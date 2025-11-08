@@ -1,0 +1,6 @@
+go 1.24.4
+
+use (
+	./apps/svc-users
+	./packages/shared-go
+)
