@@ -37,6 +37,22 @@ services:
       - "4000:80"
     volumes:
       - pgadmin_data:/var/lib/pgadmin
+    networks:
+      - internal-net
+  admin:
+    build:
+      context: .
+      dockerfile: apps/admin/Dockerfile
+    container_name: hh-admin
+    restart: unless-stopped
+    environment:
+      NODE_ENV: production
+      NEXT_PUBLIC_API_URL: http://localhost:3000/api
+      NEXT_PUBLIC_APP_ENV: production
+    ports:
+      - "5174:5174"
+    networks:
+      - internal-net
 networks:
   internal-net:
     name: internal-net
