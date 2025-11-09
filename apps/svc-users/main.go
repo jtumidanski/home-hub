@@ -1,6 +1,8 @@
 package main
 
 import (
+	"github.com/jtumidanski/home-hub/apps/svc-users/household"
+	"github.com/jtumidanski/home-hub/apps/svc-users/user"
 	"github.com/jtumidanski/home-hub/packages/shared-go/database"
 	"github.com/jtumidanski/home-hub/packages/shared-go/logger"
 	"github.com/jtumidanski/home-hub/packages/shared-go/rest/server"
@@ -41,9 +43,12 @@ func main() {
 		l.WithError(err).Fatal("Unable to initialize tracer.")
 	}
 
-	_ = database.Connect(l, database.SetMigrations())
+	db := database.Connect(l, database.SetMigrations(Migration()))
 
-	server.CreateService(l, tdm.Context(), tdm.WaitGroup(), GetServer().GetPrefix())
+	server.CreateService(l, tdm.Context(), tdm.WaitGroup(), GetServer().GetPrefix(),
+		user.InitializeRoutes(db),
+		household.InitializeRoutes(db),
+	)
 
 	tdm.TeardownFunc(tracing.Teardown(l)(tc))
 

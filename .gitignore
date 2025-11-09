@@ -33,3 +33,4 @@ coverage/
 # Misc
 .DS_Store
 *.pem
+apps/svc-users/svc-users
