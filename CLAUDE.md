@@ -25,9 +25,7 @@ Each domain (users, calendar, weather, tasks, meals, reminders) owns:
 
 ### 2. Security Model
 - **Gateway pattern**: Single public entry point (`gateway` service)
-- **Row-Level Security (RLS)**: Tenant/household isolation enforced at the database layer
 - **Header-based context**: Gateway injects `X-Tenant-ID`, `X-Household-ID`, `X-User-ID`, and service JWT
-- **Zero cross-tenant reads**: RLS leakage is the top security concern
 
 ### 3. Communication Flow
 ```
@@ -36,7 +34,7 @@ Frontend → nginx proxy → Gateway → Domain Services → PostgreSQL
                                   Workers
 ```
 
-**Critical**: Services NEVER receive tenant information in request/response bodies - only via headers. The database session sets `app.tenant_id` and `app.household_id` which RLS policies use for automatic filtering.
+**Critical**: Services NEVER receive tenant information in request/response bodies - only via headers. The database session sets `app.household_id`.
 
 ### 4. Stateless Design
 - All state persisted in PostgreSQL (one schema per service)
@@ -60,7 +58,7 @@ home-hub/                          # Mono-repo for all services
     svc-meals/                     # Recipes + weekly planner
     svc-reminders/                 # Reminders + snooze/dismiss
     workers/                       # Background jobs per domain
-    migrators/                     # One per service (AutoMigrate + RLS)
+    migrators/                     # One per service (AutoMigrate)
     kiosk/                         # React/Tailwind (Next.js)
     admin/                         # React/Tailwind (Next.js)
 ```
@@ -140,7 +138,6 @@ When implementing a new service:
 
 1. **Database Schema** (`migrators/`)
    - Define GORM models with tenant/household foreign keys
-   - Implement RLS policies (see examples in docs)
    - Create `Migration()` function for AutoMigrate
 
 2. **Service API** (`apps/svc-*/`)
@@ -159,21 +156,6 @@ When implementing a new service:
    - Document all endpoints
    - Generate clients for `dto-go` and `dto-js`
 
-### RLS Implementation Pattern
-Every service table must:
-```sql
--- Enable RLS
-ALTER TABLE tasks ENABLE ROW LEVEL SECURITY;
-
--- Create policy for tenant isolation
-CREATE POLICY tenant_isolation ON tasks
-  USING (tenant_id = current_setting('app.tenant_id')::uuid);
-
--- Create policy for household isolation (if applicable)
-CREATE POLICY household_isolation ON tasks
-  USING (household_id = current_setting('app.household_id')::uuid);
-```
-
 ### Header Flow Pattern
 ```go
 // In service handlers
@@ -185,22 +167,8 @@ userID := r.Header.Get("X-User-ID")
 db.Exec("SET app.tenant_id = ?", tenantID)
 db.Exec("SET app.household_id = ?", householdID)
 
-// RLS automatically filters queries
 var tasks []Task
 db.Find(&tasks) // Only returns tenant's household's tasks
-```
-
-### Testing RLS
-Critical to verify zero cross-tenant reads:
-```go
-// Test: Ensure tenant A cannot see tenant B's data
-SetSessionTenant(tenantA)
-resultsA := db.Find(&tasks)
-
-SetSessionTenant(tenantB)
-resultsB := db.Find(&tasks)
-
-assert.NoOverlap(resultsA, resultsB)
 ```
 
 ---
@@ -234,7 +202,6 @@ task dev
 | **Dashboard load (Pi 4)** | < 2 seconds |
 | **API latency (P99)** | < 300 ms |
 | **Offline cache window** | 1 day |
-| **RLS leakage** | Zero cross-tenant reads |
 | **Audit retention** | 90 days |
 | **Frontend polling interval** | 30 seconds |
 | **Quiet hours (reminders)** | 00:00–05:00 |
@@ -245,26 +212,22 @@ task dev
 
 ### ✅ DO
 - Extract tenant context from headers, never from request body
-- Implement RLS policies for all tables with tenant/household data
 - Use mono-repo structure with service isolation
 - Follow gateway pattern for all external requests
 - Implement workers as headless services
 - Test cross-tenant isolation rigorously
 - Use polling for kiosk UI updates (not WebSockets)
-- Set database session variables before RLS-protected queries
 - Create OpenAPI specs before implementation
 - Use shared libraries in `packages/shared-go/`
 
 ### ❌ NEVER
 - Include `tenant_id` or `household_id` in API response bodies
 - Allow direct database access from frontend
-- Skip RLS implementation on any tenant-scoped table
 - Use WebSockets for kiosk updates (breaks caching)
 - Allow cross-service direct database queries
 - Hard-code tenant or household logic in business code
 - Implement authentication outside of gateway
 - Create services without corresponding migrators
-- Skip integration tests for RLS policies
 
 ---
 
@@ -275,7 +238,7 @@ task dev
 2. Reference existing architecture in `/docs/PROJECT_KNOWLEDGE.md`
 3. Follow the service development pattern above
 4. Implement in phases:
-   - Phase 1: Database schema + RLS + migrator
+   - Phase 1: Database schema + migrator
    - Phase 2: REST API + OpenAPI spec
    - Phase 3: Worker logic (if applicable)
    - Phase 4: Integration tests
@@ -313,7 +276,6 @@ task dev
 **Next Steps**:
 1. Set up mono-repo structure (`apps/`, `packages/`)
 2. Implement `gateway` service with Google OIDC
-3. Implement `svc-users` with RLS as reference implementation
 4. Create shared libraries in `packages/shared-go/`
 5. Implement remaining domain services following the pattern
 

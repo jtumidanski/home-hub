@@ -13,7 +13,6 @@ It delivers:
 - Multi-tenant and multi-household access control
 - Google-based authentication
 - Modular domain services with strong boundaries
-- Strict data isolation (Row-Level Security, or RLS)
 - Poll-only kiosk UI (no websockets)
 - Portable deployment (Docker, Kubernetes, Helm)
 
@@ -23,7 +22,6 @@ It delivers:
 
 - **Microservices by domain:** each domain (tasks, meals, weather, reminders, etc.) owns its own database schema, API, and migrator.
 - **Gateway-based access:** the `gateway` service is the only public API entry point.
-- **RLS everywhere:** tenant and household isolation are enforced in the database layer.
 - **Single-origin local dev:** via `nginx` proxy → `http://localhost:3000`.
 - **Mono-repo structure:** all services, UIs, and libraries coexist under one repo for unified CI/CD.
 - **Stateless APIs:** all state persisted in Postgres per service; workers handle time-based logic.
@@ -45,7 +43,7 @@ home-hub/
     svc-meals/               # Recipes + weekly planner
     svc-reminders/           # Reminders CRUD + snooze/dismiss
     workers/                 # Domain-specific background jobs
-    migrators/               # One per service (AutoMigrate + RLS + SQL)
+    migrators/               # One per service (AutoMigrate + SQL)
     kiosk/                   # React/Tailwind (Next.js)
     admin/                   # React/Tailwind (Next.js)
   docker-compose.yml
@@ -101,7 +99,6 @@ All workers are headless and communicate with their owning service DBs.
 
 3. **Service → Database**
    Sets `app.tenant_id` and `app.household_id` in session.
-   Queries automatically filtered by RLS.
 
 4. **Dashboard-composer → Services**
    Fan-out calls, aggregates data, caches results briefly.
@@ -129,7 +126,6 @@ All workers are headless and communicate with their owning service DBs.
 1. Detect changed services using Turborepo + Go workspace graph.
 2. Lint, typecheck, unit test per service.
 3. Launch ephemeral Postgres → run `migrator-*`.
-4. Integration tests verify RLS.
 5. Build/push Docker images (`svc-tasks:v1.2.3`, etc.).
 6. Deploy changed services, then migrators.
 7. Run E2E (kiosk/admin flows) → promote to production.
@@ -143,7 +139,6 @@ All workers are headless and communicate with their owning service DBs.
 | **Dashboard load (Pi 4)** | < 2 seconds |
 | **API latency (P99)** | < 300 ms |
 | **Offline cache window** | 1 day |
-| **RLS leakage** | Zero cross-tenant reads |
 | **Audit retention** | 90 days |
 | **Frontend polling interval** | 30 seconds |
 | **Quiet hours (reminders)** | 00:00–05:00 |
