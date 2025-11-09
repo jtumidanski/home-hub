@@ -47,7 +47,7 @@ func main() {
 
 	server.CreateService(l, tdm.Context(), tdm.WaitGroup(), GetServer().GetPrefix(),
 		user.InitializeRoutes(GetServer())(db),
-		household.InitializeRoutes(db),
+		household.InitializeRoutes(GetServer())(db),
 	)
 
 	tdm.TeardownFunc(tracing.Teardown(l)(tc))

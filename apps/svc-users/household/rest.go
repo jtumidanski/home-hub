@@ -1,59 +1,89 @@
 package household
 
+import (
+	"github.com/google/uuid"
+)
+
 // RestModel represents the JSON:API representation of a household
 type RestModel struct {
-	Id        string `jsonapi:"primary,households"`
-	Name      string `jsonapi:"attr,name"`
-	CreatedAt string `jsonapi:"attr,created_at"`
-	UpdatedAt string `jsonapi:"attr,updated_at"`
+	Id        uuid.UUID `json:"-"`
+	Name      string    `json:"name"`
+	CreatedAt string    `json:"created_at"`
+	UpdatedAt string    `json:"updated_at"`
+}
+
+func (r *RestModel) GetName() string {
+	return "households"
+}
+
+func (r RestModel) GetID() string {
+	return r.Id.String()
+}
+
+func (r *RestModel) SetID(idStr string) error {
+	id, err := uuid.Parse(idStr)
+	if err != nil {
+		return err
+	}
+
+	r.Id = id
+	return nil
 }
 
 // Transform converts a domain Model to a REST representation
 func Transform(m Model) (RestModel, error) {
 	return RestModel{
-		Id:        m.Id().String(),
+		Id:        m.Id(),
 		Name:      m.Name(),
 		CreatedAt: m.CreatedAt().Format("2006-01-02T15:04:05Z07:00"),
 		UpdatedAt: m.UpdatedAt().Format("2006-01-02T15:04:05Z07:00"),
 	}, nil
 }
 
-// TransformSlice converts a slice of domain Models to REST representations
-func TransformSlice(models []Model) ([]RestModel, error) {
-	restModels := make([]RestModel, len(models))
-	for i, model := range models {
-		restModel, err := Transform(model)
-		if err != nil {
-			return nil, err
-		}
-		restModels[i] = restModel
-	}
-	return restModels, nil
-}
-
-// CreateRequestAttributes represents the attributes for creating a household
-type CreateRequestAttributes struct {
-	Name string `json:"name"`
-}
-
 // CreateRequest represents a JSON:API request to create a household
 type CreateRequest struct {
-	Data struct {
-		Type       string                  `json:"type"`
-		Attributes CreateRequestAttributes `json:"attributes"`
-	} `json:"data"`
+	Id   uuid.UUID `json:"-"`
+	Name string    `json:"name"`
 }
 
-// UpdateRequestAttributes represents the attributes for updating a household
-type UpdateRequestAttributes struct {
-	Name *string `json:"name,omitempty"`
+func (r *CreateRequest) GetName() string {
+	return "households"
+}
+
+func (r CreateRequest) GetID() string {
+	return r.Id.String()
+}
+
+func (r *CreateRequest) SetID(idStr string) error {
+	id, err := uuid.Parse(idStr)
+	if err != nil {
+		return err
+	}
+
+	r.Id = id
+	return nil
 }
 
 // UpdateRequest represents a JSON:API request to update a household
 type UpdateRequest struct {
-	Data struct {
-		Type       string                  `json:"type"`
-		Id         string                  `json:"id"`
-		Attributes UpdateRequestAttributes `json:"attributes"`
-	} `json:"data"`
+	Id   uuid.UUID `json:"-"`
+	Name *string   `json:"name,omitempty"`
+}
+
+func (r *UpdateRequest) GetName() string {
+	return "households"
+}
+
+func (r UpdateRequest) GetID() string {
+	return r.Id.String()
+}
+
+func (r *UpdateRequest) SetID(idStr string) error {
+	id, err := uuid.Parse(idStr)
+	if err != nil {
+		return err
+	}
+
+	r.Id = id
+	return nil
 }

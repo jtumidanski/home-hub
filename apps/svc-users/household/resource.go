@@ -1,12 +1,13 @@
 package household
 
 import (
-	"encoding/json"
 	"errors"
 	"net/http"
 
 	"github.com/google/uuid"
 	"github.com/gorilla/mux"
+	"github.com/jtumidanski/api2go/jsonapi"
+	"github.com/jtumidanski/home-hub/packages/shared-go/model/ops"
 	"github.com/sirupsen/logrus"
 	"gorm.io/gorm"
 
@@ -15,250 +16,226 @@ import (
 )
 
 // InitializeRoutes registers all household-related routes
-func InitializeRoutes(db *gorm.DB) server.RouteInitializer {
-	return func(router *mux.Router, l logrus.FieldLogger) {
-		// Household CRUD endpoints
-		router.HandleFunc("/households", listHouseholdsHandler(db, l)).Methods(http.MethodGet)
-		router.HandleFunc("/households", createHouseholdHandler(db, l)).Methods(http.MethodPost)
-		router.HandleFunc("/households/{id}", getHouseholdHandler(db, l)).Methods(http.MethodGet)
-		router.HandleFunc("/households/{id}", updateHouseholdHandler(db, l)).Methods(http.MethodPatch)
-		router.HandleFunc("/households/{id}", deleteHouseholdHandler(db, l)).Methods(http.MethodDelete)
+func InitializeRoutes(si jsonapi.ServerInformation) func(db *gorm.DB) server.RouteInitializer {
+	return func(db *gorm.DB) server.RouteInitializer {
+		return func(router *mux.Router, l logrus.FieldLogger) {
+			// Household CRUD endpoints
+			router.HandleFunc("/households", server.RegisterHandler(l)(si)("get-households", listHouseholdsHandler(db))).Methods(http.MethodGet)
+			router.HandleFunc("/households", server.RegisterInputHandler[CreateRequest](l)(si)("create-household", createHouseholdHandler(db))).Methods(http.MethodPost)
+			router.HandleFunc("/households/{id}", server.RegisterHandler(l)(si)("get-household", getHouseholdHandler(db))).Methods(http.MethodGet)
+			router.HandleFunc("/households/{id}", server.RegisterInputHandler[UpdateRequest](l)(si)("update-household", updateHouseholdHandler(db))).Methods(http.MethodPatch)
+			router.HandleFunc("/households/{id}", server.RegisterHandler(l)(si)("delete-household", deleteHouseholdHandler(db))).Methods(http.MethodDelete)
 
-		// Household relationships
-		router.HandleFunc("/households/{id}/users", getHouseholdUsersHandler(db, l)).Methods(http.MethodGet)
+			// Household relationships
+			router.HandleFunc("/households/{id}/users", server.RegisterHandler(l)(si)("get-household-users", getHouseholdUsersHandler(db))).Methods(http.MethodGet)
+		}
+	}
+}
+
+// IdHandler a handler interface which requires a householdId
+type IdHandler func(householdId uuid.UUID) http.HandlerFunc
+
+// ParseId parses the householdId consistently from the request, and provide it to the next handler
+func ParseId(l logrus.FieldLogger, next IdHandler) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		vars := mux.Vars(r)
+		id, err := uuid.Parse(vars["id"])
+		if err != nil {
+			l.WithError(err).Errorf("Unable to properly parse id from path.")
+			w.WriteHeader(http.StatusBadRequest)
+			return
+		}
+		next(id)(w, r)
 	}
 }
 
 // listHouseholdsHandler handles GET /households
-func listHouseholdsHandler(db *gorm.DB, l logrus.FieldLogger) http.HandlerFunc {
-	return func(w http.ResponseWriter, r *http.Request) {
-		models, err := GetAll(db)()
-		if err != nil {
-			writeErrorResponse(w, http.StatusInternalServerError, "Failed to fetch households", err.Error())
-			return
-		}
+func listHouseholdsHandler(db *gorm.DB) server.GetHandler {
+	return func(d *server.HandlerDependency, c *server.HandlerContext) http.HandlerFunc {
+		return func(w http.ResponseWriter, r *http.Request) {
+			models, err := GetAll(db)()
+			if err != nil {
+				d.Logger().WithError(err).Error("error listing households")
+				w.WriteHeader(http.StatusInternalServerError)
+				return
+			}
 
-		restModels, err := TransformSlice(models)
-		if err != nil {
-			writeErrorResponse(w, http.StatusInternalServerError, "Failed to transform households", err.Error())
-			return
-		}
+			res, err := ops.SliceMap(Transform)(ops.FixedProvider(models))(ops.ParallelMap())()
+			if err != nil {
+				d.Logger().WithError(err).Errorf("Creating REST model.")
+				w.WriteHeader(http.StatusInternalServerError)
+				return
+			}
 
-		writeJSONResponse(w, http.StatusOK, map[string]interface{}{"data": restModels})
+			server.MarshalResponse[[]RestModel](d.Logger())(w)(c.ServerInformation())(map[string][]string{})(res)
+		}
 	}
 }
 
 // getHouseholdHandler handles GET /households/:id
-func getHouseholdHandler(db *gorm.DB, l logrus.FieldLogger) http.HandlerFunc {
-	return func(w http.ResponseWriter, r *http.Request) {
-		processor := NewProcessor(l, r.Context(), db)
+func getHouseholdHandler(db *gorm.DB) server.GetHandler {
+	return func(d *server.HandlerDependency, c *server.HandlerContext) http.HandlerFunc {
+		return ParseId(d.Logger(), func(householdId uuid.UUID) http.HandlerFunc {
+			return func(w http.ResponseWriter, r *http.Request) {
+				model, err := NewProcessor(d.Logger(), r.Context(), db).GetById(householdId)()
+				if err != nil {
+					if errors.Is(err, ErrHouseholdNotFound) {
+						d.Logger().WithError(err).Error("Household not found")
+						w.WriteHeader(http.StatusNotFound)
+						return
+					}
+					d.Logger().WithError(err).Error("Failed to fetch household")
+					w.WriteHeader(http.StatusInternalServerError)
+					return
+				}
 
-		vars := mux.Vars(r)
-		id, err := uuid.Parse(vars["id"])
-		if err != nil {
-			writeErrorResponse(w, http.StatusBadRequest, "Invalid household ID", err.Error())
-			return
-		}
+				res, err := ops.Map(Transform)(ops.FixedProvider(model))()
+				if err != nil {
+					d.Logger().WithError(err).Errorf("Creating REST model.")
+					w.WriteHeader(http.StatusInternalServerError)
+					return
+				}
 
-		model, err := processor.GetById(id)()
-		if err != nil {
-			if errors.Is(err, ErrHouseholdNotFound) {
-				writeErrorResponse(w, http.StatusNotFound, "Household not found", err.Error())
-				return
+				server.MarshalResponse[RestModel](d.Logger())(w)(c.ServerInformation())(map[string][]string{})(res)
 			}
-			writeErrorResponse(w, http.StatusInternalServerError, "Failed to fetch household", err.Error())
-			return
-		}
-
-		restModel, err := Transform(model)
-		if err != nil {
-			writeErrorResponse(w, http.StatusInternalServerError, "Failed to transform household", err.Error())
-			return
-		}
-
-		writeJSONResponse(w, http.StatusOK, map[string]interface{}{"data": restModel})
+		})
 	}
 }
 
 // createHouseholdHandler handles POST /households
-func createHouseholdHandler(db *gorm.DB, l logrus.FieldLogger) http.HandlerFunc {
-	return func(w http.ResponseWriter, r *http.Request) {
-		processor := NewProcessor(l, r.Context(), db)
+func createHouseholdHandler(db *gorm.DB) server.InputHandler[CreateRequest] {
+	return func(d *server.HandlerDependency, c *server.HandlerContext, req CreateRequest) http.HandlerFunc {
+		return func(w http.ResponseWriter, r *http.Request) {
+			input := CreateInput{
+				Name: req.Name,
+			}
 
-		var req CreateRequest
-		if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-			writeErrorResponse(w, http.StatusBadRequest, "Invalid request body", err.Error())
-			return
-		}
-
-		if req.Data.Type != "households" {
-			writeErrorResponse(w, http.StatusBadRequest, "Invalid resource type", "Expected type 'households'")
-			return
-		}
-
-		input := CreateInput{
-			Name: req.Data.Attributes.Name,
-		}
-
-		model, err := processor.Create(input)()
-		if err != nil {
-			if errors.Is(err, ErrNameRequired) || errors.Is(err, ErrNameEmpty) {
-				writeErrorResponse(w, http.StatusBadRequest, "Validation failed", err.Error())
+			model, err := NewProcessor(d.Logger(), r.Context(), db).Create(input)()
+			if err != nil {
+				if errors.Is(err, ErrNameRequired) || errors.Is(err, ErrNameEmpty) {
+					d.Logger().WithError(err).Errorf("Validation failed.")
+					w.WriteHeader(http.StatusBadRequest)
+					return
+				}
+				d.Logger().WithError(err).Errorf("Failed to create household.")
+				w.WriteHeader(http.StatusInternalServerError)
 				return
 			}
-			writeErrorResponse(w, http.StatusInternalServerError, "Failed to create household", err.Error())
-			return
-		}
 
-		restModel, err := Transform(model)
-		if err != nil {
-			writeErrorResponse(w, http.StatusInternalServerError, "Failed to transform household", err.Error())
-			return
-		}
+			res, err := ops.Map(Transform)(ops.FixedProvider(model))()
+			if err != nil {
+				d.Logger().WithError(err).Errorf("Creating REST model.")
+				w.WriteHeader(http.StatusInternalServerError)
+				return
+			}
 
-		writeJSONResponse(w, http.StatusCreated, map[string]interface{}{"data": restModel})
+			server.MarshalResponse[RestModel](d.Logger())(w)(c.ServerInformation())(map[string][]string{})(res)
+		}
 	}
 }
 
 // updateHouseholdHandler handles PATCH /households/:id
-func updateHouseholdHandler(db *gorm.DB, l logrus.FieldLogger) http.HandlerFunc {
-	return func(w http.ResponseWriter, r *http.Request) {
-		processor := NewProcessor(l, r.Context(), db)
+func updateHouseholdHandler(db *gorm.DB) server.InputHandler[UpdateRequest] {
+	return func(d *server.HandlerDependency, c *server.HandlerContext, req UpdateRequest) http.HandlerFunc {
+		return ParseId(d.Logger(), func(householdId uuid.UUID) http.HandlerFunc {
+			return func(w http.ResponseWriter, r *http.Request) {
+				input := UpdateInput{
+					Name: req.Name,
+				}
 
-		vars := mux.Vars(r)
-		id, err := uuid.Parse(vars["id"])
-		if err != nil {
-			writeErrorResponse(w, http.StatusBadRequest, "Invalid household ID", err.Error())
-			return
-		}
+				model, err := NewProcessor(d.Logger(), r.Context(), db).Update(householdId, input)()
+				if err != nil {
+					if errors.Is(err, ErrHouseholdNotFound) {
+						d.Logger().WithError(err).Errorf("Household not found.")
+						w.WriteHeader(http.StatusNotFound)
+						return
+					}
+					if errors.Is(err, ErrNameRequired) || errors.Is(err, ErrNameEmpty) {
+						d.Logger().WithError(err).Errorf("Validation failed.")
+						w.WriteHeader(http.StatusBadRequest)
+						return
+					}
+					d.Logger().WithError(err).Errorf("Failed to update household.")
+					w.WriteHeader(http.StatusInternalServerError)
+					return
+				}
 
-		var req UpdateRequest
-		if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-			writeErrorResponse(w, http.StatusBadRequest, "Invalid request body", err.Error())
-			return
-		}
+				res, err := ops.Map(Transform)(ops.FixedProvider(model))()
+				if err != nil {
+					d.Logger().WithError(err).Errorf("Creating REST model.")
+					w.WriteHeader(http.StatusInternalServerError)
+					return
+				}
 
-		if req.Data.Type != "households" {
-			writeErrorResponse(w, http.StatusBadRequest, "Invalid resource type", "Expected type 'households'")
-			return
-		}
-
-		input := UpdateInput{
-			Name: req.Data.Attributes.Name,
-		}
-
-		model, err := processor.Update(id, input)()
-		if err != nil {
-			if errors.Is(err, ErrHouseholdNotFound) {
-				writeErrorResponse(w, http.StatusNotFound, "Household not found", err.Error())
-				return
+				server.MarshalResponse[RestModel](d.Logger())(w)(c.ServerInformation())(map[string][]string{})(res)
 			}
-			if errors.Is(err, ErrNameRequired) || errors.Is(err, ErrNameEmpty) {
-				writeErrorResponse(w, http.StatusBadRequest, "Validation failed", err.Error())
-				return
-			}
-			writeErrorResponse(w, http.StatusInternalServerError, "Failed to update household", err.Error())
-			return
-		}
-
-		restModel, err := Transform(model)
-		if err != nil {
-			writeErrorResponse(w, http.StatusInternalServerError, "Failed to transform household", err.Error())
-			return
-		}
-
-		writeJSONResponse(w, http.StatusOK, map[string]interface{}{"data": restModel})
+		})
 	}
 }
 
 // deleteHouseholdHandler handles DELETE /households/:id
-func deleteHouseholdHandler(db *gorm.DB, l logrus.FieldLogger) http.HandlerFunc {
-	return func(w http.ResponseWriter, r *http.Request) {
-		processor := NewProcessor(l, r.Context(), db)
+func deleteHouseholdHandler(db *gorm.DB) server.GetHandler {
+	return func(d *server.HandlerDependency, c *server.HandlerContext) http.HandlerFunc {
+		return ParseId(d.Logger(), func(householdId uuid.UUID) http.HandlerFunc {
+			return func(w http.ResponseWriter, r *http.Request) {
+				err := NewProcessor(d.Logger(), r.Context(), db).Delete(householdId)
+				if err != nil {
+					if errors.Is(err, ErrHouseholdNotFound) {
+						d.Logger().WithError(err).Error("Household not found")
+						w.WriteHeader(http.StatusNotFound)
+						return
+					}
+					if errors.Is(err, ErrHouseholdHasUsers) {
+						d.Logger().WithError(err).Error("Cannot delete household with users")
+						w.WriteHeader(http.StatusConflict)
+						return
+					}
+					d.Logger().WithError(err).Error("Failed to delete household")
+					w.WriteHeader(http.StatusInternalServerError)
+					return
+				}
 
-		vars := mux.Vars(r)
-		id, err := uuid.Parse(vars["id"])
-		if err != nil {
-			writeErrorResponse(w, http.StatusBadRequest, "Invalid household ID", err.Error())
-			return
-		}
-
-		err = processor.Delete(id)
-		if err != nil {
-			if errors.Is(err, ErrHouseholdNotFound) {
-				writeErrorResponse(w, http.StatusNotFound, "Household not found", err.Error())
-				return
+				w.WriteHeader(http.StatusNoContent)
 			}
-			if errors.Is(err, ErrHouseholdHasUsers) {
-				writeErrorResponse(w, http.StatusConflict, "Cannot delete household with users", err.Error())
-				return
-			}
-			writeErrorResponse(w, http.StatusInternalServerError, "Failed to delete household", err.Error())
-			return
-		}
-
-		w.WriteHeader(http.StatusNoContent)
+		})
 	}
 }
 
 // getHouseholdUsersHandler handles GET /households/:id/users
-func getHouseholdUsersHandler(db *gorm.DB, l logrus.FieldLogger) http.HandlerFunc {
-	return func(w http.ResponseWriter, r *http.Request) {
-		processor := NewProcessor(l, r.Context(), db)
+func getHouseholdUsersHandler(db *gorm.DB) server.GetHandler {
+	return func(d *server.HandlerDependency, c *server.HandlerContext) http.HandlerFunc {
+		return ParseId(d.Logger(), func(householdId uuid.UUID) http.HandlerFunc {
+			return func(w http.ResponseWriter, r *http.Request) {
+				// Verify household exists
+				_, err := NewProcessor(d.Logger(), r.Context(), db).GetById(householdId)()
+				if err != nil {
+					if errors.Is(err, ErrHouseholdNotFound) {
+						d.Logger().WithError(err).Error("Household not found")
+						w.WriteHeader(http.StatusNotFound)
+						return
+					}
+					d.Logger().WithError(err).Error("Failed to fetch household")
+					w.WriteHeader(http.StatusInternalServerError)
+					return
+				}
 
-		vars := mux.Vars(r)
-		id, err := uuid.Parse(vars["id"])
-		if err != nil {
-			writeErrorResponse(w, http.StatusBadRequest, "Invalid household ID", err.Error())
-			return
-		}
+				// Get users in household
+				users, err := userPkg.GetByHouseholdId(db)(householdId)()
+				if err != nil {
+					d.Logger().WithError(err).Error("Failed to fetch users")
+					w.WriteHeader(http.StatusInternalServerError)
+					return
+				}
 
-		// Verify household exists
-		_, err = processor.GetById(id)()
-		if err != nil {
-			if errors.Is(err, ErrHouseholdNotFound) {
-				writeErrorResponse(w, http.StatusNotFound, "Household not found", err.Error())
-				return
+				res, err := ops.SliceMap(userPkg.Transform)(ops.FixedProvider(users))(ops.ParallelMap())()
+				if err != nil {
+					d.Logger().WithError(err).Errorf("Creating REST model.")
+					w.WriteHeader(http.StatusInternalServerError)
+					return
+				}
+
+				server.MarshalResponse[[]userPkg.RestModel](d.Logger())(w)(c.ServerInformation())(map[string][]string{})(res)
 			}
-			writeErrorResponse(w, http.StatusInternalServerError, "Failed to fetch household", err.Error())
-			return
-		}
-
-		// Get users in household
-		users, err := userPkg.GetByHouseholdId(db)(id)()
-		if err != nil {
-			writeErrorResponse(w, http.StatusInternalServerError, "Failed to fetch users", err.Error())
-			return
-		}
-
-		restModels, err := userPkg.TransformSlice(users)
-		if err != nil {
-			writeErrorResponse(w, http.StatusInternalServerError, "Failed to transform users", err.Error())
-			return
-		}
-
-		writeJSONResponse(w, http.StatusOK, map[string]interface{}{"data": restModels})
+		})
 	}
-}
-
-// writeJSONResponse writes a JSON response with the given status code
-func writeJSONResponse(w http.ResponseWriter, statusCode int, payload interface{}) {
-	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(statusCode)
-	json.NewEncoder(w).Encode(payload)
-}
-
-// writeErrorResponse writes a JSON:API error response
-func writeErrorResponse(w http.ResponseWriter, statusCode int, title string, detail string) {
-	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(statusCode)
-	json.NewEncoder(w).Encode(map[string]interface{}{
-		"errors": []map[string]interface{}{
-			{
-				"status": statusCode,
-				"title":  title,
-				"detail": detail,
-			},
-		},
-	})
 }
