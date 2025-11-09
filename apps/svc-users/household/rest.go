@@ -1,7 +1,6 @@
 package household
 
 // RestModel represents the JSON:API representation of a household
-// Note: tenant_id and sensitive data are NEVER included in responses
 type RestModel struct {
 	Id        string `jsonapi:"primary,households"`
 	Name      string `jsonapi:"attr,name"`

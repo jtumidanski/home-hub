@@ -46,7 +46,7 @@ func main() {
 	db := database.Connect(l, database.SetMigrations(Migration()))
 
 	server.CreateService(l, tdm.Context(), tdm.WaitGroup(), GetServer().GetPrefix(),
-		user.InitializeRoutes(db),
+		user.InitializeRoutes(GetServer())(db),
 		household.InitializeRoutes(db),
 	)
 

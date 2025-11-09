@@ -5,14 +5,31 @@ import (
 )
 
 // RestModel represents the JSON:API representation of a user
-// Note: tenant_id and sensitive data are NEVER included in responses
 type RestModel struct {
-	Id          string  `jsonapi:"primary,users"`
-	Email       string  `jsonapi:"attr,email"`
-	DisplayName string  `jsonapi:"attr,display_name"`
-	HouseholdId *string `jsonapi:"attr,household_id,omitempty"`
-	CreatedAt   string  `jsonapi:"attr,created_at"`
-	UpdatedAt   string  `jsonapi:"attr,updated_at"`
+	Id          uuid.UUID `json:"-"`
+	Email       string    `json:"email"`
+	DisplayName string    `json:"display_name"`
+	HouseholdId *string   `json:"household_id,omitempty"`
+	CreatedAt   string    `json:"created_at"`
+	UpdatedAt   string    `json:"updated_at"`
+}
+
+func (r *RestModel) GetName() string {
+	return "users"
+}
+
+func (r RestModel) GetID() string {
+	return r.Id.String()
+}
+
+func (r *RestModel) SetID(idStr string) error {
+	id, err := uuid.Parse(idStr)
+	if err != nil {
+		return err
+	}
+
+	r.Id = id
+	return nil
 }
 
 // Transform converts a domain Model to a REST representation
@@ -24,7 +41,7 @@ func Transform(m Model) (RestModel, error) {
 	}
 
 	return RestModel{
-		Id:          m.Id().String(),
+		Id:          m.Id(),
 		Email:       m.Email(),
 		DisplayName: m.DisplayName(),
 		HouseholdId: householdId,
@@ -46,40 +63,76 @@ func TransformSlice(models []Model) ([]RestModel, error) {
 	return restModels, nil
 }
 
-// CreateRequestAttributes represents the attributes for creating a user
-type CreateRequestAttributes struct {
+// CreateRequest represents a JSON:API request to create a user
+type CreateRequest struct {
+	Id          uuid.UUID  `json:"-"`
 	Email       string     `json:"email"`
 	DisplayName string     `json:"display_name"`
 	HouseholdId *uuid.UUID `json:"household_id,omitempty"`
 }
 
-// CreateRequest represents a JSON:API request to create a user
-type CreateRequest struct {
-	Data struct {
-		Type       string                  `json:"type"`
-		Attributes CreateRequestAttributes `json:"attributes"`
-	} `json:"data"`
+func (r *CreateRequest) GetName() string {
+	return "users"
 }
 
-// UpdateRequestAttributes represents the attributes for updating a user
-type UpdateRequestAttributes struct {
-	Email       *string `json:"email,omitempty"`
-	DisplayName *string `json:"display_name,omitempty"`
+func (r CreateRequest) GetID() string {
+	return r.Id.String()
+}
+
+func (r *CreateRequest) SetID(idStr string) error {
+	id, err := uuid.Parse(idStr)
+	if err != nil {
+		return err
+	}
+
+	r.Id = id
+	return nil
 }
 
 // UpdateRequest represents a JSON:API request to update a user
 type UpdateRequest struct {
-	Data struct {
-		Type       string                  `json:"type"`
-		Id         string                  `json:"id"`
-		Attributes UpdateRequestAttributes `json:"attributes"`
-	} `json:"data"`
+	Id          uuid.UUID `json:"-"`
+	Email       *string   `json:"email,omitempty"`
+	DisplayName *string   `json:"display_name,omitempty"`
+}
+
+func (r *UpdateRequest) GetName() string {
+	return "users"
+}
+
+func (r UpdateRequest) GetID() string {
+	return r.Id.String()
+}
+
+func (r *UpdateRequest) SetID(idStr string) error {
+	id, err := uuid.Parse(idStr)
+	if err != nil {
+		return err
+	}
+
+	r.Id = id
+	return nil
 }
 
 // AssociateHouseholdRequest represents a JSON:API request to associate a household
 type AssociateHouseholdRequest struct {
-	Data struct {
-		Type string `json:"type"`
-		Id   string `json:"id"`
-	} `json:"data"`
+	Id uuid.UUID `json:"-"`
+}
+
+func (r *AssociateHouseholdRequest) GetName() string {
+	return "households"
+}
+
+func (r AssociateHouseholdRequest) GetID() string {
+	return r.Id.String()
+}
+
+func (r *AssociateHouseholdRequest) SetID(idStr string) error {
+	id, err := uuid.Parse(idStr)
+	if err != nil {
+		return err
+	}
+
+	r.Id = id
+	return nil
 }
