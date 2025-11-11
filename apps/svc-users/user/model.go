@@ -18,6 +18,7 @@ type Model struct {
 	id          uuid.UUID
 	email       string
 	displayName string
+	provider    string // OAuth provider: 'google' or 'github'
 	householdId *uuid.UUID
 	createdAt   time.Time
 	updatedAt   time.Time
@@ -36,6 +37,11 @@ func (m Model) Email() string {
 // DisplayName returns the user's display name
 func (m Model) DisplayName() string {
 	return m.displayName
+}
+
+// Provider returns the OAuth provider used for authentication
+func (m Model) Provider() string {
+	return m.provider
 }
 
 // HouseholdId returns the user's household ID if associated, nil otherwise
@@ -69,8 +75,8 @@ func (m Model) String() string {
 	if m.householdId != nil {
 		householdStr = m.householdId.String()
 	}
-	return fmt.Sprintf("User[id=%s, email=%s, displayName=%s, householdId=%s]",
-		m.id.String(), m.email, m.displayName, householdStr)
+	return fmt.Sprintf("User[id=%s, email=%s, displayName=%s, provider=%s, householdId=%s]",
+		m.id.String(), m.email, m.displayName, m.provider, householdStr)
 }
 
 // MarshalJSON implements json.Marshaler for the Model
@@ -79,6 +85,7 @@ func (m Model) MarshalJSON() ([]byte, error) {
 		Id          uuid.UUID  `json:"id"`
 		Email       string     `json:"email"`
 		DisplayName string     `json:"displayName"`
+		Provider    string     `json:"provider"`
 		HouseholdId *uuid.UUID `json:"householdId,omitempty"`
 		CreatedAt   time.Time  `json:"createdAt"`
 		UpdatedAt   time.Time  `json:"updatedAt"`
@@ -88,6 +95,7 @@ func (m Model) MarshalJSON() ([]byte, error) {
 		Id:          m.id,
 		Email:       m.email,
 		DisplayName: m.displayName,
+		Provider:    m.provider,
 		HouseholdId: m.householdId,
 		CreatedAt:   m.createdAt,
 		UpdatedAt:   m.updatedAt,
@@ -100,6 +108,7 @@ func (m *Model) UnmarshalJSON(data []byte) error {
 		Id          uuid.UUID  `json:"id"`
 		Email       string     `json:"email"`
 		DisplayName string     `json:"displayName"`
+		Provider    string     `json:"provider"`
 		HouseholdId *uuid.UUID `json:"householdId,omitempty"`
 		CreatedAt   time.Time  `json:"createdAt"`
 		UpdatedAt   time.Time  `json:"updatedAt"`
@@ -113,6 +122,7 @@ func (m *Model) UnmarshalJSON(data []byte) error {
 	m.id = a.Id
 	m.email = a.Email
 	m.displayName = a.DisplayName
+	m.provider = a.Provider
 	m.householdId = a.HouseholdId
 	m.createdAt = a.CreatedAt
 	m.updatedAt = a.UpdatedAt

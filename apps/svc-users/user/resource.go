@@ -1,12 +1,14 @@
 package user
 
 import (
+	"encoding/json"
 	"errors"
 	"net/http"
 
 	"github.com/google/uuid"
 	"github.com/gorilla/mux"
 	"github.com/jtumidanski/api2go/jsonapi"
+	"github.com/jtumidanski/home-hub/packages/shared-go/auth"
 	"github.com/jtumidanski/home-hub/packages/shared-go/model/ops"
 	"github.com/sirupsen/logrus"
 	"gorm.io/gorm"
@@ -20,6 +22,10 @@ func InitializeRoutes(si jsonapi.ServerInformation) func(db *gorm.DB) server.Rou
 		// User CRUD endpoints
 		// User-household relationship endpoints
 		return func(router *mux.Router, l logrus.FieldLogger) {
+			// Auth endpoint - /me returns the currently authenticated user
+			router.HandleFunc("/me", server.RegisterHandler(l)(si)("get-me", getMeHandler(db))).Methods(http.MethodGet)
+
+			// User CRUD
 			router.HandleFunc("/users", server.RegisterHandler(l)(si)("get-users", listUsersHandler(db))).Methods(http.MethodGet)
 			router.HandleFunc("/users", server.RegisterInputHandler[CreateRequest](l)(si)("create-user", createUserHandler(db))).Methods(http.MethodPost)
 			router.HandleFunc("/users/{id}", server.RegisterHandler(l)(si)("get-user", getUserHandler(db))).Methods(http.MethodGet)
@@ -45,6 +51,61 @@ func ParseId(l logrus.FieldLogger, next IdHandler) http.HandlerFunc {
 			return
 		}
 		next(id)(w, r)
+	}
+}
+
+// MeResponse represents the response for /api/me endpoint
+type MeResponse struct {
+	User  RestModel `json:"user"`
+	Roles []string  `json:"roles"`
+}
+
+// getMeHandler handles GET /me - returns the currently authenticated user
+func getMeHandler(db *gorm.DB) server.GetHandler {
+	return func(d *server.HandlerDependency, c *server.HandlerContext) http.HandlerFunc {
+		return func(w http.ResponseWriter, r *http.Request) {
+			// Extract auth context
+			authCtx, ok := auth.FromContext(r.Context())
+			if !ok {
+				d.Logger().Error("Auth context not found in /me handler")
+				w.WriteHeader(http.StatusUnauthorized)
+				return
+			}
+
+			// Get user by ID
+			model, err := NewProcessor(d.Logger(), r.Context(), db).GetById(authCtx.UserId)()
+			if err != nil {
+				if errors.Is(err, ErrUserNotFound) {
+					d.Logger().WithError(err).Error("Authenticated user not found in database")
+					w.WriteHeader(http.StatusNotFound)
+					return
+				}
+				d.Logger().WithError(err).Error("Failed to fetch authenticated user")
+				w.WriteHeader(http.StatusInternalServerError)
+				return
+			}
+
+			// Transform to REST model
+			restModel, err := ops.Map(Transform)(ops.FixedProvider(model))()
+			if err != nil {
+				d.Logger().WithError(err).Errorf("Creating REST model.")
+				w.WriteHeader(http.StatusInternalServerError)
+				return
+			}
+
+			// Build response
+			response := MeResponse{
+				User:  restModel,
+				Roles: authCtx.Roles,
+			}
+
+			// Marshal and return
+			w.Header().Set("Content-Type", "application/json")
+			w.WriteHeader(http.StatusOK)
+			if err := json.NewEncoder(w).Encode(response); err != nil {
+				d.Logger().WithError(err).Error("Failed to encode /me response")
+			}
+		}
 	}
 }
 

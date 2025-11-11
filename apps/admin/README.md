@@ -217,8 +217,7 @@ Authentication is handled by the gateway using Google OIDC. The gateway:
 
 ### Security
 
-- **Row-Level Security (RLS)** at the database layer ensures tenant isolation
-- **Never expose** `tenant_id` or `household_id` in API responses
+- **Never expose** `household_id` in API responses
 - **Always trust** the gateway-injected headers, not client data
 
 ### Polling vs WebSockets

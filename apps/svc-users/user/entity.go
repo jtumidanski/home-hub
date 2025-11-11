@@ -13,6 +13,7 @@ type Entity struct {
 	Id          uuid.UUID  `gorm:"type:uuid;primaryKey"`
 	Email       string     `gorm:"type:varchar(255);not null;uniqueIndex:idx_users_email"`
 	DisplayName string     `gorm:"type:varchar(255);not null"`
+	Provider    string     `gorm:"type:varchar(50);not null;default:'google'"` // OAuth provider: 'google' or 'github'
 	HouseholdId *uuid.UUID `gorm:"type:uuid;index:idx_users_household_id"`
 	CreatedAt   time.Time  `gorm:"not null"`
 	UpdatedAt   time.Time  `gorm:"not null"`
@@ -29,6 +30,7 @@ func Make(e Entity) (Model, error) {
 		id:          e.Id,
 		email:       e.Email,
 		displayName: e.DisplayName,
+		provider:    e.Provider,
 		householdId: e.HouseholdId,
 		createdAt:   e.CreatedAt,
 		updatedAt:   e.UpdatedAt,
@@ -41,6 +43,7 @@ func (m Model) ToEntity() Entity {
 		Id:          m.id,
 		Email:       m.email,
 		DisplayName: m.displayName,
+		Provider:    m.provider,
 		HouseholdId: m.householdId,
 		CreatedAt:   m.createdAt,
 		UpdatedAt:   m.updatedAt,

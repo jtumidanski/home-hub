@@ -1,13 +1,16 @@
 package main
 
 import (
+	"github.com/gorilla/mux"
 	"github.com/jtumidanski/home-hub/apps/svc-users/household"
 	"github.com/jtumidanski/home-hub/apps/svc-users/user"
+	"github.com/jtumidanski/home-hub/packages/shared-go/auth"
 	"github.com/jtumidanski/home-hub/packages/shared-go/database"
 	"github.com/jtumidanski/home-hub/packages/shared-go/logger"
 	"github.com/jtumidanski/home-hub/packages/shared-go/rest/server"
 	"github.com/jtumidanski/home-hub/packages/shared-go/service"
 	"github.com/jtumidanski/home-hub/packages/shared-go/tracing"
+	"github.com/sirupsen/logrus"
 )
 
 const serviceName = "svc-users"
@@ -45,9 +48,25 @@ func main() {
 
 	db := database.Connect(l, database.SetMigrations(Migration()))
 
+	// Create auth providers
+	userProvider := auth.NewSimpleUserProvider(db)
+	roleProvider := auth.NewSimpleRoleProvider(db)
+
+	// Create auth middleware
+	authMiddleware := auth.Middleware(l, db, userProvider, roleProvider)
+
+	// Create custom route initializer with auth middleware
+	authRouteInitializer := func(router *mux.Router, logger logrus.FieldLogger) {
+		// Apply auth middleware to all routes
+		router.Use(authMiddleware)
+
+		// Initialize user and household routes
+		user.InitializeRoutes(GetServer())(db)(router, logger)
+		household.InitializeRoutes(GetServer())(db)(router, logger)
+	}
+
 	server.CreateService(l, tdm.Context(), tdm.WaitGroup(), GetServer().GetPrefix(),
-		user.InitializeRoutes(GetServer())(db),
-		household.InitializeRoutes(GetServer())(db),
+		authRouteInitializer,
 	)
 
 	tdm.TeardownFunc(tracing.Teardown(l)(tc))

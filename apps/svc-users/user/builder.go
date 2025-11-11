@@ -13,6 +13,8 @@ var (
 	ErrEmailInvalid        = errors.New("email format is invalid")
 	ErrDisplayNameRequired = errors.New("display name is required")
 	ErrDisplayNameEmpty    = errors.New("display name cannot be empty")
+	ErrProviderRequired    = errors.New("provider is required")
+	ErrProviderInvalid     = errors.New("provider must be 'google' or 'github'")
 )
 
 // Builder provides a fluent API for constructing valid User models
@@ -20,6 +22,7 @@ type Builder struct {
 	id          *uuid.UUID
 	email       *string
 	displayName *string
+	provider    *string
 	householdId *uuid.UUID
 	createdAt   *time.Time
 	updatedAt   *time.Time
@@ -45,6 +48,12 @@ func (b *Builder) SetEmail(email string) *Builder {
 // SetDisplayName sets the user display name
 func (b *Builder) SetDisplayName(displayName string) *Builder {
 	b.displayName = &displayName
+	return b
+}
+
+// SetProvider sets the OAuth provider (google or github)
+func (b *Builder) SetProvider(provider string) *Builder {
+	b.provider = &provider
 	return b
 }
 
@@ -95,6 +104,15 @@ func (b *Builder) Build() (Model, error) {
 		return Model{}, ErrDisplayNameEmpty
 	}
 
+	// Validate provider
+	if b.provider == nil {
+		return Model{}, ErrProviderRequired
+	}
+	provider := strings.ToLower(strings.TrimSpace(*b.provider))
+	if provider != "google" && provider != "github" {
+		return Model{}, ErrProviderInvalid
+	}
+
 	// Generate ID if not provided
 	id := uuid.New()
 	if b.id != nil {
@@ -116,6 +134,7 @@ func (b *Builder) Build() (Model, error) {
 		id:          id,
 		email:       email,
 		displayName: displayName,
+		provider:    provider,
 		householdId: b.householdId,
 		createdAt:   createdAt,
 		updatedAt:   updatedAt,
@@ -129,6 +148,7 @@ func (m Model) Builder() *Builder {
 		id:          &m.id,
 		email:       &m.email,
 		displayName: &m.displayName,
+		provider:    &m.provider,
 		createdAt:   &m.createdAt,
 		updatedAt:   &m.updatedAt,
 	}
