@@ -1,4 +1,4 @@
-'use client';
+"use client";
 
 import { useAuth } from "@/lib/auth";
 import {
@@ -42,7 +42,9 @@ export default function Home() {
         setUserCount(users);
       } catch (error) {
         console.error("Failed to fetch counts:", error);
-        setCountsError(error instanceof Error ? error.message : "Failed to fetch data");
+        setCountsError(
+          error instanceof Error ? error.message : "Failed to fetch data",
+        );
       } finally {
         setCountsLoading(false);
       }
@@ -57,7 +59,10 @@ export default function Home() {
         <div className="h-10 w-64 bg-neutral-200 dark:bg-neutral-800 rounded animate-pulse" />
         <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
           {[1, 2, 3, 4].map((i) => (
-            <div key={i} className="h-32 bg-neutral-200 dark:bg-neutral-800 rounded animate-pulse" />
+            <div
+              key={i}
+              className="h-32 bg-neutral-200 dark:bg-neutral-800 rounded animate-pulse"
+            />
           ))}
         </div>
       </div>
@@ -68,11 +73,11 @@ export default function Home() {
     <div className="space-y-8">
       {/* Welcome Section */}
       <div className="space-y-2">
-        <h1 className="text-3xl font-bold tracking-tight">
-          Welcome to Home Hub Admin Portal
-        </h1>
+        <h1 className="text-3xl font-bold tracking-tight">Admin Portal</h1>
         <p className="text-neutral-600 dark:text-neutral-400">
-          {user ? `Hello, ${user.displayName}!` : "Please sign in to manage your households, users, and services."}
+          {user
+            ? `Hello, ${user.displayName}!`
+            : "Please sign in to manage your households, users, and services."}
         </p>
       </div>
 
@@ -89,7 +94,8 @@ export default function Home() {
           </CardHeader>
           <CardContent>
             <p className="text-sm text-orange-800 dark:text-orange-200">
-              Click the "Sign In" button in the top-right corner to authenticate with Google.
+              Click the "Sign In" button in the top-right corner to authenticate
+              with Google.
             </p>
           </CardContent>
         </Card>
@@ -102,7 +108,9 @@ export default function Home() {
             <CardTitle className="text-sm font-medium">
               Total Households
             </CardTitle>
-            <Building2 className="h-4 w-4 text-muted-foreground" />
+            <Link href="/households">
+              <Building2 className="h-4 w-4 text-muted-foreground hover:text-primary transition-colors cursor-pointer" />
+            </Link>
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">
@@ -124,9 +132,7 @@ export default function Home() {
 
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">
-              Active Users
-            </CardTitle>
+            <CardTitle className="text-sm font-medium">Active Users</CardTitle>
             <Users className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
@@ -156,17 +162,13 @@ export default function Home() {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">—</div>
-            <p className="text-xs text-muted-foreground">
-              Placeholder data
-            </p>
+            <p className="text-xs text-muted-foreground">Placeholder data</p>
           </CardContent>
         </Card>
 
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">
-              System Status
-            </CardTitle>
+            <CardTitle className="text-sm font-medium">System Status</CardTitle>
             <Activity className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
@@ -182,9 +184,7 @@ export default function Home() {
       <Card>
         <CardHeader>
           <CardTitle>Quick Actions</CardTitle>
-          <CardDescription>
-            Common administrative tasks
-          </CardDescription>
+          <CardDescription>Common administrative tasks</CardDescription>
         </CardHeader>
         <CardContent className="flex flex-wrap gap-2">
           <Button variant="outline" asChild>

@@ -151,3 +151,10 @@ export async function removeUserRole(
 ): Promise<void> {
   await del(`/users/${userId}/roles/${role}`);
 }
+
+/**
+ * Remove a user's household association
+ */
+export async function removeUserFromHousehold(userId: string): Promise<void> {
+  await del(`/users/${userId}/relationships/household`);
+}

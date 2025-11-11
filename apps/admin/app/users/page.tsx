@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import Link from "next/link";
 import { listUsers, User } from "@/lib/api/users";
 import { listHouseholds, Household } from "@/lib/api/households";
 import { DataGrid, ColumnDef } from "@/components/common/DataGrid";
@@ -118,7 +119,19 @@ export default function UsersPage() {
       key: "householdName",
       header: "Household",
       accessor: (user) => user.householdName,
-      render: (value) => value || "—",
+      render: (value, user) => {
+        if (!value || !user.householdId) return "—";
+
+        return (
+          <Link
+            href={`/households?householdId=${user.householdId}`}
+            className="text-blue-600 hover:underline dark:text-blue-400"
+            onClick={(e) => e.stopPropagation()}
+          >
+            {value}
+          </Link>
+        );
+      },
       sortable: true,
     },
     {

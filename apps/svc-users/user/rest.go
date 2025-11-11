@@ -27,6 +27,12 @@ func (r RestModel) GetID() string {
 }
 
 func (r *RestModel) SetID(idStr string) error {
+	// Handle empty string gracefully
+	if idStr == "" {
+		r.Id = uuid.Nil
+		return nil
+	}
+
 	id, err := uuid.Parse(idStr)
 	if err != nil {
 		return err
@@ -101,6 +107,13 @@ func (r CreateRequest) GetID() string {
 }
 
 func (r *CreateRequest) SetID(idStr string) error {
+	// For create requests, ID is optional (server generates it)
+	// Empty string is valid and will result in uuid.Nil
+	if idStr == "" {
+		r.Id = uuid.Nil
+		return nil
+	}
+
 	id, err := uuid.Parse(idStr)
 	if err != nil {
 		return err
@@ -128,6 +141,13 @@ func (r UpdateRequest) GetID() string {
 }
 
 func (r *UpdateRequest) SetID(idStr string) error {
+	// For update requests, ID typically comes from URL path
+	// Empty string is valid and will result in uuid.Nil
+	if idStr == "" {
+		r.Id = uuid.Nil
+		return nil
+	}
+
 	id, err := uuid.Parse(idStr)
 	if err != nil {
 		return err
@@ -153,6 +173,13 @@ func (r AssociateHouseholdRequest) GetID() string {
 }
 
 func (r *AssociateHouseholdRequest) SetID(idStr string) error {
+	// For relationship requests, ID comes from request body
+	// Empty string is valid and will result in uuid.Nil
+	if idStr == "" {
+		r.Id = uuid.Nil
+		return nil
+	}
+
 	id, err := uuid.Parse(idStr)
 	if err != nil {
 		return err

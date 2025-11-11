@@ -1,4 +1,4 @@
-'use client';
+"use client";
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
@@ -40,7 +40,6 @@ const menuConfig: MenuSection[] = [
   {
     title: "Management",
     items: [
-      { label: "Tenants", href: "/tenants", icon: Building2 },
       { label: "Households", href: "/households", icon: Home },
       { label: "Users", href: "/users", icon: Users },
       { label: "Devices", href: "/devices", icon: Monitor },

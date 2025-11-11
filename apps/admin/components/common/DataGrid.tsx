@@ -51,6 +51,8 @@ export interface DataGridProps<T> {
   getRowId?: (row: T, index: number) => string;
   /** Optional CSS classes for the container */
   className?: string;
+  /** Optional actions menu rendered in header */
+  actions?: React.ReactNode;
 }
 
 /**
@@ -102,6 +104,7 @@ export function DataGrid<T>({
   emptyMessage = 'No data available',
   getRowId = (_, index) => index.toString(),
   className = '',
+  actions,
 }: DataGridProps<T>) {
   const [sortColumn, setSortColumn] = useState<string | null>(null);
   const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('asc');
@@ -155,7 +158,16 @@ export function DataGrid<T>({
   if (loading) {
     return (
       <div className={`rounded-md border ${className}`}>
-        <Table>
+        {/* Actions header */}
+        {actions && (
+          <div className="flex justify-end items-center p-4 border-b bg-white dark:bg-neutral-950">
+            <div className="flex gap-2">
+              {actions}
+            </div>
+          </div>
+        )}
+        <div className="overflow-auto">
+          <Table>
           <TableHeader>
             <TableRow>
               {columns.map((column) => (
@@ -177,6 +189,7 @@ export function DataGrid<T>({
             ))}
           </TableBody>
         </Table>
+        </div>
       </div>
     );
   }
@@ -185,6 +198,14 @@ export function DataGrid<T>({
   if (data.length === 0) {
     return (
       <div className={`rounded-md border ${className}`}>
+        {/* Actions header */}
+        {actions && (
+          <div className="flex justify-end items-center p-4 border-b bg-white dark:bg-neutral-950">
+            <div className="flex gap-2">
+              {actions}
+            </div>
+          </div>
+        )}
         <div className="flex flex-col items-center justify-center py-12 px-4 text-center">
           <p className="text-neutral-500 dark:text-neutral-400">
             {emptyMessage}
@@ -196,8 +217,17 @@ export function DataGrid<T>({
 
   // Render data grid
   return (
-    <div className={`rounded-md border overflow-auto ${className}`}>
-      <Table>
+    <div className={`rounded-md border ${className}`}>
+      {/* Actions header */}
+      {actions && (
+        <div className="flex justify-end items-center p-4 border-b bg-white dark:bg-neutral-950">
+          <div className="flex gap-2">
+            {actions}
+          </div>
+        </div>
+      )}
+      <div className="overflow-auto">
+        <Table>
         <TableHeader>
           <TableRow>
             {columns.map((column) => (
@@ -267,6 +297,7 @@ export function DataGrid<T>({
           })}
         </TableBody>
       </Table>
+      </div>
     </div>
   );
 }
