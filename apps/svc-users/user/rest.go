@@ -11,23 +11,14 @@ type RestModel struct {
 	DisplayName string    `json:"displayName"`
 	Provider    string    `json:"provider"`
 	HouseholdId *string   `json:"householdId,omitempty"`
+	Roles       []string  `json:"roles,omitempty"`
 	CreatedAt   string    `json:"createdAt"`
 	UpdatedAt   string    `json:"updatedAt"`
 }
 
-// MeResponse represents the JSON:API representation of the current user with roles
-type MeResponse struct {
-	Id          uuid.UUID `json:"-"`
-	Email       string    `json:"email"`
-	DisplayName string    `json:"displayName"`
-	Provider    string    `json:"provider"`
-	HouseholdId *string   `json:"householdId,omitempty"`
-	Roles       []string  `json:"roles"`
-	CreatedAt   string    `json:"createdAt"`
-	UpdatedAt   string    `json:"updatedAt"`
-}
-
-func (r *RestModel) GetName() string {
+// GetName returns the resource type name for JSON:API
+// Note: Value receiver (not pointer) as per api2go interface requirements
+func (r RestModel) GetName() string {
 	return "users"
 }
 
@@ -42,24 +33,6 @@ func (r *RestModel) SetID(idStr string) error {
 	}
 
 	r.Id = id
-	return nil
-}
-
-func (m *MeResponse) GetName() string {
-	return "me"
-}
-
-func (m MeResponse) GetID() string {
-	return m.Id.String()
-}
-
-func (m *MeResponse) SetID(idStr string) error {
-	id, err := uuid.Parse(idStr)
-	if err != nil {
-		return err
-	}
-
-	m.Id = id
 	return nil
 }
 
@@ -82,24 +55,18 @@ func Transform(m Model) (RestModel, error) {
 	}, nil
 }
 
-// TransformToMe converts a domain Model to a MeResponse representation with roles
-func TransformToMe(m Model, roles []string) (MeResponse, error) {
-	var householdId *string
-	if m.HouseholdId() != nil {
-		hid := m.HouseholdId().String()
-		householdId = &hid
+// TransformWithRoles converts a domain Model to a REST representation including roles
+// Used for /me endpoint to include the user's roles
+func TransformWithRoles(m Model, roles []string) (RestModel, error) {
+	restModel, err := Transform(m)
+	if err != nil {
+		return RestModel{}, err
 	}
 
-	return MeResponse{
-		Id:          m.Id(),
-		Email:       m.Email(),
-		DisplayName: m.DisplayName(),
-		Provider:    m.Provider(),
-		HouseholdId: householdId,
-		Roles:       roles,
-		CreatedAt:   m.CreatedAt().Format("2006-01-02T15:04:05Z07:00"),
-		UpdatedAt:   m.UpdatedAt().Format("2006-01-02T15:04:05Z07:00"),
-	}, nil
+	// Include roles (api2go will omit if empty due to omitempty tag)
+	restModel.Roles = roles
+
+	return restModel, nil
 }
 
 // TransformSlice converts a slice of domain Models to REST representations
@@ -123,7 +90,9 @@ type CreateRequest struct {
 	HouseholdId *uuid.UUID `json:"householdId,omitempty"`
 }
 
-func (r *CreateRequest) GetName() string {
+// GetName returns the resource type name for JSON:API
+// Note: Value receiver (not pointer) as per api2go interface requirements
+func (r CreateRequest) GetName() string {
 	return "users"
 }
 
@@ -148,7 +117,9 @@ type UpdateRequest struct {
 	DisplayName *string   `json:"displayName,omitempty"`
 }
 
-func (r *UpdateRequest) GetName() string {
+// GetName returns the resource type name for JSON:API
+// Note: Value receiver (not pointer) as per api2go interface requirements
+func (r UpdateRequest) GetName() string {
 	return "users"
 }
 
@@ -171,7 +142,9 @@ type AssociateHouseholdRequest struct {
 	Id uuid.UUID `json:"-"`
 }
 
-func (r *AssociateHouseholdRequest) GetName() string {
+// GetName returns the resource type name for JSON:API
+// Note: Value receiver (not pointer) as per api2go interface requirements
+func (r AssociateHouseholdRequest) GetName() string {
 	return "households"
 }
 

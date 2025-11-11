@@ -8,6 +8,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/gorilla/mux"
 	"github.com/jtumidanski/api2go/jsonapi"
+	"github.com/jtumidanski/home-hub/apps/svc-users/user/role"
 	"github.com/jtumidanski/home-hub/packages/shared-go/auth"
 	"github.com/jtumidanski/home-hub/packages/shared-go/model/ops"
 	"github.com/sirupsen/logrus"
@@ -34,6 +35,11 @@ func InitializeRoutes(si jsonapi.ServerInformation) func(db *gorm.DB) server.Rou
 			router.HandleFunc("/users/{id}", server.RegisterHandler(l)(si)("delete-user", deleteUserHandler(db))).Methods(http.MethodDelete)
 			router.HandleFunc("/users/{id}/relationships/household", server.RegisterInputHandler[AssociateHouseholdRequest](l)(si)("associate-household", associateHouseholdHandler(db))).Methods(http.MethodPost)
 			router.HandleFunc("/users/{id}/relationships/household", server.RegisterHandler(l)(si)("disassociate-household", disassociateHouseholdHandler(db))).Methods(http.MethodDelete)
+
+			// User role endpoints
+			router.HandleFunc("/users/{userId}/roles", server.RegisterHandler(l)(si)("list-user-roles", listUserRolesHandler(db))).Methods(http.MethodGet)
+			router.HandleFunc("/users/{userId}/roles", server.RegisterInputHandler[role.AddRoleRequest](l)(si)("add-user-role", addUserRoleHandler(db))).Methods(http.MethodPost)
+			router.HandleFunc("/users/{userId}/roles/{role}", server.RegisterHandler(l)(si)("remove-user-role", removeUserRoleHandler(db))).Methods(http.MethodDelete)
 		}
 	}
 }
@@ -80,16 +86,16 @@ func getMeHandler(db *gorm.DB) server.GetHandler {
 				return
 			}
 
-			// Transform to MeResponse with roles
-			meResponse, err := TransformToMe(model, authCtx.Roles)
+			// Transform to RestModel with roles included
+			restModel, err := TransformWithRoles(model, authCtx.Roles)
 			if err != nil {
-				d.Logger().WithError(err).Errorf("Creating MeResponse model.")
+				d.Logger().WithError(err).Errorf("Creating REST model.")
 				w.WriteHeader(http.StatusInternalServerError)
 				return
 			}
 
 			// Marshal using JSON:API format
-			server.MarshalResponse[MeResponse](d.Logger())(w)(c.ServerInformation())(map[string][]string{})(meResponse)
+			server.MarshalResponse[RestModel](d.Logger())(w)(c.ServerInformation())(map[string][]string{})(restModel)
 		}
 	}
 }
@@ -340,6 +346,120 @@ func disassociateHouseholdHandler(db *gorm.DB) server.GetHandler {
 				}
 
 				server.MarshalResponse[RestModel](d.Logger())(w)(c.ServerInformation())(map[string][]string{})(res)
+			}
+		})
+	}
+}
+
+// ParseUserId parses the userId from the path variable (used for role endpoints)
+func ParseUserId(l logrus.FieldLogger, next IdHandler) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		vars := mux.Vars(r)
+		userId, err := uuid.Parse(vars["userId"])
+		if err != nil {
+			l.WithError(err).Errorf("Unable to properly parse userId from path.")
+			w.WriteHeader(http.StatusBadRequest)
+			return
+		}
+		next(userId)(w, r)
+	}
+}
+
+// listUserRolesHandler handles GET /users/:userId/roles
+func listUserRolesHandler(db *gorm.DB) server.GetHandler {
+	return func(d *server.HandlerDependency, c *server.HandlerContext) http.HandlerFunc {
+		return ParseUserId(d.Logger(), func(userId uuid.UUID) http.HandlerFunc {
+			return func(w http.ResponseWriter, r *http.Request) {
+				// Get all roles for the user
+				models, err := role.GetByUserId(userId)(db)
+				if err != nil {
+					d.Logger().WithError(err).Error("Failed to fetch user roles")
+					w.WriteHeader(http.StatusInternalServerError)
+					return
+				}
+
+				// Transform to REST models
+				restModels, err := role.TransformSlice(models)
+				if err != nil {
+					d.Logger().WithError(err).Error("Failed to transform role models")
+					w.WriteHeader(http.StatusInternalServerError)
+					return
+				}
+
+				server.MarshalResponse[[]role.RestModel](d.Logger())(w)(c.ServerInformation())(map[string][]string{})(restModels)
+			}
+		})
+	}
+}
+
+// addUserRoleHandler handles POST /users/:userId/roles
+func addUserRoleHandler(db *gorm.DB) server.InputHandler[role.AddRoleRequest] {
+	return func(d *server.HandlerDependency, c *server.HandlerContext, req role.AddRoleRequest) http.HandlerFunc {
+		return ParseUserId(d.Logger(), func(userId uuid.UUID) http.HandlerFunc {
+			return func(w http.ResponseWriter, r *http.Request) {
+				// Validate role name
+				if !role.ValidRoles[req.Role] {
+					d.Logger().Errorf("Invalid role name: %s", req.Role)
+					w.WriteHeader(http.StatusBadRequest)
+					return
+				}
+
+				// Assign the role
+				model, err := role.AssignRole(userId, req.Role)(db)
+				if err != nil {
+					if errors.Is(err, role.ErrRoleAlreadyAssigned) {
+						d.Logger().WithError(err).Errorf("Role already assigned")
+						w.WriteHeader(http.StatusConflict)
+						return
+					}
+					d.Logger().WithError(err).Error("Failed to assign role")
+					w.WriteHeader(http.StatusInternalServerError)
+					return
+				}
+
+				// Transform to REST model
+				restModel, err := role.Transform(model)
+				if err != nil {
+					d.Logger().WithError(err).Error("Failed to transform role model")
+					w.WriteHeader(http.StatusInternalServerError)
+					return
+				}
+
+				server.MarshalResponse[role.RestModel](d.Logger())(w)(c.ServerInformation())(map[string][]string{})(restModel)
+			}
+		})
+	}
+}
+
+// removeUserRoleHandler handles DELETE /users/:userId/roles/:role
+func removeUserRoleHandler(db *gorm.DB) server.GetHandler {
+	return func(d *server.HandlerDependency, c *server.HandlerContext) http.HandlerFunc {
+		return ParseUserId(d.Logger(), func(userId uuid.UUID) http.HandlerFunc {
+			return func(w http.ResponseWriter, r *http.Request) {
+				vars := mux.Vars(r)
+				roleName := vars["role"]
+
+				// Validate role name
+				if !role.ValidRoles[roleName] {
+					d.Logger().Errorf("Invalid role name: %s", roleName)
+					w.WriteHeader(http.StatusBadRequest)
+					return
+				}
+
+				// Remove the role
+				err := role.RemoveRole(userId, roleName)(db)
+				if err != nil {
+					if errors.Is(err, role.ErrRoleNotAssigned) {
+						d.Logger().WithError(err).Error("Role not assigned")
+						w.WriteHeader(http.StatusNotFound)
+						return
+					}
+					d.Logger().WithError(err).Error("Failed to remove role")
+					w.WriteHeader(http.StatusInternalServerError)
+					return
+				}
+
+				w.WriteHeader(http.StatusNoContent)
 			}
 		})
 	}
