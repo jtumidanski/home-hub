@@ -2,6 +2,7 @@ package household
 
 import (
 	"errors"
+	"fmt"
 	"net/http"
 
 	"github.com/google/uuid"
@@ -22,6 +23,7 @@ func InitializeRoutes(si jsonapi.ServerInformation) func(db *gorm.DB) server.Rou
 			// Household CRUD endpoints
 			router.HandleFunc("/households", server.RegisterHandler(l)(si)("get-households", listHouseholdsHandler(db))).Methods(http.MethodGet)
 			router.HandleFunc("/households", server.RegisterInputHandler[CreateRequest](l)(si)("create-household", createHouseholdHandler(db))).Methods(http.MethodPost)
+			router.HandleFunc("/households/count", server.RegisterHandler(l)(si)("count-households", countHouseholdsHandler(db))).Methods(http.MethodGet)
 			router.HandleFunc("/households/{id}", server.RegisterHandler(l)(si)("get-household", getHouseholdHandler(db))).Methods(http.MethodGet)
 			router.HandleFunc("/households/{id}", server.RegisterInputHandler[UpdateRequest](l)(si)("update-household", updateHouseholdHandler(db))).Methods(http.MethodPatch)
 			router.HandleFunc("/households/{id}", server.RegisterHandler(l)(si)("delete-household", deleteHouseholdHandler(db))).Methods(http.MethodDelete)
@@ -198,6 +200,25 @@ func deleteHouseholdHandler(db *gorm.DB) server.GetHandler {
 				w.WriteHeader(http.StatusNoContent)
 			}
 		})
+	}
+}
+
+// countHouseholdsHandler handles GET /households/count
+func countHouseholdsHandler(db *gorm.DB) server.GetHandler {
+	return func(d *server.HandlerDependency, c *server.HandlerContext) http.HandlerFunc {
+		return func(w http.ResponseWriter, r *http.Request) {
+			count, err := Count(db)()
+			if err != nil {
+				d.Logger().WithError(err).Error("Failed to count households")
+				w.WriteHeader(http.StatusInternalServerError)
+				return
+			}
+
+			// Return JSON:API response with meta
+			w.Header().Set("Content-Type", "application/json")
+			w.WriteHeader(http.StatusOK)
+			w.Write([]byte(fmt.Sprintf(`{"meta":{"count":%d}}`, count)))
+		}
 	}
 }
 

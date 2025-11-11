@@ -18,3 +18,12 @@ func GetById(db *gorm.DB) func(id uuid.UUID) ops.Provider[Model] {
 func GetAll(db *gorm.DB) ops.Provider[[]Model] {
 	return ops.SliceMap(Make)(database.SliceQuery[Entity](db, Entity{}))(ops.ParallelMap())
 }
+
+// Count returns a provider that counts total households
+func Count(db *gorm.DB) ops.Provider[int64] {
+	return func() (int64, error) {
+		var count int64
+		err := db.Model(&Entity{}).Count(&count).Error
+		return count, err
+	}
+}

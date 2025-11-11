@@ -53,3 +53,12 @@ func GetUsersWithoutHousehold(db *gorm.DB) ops.Provider[[]Model] {
 		return models, nil
 	}
 }
+
+// Count returns a provider that counts total users
+func Count(db *gorm.DB) ops.Provider[int64] {
+	return func() (int64, error) {
+		var count int64
+		err := db.Model(&Entity{}).Count(&count).Error
+		return count, err
+	}
+}

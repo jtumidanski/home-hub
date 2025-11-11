@@ -11,9 +11,45 @@ import {
 import { Button } from "@/components/ui/button";
 import { Building2, Users, Monitor, Activity } from "lucide-react";
 import Link from "next/link";
+import { useEffect, useState } from "react";
+import { getHouseholdCount, getUserCount } from "@/lib/api/users";
 
 export default function Home() {
   const { user, loading } = useAuth();
+  const [householdCount, setHouseholdCount] = useState<number | null>(null);
+  const [userCount, setUserCount] = useState<number | null>(null);
+  const [countsLoading, setCountsLoading] = useState(true);
+  const [countsError, setCountsError] = useState<string | null>(null);
+
+  // Fetch counts when component mounts and user is authenticated
+  useEffect(() => {
+    if (!user) {
+      setCountsLoading(false);
+      return;
+    }
+
+    const fetchCounts = async () => {
+      try {
+        setCountsLoading(true);
+        setCountsError(null);
+
+        const [households, users] = await Promise.all([
+          getHouseholdCount(),
+          getUserCount(),
+        ]);
+
+        setHouseholdCount(households);
+        setUserCount(users);
+      } catch (error) {
+        console.error("Failed to fetch counts:", error);
+        setCountsError(error instanceof Error ? error.message : "Failed to fetch data");
+      } finally {
+        setCountsLoading(false);
+      }
+    };
+
+    fetchCounts();
+  }, [user]);
 
   if (loading) {
     return (
@@ -69,9 +105,19 @@ export default function Home() {
             <Building2 className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">—</div>
+            <div className="text-2xl font-bold">
+              {countsLoading ? (
+                <span className="text-neutral-400">...</span>
+              ) : countsError ? (
+                <span className="text-red-600 text-sm">Error</span>
+              ) : householdCount !== null ? (
+                householdCount
+              ) : (
+                "—"
+              )}
+            </div>
             <p className="text-xs text-muted-foreground">
-              Placeholder data
+              {countsError ? countsError : "Registered households"}
             </p>
           </CardContent>
         </Card>
@@ -84,9 +130,19 @@ export default function Home() {
             <Users className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">—</div>
+            <div className="text-2xl font-bold">
+              {countsLoading ? (
+                <span className="text-neutral-400">...</span>
+              ) : countsError ? (
+                <span className="text-red-600 text-sm">Error</span>
+              ) : userCount !== null ? (
+                userCount
+              ) : (
+                "—"
+              )}
+            </div>
             <p className="text-xs text-muted-foreground">
-              Placeholder data
+              {countsError ? "Unable to fetch data" : "Total registered users"}
             </p>
           </CardContent>
         </Card>

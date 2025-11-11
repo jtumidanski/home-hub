@@ -2,6 +2,7 @@ package user
 
 import (
 	"errors"
+	"fmt"
 	"net/http"
 
 	"github.com/google/uuid"
@@ -27,6 +28,7 @@ func InitializeRoutes(si jsonapi.ServerInformation) func(db *gorm.DB) server.Rou
 			// User CRUD
 			router.HandleFunc("/users", server.RegisterHandler(l)(si)("get-users", listUsersHandler(db))).Methods(http.MethodGet)
 			router.HandleFunc("/users", server.RegisterInputHandler[CreateRequest](l)(si)("create-user", createUserHandler(db))).Methods(http.MethodPost)
+			router.HandleFunc("/users/count", server.RegisterHandler(l)(si)("count-users", countUsersHandler(db))).Methods(http.MethodGet)
 			router.HandleFunc("/users/{id}", server.RegisterHandler(l)(si)("get-user", getUserHandler(db))).Methods(http.MethodGet)
 			router.HandleFunc("/users/{id}", server.RegisterInputHandler[UpdateRequest](l)(si)("update-user", updateUserHandler(db))).Methods(http.MethodPatch)
 			router.HandleFunc("/users/{id}", server.RegisterHandler(l)(si)("delete-user", deleteUserHandler(db))).Methods(http.MethodDelete)
@@ -291,6 +293,25 @@ func associateHouseholdHandler(db *gorm.DB) server.InputHandler[AssociateHouseho
 				server.MarshalResponse[RestModel](d.Logger())(w)(c.ServerInformation())(map[string][]string{})(res)
 			}
 		})
+	}
+}
+
+// countUsersHandler handles GET /users/count
+func countUsersHandler(db *gorm.DB) server.GetHandler {
+	return func(d *server.HandlerDependency, c *server.HandlerContext) http.HandlerFunc {
+		return func(w http.ResponseWriter, r *http.Request) {
+			count, err := Count(db)()
+			if err != nil {
+				d.Logger().WithError(err).Error("Failed to count users")
+				w.WriteHeader(http.StatusInternalServerError)
+				return
+			}
+
+			// Return JSON:API response with meta
+			w.Header().Set("Content-Type", "application/json")
+			w.WriteHeader(http.StatusOK)
+			w.Write([]byte(fmt.Sprintf(`{"meta":{"count":%d}}`, count)))
+		}
 	}
 }
 
