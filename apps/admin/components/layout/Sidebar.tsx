@@ -149,8 +149,8 @@ export function Sidebar({ mobileMenuOpen, onClose }: SidebarProps) {
             aria-hidden="true"
           />
 
-          {/* Sidebar drawer */}
-          <aside className="fixed inset-y-0 left-0 z-50 w-64 flex flex-col border-r border-neutral-200 bg-neutral-50 dark:border-neutral-800 dark:bg-neutral-950 shadow-lg">
+          {/* Sidebar drawer - positioned below header (h-16) */}
+          <aside className="fixed top-16 bottom-0 left-0 z-40 w-64 flex flex-col border-r border-neutral-200 bg-neutral-50 dark:border-neutral-800 dark:bg-neutral-950 shadow-lg">
             {sidebarContent}
           </aside>
         </div>
