@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Home Hub</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="min-h-screen bg-gradient-to-br from-neutral-50 to-neutral-100 dark:from-neutral-950 dark:to-neutral-900">
+    <div class="min-h-screen flex items-center justify-center p-4">
+        <div class="max-w-4xl w-full">
+            <!-- Header -->
+            <div class="text-center mb-12">
+                <h1 class="text-5xl md:text-6xl font-bold text-neutral-900 dark:text-neutral-100 mb-4">
+                    Home Hub
+                </h1>
+                <p class="text-xl md:text-2xl text-neutral-600 dark:text-neutral-400">
+                    Choose your interface
+                </p>
+            </div>
+
+            <!-- App Selection Cards -->
+            <div class="grid md:grid-cols-2 gap-6 md:gap-8">
+                <!-- Admin Portal Card -->
+                <a href="/admin" class="group block bg-white dark:bg-neutral-800 hover:bg-neutral-50 dark:hover:bg-neutral-700 rounded-2xl shadow-lg hover:shadow-xl p-8 md:p-12 transition-all duration-200 border-2 border-transparent hover:border-blue-500">
+                    <div class="text-center">
+                        <div class="text-6xl md:text-7xl mb-6 group-hover:scale-110 transition-transform duration-200">
+                            ⚙️
+                        </div>
+                        <h2 class="text-2xl md:text-3xl font-bold text-neutral-900 dark:text-neutral-100 mb-3">
+                            Admin Portal
+                        </h2>
+                        <p class="text-neutral-600 dark:text-neutral-400 text-lg">
+                            Manage your household settings, users, and preferences
+                        </p>
+                    </div>
+                </a>
+
+                <!-- Kiosk Display Card -->
+                <a href="/kiosk" class="group block bg-white dark:bg-neutral-800 hover:bg-neutral-50 dark:hover:bg-neutral-700 rounded-2xl shadow-lg hover:shadow-xl p-8 md:p-12 transition-all duration-200 border-2 border-transparent hover:border-green-500">
+                    <div class="text-center">
+                        <div class="text-6xl md:text-7xl mb-6 group-hover:scale-110 transition-transform duration-200">
+                            📺
+                        </div>
+                        <h2 class="text-2xl md:text-3xl font-bold text-neutral-900 dark:text-neutral-100 mb-3">
+                            Kiosk Display
+                        </h2>
+                        <p class="text-neutral-600 dark:text-neutral-400 text-lg">
+                            View your household dashboard, calendar, and reminders
+                        </p>
+                    </div>
+                </a>
+            </div>
+
+            <!-- Footer -->
+            <div class="text-center mt-12 text-sm text-neutral-500 dark:text-neutral-600">
+                <p>Home Hub &copy; 2025</p>
+            </div>
+        </div>
+    </div>
+</body>
+</html>
