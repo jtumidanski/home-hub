@@ -1,4 +1,6 @@
-import { Button } from "@/components/ui/button";
+'use client';
+
+import { useAuth } from "@/lib/auth";
 import {
   Card,
   CardContent,
@@ -6,151 +8,143 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Separator } from "@/components/ui/separator";
+import { Button } from "@/components/ui/button";
+import { Building2, Users, Monitor, Activity } from "lucide-react";
+import Link from "next/link";
 
 export default function Home() {
+  const { user, loading } = useAuth();
+
+  if (loading) {
+    return (
+      <div className="space-y-6">
+        <div className="h-10 w-64 bg-neutral-200 dark:bg-neutral-800 rounded animate-pulse" />
+        <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
+          {[1, 2, 3, 4].map((i) => (
+            <div key={i} className="h-32 bg-neutral-200 dark:bg-neutral-800 rounded animate-pulse" />
+          ))}
+        </div>
+      </div>
+    );
+  }
+
   return (
-    <div className="min-h-screen bg-gradient-to-br from-neutral-50 to-neutral-100 dark:from-neutral-950 dark:to-neutral-900 p-8">
-      <div className="max-w-5xl mx-auto space-y-8">
-        {/* Header */}
-        <div className="text-center space-y-4">
-          <h1 className="text-4xl font-bold tracking-tight">
-            Home Hub Admin Portal
-          </h1>
-          <p className="text-neutral-600 dark:text-neutral-400 text-lg">
-            Next.js 16 + React 19 + Tailwind CSS 4 + shadcn/ui
-          </p>
-        </div>
+    <div className="space-y-8">
+      {/* Welcome Section */}
+      <div className="space-y-2">
+        <h1 className="text-3xl font-bold tracking-tight">
+          Welcome to Home Hub Admin Portal
+        </h1>
+        <p className="text-neutral-600 dark:text-neutral-400">
+          {user ? `Hello, ${user.displayName}!` : "Please sign in to manage your households, users, and services."}
+        </p>
+      </div>
 
-        <Separator />
-
-        {/* Component Showcase */}
-        <div className="grid gap-6 md:grid-cols-2">
-          {/* Buttons Card */}
-          <Card>
-            <CardHeader>
-              <CardTitle>Button Components</CardTitle>
-              <CardDescription>
-                Various button styles and variants
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="flex flex-wrap gap-2">
-              <Button>Default</Button>
-              <Button variant="secondary">Secondary</Button>
-              <Button variant="outline">Outline</Button>
-              <Button variant="ghost">Ghost</Button>
-              <Button variant="destructive">Destructive</Button>
-              <Button variant="link">Link</Button>
-            </CardContent>
-          </Card>
-
-          {/* Form Card */}
-          <Card>
-            <CardHeader>
-              <CardTitle>Form Components</CardTitle>
-              <CardDescription>Input fields with labels</CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="space-y-2">
-                <Label htmlFor="name">Name</Label>
-                <Input id="name" placeholder="Enter your name" />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="email">Email</Label>
-                <Input id="email" type="email" placeholder="Enter your email" />
-              </div>
-            </CardContent>
-          </Card>
-
-          {/* Avatar Card */}
-          <Card>
-            <CardHeader>
-              <CardTitle>Avatar Components</CardTitle>
-              <CardDescription>User avatars with fallbacks</CardDescription>
-            </CardHeader>
-            <CardContent className="flex gap-4">
-              <Avatar>
-                <AvatarImage src="https://github.com/shadcn.png" alt="User" />
-                <AvatarFallback>CN</AvatarFallback>
-              </Avatar>
-              <Avatar>
-                <AvatarFallback>JD</AvatarFallback>
-              </Avatar>
-              <Avatar>
-                <AvatarFallback>AB</AvatarFallback>
-              </Avatar>
-            </CardContent>
-          </Card>
-
-          {/* Status Card */}
-          <Card>
-            <CardHeader>
-              <CardTitle>Project Status</CardTitle>
-              <CardDescription>Current implementation phase</CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-3">
-              <div className="flex justify-between items-center">
-                <span className="text-sm font-medium">Phase 1: Next.js Init</span>
-                <span className="text-green-600 dark:text-green-400 text-sm">✓ Complete</span>
-              </div>
-              <Separator />
-              <div className="flex justify-between items-center">
-                <span className="text-sm font-medium">Phase 2: shadcn/ui</span>
-                <span className="text-green-600 dark:text-green-400 text-sm">✓ Complete</span>
-              </div>
-              <Separator />
-              <div className="flex justify-between items-center">
-                <span className="text-sm font-medium">Phase 3: Docker</span>
-                <span className="text-neutral-500 text-sm">Pending</span>
-              </div>
-            </CardContent>
-          </Card>
-        </div>
-
-        {/* Info Section */}
-        <Card className="border-neutral-200 dark:border-neutral-800">
+      {/* Not authenticated message */}
+      {!user && (
+        <Card className="border-orange-200 bg-orange-50 dark:border-orange-800 dark:bg-orange-950">
           <CardHeader>
-            <CardTitle>Architecture Overview</CardTitle>
-            <CardDescription>
-              Home Hub microservices platform
+            <CardTitle className="text-orange-900 dark:text-orange-100">
+              Authentication Required
+            </CardTitle>
+            <CardDescription className="text-orange-700 dark:text-orange-300">
+              You need to sign in to access the admin portal
             </CardDescription>
           </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="grid gap-4 md:grid-cols-3">
-              <div className="space-y-2">
-                <h3 className="font-semibold text-sm">Technology Stack</h3>
-                <ul className="text-sm text-neutral-600 dark:text-neutral-400 space-y-1">
-                  <li>• Next.js 16</li>
-                  <li>• React 19</li>
-                  <li>• TypeScript 5</li>
-                  <li>• Tailwind CSS 4</li>
-                </ul>
-              </div>
-              <div className="space-y-2">
-                <h3 className="font-semibold text-sm">Features</h3>
-                <ul className="text-sm text-neutral-600 dark:text-neutral-400 space-y-1">
-                  <li>• App Router</li>
-                  <li>• Server Components</li>
-                  <li>• shadcn/ui</li>
-                  <li>• Docker Ready</li>
-                </ul>
-              </div>
-              <div className="space-y-2">
-                <h3 className="font-semibold text-sm">Development</h3>
-                <ul className="text-sm text-neutral-600 dark:text-neutral-400 space-y-1">
-                  <li>• Port: 5174</li>
-                  <li>• Hot Reload</li>
-                  <li>• TypeScript Strict</li>
-                  <li>• ESLint</li>
-                </ul>
-              </div>
-            </div>
+          <CardContent>
+            <p className="text-sm text-orange-800 dark:text-orange-200">
+              Click the "Sign In" button in the top-right corner to authenticate with Google.
+            </p>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Stats Cards */}
+      <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">
+              Total Households
+            </CardTitle>
+            <Building2 className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">—</div>
+            <p className="text-xs text-muted-foreground">
+              Placeholder data
+            </p>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">
+              Active Users
+            </CardTitle>
+            <Users className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">—</div>
+            <p className="text-xs text-muted-foreground">
+              Placeholder data
+            </p>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">
+              Registered Devices
+            </CardTitle>
+            <Monitor className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">—</div>
+            <p className="text-xs text-muted-foreground">
+              Placeholder data
+            </p>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">
+              System Status
+            </CardTitle>
+            <Activity className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold text-green-600">Online</div>
+            <p className="text-xs text-muted-foreground">
+              All services operational
+            </p>
           </CardContent>
         </Card>
       </div>
+
+      {/* Quick Actions */}
+      <Card>
+        <CardHeader>
+          <CardTitle>Quick Actions</CardTitle>
+          <CardDescription>
+            Common administrative tasks
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="flex flex-wrap gap-2">
+          <Button variant="outline" asChild>
+            <Link href="/households">View Households</Link>
+          </Button>
+          <Button variant="outline" asChild>
+            <Link href="/users">Manage Users</Link>
+          </Button>
+          <Button variant="outline" asChild>
+            <Link href="/devices">View Devices</Link>
+          </Button>
+          <Button variant="outline" asChild>
+            <Link href="/system/logs">View Logs</Link>
+          </Button>
+        </CardContent>
+      </Card>
     </div>
   );
 }

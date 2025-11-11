@@ -38,7 +38,18 @@ export function UserProfile() {
   }
 
   if (!user) {
-    return null;
+    return (
+      <Button
+        variant="default"
+        size="sm"
+        onClick={() => {
+          // Redirect to the admin page which will trigger OAuth
+          window.location.href = '/admin';
+        }}
+      >
+        Sign In
+      </Button>
+    );
   }
 
   const initials = user.displayName
@@ -49,7 +60,7 @@ export function UserProfile() {
     .substring(0, 2);
 
   const handleLogout = () => {
-    logout(user.provider);
+    logout(user.provider || 'google'); // Default to google if provider not specified
   };
 
   return (

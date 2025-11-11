@@ -4,7 +4,7 @@ export interface User {
   id: string;
   email: string;
   displayName: string;
-  provider: 'google' | 'github';
+  provider?: 'google' | 'github';
   householdId?: string;
   createdAt: string;
   updatedAt: string;
@@ -13,6 +13,23 @@ export interface User {
 export interface MeResponse {
   user: User;
   roles: string[];
+}
+
+// JSON:API response structure
+interface JsonApiResponse {
+  data: {
+    type: string;
+    id: string;
+    attributes: {
+      email: string;
+      displayName: string;
+      provider: string;
+      householdId?: string;
+      roles: string[];
+      createdAt: string;
+      updatedAt: string;
+    };
+  };
 }
 
 /**
@@ -25,7 +42,8 @@ export async function fetchMe(): Promise<MeResponse | null> {
       method: 'GET',
       credentials: 'include', // Include cookies
       headers: {
-        'Content-Type': 'application/json',
+        'Content-Type': 'application/vnd.api+json',
+        'Accept': 'application/vnd.api+json',
       },
     });
 
@@ -38,8 +56,23 @@ export async function fetchMe(): Promise<MeResponse | null> {
       throw new Error(`Failed to fetch user: ${response.statusText}`);
     }
 
-    const data: MeResponse = await response.json();
-    return data;
+    const jsonApiData: JsonApiResponse = await response.json();
+
+    // Transform JSON:API format to our internal format
+    const user: User = {
+      id: jsonApiData.data.id,
+      email: jsonApiData.data.attributes.email,
+      displayName: jsonApiData.data.attributes.displayName,
+      provider: jsonApiData.data.attributes.provider as 'google' | 'github',
+      householdId: jsonApiData.data.attributes.householdId,
+      createdAt: jsonApiData.data.attributes.createdAt,
+      updatedAt: jsonApiData.data.attributes.updatedAt,
+    };
+
+    return {
+      user,
+      roles: jsonApiData.data.attributes.roles,
+    };
   } catch (error) {
     console.error('Error fetching current user:', error);
     throw error;

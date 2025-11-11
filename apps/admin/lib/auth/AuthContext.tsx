@@ -1,7 +1,7 @@
 'use client';
 
 import React, { createContext, useContext, useEffect, useState } from 'react';
-import { User, MeResponse, fetchMe } from './api';
+import { User, fetchMe } from './api';
 
 interface AuthState {
   user: User | null;
@@ -76,6 +76,8 @@ export function AuthProvider({ children }: AuthProviderProps) {
   };
 
   useEffect(() => {
+    // Fetch user data on mount - this is a legitimate use case for setState in effect
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     fetchUser();
   }, []);
 

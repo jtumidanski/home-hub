@@ -212,12 +212,12 @@ func (p *SimpleUserProvider) GetOrCreateUserByEmail(email, displayName, provider
 
 	var user UserEntity
 
-	// Try to find existing user
-	err := p.db.Where("email = ?", email).First(&user).Error
+	// Try to find existing user - use Table() to specify correct table name
+	err := p.db.Table("users").Where("email = ?", email).First(&user).Error
 	if err == nil {
 		// User exists, update display name if changed
 		if user.DisplayName != displayName {
-			p.db.Model(&user).Update("display_name", displayName)
+			p.db.Table("users").Model(&user).Update("display_name", displayName)
 		}
 		return user.Id, nil
 	}
@@ -237,7 +237,7 @@ func (p *SimpleUserProvider) GetOrCreateUserByEmail(email, displayName, provider
 		UpdatedAt:   now,
 	}
 
-	if err := p.db.Create(&user).Error; err != nil {
+	if err := p.db.Table("users").Create(&user).Error; err != nil {
 		return uuid.Nil, err
 	}
 
@@ -252,7 +252,7 @@ func (p *SimpleUserProvider) GetOrCreateUserByEmail(email, displayName, provider
 		Role:   "user",
 	}
 
-	if err := p.db.Create(&role).Error; err != nil {
+	if err := p.db.Table("user_roles").Create(&role).Error; err != nil {
 		// Log but don't fail if role assignment fails
 		// The user is created, they just won't have a role yet
 		return user.Id, nil
@@ -279,7 +279,7 @@ func (p *SimpleRoleProvider) GetRolesByUserId(userId uuid.UUID) ([]string, error
 	}
 
 	var roles []RoleEntity
-	if err := p.db.Where("user_id = ?", userId).Find(&roles).Error; err != nil {
+	if err := p.db.Table("user_roles").Where("user_id = ?", userId).Find(&roles).Error; err != nil {
 		return nil, err
 	}
 

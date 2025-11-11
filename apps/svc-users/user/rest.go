@@ -8,10 +8,23 @@ import (
 type RestModel struct {
 	Id          uuid.UUID `json:"-"`
 	Email       string    `json:"email"`
-	DisplayName string    `json:"display_name"`
-	HouseholdId *string   `json:"household_id,omitempty"`
-	CreatedAt   string    `json:"created_at"`
-	UpdatedAt   string    `json:"updated_at"`
+	DisplayName string    `json:"displayName"`
+	Provider    string    `json:"provider"`
+	HouseholdId *string   `json:"householdId,omitempty"`
+	CreatedAt   string    `json:"createdAt"`
+	UpdatedAt   string    `json:"updatedAt"`
+}
+
+// MeResponse represents the JSON:API representation of the current user with roles
+type MeResponse struct {
+	Id          uuid.UUID `json:"-"`
+	Email       string    `json:"email"`
+	DisplayName string    `json:"displayName"`
+	Provider    string    `json:"provider"`
+	HouseholdId *string   `json:"householdId,omitempty"`
+	Roles       []string  `json:"roles"`
+	CreatedAt   string    `json:"createdAt"`
+	UpdatedAt   string    `json:"updatedAt"`
 }
 
 func (r *RestModel) GetName() string {
@@ -32,6 +45,24 @@ func (r *RestModel) SetID(idStr string) error {
 	return nil
 }
 
+func (m *MeResponse) GetName() string {
+	return "me"
+}
+
+func (m MeResponse) GetID() string {
+	return m.Id.String()
+}
+
+func (m *MeResponse) SetID(idStr string) error {
+	id, err := uuid.Parse(idStr)
+	if err != nil {
+		return err
+	}
+
+	m.Id = id
+	return nil
+}
+
 // Transform converts a domain Model to a REST representation
 func Transform(m Model) (RestModel, error) {
 	var householdId *string
@@ -44,7 +75,28 @@ func Transform(m Model) (RestModel, error) {
 		Id:          m.Id(),
 		Email:       m.Email(),
 		DisplayName: m.DisplayName(),
+		Provider:    m.Provider(),
 		HouseholdId: householdId,
+		CreatedAt:   m.CreatedAt().Format("2006-01-02T15:04:05Z07:00"),
+		UpdatedAt:   m.UpdatedAt().Format("2006-01-02T15:04:05Z07:00"),
+	}, nil
+}
+
+// TransformToMe converts a domain Model to a MeResponse representation with roles
+func TransformToMe(m Model, roles []string) (MeResponse, error) {
+	var householdId *string
+	if m.HouseholdId() != nil {
+		hid := m.HouseholdId().String()
+		householdId = &hid
+	}
+
+	return MeResponse{
+		Id:          m.Id(),
+		Email:       m.Email(),
+		DisplayName: m.DisplayName(),
+		Provider:    m.Provider(),
+		HouseholdId: householdId,
+		Roles:       roles,
 		CreatedAt:   m.CreatedAt().Format("2006-01-02T15:04:05Z07:00"),
 		UpdatedAt:   m.UpdatedAt().Format("2006-01-02T15:04:05Z07:00"),
 	}, nil
@@ -67,8 +119,8 @@ func TransformSlice(models []Model) ([]RestModel, error) {
 type CreateRequest struct {
 	Id          uuid.UUID  `json:"-"`
 	Email       string     `json:"email"`
-	DisplayName string     `json:"display_name"`
-	HouseholdId *uuid.UUID `json:"household_id,omitempty"`
+	DisplayName string     `json:"displayName"`
+	HouseholdId *uuid.UUID `json:"householdId,omitempty"`
 }
 
 func (r *CreateRequest) GetName() string {
@@ -93,7 +145,7 @@ func (r *CreateRequest) SetID(idStr string) error {
 type UpdateRequest struct {
 	Id          uuid.UUID `json:"-"`
 	Email       *string   `json:"email,omitempty"`
-	DisplayName *string   `json:"display_name,omitempty"`
+	DisplayName *string   `json:"displayName,omitempty"`
 }
 
 func (r *UpdateRequest) GetName() string {

@@ -1,7 +1,6 @@
 package user
 
 import (
-	"encoding/json"
 	"errors"
 	"net/http"
 
@@ -54,13 +53,7 @@ func ParseId(l logrus.FieldLogger, next IdHandler) http.HandlerFunc {
 	}
 }
 
-// MeResponse represents the response for /api/me endpoint
-type MeResponse struct {
-	User  RestModel `json:"user"`
-	Roles []string  `json:"roles"`
-}
-
-// getMeHandler handles GET /me - returns the currently authenticated user
+// getMeHandler handles GET /me - returns the currently authenticated user with roles
 func getMeHandler(db *gorm.DB) server.GetHandler {
 	return func(d *server.HandlerDependency, c *server.HandlerContext) http.HandlerFunc {
 		return func(w http.ResponseWriter, r *http.Request) {
@@ -85,26 +78,16 @@ func getMeHandler(db *gorm.DB) server.GetHandler {
 				return
 			}
 
-			// Transform to REST model
-			restModel, err := ops.Map(Transform)(ops.FixedProvider(model))()
+			// Transform to MeResponse with roles
+			meResponse, err := TransformToMe(model, authCtx.Roles)
 			if err != nil {
-				d.Logger().WithError(err).Errorf("Creating REST model.")
+				d.Logger().WithError(err).Errorf("Creating MeResponse model.")
 				w.WriteHeader(http.StatusInternalServerError)
 				return
 			}
 
-			// Build response
-			response := MeResponse{
-				User:  restModel,
-				Roles: authCtx.Roles,
-			}
-
-			// Marshal and return
-			w.Header().Set("Content-Type", "application/json")
-			w.WriteHeader(http.StatusOK)
-			if err := json.NewEncoder(w).Encode(response); err != nil {
-				d.Logger().WithError(err).Error("Failed to encode /me response")
-			}
+			// Marshal using JSON:API format
+			server.MarshalResponse[MeResponse](d.Logger())(w)(c.ServerInformation())(map[string][]string{})(meResponse)
 		}
 	}
 }
