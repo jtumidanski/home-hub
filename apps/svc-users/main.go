@@ -4,6 +4,7 @@ import (
 	"github.com/gorilla/mux"
 	"github.com/jtumidanski/home-hub/apps/svc-users/household"
 	"github.com/jtumidanski/home-hub/apps/svc-users/user"
+	"github.com/jtumidanski/home-hub/apps/svc-users/user/preference"
 	"github.com/jtumidanski/home-hub/packages/shared-go/auth"
 	"github.com/jtumidanski/home-hub/packages/shared-go/database"
 	"github.com/jtumidanski/home-hub/packages/shared-go/logger"
@@ -60,9 +61,10 @@ func main() {
 		// Apply auth middleware to all routes
 		router.Use(authMiddleware)
 
-		// Initialize user and household routes
+		// Initialize user, household, and preference routes
 		user.InitializeRoutes(GetServer())(db)(router, logger)
 		household.InitializeRoutes(GetServer())(db)(router, logger)
+		preference.InitializeRoutes(GetServer())(db)(router, logger)
 	}
 
 	server.CreateService(l, tdm.Context(), tdm.WaitGroup(), GetServer().GetPrefix(),

@@ -6,14 +6,15 @@ import (
 
 // RestModel represents the JSON:API representation of a user
 type RestModel struct {
-	Id          uuid.UUID `json:"-"`
-	Email       string    `json:"email"`
-	DisplayName string    `json:"displayName"`
-	Provider    string    `json:"provider"`
-	HouseholdId *string   `json:"householdId,omitempty"`
-	Roles       []string  `json:"roles,omitempty"`
-	CreatedAt   string    `json:"createdAt"`
-	UpdatedAt   string    `json:"updatedAt"`
+	Id          uuid.UUID         `json:"-"`
+	Email       string            `json:"email"`
+	DisplayName string            `json:"displayName"`
+	Provider    string            `json:"provider"`
+	HouseholdId *string           `json:"householdId,omitempty"`
+	Roles       []string          `json:"roles,omitempty"`
+	Preferences map[string]string `json:"preferences,omitempty"`
+	CreatedAt   string            `json:"createdAt"`
+	UpdatedAt   string            `json:"updatedAt"`
 }
 
 // GetName returns the resource type name for JSON:API
@@ -71,6 +72,21 @@ func TransformWithRoles(m Model, roles []string) (RestModel, error) {
 
 	// Include roles (api2go will omit if empty due to omitempty tag)
 	restModel.Roles = roles
+
+	return restModel, nil
+}
+
+// TransformWithRolesAndPreferences converts a domain Model to a REST representation including roles and preferences
+// Used for /me endpoint to include the user's roles and preferences
+func TransformWithRolesAndPreferences(m Model, roles []string, preferences map[string]string) (RestModel, error) {
+	restModel, err := Transform(m)
+	if err != nil {
+		return RestModel{}, err
+	}
+
+	// Include roles and preferences (api2go will omit if empty due to omitempty tag)
+	restModel.Roles = roles
+	restModel.Preferences = preferences
 
 	return restModel, nil
 }

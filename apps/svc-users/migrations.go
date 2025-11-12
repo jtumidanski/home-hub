@@ -3,6 +3,7 @@ package main
 import (
 	"github.com/jtumidanski/home-hub/apps/svc-users/household"
 	"github.com/jtumidanski/home-hub/apps/svc-users/user"
+	"github.com/jtumidanski/home-hub/apps/svc-users/user/preference"
 	"github.com/jtumidanski/home-hub/apps/svc-users/user/role"
 	"gorm.io/gorm"
 )
@@ -12,6 +13,7 @@ import (
 //   1. households (no dependencies)
 //   2. users (depends on households)
 //   3. user_roles (depends on users)
+//   4. user_preferences (depends on users)
 func Migration() func(db *gorm.DB) error {
 	return func(db *gorm.DB) error {
 		// Migrate households first (no dependencies)
@@ -26,6 +28,11 @@ func Migration() func(db *gorm.DB) error {
 
 		// Migrate user_roles third (depends on users)
 		if err := role.Migration()(db); err != nil {
+			return err
+		}
+
+		// Migrate user_preferences fourth (depends on users)
+		if err := preference.Migration()(db); err != nil {
 			return err
 		}
 

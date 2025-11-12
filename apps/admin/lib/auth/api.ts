@@ -6,6 +6,7 @@ export interface User {
   displayName: string;
   provider?: 'google' | 'github';
   householdId?: string;
+  preferences?: Record<string, string>;
   createdAt: string;
   updatedAt: string;
 }
@@ -26,6 +27,7 @@ interface JsonApiResponse {
       provider: string;
       householdId?: string;
       roles: string[];
+      preferences?: Record<string, string>;
       createdAt: string;
       updatedAt: string;
     };
@@ -65,6 +67,7 @@ export async function fetchMe(): Promise<MeResponse | null> {
       displayName: jsonApiData.data.attributes.displayName,
       provider: jsonApiData.data.attributes.provider as 'google' | 'github',
       householdId: jsonApiData.data.attributes.householdId,
+      preferences: jsonApiData.data.attributes.preferences,
       createdAt: jsonApiData.data.attributes.createdAt,
       updatedAt: jsonApiData.data.attributes.updatedAt,
     };

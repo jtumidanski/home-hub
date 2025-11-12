@@ -1,9 +1,10 @@
 'use client';
 
-import React from 'react';
+import React, { useState } from 'react';
 import { useAuth } from '@/lib/auth/AuthContext';
 import { logout } from '@/lib/auth/api';
 import { Button } from '@/components/ui/button';
+import { ProfileModal } from './ProfileModal';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -27,6 +28,7 @@ import { User, LogOut, Shield } from 'lucide-react';
  */
 export function UserProfile() {
   const { user, roles, loading } = useAuth();
+  const [profileOpen, setProfileOpen] = useState(false);
 
   if (loading) {
     return (
@@ -97,7 +99,7 @@ export function UserProfile() {
           </div>
         </DropdownMenuLabel>
         <DropdownMenuSeparator />
-        <DropdownMenuItem disabled>
+        <DropdownMenuItem onClick={() => setProfileOpen(true)}>
           <User className="mr-2 h-4 w-4" />
           <span>Profile</span>
         </DropdownMenuItem>
@@ -107,6 +109,7 @@ export function UserProfile() {
           <span>Log out</span>
         </DropdownMenuItem>
       </DropdownMenuContent>
+      <ProfileModal open={profileOpen} onOpenChange={setProfileOpen} />
     </DropdownMenu>
   );
 }

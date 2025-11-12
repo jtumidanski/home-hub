@@ -8,6 +8,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/gorilla/mux"
 	"github.com/jtumidanski/api2go/jsonapi"
+	"github.com/jtumidanski/home-hub/apps/svc-users/user/preference"
 	"github.com/jtumidanski/home-hub/apps/svc-users/user/role"
 	"github.com/jtumidanski/home-hub/packages/shared-go/auth"
 	"github.com/jtumidanski/home-hub/packages/shared-go/model/ops"
@@ -86,8 +87,16 @@ func getMeHandler(db *gorm.DB) server.GetHandler {
 				return
 			}
 
-			// Transform to RestModel with roles included
-			restModel, err := TransformWithRoles(model, authCtx.Roles)
+			// Get user preferences
+			preferences, err := preference.NewProcessor(preference.NewGormProvider(db)).GetUserPreferencesMap(authCtx.UserId)
+			if err != nil {
+				// Log error but don't fail the request - preferences are optional
+				d.Logger().WithError(err).Warn("Failed to fetch user preferences")
+				preferences = make(map[string]string)
+			}
+
+			// Transform to RestModel with roles and preferences included
+			restModel, err := TransformWithRolesAndPreferences(model, authCtx.Roles, preferences)
 			if err != nil {
 				d.Logger().WithError(err).Errorf("Creating REST model.")
 				w.WriteHeader(http.StatusInternalServerError)
