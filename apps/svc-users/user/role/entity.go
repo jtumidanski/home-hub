@@ -8,7 +8,7 @@ import (
 // Entity represents the database model for user roles.
 // This is a junction table between users and their assigned roles.
 type Entity struct {
-	UserId uuid.UUID `gorm:"type:uuid;primaryKey;index:idx_user_roles_user_id"`
+	UserId uuid.UUID `gorm:"type:uuid;primaryKey;index:idx_user_roles_user_id;constraint:OnDelete:CASCADE"`
 	Role   string    `gorm:"type:varchar(100);primaryKey;not null"`
 }
 
