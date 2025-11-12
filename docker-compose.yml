@@ -53,6 +53,20 @@ services:
       - "5174:5174"
     networks:
       - internal-net
+  kiosk:
+    build:
+      context: .
+      dockerfile: apps/kiosk/Dockerfile
+    container_name: hh-kiosk
+    restart: unless-stopped
+    environment:
+      NODE_ENV: production
+      NEXT_PUBLIC_API_URL: http://localhost:3000/api
+      NEXT_PUBLIC_APP_ENV: production
+    ports:
+      - "5173:5173"
+    networks:
+      - internal-net
   oauth2-proxy-google:
     image: quay.io/oauth2-proxy/oauth2-proxy:v7.6.0
     container_name: hh-oauth2-google
@@ -69,10 +83,11 @@ services:
       - --cookie-domain=${COOKIE_DOMAIN:-homehub.localtest.me}
       - --redirect-url=${APP_BASE_URL:-http://homehub.localtest.me}/oauth2/google/callback
       - --email-domain=${GOOGLE_EMAIL_DOMAIN:-*}
-      - --upstream=http://hh-admin:5174
+      - --upstream=static://202
       - --http-address=0.0.0.0:4180
       - --scope=openid email profile
       - --set-xauthrequest=true
+      - --reverse-proxy=true
     ports:
       - "4180:4180"
     networks:
@@ -94,11 +109,12 @@ services:
       - --cookie-secure=${COOKIE_SECURE:-false}
       - --cookie-domain=${COOKIE_DOMAIN:-homehub.localtest.me}
       - --redirect-url=${APP_BASE_URL:-http://homehub.localtest.me}/oauth2/github/callback
-      - --upstream=http://hh-admin:5174
+      - --upstream=static://202
       - --http-address=0.0.0.0:4181
       - --scope=user:email read:org
       - --email-domain=*
       - --set-xauthrequest=true
+      - --reverse-proxy=true
     environment:
       OAUTH2_PROXY_GITHUB_ORG: ${GITHUB_ORG:-}
     ports:
@@ -123,6 +139,7 @@ services:
       - oauth2-proxy-github
       - svc-users
       - admin
+      - kiosk
 networks:
   internal-net:
     name: internal-net
