@@ -5,9 +5,19 @@ import Link from "next/link";
 import { listUsers, User } from "@/lib/api/users";
 import { listHouseholds, Household } from "@/lib/api/households";
 import { DataGrid, ColumnDef } from "@/components/common/DataGrid";
-import { UserDetailModal } from "@/components/users/UserDetailModal";
+import { UserViewModal } from "@/components/users/UserViewModal";
+import { UserEditModal } from "@/components/users/UserEditModal";
+import { UserHouseholdModal } from "@/components/users/UserHouseholdModal";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { AlertCircle } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { AlertCircle, MoreVertical } from "lucide-react";
 
 /** User with resolved household name */
 interface UserWithHousehold extends User {
@@ -16,13 +26,14 @@ interface UserWithHousehold extends User {
 
 export default function UsersPage() {
   const [users, setUsers] = useState<UserWithHousehold[]>([]);
-  const [households, setHouseholds] = useState<Map<string, string>>(new Map());
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [selectedUser, setSelectedUser] = useState<UserWithHousehold | null>(
     null,
   );
-  const [modalOpen, setModalOpen] = useState(false);
+  const [viewModalOpen, setViewModalOpen] = useState(false);
+  const [editModalOpen, setEditModalOpen] = useState(false);
+  const [householdModalOpen, setHouseholdModalOpen] = useState(false);
 
   // Fetch users and households on mount
   useEffect(() => {
@@ -45,7 +56,6 @@ export default function UsersPage() {
       householdsData.forEach((h: Household) => {
         householdMap.set(h.id, h.name);
       });
-      setHouseholds(householdMap);
 
       // Enrich users with household names
       const enrichedUsers: UserWithHousehold[] = usersData.map((user) => ({
@@ -64,13 +74,26 @@ export default function UsersPage() {
     }
   };
 
-  const handleRowClick = (user: UserWithHousehold) => {
+  const handleView = (user: UserWithHousehold) => {
     setSelectedUser(user);
-    setModalOpen(true);
+    setViewModalOpen(true);
   };
 
+  const handleEdit = (user: UserWithHousehold) => {
+    setSelectedUser(user);
+    setEditModalOpen(true);
+  };
+
+  const handleManageHousehold = (user: UserWithHousehold) => {
+    setSelectedUser(user);
+    setHouseholdModalOpen(true);
+  };
+
+
   const handleModalClose = () => {
-    setModalOpen(false);
+    setViewModalOpen(false);
+    setEditModalOpen(false);
+    setHouseholdModalOpen(false);
     setSelectedUser(null);
   };
 
@@ -148,6 +171,52 @@ export default function UsersPage() {
       render: (value) => formatDate(value),
       sortable: true,
     },
+    {
+      key: "actions",
+      header: "",
+      accessor: () => null,
+      width: "80px",
+      render: (_, user) => (
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <MoreVertical className="h-4 w-4" />
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end">
+            <DropdownMenuItem
+              onClick={(e) => {
+                e.stopPropagation();
+                handleView(user);
+              }}
+            >
+              View
+            </DropdownMenuItem>
+            <DropdownMenuItem
+              onClick={(e) => {
+                e.stopPropagation();
+                handleEdit(user);
+              }}
+            >
+              Edit
+            </DropdownMenuItem>
+            <DropdownMenuSeparator />
+            <DropdownMenuItem
+              onClick={(e) => {
+                e.stopPropagation();
+                handleManageHousehold(user);
+              }}
+            >
+              Manage Household
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
+      ),
+    },
   ];
 
   return (
@@ -173,21 +242,35 @@ export default function UsersPage() {
       <DataGrid
         data={users}
         columns={columns}
-        onRowClick={handleRowClick}
         loading={loading}
         emptyMessage="No users found"
         getRowId={(user) => user.id}
       />
 
-      {/* User Detail Modal */}
+      {/* User Modals */}
       {selectedUser && (
-        <UserDetailModal
-          user={selectedUser}
-          householdName={selectedUser.householdName}
-          open={modalOpen}
-          onClose={handleModalClose}
-          onSave={handleModalSave}
-        />
+        <>
+          <UserViewModal
+            user={selectedUser}
+            householdName={selectedUser.householdName}
+            open={viewModalOpen}
+            onClose={handleModalClose}
+          />
+          <UserEditModal
+            user={selectedUser}
+            householdName={selectedUser.householdName}
+            open={editModalOpen}
+            onClose={handleModalClose}
+            onSave={handleModalSave}
+          />
+          <UserHouseholdModal
+            user={selectedUser}
+            currentHouseholdName={selectedUser.householdName}
+            open={householdModalOpen}
+            onClose={handleModalClose}
+            onSave={handleModalSave}
+          />
+        </>
       )}
     </div>
   );

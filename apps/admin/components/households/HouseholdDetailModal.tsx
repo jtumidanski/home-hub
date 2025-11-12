@@ -12,7 +12,8 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
 import { getHouseholdUsers, Household } from "@/lib/api/households";
-import { removeUserFromHousehold, User } from "@/lib/api/users";
+import { User } from "@/lib/api/users";
+import { UserDisassociateDialog } from "@/components/users/UserDisassociateDialog";
 import { toast } from "sonner";
 import { AlertCircle } from "lucide-react";
 
@@ -31,7 +32,8 @@ export function HouseholdDetailModal({
 }: HouseholdDetailModalProps) {
   const [users, setUsers] = useState<User[]>([]);
   const [loading, setLoading] = useState(false);
-  const [removing, setRemoving] = useState<string | null>(null);
+  const [userToRemove, setUserToRemove] = useState<User | null>(null);
+  const [disassociateDialogOpen, setDisassociateDialogOpen] = useState(false);
 
   // Fetch users when modal opens
   useEffect(() => {
@@ -55,23 +57,16 @@ export function HouseholdDetailModal({
     }
   };
 
-  const handleRemoveUser = async (userId: string, userName: string) => {
-    if (!confirm(`Remove ${userName} from this household?`)) {
-      return;
-    }
+  const handleRemoveUser = (user: User) => {
+    setUserToRemove(user);
+    setDisassociateDialogOpen(true);
+  };
 
-    try {
-      setRemoving(userId);
-      await removeUserFromHousehold(userId);
-      toast.success("User removed from household");
-      await fetchUsers(); // Refresh users list
-      onUpdate(); // Notify parent to refresh
-    } catch (error) {
-      console.error("Failed to remove user:", error);
-      toast.error("Failed to remove user");
-    } finally {
-      setRemoving(null);
-    }
+  const handleDisassociateConfirmed = async () => {
+    setDisassociateDialogOpen(false);
+    setUserToRemove(null);
+    await fetchUsers(); // Refresh users list
+    onUpdate(); // Notify parent to refresh
   };
 
   const formatDate = (dateString: string): string => {
@@ -189,11 +184,10 @@ export function HouseholdDetailModal({
                       <Button
                         variant="outline"
                         size="sm"
-                        onClick={() => handleRemoveUser(user.id, user.displayName)}
-                        disabled={removing === user.id}
+                        onClick={() => handleRemoveUser(user)}
                         className="text-red-600 hover:text-red-700 hover:bg-red-50 dark:hover:bg-red-950"
                       >
-                        {removing === user.id ? "Removing..." : "Remove"}
+                        Remove
                       </Button>
                     </div>
                   ))}
@@ -203,6 +197,18 @@ export function HouseholdDetailModal({
           </Card>
         </div>
       </DialogContent>
+
+      {/* Disassociate Confirmation Dialog */}
+      <UserDisassociateDialog
+        user={userToRemove}
+        householdName={household?.name}
+        open={disassociateDialogOpen}
+        onClose={() => {
+          setDisassociateDialogOpen(false);
+          setUserToRemove(null);
+        }}
+        onDisassociated={handleDisassociateConfirmed}
+      />
     </Dialog>
   );
 }

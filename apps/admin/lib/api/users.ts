@@ -5,7 +5,7 @@
  * Handles users, households, and related operations.
  */
 
-import { get, post, del } from "./client";
+import { get, post, patch, del } from "./client";
 
 /**
  * JSON:API count response shape from the backend
@@ -150,6 +150,43 @@ export async function removeUserRole(
   role: string
 ): Promise<void> {
   await del(`/users/${userId}/roles/${role}`);
+}
+
+/**
+ * Update a user's display name
+ */
+export async function updateUser(
+  userId: string,
+  displayName: string
+): Promise<User> {
+  const response = await patch<JsonApiResponse<UserAttributes>>(
+    `/users/${userId}`,
+    {
+      data: {
+        type: "users",
+        id: userId,
+        attributes: {
+          displayName,
+        },
+      },
+    }
+  );
+  return flattenResource(response.data);
+}
+
+/**
+ * Associate a user with a household
+ */
+export async function associateUserToHousehold(
+  userId: string,
+  householdId: string
+): Promise<void> {
+  await post(`/users/${userId}/relationships/household`, {
+    data: {
+      type: "households",
+      id: householdId,
+    },
+  });
 }
 
 /**
