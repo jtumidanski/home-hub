@@ -109,7 +109,10 @@ func createHouseholdHandler(db *gorm.DB) server.InputHandler[CreateRequest] {
 	return func(d *server.HandlerDependency, c *server.HandlerContext, req CreateRequest) http.HandlerFunc {
 		return func(w http.ResponseWriter, r *http.Request) {
 			input := CreateInput{
-				Name: req.Name,
+				Name:      req.Name,
+				Latitude:  req.Latitude,
+				Longitude: req.Longitude,
+				Timezone:  req.Timezone,
 			}
 
 			model, err := NewProcessor(d.Logger(), r.Context(), db).Create(input)()
@@ -142,7 +145,10 @@ func updateHouseholdHandler(db *gorm.DB) server.InputHandler[UpdateRequest] {
 		return ParseId(d.Logger(), func(householdId uuid.UUID) http.HandlerFunc {
 			return func(w http.ResponseWriter, r *http.Request) {
 				input := UpdateInput{
-					Name: req.Name,
+					Name:      req.Name,
+					Latitude:  req.Latitude,
+					Longitude: req.Longitude,
+					Timezone:  req.Timezone,
 				}
 
 				model, err := NewProcessor(d.Logger(), r.Context(), db).Update(householdId, input)()

@@ -75,10 +75,6 @@ function HouseholdsContent() {
     setDeleteDialogOpen(true);
   };
 
-  const handleRowClick = (household: Household) => {
-    handleView(household);
-  };
-
   const handleModalClose = () => {
     setCreateModalOpen(false);
     setEditModalOpen(false);
@@ -211,7 +207,6 @@ function HouseholdsContent() {
       <DataGrid
         data={filteredHouseholds}
         columns={columns}
-        onRowClick={handleRowClick}
         loading={loading}
         emptyMessage="No households found"
         getRowId={(h) => h.id}

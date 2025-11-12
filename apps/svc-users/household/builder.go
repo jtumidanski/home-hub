@@ -17,6 +17,9 @@ var (
 type Builder struct {
 	id        *uuid.UUID
 	name      *string
+	latitude  *float64
+	longitude *float64
+	timezone  *string
 	createdAt *time.Time
 	updatedAt *time.Time
 }
@@ -35,6 +38,24 @@ func (b *Builder) SetId(id uuid.UUID) *Builder {
 // SetName sets the household name
 func (b *Builder) SetName(name string) *Builder {
 	b.name = &name
+	return b
+}
+
+// SetLatitude sets the household latitude coordinate
+func (b *Builder) SetLatitude(lat float64) *Builder {
+	b.latitude = &lat
+	return b
+}
+
+// SetLongitude sets the household longitude coordinate
+func (b *Builder) SetLongitude(lng float64) *Builder {
+	b.longitude = &lng
+	return b
+}
+
+// SetTimezone sets the household IANA timezone
+func (b *Builder) SetTimezone(tz string) *Builder {
+	b.timezone = &tz
 	return b
 }
 
@@ -81,6 +102,9 @@ func (b *Builder) Build() (Model, error) {
 	return Model{
 		id:        id,
 		name:      name,
+		latitude:  b.latitude,
+		longitude: b.longitude,
+		timezone:  b.timezone,
 		createdAt: createdAt,
 		updatedAt: updatedAt,
 	}, nil
@@ -92,6 +116,9 @@ func (m Model) Builder() *Builder {
 	return &Builder{
 		id:        &m.id,
 		name:      &m.name,
+		latitude:  m.latitude,
+		longitude: m.longitude,
+		timezone:  m.timezone,
 		createdAt: &m.createdAt,
 		updatedAt: &m.updatedAt,
 	}

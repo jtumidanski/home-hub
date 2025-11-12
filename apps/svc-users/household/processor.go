@@ -19,12 +19,18 @@ var (
 
 // CreateInput contains the data needed to create a new household
 type CreateInput struct {
-	Name string
+	Name      string
+	Latitude  *float64
+	Longitude *float64
+	Timezone  *string
 }
 
 // UpdateInput contains the data to update an existing household
 type UpdateInput struct {
-	Name *string
+	Name      *string
+	Latitude  *float64
+	Longitude *float64
+	Timezone  *string
 }
 
 // Processor handles business logic for household operations
@@ -49,9 +55,20 @@ func (p Processor) Create(input CreateInput) ops.Provider[Model] {
 		p.log.WithField("name", input.Name).Info("Creating new household")
 
 		// Build the model
-		model, err := NewBuilder().
-			SetName(input.Name).
-			Build()
+		builder := NewBuilder().SetName(input.Name)
+
+		// Add location coordinates if provided
+		if input.Latitude != nil {
+			builder.SetLatitude(*input.Latitude)
+		}
+		if input.Longitude != nil {
+			builder.SetLongitude(*input.Longitude)
+		}
+		if input.Timezone != nil {
+			builder.SetTimezone(*input.Timezone)
+		}
+
+		model, err := builder.Build()
 		if err != nil {
 			p.log.WithError(err).Error("Failed to build household model")
 			return Model{}, err
@@ -100,6 +117,15 @@ func (p Processor) Update(id uuid.UUID, input UpdateInput) ops.Provider[Model] {
 
 		if input.Name != nil {
 			builder.SetName(*input.Name)
+		}
+		if input.Latitude != nil {
+			builder.SetLatitude(*input.Latitude)
+		}
+		if input.Longitude != nil {
+			builder.SetLongitude(*input.Longitude)
+		}
+		if input.Timezone != nil {
+			builder.SetTimezone(*input.Timezone)
 		}
 
 		model, err := builder.Build()

@@ -31,23 +31,91 @@ export function HouseholdFormModal({
   onSave,
 }: HouseholdFormModalProps) {
   const [name, setName] = useState("");
+  const [latitude, setLatitude] = useState<number | undefined>(undefined);
+  const [longitude, setLongitude] = useState<number | undefined>(undefined);
+  const [timezone, setTimezone] = useState<string | undefined>(undefined);
   const [saving, setSaving] = useState(false);
+  const [locating, setLocating] = useState(false);
 
   // Reset or populate form when modal opens
   useEffect(() => {
     if (open) {
       if (mode === "edit" && household) {
         setName(household.name);
+        setLatitude(household.latitude);
+        setLongitude(household.longitude);
+        setTimezone(household.timezone);
       } else if (mode === "create") {
         setName("");
+        setLatitude(undefined);
+        setLongitude(undefined);
+        // Auto-detect timezone on create
+        setTimezone(Intl.DateTimeFormat().resolvedOptions().timeZone);
       }
     }
   }, [open, mode, household]);
 
+  // Get current location using browser Geolocation API
+  const handleGetLocation = () => {
+    if (!navigator.geolocation) {
+      toast.error("Geolocation is not supported by your browser");
+      return;
+    }
+
+    // Check if running on HTTPS or localhost
+    const isSecureContext = window.isSecureContext;
+    if (!isSecureContext) {
+      toast.error("Geolocation requires HTTPS. Please enter coordinates manually below.");
+      return;
+    }
+
+    setLocating(true);
+    navigator.geolocation.getCurrentPosition(
+      (position) => {
+        setLatitude(position.coords.latitude);
+        setLongitude(position.coords.longitude);
+        // Auto-detect timezone
+        setTimezone(Intl.DateTimeFormat().resolvedOptions().timeZone);
+        setLocating(false);
+        toast.success("Location detected successfully");
+      },
+      (error) => {
+        console.error("Error getting location:", error);
+        setLocating(false);
+
+        let errorMessage = "Failed to get location. ";
+        switch (error.code) {
+          case error.PERMISSION_DENIED:
+            errorMessage += "Location permission denied. Please enable location access in your browser settings or enter coordinates manually.";
+            break;
+          case error.POSITION_UNAVAILABLE:
+            errorMessage += "Location information unavailable. Please enter coordinates manually.";
+            break;
+          case error.TIMEOUT:
+            errorMessage += "Location request timed out. Please try again or enter coordinates manually.";
+            break;
+          default:
+            errorMessage += "Please enter coordinates manually.";
+        }
+        toast.error(errorMessage);
+      },
+      {
+        enableHighAccuracy: true,
+        timeout: 10000,
+        maximumAge: 0,
+      }
+    );
+  };
+
   // Validation
   const isValid = name.trim().length > 0;
   const hasChanges =
-    mode === "create" || (household && name !== household.name);
+    mode === "create" ||
+    (household &&
+      (name !== household.name ||
+        latitude !== household.latitude ||
+        longitude !== household.longitude ||
+        timezone !== household.timezone));
 
   const handleSave = async () => {
     if (!isValid) return;
@@ -56,10 +124,20 @@ export function HouseholdFormModal({
       setSaving(true);
 
       if (mode === "create") {
-        await createHousehold({ name });
+        await createHousehold({
+          name,
+          latitude,
+          longitude,
+          timezone,
+        });
         toast.success("Household created successfully");
       } else if (household) {
-        await updateHousehold(household.id, { name });
+        await updateHousehold(household.id, {
+          name,
+          latitude,
+          longitude,
+          timezone,
+        });
         toast.success("Household updated successfully");
       }
 
@@ -110,6 +188,64 @@ export function HouseholdFormModal({
             {name.trim().length === 0 && name.length > 0 && (
               <p className="text-sm text-red-600">Name cannot be empty</p>
             )}
+          </div>
+
+          {/* Location section */}
+          <div className="space-y-2">
+            <Label>Location (for weather)</Label>
+            <Button
+              type="button"
+              variant="outline"
+              onClick={handleGetLocation}
+              disabled={saving || locating}
+              className="w-full"
+            >
+              {locating ? "Getting location..." : "Use my current location"}
+            </Button>
+            <p className="text-xs text-muted-foreground">
+              This will use your browser's location to set coordinates and timezone
+            </p>
+          </div>
+
+          {/* Manual coordinate entry */}
+          <div className="space-y-3">
+            <div className="space-y-2">
+              <Label htmlFor="latitude">Latitude (optional)</Label>
+              <Input
+                id="latitude"
+                type="number"
+                step="0.000001"
+                placeholder="e.g., 37.7749"
+                value={latitude ?? ""}
+                onChange={(e) => setLatitude(e.target.value ? parseFloat(e.target.value) : undefined)}
+                disabled={saving}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="longitude">Longitude (optional)</Label>
+              <Input
+                id="longitude"
+                type="number"
+                step="0.000001"
+                placeholder="e.g., -122.4194"
+                value={longitude ?? ""}
+                onChange={(e) => setLongitude(e.target.value ? parseFloat(e.target.value) : undefined)}
+                disabled={saving}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="timezone">Timezone (optional)</Label>
+              <Input
+                id="timezone"
+                placeholder="e.g., America/Los_Angeles"
+                value={timezone ?? ""}
+                onChange={(e) => setTimezone(e.target.value || undefined)}
+                disabled={saving}
+              />
+              <p className="text-xs text-muted-foreground">
+                IANA timezone identifier
+              </p>
+            </div>
           </div>
         </div>
 

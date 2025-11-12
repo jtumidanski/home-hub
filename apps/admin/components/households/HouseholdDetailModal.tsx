@@ -114,6 +114,50 @@ export function HouseholdDetailModal({
                 <div className="col-span-2 text-sm">{household.name}</div>
               </div>
               <Separator />
+              {/* Location Information */}
+              {(household.latitude !== undefined || household.longitude !== undefined || household.timezone) && (
+                <>
+                  {household.latitude !== undefined && (
+                    <>
+                      <div className="grid grid-cols-3 gap-2">
+                        <div className="text-sm font-medium text-neutral-500 dark:text-neutral-400">
+                          Latitude
+                        </div>
+                        <div className="col-span-2 text-sm font-mono">
+                          {household.latitude.toFixed(6)}
+                        </div>
+                      </div>
+                      <Separator />
+                    </>
+                  )}
+                  {household.longitude !== undefined && (
+                    <>
+                      <div className="grid grid-cols-3 gap-2">
+                        <div className="text-sm font-medium text-neutral-500 dark:text-neutral-400">
+                          Longitude
+                        </div>
+                        <div className="col-span-2 text-sm font-mono">
+                          {household.longitude.toFixed(6)}
+                        </div>
+                      </div>
+                      <Separator />
+                    </>
+                  )}
+                  {household.timezone && (
+                    <>
+                      <div className="grid grid-cols-3 gap-2">
+                        <div className="text-sm font-medium text-neutral-500 dark:text-neutral-400">
+                          Timezone
+                        </div>
+                        <div className="col-span-2 text-sm font-mono">
+                          {household.timezone}
+                        </div>
+                      </div>
+                      <Separator />
+                    </>
+                  )}
+                </>
+              )}
               <div className="grid grid-cols-3 gap-2">
                 <div className="text-sm font-medium text-neutral-500 dark:text-neutral-400">
                   Created

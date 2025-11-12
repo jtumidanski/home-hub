@@ -12,6 +12,9 @@ import { JsonApiResponse, JsonApiArrayResponse, JsonApiResource, User, UserAttri
  */
 export interface HouseholdAttributes {
   name: string;
+  latitude?: number;
+  longitude?: number;
+  timezone?: string;
   created_at: string;
   updated_at: string;
 }
@@ -22,6 +25,9 @@ export interface HouseholdAttributes {
 export interface Household {
   id: string;
   name: string;
+  latitude?: number;
+  longitude?: number;
+  timezone?: string;
   createdAt: string;
   updatedAt: string;
 }
@@ -31,6 +37,9 @@ export interface Household {
  */
 export interface CreateHouseholdRequest {
   name: string;
+  latitude?: number;
+  longitude?: number;
+  timezone?: string;
 }
 
 /**
@@ -38,6 +47,9 @@ export interface CreateHouseholdRequest {
  */
 export interface UpdateHouseholdRequest {
   name?: string;
+  latitude?: number;
+  longitude?: number;
+  timezone?: string;
 }
 
 /**
@@ -59,6 +71,9 @@ function flattenHousehold(resource: JsonApiResource<HouseholdAttributes>): House
   return {
     id: resource.id,
     name: resource.attributes.name,
+    latitude: resource.attributes.latitude,
+    longitude: resource.attributes.longitude,
+    timezone: resource.attributes.timezone,
     createdAt: resource.attributes.created_at,
     updatedAt: resource.attributes.updated_at,
   };

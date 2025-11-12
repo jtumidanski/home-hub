@@ -11,7 +11,8 @@ import (
 
 const (
 	// Common preference keys
-	THEME_KEY = "theme"
+	THEME_KEY            = "theme"
+	TEMPERATURE_UNIT_KEY = "temperatureUnit"
 )
 
 // Valid theme values
@@ -19,6 +20,12 @@ const (
 	THEME_SYSTEM = "system"
 	THEME_LIGHT  = "light"
 	THEME_DARK   = "dark"
+)
+
+// Valid temperature unit values
+const (
+	TEMP_UNIT_CELSIUS    = "celsius"
+	TEMP_UNIT_FAHRENHEIT = "fahrenheit"
 )
 
 // Model represents an immutable user preference in the domain.
@@ -79,6 +86,8 @@ func (m Model) ValidateForKey() error {
 	switch m.key {
 	case THEME_KEY:
 		return m.validateThemeValue()
+	case TEMPERATURE_UNIT_KEY:
+		return m.validateTemperatureUnitValue()
 	default:
 		// For unknown keys, just check basic value validity
 		if !m.ValidValue() {
@@ -96,6 +105,17 @@ func (m Model) validateThemeValue() error {
 		return nil
 	default:
 		return fmt.Errorf("invalid theme value: %s (must be 'system', 'light', or 'dark')", m.value)
+	}
+}
+
+// validateTemperatureUnitValue validates that the temperature unit value is one of the allowed values
+func (m Model) validateTemperatureUnitValue() error {
+	value := strings.ToLower(strings.TrimSpace(m.value))
+	switch value {
+	case TEMP_UNIT_CELSIUS, TEMP_UNIT_FAHRENHEIT:
+		return nil
+	default:
+		return fmt.Errorf("invalid temperature unit: %s (must be 'celsius' or 'fahrenheit')", m.value)
 	}
 }
 

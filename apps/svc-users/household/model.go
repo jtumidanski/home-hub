@@ -13,6 +13,9 @@ import (
 type Model struct {
 	id        uuid.UUID
 	name      string
+	latitude  *float64
+	longitude *float64
+	timezone  *string
 	createdAt time.Time
 	updatedAt time.Time
 }
@@ -25,6 +28,21 @@ func (m Model) Id() uuid.UUID {
 // Name returns the household's name
 func (m Model) Name() string {
 	return m.name
+}
+
+// Latitude returns the household's latitude coordinate
+func (m Model) Latitude() *float64 {
+	return m.latitude
+}
+
+// Longitude returns the household's longitude coordinate
+func (m Model) Longitude() *float64 {
+	return m.longitude
+}
+
+// Timezone returns the household's IANA timezone
+func (m Model) Timezone() *string {
+	return m.timezone
 }
 
 // CreatedAt returns when the household was created
@@ -47,6 +65,9 @@ func (m Model) MarshalJSON() ([]byte, error) {
 	type alias struct {
 		Id        uuid.UUID `json:"id"`
 		Name      string    `json:"name"`
+		Latitude  *float64  `json:"latitude,omitempty"`
+		Longitude *float64  `json:"longitude,omitempty"`
+		Timezone  *string   `json:"timezone,omitempty"`
 		CreatedAt time.Time `json:"createdAt"`
 		UpdatedAt time.Time `json:"updatedAt"`
 	}
@@ -54,6 +75,9 @@ func (m Model) MarshalJSON() ([]byte, error) {
 	return json.Marshal(&alias{
 		Id:        m.id,
 		Name:      m.name,
+		Latitude:  m.latitude,
+		Longitude: m.longitude,
+		Timezone:  m.timezone,
 		CreatedAt: m.createdAt,
 		UpdatedAt: m.updatedAt,
 	})
@@ -64,6 +88,9 @@ func (m *Model) UnmarshalJSON(data []byte) error {
 	type alias struct {
 		Id        uuid.UUID `json:"id"`
 		Name      string    `json:"name"`
+		Latitude  *float64  `json:"latitude,omitempty"`
+		Longitude *float64  `json:"longitude,omitempty"`
+		Timezone  *string   `json:"timezone,omitempty"`
 		CreatedAt time.Time `json:"createdAt"`
 		UpdatedAt time.Time `json:"updatedAt"`
 	}
@@ -75,6 +102,9 @@ func (m *Model) UnmarshalJSON(data []byte) error {
 
 	m.id = a.Id
 	m.name = a.Name
+	m.latitude = a.Latitude
+	m.longitude = a.Longitude
+	m.timezone = a.Timezone
 	m.createdAt = a.CreatedAt
 	m.updatedAt = a.UpdatedAt
 
