@@ -53,12 +53,13 @@ func main() {
 	userProvider := auth.NewSimpleUserProvider(db)
 	roleProvider := auth.NewSimpleRoleProvider(db)
 
-	// Create auth middleware
-	authMiddleware := auth.Middleware(l, db, userProvider, roleProvider)
+	// Create optional auth middleware - allows service-to-service calls without auth
+	// while still authenticating requests that come through nginx
+	authMiddleware := auth.OptionalMiddleware(l, db, userProvider, roleProvider)
 
 	// Create custom route initializer with auth middleware
 	authRouteInitializer := func(router *mux.Router, logger logrus.FieldLogger) {
-		// Apply auth middleware to all routes
+		// Apply optional auth middleware to all routes
 		router.Use(authMiddleware)
 
 		// Initialize user, household, and preference routes

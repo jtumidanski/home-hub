@@ -1,6 +1,7 @@
 package weather
 
 import (
+	"context"
 	"net/http"
 	"strconv"
 
@@ -181,8 +182,9 @@ func refreshCacheHandler(provider Provider) server.GetHandler {
 			}
 
 			// Trigger async refresh (non-blocking)
+			// Use context.Background() since the HTTP request will complete before the refresh
 			go func() {
-				if err := provider.Refresh(r.Context(), householdID); err != nil {
+				if err := provider.Refresh(context.Background(), householdID); err != nil {
 					d.Logger().WithError(err).WithField("household_id", householdID).Error("Failed to refresh cache")
 				}
 			}()

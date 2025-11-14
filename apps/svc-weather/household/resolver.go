@@ -73,7 +73,7 @@ func (r *HTTPResolver) Resolve(ctx context.Context, householdID uuid.UUID) (Loca
 
 // fetchFromSvcUsers performs the HTTP request to svc-users
 func (r *HTTPResolver) fetchFromSvcUsers(ctx context.Context, householdID uuid.UUID) (Location, error) {
-	url := fmt.Sprintf("%s/api/v1/households/%s", r.baseURL, householdID.String())
+	url := fmt.Sprintf("%s/api/households/%s", r.baseURL, householdID.String())
 
 	req, err := http.NewRequestWithContext(ctx, http.MethodGet, url, nil)
 	if err != nil {
