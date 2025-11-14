@@ -26,6 +26,22 @@ services:
     networks:
       - internal-net
     container_name: hh-users
+  svc-tasks:
+    build:
+      context: .
+      dockerfile: apps/svc-tasks/Dockerfile
+    environment:
+      DB_HOST: hh-db
+      DB_PORT: ${DB_PORT}
+      DB_NAME: svc-tasks
+      DB_USER: ${DB_USER}
+      DB_PASSWORD: ${DB_PASSWORD}
+    networks:
+      - internal-net
+    container_name: hh-tasks
+    depends_on:
+      - db
+      - svc-users
   redis:
     image: redis:7-alpine
     container_name: hh-redis
