@@ -69,12 +69,14 @@ export function DeviceProvider({ children, deviceId, householdTemperatureUnit = 
 
   // Temperature unit resolution: device preference → household → system default ("fahrenheit")
   // If device preference is "household", use household's temperature unit
-  // If device preference is explicit ("fahrenheit" or "celsius"), use that
+  // If device preference is explicit ("F" or "C"), map to full words
   // If no device preferences loaded yet, use household default
   const resolvedTemperatureUnit: "fahrenheit" | "celsius" = preferences
     ? preferences.temperatureUnit === "household"
       ? householdTemperatureUnit
-      : preferences.temperatureUnit
+      : preferences.temperatureUnit === "F"
+      ? "fahrenheit"
+      : "celsius"
     : householdTemperatureUnit;
 
   // Theme resolution: device preference → system default ("dark")

@@ -290,7 +290,6 @@ export default function DevicesPage() {
         loading={loading}
         emptyMessage="No devices found. Register a new device to get started."
         getRowId={(device) => device.id}
-        onRowClick={handleViewClick}
       />
 
       {/* Delete Confirmation Dialog */}

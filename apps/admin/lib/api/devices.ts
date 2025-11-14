@@ -20,7 +20,7 @@ export type Theme = "light" | "dark";
 /**
  * Temperature unit preference
  */
-export type TemperatureUnit = "household" | "fahrenheit" | "celsius";
+export type TemperatureUnit = "household" | "F" | "C";
 
 /**
  * Device attributes
@@ -269,8 +269,8 @@ export function formatTheme(theme: Theme): string {
 export function formatTemperatureUnit(unit: TemperatureUnit): string {
   const unitMap: Record<TemperatureUnit, string> = {
     household: "Household Default",
-    fahrenheit: "Fahrenheit (°F)",
-    celsius: "Celsius (°C)",
+    F: "Fahrenheit (°F)",
+    C: "Celsius (°C)",
   };
   return unitMap[unit] || unit;
 }

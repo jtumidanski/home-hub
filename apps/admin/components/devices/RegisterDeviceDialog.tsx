@@ -261,8 +261,8 @@ export function RegisterDeviceDialog({
                     </SelectTrigger>
                     <SelectContent>
                       <SelectItem value="household">Household Default</SelectItem>
-                      <SelectItem value="fahrenheit">Fahrenheit (°F)</SelectItem>
-                      <SelectItem value="celsius">Celsius (°C)</SelectItem>
+                      <SelectItem value="F">Fahrenheit (°F)</SelectItem>
+                      <SelectItem value="C">Celsius (°C)</SelectItem>
                     </SelectContent>
                   </Select>
                   <p className="text-sm text-neutral-500 dark:text-neutral-400">

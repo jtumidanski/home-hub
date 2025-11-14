@@ -34,6 +34,7 @@ import {
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { AlertCircle, Save } from "lucide-react";
 import Link from "next/link";
+import { toast } from "sonner";
 
 interface EditDeviceDialogProps {
   deviceId: string | null;
@@ -53,7 +54,6 @@ export function EditDeviceDialog({
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [success, setSuccess] = useState<string | null>(null);
 
   // Form state
   const [name, setName] = useState("");
@@ -76,7 +76,6 @@ export function EditDeviceDialog({
       setTheme("dark");
       setTemperatureUnit("household");
       setError(null);
-      setSuccess(null);
     }
   }, [open]);
 
@@ -120,7 +119,6 @@ export function EditDeviceDialog({
     try {
       setSaving(true);
       setError(null);
-      setSuccess(null);
 
       // Determine what changed
       const nameChanged = name !== device.name;
@@ -141,16 +139,14 @@ export function EditDeviceDialog({
         });
       }
 
-      setSuccess("Device updated successfully");
-
-      // Notify parent and close after a brief delay to show success message
-      setTimeout(() => {
-        onSuccess();
-        onOpenChange(false);
-      }, 1000);
+      toast.success("Device updated successfully");
+      onSuccess();
+      onOpenChange(false);
     } catch (err) {
       console.error("Failed to save device:", err);
-      setError(err instanceof Error ? err.message : "Failed to save device");
+      const errorMessage = err instanceof Error ? err.message : "Failed to save device";
+      setError(errorMessage);
+      toast.error(errorMessage);
     } finally {
       setSaving(false);
     }
@@ -194,14 +190,6 @@ export function EditDeviceDialog({
             <AlertCircle className="h-4 w-4" />
             <AlertTitle>Error</AlertTitle>
             <AlertDescription>{error}</AlertDescription>
-          </Alert>
-        )}
-
-        {/* Success State */}
-        {success && (
-          <Alert>
-            <AlertTitle>Success</AlertTitle>
-            <AlertDescription>{success}</AlertDescription>
           </Alert>
         )}
 
@@ -294,8 +282,8 @@ export function EditDeviceDialog({
                       </SelectTrigger>
                       <SelectContent>
                         <SelectItem value="household">Household Default</SelectItem>
-                        <SelectItem value="fahrenheit">Fahrenheit (°F)</SelectItem>
-                        <SelectItem value="celsius">Celsius (°C)</SelectItem>
+                        <SelectItem value="F">Fahrenheit (°F)</SelectItem>
+                        <SelectItem value="C">Celsius (°C)</SelectItem>
                       </SelectContent>
                     </Select>
                     <p className="text-sm text-neutral-500 dark:text-neutral-400">
