@@ -75,6 +75,16 @@ func (p *CacheProvider) GetCombined(ctx context.Context, householdID uuid.UUID) 
 	current, currentStale, currentErr := p.getCurrent(ctx, gk)
 	forecast, forecastStale, forecastErr := p.getForecast(ctx, gk, 7)
 
+	// Log when one or both fail to help debug inconsistent data
+	if currentErr != nil || forecastErr != nil {
+		p.logger.WithFields(logrus.Fields{
+			"household_id":   householdID,
+			"geokey":         gk,
+			"current_error":  currentErr != nil,
+			"forecast_error": forecastErr != nil,
+		}).Warn("GetCombined: partial data available")
+	}
+
 	// If both failed, return error
 	if currentErr != nil && forecastErr != nil {
 		return CombinedWeather{}, false, fmt.Errorf("no weather data available")
@@ -88,11 +98,23 @@ func (p *CacheProvider) GetCombined(ctx context.Context, householdID uuid.UUID) 
 	var currentPtr *CurrentWeather
 	if currentErr == nil {
 		currentPtr = &current
+	} else {
+		p.logger.WithFields(logrus.Fields{
+			"household_id": householdID,
+			"geokey":       gk,
+			"error":        currentErr.Error(),
+		}).Debug("Current weather unavailable in GetCombined")
 	}
 
 	var forecastPtr *ForecastWeather
 	if forecastErr == nil {
 		forecastPtr = &forecast
+	} else {
+		p.logger.WithFields(logrus.Fields{
+			"household_id": householdID,
+			"geokey":       gk,
+			"error":        forecastErr.Error(),
+		}).Debug("Forecast weather unavailable in GetCombined")
 	}
 
 	return NewCombinedWeather(currentPtr, forecastPtr, meta), stale, nil

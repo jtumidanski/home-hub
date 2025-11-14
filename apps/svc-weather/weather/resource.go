@@ -62,6 +62,22 @@ func getCombinedHandler(provider Provider, tracker HouseholdTracker) server.GetH
 				return
 			}
 
+			// Check for partial data and trigger refresh for missing parts
+			if !combined.HasCurrent() || !combined.HasForecast() {
+				d.Logger().WithFields(logrus.Fields{
+					"household_id":  householdID,
+					"has_current":   combined.HasCurrent(),
+					"has_forecast":  combined.HasForecast(),
+				}).Info("Combined weather missing data, triggering refresh")
+
+				// Trigger refresh to populate missing data
+				go func() {
+					if refreshErr := provider.Refresh(context.Background(), householdID); refreshErr != nil {
+						d.Logger().WithError(refreshErr).WithField("household_id", householdID).Warn("Failed to refresh missing weather data")
+					}
+				}()
+			}
+
 			model := Transform(householdID, combined, stale)
 			server.MarshalResponse[RestModel](d.Logger())(w)(c.ServerInformation())(map[string][]string{})(model)
 		}
