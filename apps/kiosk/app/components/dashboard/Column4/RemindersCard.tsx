@@ -31,12 +31,7 @@ export function RemindersCard({ reminders, loading, error, onUpdate }: Reminders
   if (error) {
     return (
       <Card>
-        <div className="flex items-center justify-between mb-2">
-          <h3 className="font-semibold text-gray-900 dark:text-white">Reminders</h3>
-          <span className="text-xs bg-yellow-100 dark:bg-yellow-900/30 text-yellow-800 dark:text-yellow-200 px-2 py-1 rounded">
-            Preview
-          </span>
-        </div>
+        <h3 className="font-semibold text-gray-900 dark:text-white mb-2">Reminders</h3>
         <div className="text-center py-4">
           <p className="text-sm text-red-600 dark:text-red-400">{error}</p>
         </div>
@@ -54,12 +49,7 @@ export function RemindersCard({ reminders, loading, error, onUpdate }: Reminders
 
   return (
     <Card>
-      <div className="flex items-center justify-between mb-4">
-        <h3 className="font-semibold text-gray-900 dark:text-white">Reminders</h3>
-        <span className="text-xs bg-yellow-100 dark:bg-yellow-900/30 text-yellow-800 dark:text-yellow-200 px-2 py-1 rounded">
-          Preview
-        </span>
-      </div>
+      <h3 className="font-semibold text-gray-900 dark:text-white mb-4">Reminders</h3>
 
       {activeReminders.length === 0 ? (
         <div className="text-center py-8">
@@ -89,7 +79,7 @@ interface ReminderItemProps {
 }
 
 function ReminderItem({ reminder, onDismiss, onSnooze }: ReminderItemProps) {
-  const triggerTime = new Date(reminder.triggerAt);
+  const triggerTime = new Date(reminder.remindAt);
   const isPast = triggerTime < new Date();
 
   return (
@@ -97,7 +87,10 @@ function ReminderItem({ reminder, onDismiss, onSnooze }: ReminderItemProps) {
       <div className="flex items-start gap-3 mb-3">
         <Bell className="h-5 w-5 text-blue-600 dark:text-blue-400 flex-shrink-0 mt-0.5" />
         <div className="flex-1 min-w-0">
-          <p className="text-sm text-gray-900 dark:text-white">{reminder.text}</p>
+          <p className="text-sm text-gray-900 dark:text-white">{reminder.name}</p>
+          {reminder.description && (
+            <p className="text-xs text-gray-600 dark:text-gray-400 mt-0.5">{reminder.description}</p>
+          )}
           <p className="text-xs text-gray-600 dark:text-gray-400 mt-1">
             {isPast ? 'Now' : formatRelativeTime(triggerTime)}
           </p>

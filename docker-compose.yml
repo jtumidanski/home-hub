@@ -45,6 +45,24 @@ services:
     depends_on:
       - db
       - svc-users
+  svc-reminders:
+    build:
+      context: .
+      dockerfile: apps/svc-reminders/Dockerfile
+    environment:
+      DB_HOST: hh-db
+      DB_PORT: ${DB_PORT}
+      DB_NAME: svc-reminders
+      DB_USER: ${DB_USER}
+      DB_PASSWORD: ${DB_PASSWORD}
+      LOG_LEVEL: #{LOG_LEVEL}
+      SVC_USERS_BASE_URL: http://hh-users:8080
+    networks:
+      - internal-net
+    container_name: hh-reminders
+    depends_on:
+      - db
+      - svc-users
   redis:
     image: redis:7-alpine
     container_name: hh-redis
@@ -192,6 +210,7 @@ services:
       - svc-users
       - svc-weather
       - svc-tasks
+      - svc-reminders
       - admin
       - kiosk
 networks:

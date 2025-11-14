@@ -36,3 +36,4 @@ coverage/
 *.pem
 apps/svc-users/svc-users
 apps/svc-weather/svc-weather
+apps/svc-reminders/svc-reminders
