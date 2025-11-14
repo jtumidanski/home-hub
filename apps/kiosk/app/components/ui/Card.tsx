@@ -9,10 +9,10 @@ interface CardProps {
 
 export function Card({ children, title, className = '', loading = false }: CardProps) {
   return (
-    <div className={`bg-white dark:bg-gray-800 rounded-lg shadow-lg border border-gray-200 dark:border-gray-700 overflow-hidden ${className}`}>
+    <div className={`bg-card text-card-foreground rounded-lg shadow-lg border border-border overflow-hidden ${className}`}>
       {title && (
-        <div className="px-6 py-4 border-b border-gray-200 dark:border-gray-700">
-          <h2 className="text-lg font-semibold text-gray-900 dark:text-white">
+        <div className="px-6 py-4 border-b border-border">
+          <h2 className="text-lg font-semibold">
             {title}
           </h2>
         </div>
@@ -20,7 +20,7 @@ export function Card({ children, title, className = '', loading = false }: CardP
       <div className="p-6">
         {loading ? (
           <div className="flex items-center justify-center py-8">
-            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 dark:border-blue-400"></div>
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
           </div>
         ) : (
           children
@@ -40,7 +40,7 @@ export function CardSection({ title, children, className = '' }: CardSectionProp
   return (
     <div className={`space-y-3 ${className}`}>
       {title && (
-        <h3 className="text-sm font-medium text-gray-700 dark:text-gray-300">
+        <h3 className="text-sm font-medium text-muted-foreground">
           {title}
         </h3>
       )}

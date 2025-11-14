@@ -96,6 +96,24 @@ services:
     depends_on:
       - redis
       - svc-users
+  svc-devices:
+    build:
+      context: .
+      dockerfile: apps/svc-devices/Dockerfile
+    environment:
+      DB_HOST: hh-db
+      DB_PORT: ${DB_PORT}
+      DB_NAME: svc-devices
+      DB_USER: ${DB_USER}
+      DB_PASSWORD: ${DB_PASSWORD}
+      LOG_LEVEL: #{LOG_LEVEL}
+      SVC_USERS_BASE_URL: http://hh-users:8080
+    networks:
+      - internal-net
+    container_name: hh-devices
+    depends_on:
+      - db
+      - svc-users
   pgadmin:
     image: dpage/pgadmin4:8
     container_name: hh-pgadmin
@@ -211,6 +229,7 @@ services:
       - svc-weather
       - svc-tasks
       - svc-reminders
+      - svc-devices
       - admin
       - kiosk
 networks:

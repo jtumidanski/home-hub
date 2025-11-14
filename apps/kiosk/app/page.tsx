@@ -2,7 +2,8 @@
 
 import { useAuth } from '@/lib/auth';
 import { getHousehold, getHouseholdUsers, type Household, type User } from '@/lib/api/households';
-import { useEffect, useState } from 'react';
+import { useEffect, useState, Suspense } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { DashboardLayout, DashboardColumn } from '@/app/components/dashboard/DashboardLayout';
 import { WeatherCard } from '@/app/components/dashboard/Column1/WeatherCard';
 import { TasksCard } from '@/app/components/dashboard/Column1/TasksCard';
@@ -12,9 +13,16 @@ import { TomorrowPreviewCard } from '@/app/components/dashboard/Column3/Tomorrow
 import { RemindersCard } from '@/app/components/dashboard/Column4/RemindersCard';
 import { useDashboardData } from '@/lib/hooks/useDashboardData';
 import { useScreenWakeLock } from '@/lib/hooks/useScreenWakeLock';
+import { DeviceProvider } from '@/contexts/DeviceContext';
 
-export default function Home() {
+export const dynamic = 'force-dynamic';
+
+function HomeContent() {
   const { user, roles, loading: authLoading, error: authError } = useAuth();
+  const router = useRouter();
+  const searchParams = useSearchParams();
+  const kioskId = searchParams.get('kioskId');
+
   const [household, setHousehold] = useState<Household | null>(null);
   const [householdMembers, setHouseholdMembers] = useState<User[]>([]);
   const [householdLoading, setHouseholdLoading] = useState(false);
@@ -22,6 +30,13 @@ export default function Home() {
 
   // Use screen wake lock to prevent sleep (must be called before any conditional returns)
   useScreenWakeLock();
+
+  // Redirect to device selection if no kioskId is provided
+  useEffect(() => {
+    if (!authLoading && user && user.householdId && !kioskId) {
+      router.push('/select-device');
+    }
+  }, [authLoading, user, kioskId, router]);
 
   // Fetch household data when user is authenticated and has a household ID
   useEffect(() => {
@@ -57,10 +72,10 @@ export default function Home() {
   // Loading state
   if (authLoading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 to-indigo-100 dark:from-gray-900 dark:to-gray-800">
+      <div className="min-h-screen flex items-center justify-center bg-background">
         <div className="flex flex-col items-center space-y-4">
-          <div className="animate-spin rounded-full h-16 w-16 border-b-2 border-blue-600"></div>
-          <p className="text-lg text-gray-600 dark:text-gray-400">Loading...</p>
+          <div className="animate-spin rounded-full h-16 w-16 border-b-2 border-primary"></div>
+          <p className="text-lg text-muted-foreground">Loading...</p>
         </div>
       </div>
     );
@@ -69,7 +84,7 @@ export default function Home() {
   // Auth error state
   if (authError) {
     return (
-      <div className="min-h-screen flex items-center justify-center p-4 bg-gradient-to-br from-blue-50 to-indigo-100 dark:from-gray-900 dark:to-gray-800">
+      <div className="min-h-screen flex items-center justify-center p-4 bg-background">
         <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg p-6 max-w-md">
           <h2 className="text-xl font-semibold text-red-900 dark:text-red-100 mb-2">
             Error
@@ -85,29 +100,29 @@ export default function Home() {
   // Not authenticated - show sign-in options
   if (!user) {
     return (
-      <div className="min-h-screen flex items-center justify-center p-4 bg-gradient-to-br from-blue-50 to-indigo-100 dark:from-gray-900 dark:to-gray-800">
+      <div className="min-h-screen flex items-center justify-center p-4 bg-background">
         <div className="max-w-md w-full space-y-8 text-center">
           <div className="space-y-4">
-            <h1 className="text-4xl font-bold tracking-tight text-gray-900 dark:text-white">
+            <h1 className="text-4xl font-bold tracking-tight">
               Home Hub Kiosk
             </h1>
-            <p className="text-lg text-gray-600 dark:text-gray-300">
+            <p className="text-lg text-muted-foreground">
               Welcome to your household dashboard
             </p>
           </div>
 
-          <div className="bg-white dark:bg-gray-800 shadow-lg rounded-lg p-8 space-y-6">
-            <h2 className="text-xl font-semibold text-gray-900 dark:text-white">
+          <div className="bg-card text-card-foreground shadow-lg rounded-lg p-8 space-y-6 border border-border">
+            <h2 className="text-xl font-semibold">
               Sign In
             </h2>
-            <p className="text-sm text-gray-600 dark:text-gray-400">
+            <p className="text-sm text-muted-foreground">
               Choose your authentication provider to continue
             </p>
 
             <div className="space-y-3">
               <a
                 href="/oauth2/google/start?rd=/kiosk"
-                className="flex items-center justify-center gap-3 w-full px-4 py-3 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-600 transition-colors"
+                className="flex items-center justify-center gap-3 w-full px-4 py-3 bg-card border border-border rounded-lg hover:bg-muted transition-colors"
               >
                 <svg className="w-5 h-5" viewBox="0 0 24 24">
                   <path
@@ -127,14 +142,14 @@ export default function Home() {
                     d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"
                   />
                 </svg>
-                <span className="font-medium text-gray-700 dark:text-gray-200">
+                <span className="font-medium">
                   Sign in with Google
                 </span>
               </a>
 
               <a
                 href="/oauth2/github/start?rd=/kiosk"
-                className="flex items-center justify-center gap-3 w-full px-4 py-3 bg-gray-900 dark:bg-gray-700 border border-gray-800 dark:border-gray-600 rounded-lg hover:bg-gray-800 dark:hover:bg-gray-600 transition-colors"
+                className="flex items-center justify-center gap-3 w-full px-4 py-3 bg-secondary text-secondary-foreground border border-border rounded-lg hover:bg-secondary/80 transition-colors"
               >
                 <svg className="w-5 h-5 text-white" fill="currentColor" viewBox="0 0 24 24">
                   <path
@@ -155,7 +170,7 @@ export default function Home() {
   // Show no household warning
   if (!user.householdId) {
     return (
-      <div className="min-h-screen flex items-center justify-center p-4 bg-gradient-to-br from-blue-50 to-indigo-100 dark:from-gray-900 dark:to-gray-800">
+      <div className="min-h-screen flex items-center justify-center p-4 bg-background">
         <div className="bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-lg p-6 max-w-md">
           <h2 className="text-lg font-semibold text-yellow-900 dark:text-yellow-100 mb-2">
             No Household Associated
@@ -175,8 +190,15 @@ export default function Home() {
     );
   }
 
-  // Render dashboard
-  return <KioskDashboard household={household} householdMembers={householdMembers} />;
+  // Render dashboard wrapped in DeviceProvider
+  return (
+    <DeviceProvider
+      deviceId={kioskId}
+      householdTemperatureUnit={household?.temperatureUnit || 'fahrenheit'}
+    >
+      <KioskDashboard household={household} householdMembers={householdMembers} />
+    </DeviceProvider>
+  );
 }
 
 interface KioskDashboardProps {
@@ -247,5 +269,20 @@ function KioskDashboard({ household, householdMembers }: KioskDashboardProps) {
         />
       </DashboardColumn>
     </DashboardLayout>
+  );
+}
+
+export default function Home() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen flex items-center justify-center bg-background">
+        <div className="flex flex-col items-center space-y-4">
+          <div className="animate-spin rounded-full h-16 w-16 border-b-2 border-primary"></div>
+          <p className="text-lg text-muted-foreground">Loading...</p>
+        </div>
+      </div>
+    }>
+      <HomeContent />
+    </Suspense>
   );
 }

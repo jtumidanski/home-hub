@@ -9,6 +9,7 @@ import {
   formatForecastDate,
 } from '@/lib/api/weather';
 import { Household } from '@/lib/api/households';
+import { useDevice } from '@/contexts/DeviceContext';
 import { Cloud, CloudRain, Sun, Wind } from 'lucide-react';
 
 interface WeatherCardProps {
@@ -19,8 +20,9 @@ interface WeatherCardProps {
 }
 
 export function WeatherCard({ weather, household, loading, error }: WeatherCardProps) {
-  // Get temperature unit from household preference, default to celsius
-  const tempUnit = household?.temperatureUnit || 'celsius';
+  // Get temperature unit from device context (resolves device -> household -> default)
+  const { resolvedTemperatureUnit } = useDevice();
+  const tempUnit = resolvedTemperatureUnit;
   if (error) {
     return (
       <Card title="Weather">

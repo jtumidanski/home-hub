@@ -6,6 +6,7 @@ import { WeatherResponse, formatTemperature, formatForecastDate } from '@/lib/ap
 import { Household } from '@/lib/api/households';
 import { CalendarEvent } from '@/lib/api/calendar';
 import { Task } from '@/lib/api/tasks';
+import { useDevice } from '@/contexts/DeviceContext';
 import { Calendar, CheckSquare, CloudSun } from 'lucide-react';
 
 interface TomorrowPreviewCardProps {
@@ -25,8 +26,9 @@ export function TomorrowPreviewCard({
   loading,
   error,
 }: TomorrowPreviewCardProps) {
-  // Get temperature unit from household preference, default to celsius
-  const tempUnit = household?.temperatureUnit || 'celsius';
+  // Get temperature unit from device context (resolves device -> household -> default)
+  const { resolvedTemperatureUnit } = useDevice();
+  const tempUnit = resolvedTemperatureUnit;
   if (error) {
     return (
       <Card title="Tomorrow">
