@@ -9,19 +9,21 @@ import (
 )
 
 var (
-	ErrNameRequired = errors.New("household name is required")
-	ErrNameEmpty    = errors.New("household name cannot be empty")
+	ErrNameRequired            = errors.New("household name is required")
+	ErrNameEmpty               = errors.New("household name cannot be empty")
+	ErrInvalidTemperatureUnit  = errors.New("temperature unit must be 'celsius' or 'fahrenheit'")
 )
 
 // Builder provides a fluent API for constructing valid Household models
 type Builder struct {
-	id        *uuid.UUID
-	name      *string
-	latitude  *float64
-	longitude *float64
-	timezone  *string
-	createdAt *time.Time
-	updatedAt *time.Time
+	id              *uuid.UUID
+	name            *string
+	latitude        *float64
+	longitude       *float64
+	timezone        *string
+	temperatureUnit *string
+	createdAt       *time.Time
+	updatedAt       *time.Time
 }
 
 // NewBuilder creates a new household builder
@@ -59,6 +61,12 @@ func (b *Builder) SetTimezone(tz string) *Builder {
 	return b
 }
 
+// SetTemperatureUnit sets the temperature display unit preference
+func (b *Builder) SetTemperatureUnit(unit string) *Builder {
+	b.temperatureUnit = &unit
+	return b
+}
+
 // SetCreatedAt sets the creation timestamp
 func (b *Builder) SetCreatedAt(createdAt time.Time) *Builder {
 	b.createdAt = &createdAt
@@ -82,6 +90,14 @@ func (b *Builder) Build() (Model, error) {
 		return Model{}, ErrNameEmpty
 	}
 
+	// Validate temperature unit if provided
+	if b.temperatureUnit != nil {
+		unit := *b.temperatureUnit
+		if unit != "celsius" && unit != "fahrenheit" {
+			return Model{}, ErrInvalidTemperatureUnit
+		}
+	}
+
 	// Generate ID if not provided
 	id := uuid.New()
 	if b.id != nil {
@@ -100,13 +116,14 @@ func (b *Builder) Build() (Model, error) {
 	}
 
 	return Model{
-		id:        id,
-		name:      name,
-		latitude:  b.latitude,
-		longitude: b.longitude,
-		timezone:  b.timezone,
-		createdAt: createdAt,
-		updatedAt: updatedAt,
+		id:              id,
+		name:            name,
+		latitude:        b.latitude,
+		longitude:       b.longitude,
+		timezone:        b.timezone,
+		temperatureUnit: b.temperatureUnit,
+		createdAt:       createdAt,
+		updatedAt:       updatedAt,
 	}, nil
 }
 
@@ -114,12 +131,13 @@ func (b *Builder) Build() (Model, error) {
 // This enables modification flows: model.Builder().SetName(newName).Build()
 func (m Model) Builder() *Builder {
 	return &Builder{
-		id:        &m.id,
-		name:      &m.name,
-		latitude:  m.latitude,
-		longitude: m.longitude,
-		timezone:  m.timezone,
-		createdAt: &m.createdAt,
-		updatedAt: &m.updatedAt,
+		id:              &m.id,
+		name:            &m.name,
+		latitude:        m.latitude,
+		longitude:       m.longitude,
+		timezone:        m.timezone,
+		temperatureUnit: m.temperatureUnit,
+		createdAt:       &m.createdAt,
+		updatedAt:       &m.updatedAt,
 	}
 }

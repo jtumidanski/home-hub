@@ -50,13 +50,19 @@ export async function getWeather(householdId: string, signal?: AbortSignal): Pro
 }
 
 /**
+ * Convert Celsius to Fahrenheit
+ */
+export function celsiusToFahrenheit(celsius: number): number {
+  return (celsius * 9/5) + 32;
+}
+
+/**
  * Format temperature for display
  */
-export function formatTemperature(celsius: number, units: string = 'celsius'): string {
-  if (units === 'celsius') {
-    return `${Math.round(celsius)}°C`;
+export function formatTemperature(celsius: number, unit: 'celsius' | 'fahrenheit' = 'celsius'): string {
+  if (unit === 'fahrenheit') {
+    return `${Math.round(celsiusToFahrenheit(celsius))}°F`;
   }
-  // Future: Add Fahrenheit conversion if needed
   return `${Math.round(celsius)}°C`;
 }
 

@@ -6,13 +6,14 @@ import (
 
 // RestModel represents the JSON:API representation of a household
 type RestModel struct {
-	Id        uuid.UUID `json:"-"`
-	Name      string    `json:"name"`
-	Latitude  *float64  `json:"latitude,omitempty"`
-	Longitude *float64  `json:"longitude,omitempty"`
-	Timezone  *string   `json:"timezone,omitempty"`
-	CreatedAt string    `json:"created_at"`
-	UpdatedAt string    `json:"updated_at"`
+	Id              uuid.UUID `json:"-"`
+	Name            string    `json:"name"`
+	Latitude        *float64  `json:"latitude,omitempty"`
+	Longitude       *float64  `json:"longitude,omitempty"`
+	Timezone        *string   `json:"timezone,omitempty"`
+	TemperatureUnit *string   `json:"temperatureUnit,omitempty"`
+	CreatedAt       string    `json:"created_at"`
+	UpdatedAt       string    `json:"updated_at"`
 }
 
 func (r RestModel) GetName() string {
@@ -42,23 +43,25 @@ func (r *RestModel) SetID(idStr string) error {
 // Transform converts a domain Model to a REST representation
 func Transform(m Model) (RestModel, error) {
 	return RestModel{
-		Id:        m.Id(),
-		Name:      m.Name(),
-		Latitude:  m.Latitude(),
-		Longitude: m.Longitude(),
-		Timezone:  m.Timezone(),
-		CreatedAt: m.CreatedAt().Format("2006-01-02T15:04:05Z07:00"),
-		UpdatedAt: m.UpdatedAt().Format("2006-01-02T15:04:05Z07:00"),
+		Id:              m.Id(),
+		Name:            m.Name(),
+		Latitude:        m.Latitude(),
+		Longitude:       m.Longitude(),
+		Timezone:        m.Timezone(),
+		TemperatureUnit: m.TemperatureUnit(),
+		CreatedAt:       m.CreatedAt().Format("2006-01-02T15:04:05Z07:00"),
+		UpdatedAt:       m.UpdatedAt().Format("2006-01-02T15:04:05Z07:00"),
 	}, nil
 }
 
 // CreateRequest represents a JSON:API request to create a household
 type CreateRequest struct {
-	Id        uuid.UUID `json:"-"`
-	Name      string    `json:"name"`
-	Latitude  *float64  `json:"latitude,omitempty"`
-	Longitude *float64  `json:"longitude,omitempty"`
-	Timezone  *string   `json:"timezone,omitempty"`
+	Id              uuid.UUID `json:"-"`
+	Name            string    `json:"name"`
+	Latitude        *float64  `json:"latitude,omitempty"`
+	Longitude       *float64  `json:"longitude,omitempty"`
+	Timezone        *string   `json:"timezone,omitempty"`
+	TemperatureUnit *string   `json:"temperatureUnit,omitempty"`
 }
 
 func (r CreateRequest) GetName() string {
@@ -88,11 +91,12 @@ func (r *CreateRequest) SetID(idStr string) error {
 
 // UpdateRequest represents a JSON:API request to update a household
 type UpdateRequest struct {
-	Id        uuid.UUID `json:"-"`
-	Name      *string   `json:"name,omitempty"`
-	Latitude  *float64  `json:"latitude,omitempty"`
-	Longitude *float64  `json:"longitude,omitempty"`
-	Timezone  *string   `json:"timezone,omitempty"`
+	Id              uuid.UUID `json:"-"`
+	Name            *string   `json:"name,omitempty"`
+	Latitude        *float64  `json:"latitude,omitempty"`
+	Longitude       *float64  `json:"longitude,omitempty"`
+	Timezone        *string   `json:"timezone,omitempty"`
+	TemperatureUnit *string   `json:"temperatureUnit,omitempty"`
 }
 
 func (r UpdateRequest) GetName() string {

@@ -109,15 +109,16 @@ func createHouseholdHandler(db *gorm.DB) server.InputHandler[CreateRequest] {
 	return func(d *server.HandlerDependency, c *server.HandlerContext, req CreateRequest) http.HandlerFunc {
 		return func(w http.ResponseWriter, r *http.Request) {
 			input := CreateInput{
-				Name:      req.Name,
-				Latitude:  req.Latitude,
-				Longitude: req.Longitude,
-				Timezone:  req.Timezone,
+				Name:            req.Name,
+				Latitude:        req.Latitude,
+				Longitude:       req.Longitude,
+				Timezone:        req.Timezone,
+				TemperatureUnit: req.TemperatureUnit,
 			}
 
 			model, err := NewProcessor(d.Logger(), r.Context(), db).Create(input)()
 			if err != nil {
-				if errors.Is(err, ErrNameRequired) || errors.Is(err, ErrNameEmpty) {
+				if errors.Is(err, ErrNameRequired) || errors.Is(err, ErrNameEmpty) || errors.Is(err, ErrInvalidTemperatureUnit) {
 					d.Logger().WithError(err).Errorf("Validation failed.")
 					w.WriteHeader(http.StatusBadRequest)
 					return
@@ -145,10 +146,11 @@ func updateHouseholdHandler(db *gorm.DB) server.InputHandler[UpdateRequest] {
 		return ParseId(d.Logger(), func(householdId uuid.UUID) http.HandlerFunc {
 			return func(w http.ResponseWriter, r *http.Request) {
 				input := UpdateInput{
-					Name:      req.Name,
-					Latitude:  req.Latitude,
-					Longitude: req.Longitude,
-					Timezone:  req.Timezone,
+					Name:            req.Name,
+					Latitude:        req.Latitude,
+					Longitude:       req.Longitude,
+					Timezone:        req.Timezone,
+					TemperatureUnit: req.TemperatureUnit,
 				}
 
 				model, err := NewProcessor(d.Logger(), r.Context(), db).Update(householdId, input)()
@@ -158,7 +160,7 @@ func updateHouseholdHandler(db *gorm.DB) server.InputHandler[UpdateRequest] {
 						w.WriteHeader(http.StatusNotFound)
 						return
 					}
-					if errors.Is(err, ErrNameRequired) || errors.Is(err, ErrNameEmpty) {
+					if errors.Is(err, ErrNameRequired) || errors.Is(err, ErrNameEmpty) || errors.Is(err, ErrInvalidTemperatureUnit) {
 						d.Logger().WithError(err).Errorf("Validation failed.")
 						w.WriteHeader(http.StatusBadRequest)
 						return

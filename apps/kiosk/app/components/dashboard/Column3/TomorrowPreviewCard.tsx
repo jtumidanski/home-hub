@@ -3,12 +3,14 @@
 import React from 'react';
 import { Card, CardSection } from '@/app/components/ui/Card';
 import { WeatherResponse, formatTemperature, formatForecastDate } from '@/lib/api/weather';
+import { Household } from '@/lib/api/households';
 import { CalendarEvent } from '@/lib/api/calendar';
 import { Task } from '@/lib/api/tasks';
 import { Calendar, CheckSquare, CloudSun } from 'lucide-react';
 
 interface TomorrowPreviewCardProps {
   weather?: WeatherResponse | null;
+  household?: Household | null;
   events?: CalendarEvent[] | null;
   tasks?: Task[] | null;
   loading?: boolean;
@@ -17,11 +19,14 @@ interface TomorrowPreviewCardProps {
 
 export function TomorrowPreviewCard({
   weather,
+  household,
   events,
   tasks,
   loading,
   error,
 }: TomorrowPreviewCardProps) {
+  // Get temperature unit from household preference, default to celsius
+  const tempUnit = household?.temperatureUnit || 'celsius';
   if (error) {
     return (
       <Card title="Tomorrow">
@@ -64,8 +69,8 @@ export function TomorrowPreviewCard({
               <div>
                 <div className="text-sm text-gray-600 dark:text-gray-400">Weather</div>
                 <div className="text-lg font-semibold text-gray-900 dark:text-white">
-                  {formatTemperature(tomorrowForecast.tmax_c, weather?.units || 'celsius')} /{' '}
-                  {formatTemperature(tomorrowForecast.tmin_c, weather?.units || 'celsius')}
+                  {formatTemperature(tomorrowForecast.tmax_c, tempUnit)} /{' '}
+                  {formatTemperature(tomorrowForecast.tmin_c, tempUnit)}
                 </div>
               </div>
             </div>

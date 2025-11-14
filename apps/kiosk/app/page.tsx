@@ -176,14 +176,15 @@ export default function Home() {
   }
 
   // Render dashboard
-  return <KioskDashboard householdMembers={householdMembers} />;
+  return <KioskDashboard household={household} householdMembers={householdMembers} />;
 }
 
 interface KioskDashboardProps {
+  household: Household | null;
   householdMembers: User[];
 }
 
-function KioskDashboard({ householdMembers }: KioskDashboardProps) {
+function KioskDashboard({ household, householdMembers }: KioskDashboardProps) {
   const { user } = useAuth();
   const { data, loading, errors, isRefreshing, refresh } = useDashboardData(user?.householdId);
 
@@ -198,6 +199,7 @@ function KioskDashboard({ householdMembers }: KioskDashboardProps) {
       <DashboardColumn>
         <WeatherCard
           weather={data.weather}
+          household={household}
           loading={loading.weather}
           error={errors.weather}
         />
@@ -227,6 +229,7 @@ function KioskDashboard({ householdMembers }: KioskDashboardProps) {
       <DashboardColumn>
         <TomorrowPreviewCard
           weather={data.weather}
+          household={household}
           events={data.tomorrowEvents}
           tasks={data.tasks}
           loading={loading.tomorrowEvents}

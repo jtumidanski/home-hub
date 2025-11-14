@@ -8,15 +8,19 @@ import {
   formatRelativeTime,
   formatForecastDate,
 } from '@/lib/api/weather';
+import { Household } from '@/lib/api/households';
 import { Cloud, CloudRain, Sun, Wind } from 'lucide-react';
 
 interface WeatherCardProps {
   weather?: WeatherResponse | null;
+  household?: Household | null;
   loading?: boolean;
   error?: string | null;
 }
 
-export function WeatherCard({ weather, loading, error }: WeatherCardProps) {
+export function WeatherCard({ weather, household, loading, error }: WeatherCardProps) {
+  // Get temperature unit from household preference, default to celsius
+  const tempUnit = household?.temperatureUnit || 'celsius';
   if (error) {
     return (
       <Card title="Weather">
@@ -44,7 +48,7 @@ export function WeatherCard({ weather, loading, error }: WeatherCardProps) {
             <div className="flex items-center justify-between">
               <div>
                 <div className="text-5xl font-bold text-gray-900 dark:text-white">
-                  {formatTemperature(weather.current.temperature_c, weather.units)}
+                  {formatTemperature(weather.current.temperature_c, tempUnit)}
                 </div>
                 <div className="text-sm text-gray-600 dark:text-gray-400 mt-1">
                   {formatRelativeTime(weather.current.observed_at)}
@@ -74,10 +78,10 @@ export function WeatherCard({ weather, loading, error }: WeatherCardProps) {
                   </span>
                   <div className="flex items-center gap-4 text-sm">
                     <span className="text-gray-900 dark:text-white font-medium">
-                      {formatTemperature(day.tmax_c, weather.units)}
+                      {formatTemperature(day.tmax_c, tempUnit)}
                     </span>
                     <span className="text-gray-500 dark:text-gray-400">
-                      {formatTemperature(day.tmin_c, weather.units)}
+                      {formatTemperature(day.tmin_c, tempUnit)}
                     </span>
                   </div>
                 </div>

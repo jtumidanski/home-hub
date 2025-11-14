@@ -11,13 +11,14 @@ import (
 // Model represents an immutable household in the domain.
 // All fields are private to enforce immutability.
 type Model struct {
-	id        uuid.UUID
-	name      string
-	latitude  *float64
-	longitude *float64
-	timezone  *string
-	createdAt time.Time
-	updatedAt time.Time
+	id              uuid.UUID
+	name            string
+	latitude        *float64
+	longitude       *float64
+	timezone        *string
+	temperatureUnit *string
+	createdAt       time.Time
+	updatedAt       time.Time
 }
 
 // Id returns the household's unique identifier
@@ -45,6 +46,11 @@ func (m Model) Timezone() *string {
 	return m.timezone
 }
 
+// TemperatureUnit returns the household's preferred temperature display unit
+func (m Model) TemperatureUnit() *string {
+	return m.temperatureUnit
+}
+
 // CreatedAt returns when the household was created
 func (m Model) CreatedAt() time.Time {
 	return m.createdAt
@@ -63,36 +69,39 @@ func (m Model) String() string {
 // MarshalJSON implements json.Marshaler for the Model
 func (m Model) MarshalJSON() ([]byte, error) {
 	type alias struct {
-		Id        uuid.UUID `json:"id"`
-		Name      string    `json:"name"`
-		Latitude  *float64  `json:"latitude,omitempty"`
-		Longitude *float64  `json:"longitude,omitempty"`
-		Timezone  *string   `json:"timezone,omitempty"`
-		CreatedAt time.Time `json:"createdAt"`
-		UpdatedAt time.Time `json:"updatedAt"`
+		Id              uuid.UUID `json:"id"`
+		Name            string    `json:"name"`
+		Latitude        *float64  `json:"latitude,omitempty"`
+		Longitude       *float64  `json:"longitude,omitempty"`
+		Timezone        *string   `json:"timezone,omitempty"`
+		TemperatureUnit *string   `json:"temperatureUnit,omitempty"`
+		CreatedAt       time.Time `json:"createdAt"`
+		UpdatedAt       time.Time `json:"updatedAt"`
 	}
 
 	return json.Marshal(&alias{
-		Id:        m.id,
-		Name:      m.name,
-		Latitude:  m.latitude,
-		Longitude: m.longitude,
-		Timezone:  m.timezone,
-		CreatedAt: m.createdAt,
-		UpdatedAt: m.updatedAt,
+		Id:              m.id,
+		Name:            m.name,
+		Latitude:        m.latitude,
+		Longitude:       m.longitude,
+		Timezone:        m.timezone,
+		TemperatureUnit: m.temperatureUnit,
+		CreatedAt:       m.createdAt,
+		UpdatedAt:       m.updatedAt,
 	})
 }
 
 // UnmarshalJSON implements json.Unmarshaler for the Model
 func (m *Model) UnmarshalJSON(data []byte) error {
 	type alias struct {
-		Id        uuid.UUID `json:"id"`
-		Name      string    `json:"name"`
-		Latitude  *float64  `json:"latitude,omitempty"`
-		Longitude *float64  `json:"longitude,omitempty"`
-		Timezone  *string   `json:"timezone,omitempty"`
-		CreatedAt time.Time `json:"createdAt"`
-		UpdatedAt time.Time `json:"updatedAt"`
+		Id              uuid.UUID `json:"id"`
+		Name            string    `json:"name"`
+		Latitude        *float64  `json:"latitude,omitempty"`
+		Longitude       *float64  `json:"longitude,omitempty"`
+		Timezone        *string   `json:"timezone,omitempty"`
+		TemperatureUnit *string   `json:"temperatureUnit,omitempty"`
+		CreatedAt       time.Time `json:"createdAt"`
+		UpdatedAt       time.Time `json:"updatedAt"`
 	}
 
 	var a alias
@@ -105,6 +114,7 @@ func (m *Model) UnmarshalJSON(data []byte) error {
 	m.latitude = a.Latitude
 	m.longitude = a.Longitude
 	m.timezone = a.Timezone
+	m.temperatureUnit = a.TemperatureUnit
 	m.createdAt = a.CreatedAt
 	m.updatedAt = a.UpdatedAt
 

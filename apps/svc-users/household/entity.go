@@ -16,6 +16,8 @@ type Entity struct {
 	Latitude  *float64  `gorm:"type:double precision"`
 	Longitude *float64  `gorm:"type:double precision"`
 	Timezone  *string   `gorm:"type:varchar(100)"`
+	// Temperature display preference for kiosk ('celsius' or 'fahrenheit')
+	TemperatureUnit *string `gorm:"type:varchar(20);default:'celsius'"`
 	// Timestamps
 	CreatedAt time.Time `gorm:"not null"`
 	UpdatedAt time.Time `gorm:"not null"`
@@ -29,26 +31,28 @@ func (e Entity) TableName() string {
 // Make transforms a database Entity into a domain Model
 func Make(e Entity) (Model, error) {
 	return Model{
-		id:        e.Id,
-		name:      e.Name,
-		latitude:  e.Latitude,
-		longitude: e.Longitude,
-		timezone:  e.Timezone,
-		createdAt: e.CreatedAt,
-		updatedAt: e.UpdatedAt,
+		id:              e.Id,
+		name:            e.Name,
+		latitude:        e.Latitude,
+		longitude:       e.Longitude,
+		timezone:        e.Timezone,
+		temperatureUnit: e.TemperatureUnit,
+		createdAt:       e.CreatedAt,
+		updatedAt:       e.UpdatedAt,
 	}, nil
 }
 
 // ToEntity transforms a domain Model into a database Entity
 func (m Model) ToEntity() Entity {
 	return Entity{
-		Id:        m.id,
-		Name:      m.name,
-		Latitude:  m.latitude,
-		Longitude: m.longitude,
-		Timezone:  m.timezone,
-		CreatedAt: m.createdAt,
-		UpdatedAt: m.updatedAt,
+		Id:              m.id,
+		Name:            m.name,
+		Latitude:        m.latitude,
+		Longitude:       m.longitude,
+		Timezone:        m.timezone,
+		TemperatureUnit: m.temperatureUnit,
+		CreatedAt:       m.createdAt,
+		UpdatedAt:       m.updatedAt,
 	}
 }
 

@@ -12,6 +12,13 @@ import {
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { createHousehold, updateHousehold, Household } from "@/lib/api/households";
 import { toast } from "sonner";
 import { GeocodingSearchInput } from "./GeocodingSearchInput";
@@ -36,6 +43,7 @@ export function HouseholdFormModal({
   const [latitude, setLatitude] = useState<number | undefined>(undefined);
   const [longitude, setLongitude] = useState<number | undefined>(undefined);
   const [timezone, setTimezone] = useState<string | undefined>(undefined);
+  const [temperatureUnit, setTemperatureUnit] = useState<'celsius' | 'fahrenheit'>('celsius');
   const [saving, setSaving] = useState(false);
   const [locating, setLocating] = useState(false);
 
@@ -47,12 +55,14 @@ export function HouseholdFormModal({
         setLatitude(household.latitude);
         setLongitude(household.longitude);
         setTimezone(household.timezone);
+        setTemperatureUnit(household.temperatureUnit || 'celsius');
       } else if (mode === "create") {
         setName("");
         setLatitude(undefined);
         setLongitude(undefined);
         // Auto-detect timezone on create
         setTimezone(Intl.DateTimeFormat().resolvedOptions().timeZone);
+        setTemperatureUnit('celsius');
       }
     }
   }, [open, mode, household]);
@@ -129,7 +139,8 @@ export function HouseholdFormModal({
       (name !== household.name ||
         latitude !== household.latitude ||
         longitude !== household.longitude ||
-        timezone !== household.timezone));
+        timezone !== household.timezone ||
+        temperatureUnit !== (household.temperatureUnit || 'celsius')));
 
   const handleSave = async () => {
     if (!isValid) return;
@@ -143,6 +154,7 @@ export function HouseholdFormModal({
           latitude,
           longitude,
           timezone,
+          temperatureUnit,
         });
         toast.success("Household created successfully");
       } else if (household) {
@@ -151,6 +163,7 @@ export function HouseholdFormModal({
           latitude,
           longitude,
           timezone,
+          temperatureUnit,
         });
         toast.success("Household updated successfully");
       }
@@ -284,6 +297,27 @@ export function HouseholdFormModal({
                 IANA timezone identifier
               </p>
             </div>
+          </div>
+
+          {/* Temperature Unit */}
+          <div className="space-y-2">
+            <Label htmlFor="temperatureUnit">Temperature Display</Label>
+            <Select
+              value={temperatureUnit}
+              onValueChange={(value) => setTemperatureUnit(value as 'celsius' | 'fahrenheit')}
+              disabled={saving}
+            >
+              <SelectTrigger>
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="celsius">Celsius (°C)</SelectItem>
+                <SelectItem value="fahrenheit">Fahrenheit (°F)</SelectItem>
+              </SelectContent>
+            </Select>
+            <p className="text-xs text-muted-foreground">
+              How temperatures are displayed in the kiosk
+            </p>
           </div>
         </div>
 

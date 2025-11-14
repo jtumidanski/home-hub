@@ -31,6 +31,7 @@ export interface HouseholdAttributes {
   latitude?: number;
   longitude?: number;
   timezone?: string;
+  temperatureUnit?: 'celsius' | 'fahrenheit';
   created_at: string;
   updated_at: string;
 }
@@ -44,6 +45,7 @@ export interface Household {
   latitude?: number;
   longitude?: number;
   timezone?: string;
+  temperatureUnit?: 'celsius' | 'fahrenheit';
   createdAt: string;
   updatedAt: string;
 }
@@ -85,6 +87,7 @@ function flattenHousehold(resource: JsonApiResource<HouseholdAttributes>): House
     latitude: resource.attributes.latitude,
     longitude: resource.attributes.longitude,
     timezone: resource.attributes.timezone,
+    temperatureUnit: resource.attributes.temperatureUnit,
     createdAt: resource.attributes.created_at,
     updatedAt: resource.attributes.updated_at,
   };

@@ -19,18 +19,20 @@ var (
 
 // CreateInput contains the data needed to create a new household
 type CreateInput struct {
-	Name      string
-	Latitude  *float64
-	Longitude *float64
-	Timezone  *string
+	Name            string
+	Latitude        *float64
+	Longitude       *float64
+	Timezone        *string
+	TemperatureUnit *string
 }
 
 // UpdateInput contains the data to update an existing household
 type UpdateInput struct {
-	Name      *string
-	Latitude  *float64
-	Longitude *float64
-	Timezone  *string
+	Name            *string
+	Latitude        *float64
+	Longitude       *float64
+	Timezone        *string
+	TemperatureUnit *string
 }
 
 // Processor handles business logic for household operations
@@ -66,6 +68,9 @@ func (p Processor) Create(input CreateInput) ops.Provider[Model] {
 		}
 		if input.Timezone != nil {
 			builder.SetTimezone(*input.Timezone)
+		}
+		if input.TemperatureUnit != nil {
+			builder.SetTemperatureUnit(*input.TemperatureUnit)
 		}
 
 		model, err := builder.Build()
@@ -126,6 +131,9 @@ func (p Processor) Update(id uuid.UUID, input UpdateInput) ops.Provider[Model] {
 		}
 		if input.Timezone != nil {
 			builder.SetTimezone(*input.Timezone)
+		}
+		if input.TemperatureUnit != nil {
+			builder.SetTemperatureUnit(*input.TemperatureUnit)
 		}
 
 		model, err := builder.Build()
