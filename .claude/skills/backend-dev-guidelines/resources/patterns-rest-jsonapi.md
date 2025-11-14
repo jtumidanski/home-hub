@@ -144,14 +144,17 @@ type RestModel struct {
 	UpdatedAt   string    `json:"updated_at"`
 }
 
-func (r *RestModel) GetName() string {
+// GetName uses value receiver - required by api2go interface
+func (r RestModel) GetName() string {
 	return "users"
 }
 
+// GetID uses value receiver - read-only operation
 func (r RestModel) GetID() string {
 	return r.Id.String()
 }
 
+// SetID uses pointer receiver - mutates the model
 func (r *RestModel) SetID(idStr string) error {
 	id, err := uuid.Parse(idStr)
 	if err != nil {
@@ -161,6 +164,11 @@ func (r *RestModel) SetID(idStr string) error {
 	return nil
 }
 ```
+
+**Critical Receiver Type Requirements:**
+- `GetName()` **MUST** use value receiver `(r RestModel)` - required by api2go interface
+- `GetID()` **SHOULD** use value receiver `(r RestModel)` - read-only operation
+- `SetID()` **MUST** use pointer receiver `(r *RestModel)` - mutates the model
 
 ### Request Models
 Request models also implement the JSON:API interface:
@@ -173,14 +181,17 @@ type CreateRequest struct {
 	HouseholdId *uuid.UUID `json:"household_id,omitempty"`
 }
 
-func (r *CreateRequest) GetName() string {
+// GetName uses value receiver - required by api2go interface
+func (r CreateRequest) GetName() string {
 	return "users"
 }
 
+// GetID uses value receiver - read-only operation
 func (r CreateRequest) GetID() string {
 	return r.Id.String()
 }
 
+// SetID uses pointer receiver - mutates the model
 func (r *CreateRequest) SetID(idStr string) error {
 	id, err := uuid.Parse(idStr)
 	if err != nil {
@@ -283,14 +294,17 @@ type AssociateHouseholdRequest struct {
 	Id uuid.UUID `json:"-"`
 }
 
-func (r *AssociateHouseholdRequest) GetName() string {
+// GetName uses value receiver - required by api2go interface
+func (r AssociateHouseholdRequest) GetName() string {
 	return "households"  // Related resource type
 }
 
+// GetID uses value receiver - read-only operation
 func (r AssociateHouseholdRequest) GetID() string {
 	return r.Id.String()
 }
 
+// SetID uses pointer receiver - mutates the model
 func (r *AssociateHouseholdRequest) SetID(idStr string) error {
 	id, err := uuid.Parse(idStr)
 	if err != nil {

@@ -15,7 +15,7 @@ type RestModel struct {
 	UpdatedAt string    `json:"updated_at"`
 }
 
-func (r *RestModel) GetName() string {
+func (r RestModel) GetName() string {
 	return "households"
 }
 
@@ -61,7 +61,7 @@ type CreateRequest struct {
 	Timezone  *string   `json:"timezone,omitempty"`
 }
 
-func (r *CreateRequest) GetName() string {
+func (r CreateRequest) GetName() string {
 	return "households"
 }
 
@@ -95,7 +95,7 @@ type UpdateRequest struct {
 	Timezone  *string   `json:"timezone,omitempty"`
 }
 
-func (r *UpdateRequest) GetName() string {
+func (r UpdateRequest) GetName() string {
 	return "households"
 }
 

@@ -39,7 +39,7 @@ type MetaAttributes struct {
 }
 
 // GetName returns the JSON:API resource name
-func (r *RestModel) GetName() string {
+func (r RestModel) GetName() string {
 	return "weather"
 }
 
