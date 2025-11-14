@@ -14,6 +14,8 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { createHousehold, updateHousehold, Household } from "@/lib/api/households";
 import { toast } from "sonner";
+import { GeocodingSearchInput } from "./GeocodingSearchInput";
+import { getTimezoneFromCoords, type GeocodingResult } from "@/lib/api/geocoding";
 
 interface HouseholdFormModalProps {
   open: boolean;
@@ -54,6 +56,18 @@ export function HouseholdFormModal({
       }
     }
   }, [open, mode, household]);
+
+  // Handle geocoding search selection (city search)
+  const handleGeocodingSelect = async (result: GeocodingResult) => {
+    setLatitude(result.lat);
+    setLongitude(result.lon);
+
+    // Get timezone from coordinates
+    const tz = await getTimezoneFromCoords(result.lat, result.lon);
+    setTimezone(tz);
+
+    toast.success(`Location set to ${result.displayName}`);
+  };
 
   // Get current location using browser Geolocation API
   const handleGetLocation = () => {
@@ -191,20 +205,44 @@ export function HouseholdFormModal({
           </div>
 
           {/* Location section */}
-          <div className="space-y-2">
+          <div className="space-y-4">
             <Label>Location (for weather)</Label>
-            <Button
-              type="button"
-              variant="outline"
-              onClick={handleGetLocation}
-              disabled={saving || locating}
-              className="w-full"
-            >
-              {locating ? "Getting location..." : "Use my current location"}
-            </Button>
-            <p className="text-xs text-muted-foreground">
-              This will use your browser's location to set coordinates and timezone
-            </p>
+
+            {/* Method 1: City Search (recommended for development) */}
+            <div className="space-y-2">
+              <GeocodingSearchInput
+                onLocationSelect={handleGeocodingSelect}
+                disabled={saving || locating}
+              />
+            </div>
+
+            {/* OR divider */}
+            <div className="relative">
+              <div className="absolute inset-0 flex items-center">
+                <span className="w-full border-t border-neutral-200 dark:border-neutral-800" />
+              </div>
+              <div className="relative flex justify-center text-xs uppercase">
+                <span className="bg-white dark:bg-neutral-950 px-2 text-neutral-500">
+                  Or
+                </span>
+              </div>
+            </div>
+
+            {/* Method 2: Browser Geolocation */}
+            <div className="space-y-2">
+              <Button
+                type="button"
+                variant="outline"
+                onClick={handleGetLocation}
+                disabled={saving || locating}
+                className="w-full"
+              >
+                {locating ? "Getting location..." : "Use my current location"}
+              </Button>
+              <p className="text-xs text-muted-foreground">
+                Requires HTTPS and location permission (may not work in development)
+              </p>
+            </div>
           </div>
 
           {/* Manual coordinate entry */}
