@@ -26,6 +26,38 @@ services:
     networks:
       - internal-net
     container_name: hh-users
+  redis:
+    image: redis:7-alpine
+    container_name: hh-redis
+    restart: unless-stopped
+    ports:
+      - "6379:6379"
+    networks:
+      - internal-net
+    volumes:
+      - redis_data:/data
+  svc-weather:
+    build:
+      context: .
+      dockerfile: apps/svc-weather/Dockerfile
+    environment:
+      REDIS_URL: redis://hh-redis:6379/0
+      SVC_USERS_BASE_URL: http://hh-users:8080
+      SVC_USERS_TIMEOUT: 10s
+      HOUSEHOLD_CACHE_TTL: 24h
+      CURRENT_TTL: 5m
+      FORECAST_TTL: 1h
+      STALE_MAX: 24h
+      REFRESH_JITTER: 0.2
+      GEOHASH_PRECISION: 5
+      OPEN_METEO_BASE_URL: https://api.open-meteo.com
+      OPEN_METEO_TIMEOUT: 10s
+    networks:
+      - internal-net
+    container_name: hh-weather
+    depends_on:
+      - redis
+      - svc-users
   pgadmin:
     image: dpage/pgadmin4:8
     container_name: hh-pgadmin
@@ -138,6 +170,7 @@ services:
       - oauth2-proxy-google
       - oauth2-proxy-github
       - svc-users
+      - svc-weather
       - admin
       - kiosk
 networks:
@@ -147,3 +180,6 @@ volumes:
   postgres_data:
     driver: local
   pgadmin_data:
+    driver: local
+  redis_data:
+    driver: local
