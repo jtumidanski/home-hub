@@ -74,6 +74,15 @@ export async function apiClient<T>(
       return undefined as T;
     }
 
+    // Handle 202 Accepted (may have no response body)
+    if (response.status === 202) {
+      const text = await response.text();
+      if (!text || text.trim() === "") {
+        return undefined as T;
+      }
+      return JSON.parse(text) as T;
+    }
+
     // Parse successful response
     const data = await response.json();
     return data as T;
