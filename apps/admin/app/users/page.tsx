@@ -9,6 +9,7 @@ import { UserViewModal } from "@/components/users/UserViewModal";
 import { UserEditModal } from "@/components/users/UserEditModal";
 import { UserHouseholdModal } from "@/components/users/UserHouseholdModal";
 import { UserTasksModal } from "@/components/users/UserTasksModal";
+import { UserRemindersModal } from "@/components/users/UserRemindersModal";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import {
@@ -36,6 +37,7 @@ export default function UsersPage() {
   const [editModalOpen, setEditModalOpen] = useState(false);
   const [householdModalOpen, setHouseholdModalOpen] = useState(false);
   const [tasksModalOpen, setTasksModalOpen] = useState(false);
+  const [remindersModalOpen, setRemindersModalOpen] = useState(false);
 
   // Fetch users and households on mount
   useEffect(() => {
@@ -96,11 +98,17 @@ export default function UsersPage() {
     setTasksModalOpen(true);
   };
 
+  const handleManageReminders = (user: UserWithHousehold) => {
+    setSelectedUser(user);
+    setRemindersModalOpen(true);
+  };
+
   const handleModalClose = () => {
     setViewModalOpen(false);
     setEditModalOpen(false);
     setHouseholdModalOpen(false);
     setTasksModalOpen(false);
+    setRemindersModalOpen(false);
     setSelectedUser(null);
   };
 
@@ -228,6 +236,14 @@ export default function UsersPage() {
             >
               Manage Tasks
             </DropdownMenuItem>
+            <DropdownMenuItem
+              onClick={(e) => {
+                e.stopPropagation();
+                handleManageReminders(user);
+              }}
+            >
+              Manage Reminders
+            </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
       ),
@@ -288,6 +304,12 @@ export default function UsersPage() {
           <UserTasksModal
             user={selectedUser}
             open={tasksModalOpen}
+            onClose={handleModalClose}
+            onSave={handleModalSave}
+          />
+          <UserRemindersModal
+            user={selectedUser}
+            open={remindersModalOpen}
             onClose={handleModalClose}
             onSave={handleModalSave}
           />
