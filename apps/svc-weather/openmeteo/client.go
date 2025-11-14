@@ -63,6 +63,15 @@ func (c *HTTPClient) FetchCurrent(ctx context.Context, lat, lon float64) (Curren
 		return CurrentResponse{}, fmt.Errorf("failed to fetch current weather: %w", err)
 	}
 
+	// Debug log the response from OpenMeteo
+	c.logger.WithFields(logrus.Fields{
+		"response_time":        response.Current.Time,
+		"response_temperature": response.Current.Temperature2m,
+		"response_timezone":    response.Timezone,
+		"response_latitude":    response.Latitude,
+		"response_longitude":   response.Longitude,
+	}).Info("Received current weather response from Open-Meteo")
+
 	return response, nil
 }
 

@@ -348,16 +348,34 @@ func (p *CacheProvider) refreshForecast(ctx context.Context, lat, lon float64, g
 
 // convertCurrentResponse converts Open-Meteo current response to domain model
 func convertCurrentResponse(response openmeteo.CurrentResponse) (CurrentWeather, error) {
-	observedAt, err := time.Parse("2006-01-02T15:04", response.Current.Time)
+	// Load the timezone from the response
+	loc, err := time.LoadLocation(response.Timezone)
+	if err != nil {
+		return CurrentWeather{}, fmt.Errorf("failed to load timezone %s: %w", response.Timezone, err)
+	}
+
+	// Parse the time string in the location's timezone
+	observedAt, err := time.ParseInLocation("2006-01-02T15:04", response.Current.Time, loc)
 	if err != nil {
 		return CurrentWeather{}, fmt.Errorf("failed to parse current time: %w", err)
 	}
 
-	return NewCurrentWeather(
+	current := NewCurrentWeather(
 		response.Current.Temperature2m,
 		observedAt,
 		response.Timezone,
-	), nil
+	)
+
+	// Debug logging to trace the observation time
+	logrus.WithFields(logrus.Fields{
+		"raw_time_string":     response.Current.Time,
+		"parsed_observed_at":  observedAt.Format(time.RFC3339),
+		"observation_age_sec": int64(current.Age().Seconds()),
+		"timezone":            response.Timezone,
+		"temperature":         response.Current.Temperature2m,
+	}).Info("Converted OpenMeteo current weather response")
+
+	return current, nil
 }
 
 // convertForecastResponse converts Open-Meteo forecast response to domain model

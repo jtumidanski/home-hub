@@ -22,7 +22,7 @@ FROM alpine:3.22
 
 EXPOSE 8080
 
-RUN apk add --no-cache libc6-compat ca-certificates
+RUN apk add --no-cache libc6-compat ca-certificates tzdata
 
 WORKDIR /
 
