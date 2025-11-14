@@ -8,6 +8,7 @@ import { DataGrid, ColumnDef } from "@/components/common/DataGrid";
 import { UserViewModal } from "@/components/users/UserViewModal";
 import { UserEditModal } from "@/components/users/UserEditModal";
 import { UserHouseholdModal } from "@/components/users/UserHouseholdModal";
+import { UserTasksModal } from "@/components/users/UserTasksModal";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import {
@@ -34,6 +35,7 @@ export default function UsersPage() {
   const [viewModalOpen, setViewModalOpen] = useState(false);
   const [editModalOpen, setEditModalOpen] = useState(false);
   const [householdModalOpen, setHouseholdModalOpen] = useState(false);
+  const [tasksModalOpen, setTasksModalOpen] = useState(false);
 
   // Fetch users and households on mount
   useEffect(() => {
@@ -89,11 +91,16 @@ export default function UsersPage() {
     setHouseholdModalOpen(true);
   };
 
+  const handleManageTasks = (user: UserWithHousehold) => {
+    setSelectedUser(user);
+    setTasksModalOpen(true);
+  };
 
   const handleModalClose = () => {
     setViewModalOpen(false);
     setEditModalOpen(false);
     setHouseholdModalOpen(false);
+    setTasksModalOpen(false);
     setSelectedUser(null);
   };
 
@@ -213,6 +220,14 @@ export default function UsersPage() {
             >
               Manage Household
             </DropdownMenuItem>
+            <DropdownMenuItem
+              onClick={(e) => {
+                e.stopPropagation();
+                handleManageTasks(user);
+              }}
+            >
+              Manage Tasks
+            </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
       ),
@@ -267,6 +282,12 @@ export default function UsersPage() {
             user={selectedUser}
             currentHouseholdName={selectedUser.householdName}
             open={householdModalOpen}
+            onClose={handleModalClose}
+            onSave={handleModalSave}
+          />
+          <UserTasksModal
+            user={selectedUser}
+            open={tasksModalOpen}
             onClose={handleModalClose}
             onSave={handleModalSave}
           />

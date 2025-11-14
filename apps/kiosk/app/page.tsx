@@ -176,12 +176,21 @@ export default function Home() {
   }
 
   // Render dashboard
-  return <KioskDashboard />;
+  return <KioskDashboard householdMembers={householdMembers} />;
 }
 
-function KioskDashboard() {
+interface KioskDashboardProps {
+  householdMembers: User[];
+}
+
+function KioskDashboard({ householdMembers }: KioskDashboardProps) {
   const { user } = useAuth();
   const { data, loading, errors, isRefreshing, refresh } = useDashboardData(user?.householdId);
+
+  // Build user ID to name map
+  const userNames = new Map(
+    householdMembers.map(member => [member.id, member.displayName])
+  );
 
   return (
     <DashboardLayout>
@@ -201,6 +210,7 @@ function KioskDashboard() {
           tasks={data.tasks}
           loading={loading.tasks}
           error={errors.tasks}
+          userNames={userNames}
         />
       </DashboardColumn>
 

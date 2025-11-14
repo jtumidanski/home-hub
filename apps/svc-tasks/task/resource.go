@@ -8,7 +8,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/gorilla/mux"
 	"github.com/jtumidanski/api2go/jsonapi"
-	"github.com/jtumidanski/home-hub/packages/shared-go/auth"
+	"github.com/jtumidanski/home-hub/apps/svc-tasks/user"
 	"github.com/jtumidanski/home-hub/packages/shared-go/model/ops"
 	"github.com/sirupsen/logrus"
 	"gorm.io/gorm"
@@ -53,10 +53,10 @@ func ParseId(l logrus.FieldLogger, next IdHandler) http.HandlerFunc {
 func listTasksHandler(db *gorm.DB) server.GetHandler {
 	return func(d *server.HandlerDependency, c *server.HandlerContext) http.HandlerFunc {
 		return func(w http.ResponseWriter, r *http.Request) {
-			// Extract auth context
-			authCtx, ok := auth.FromContext(r.Context())
+			// Extract user ID from context (set by user resolver middleware)
+			userId, ok := user.UserIDFromContext(r.Context())
 			if !ok {
-				d.Logger().Error("Auth context not found in /tasks handler")
+				d.Logger().Error("User ID not found in /tasks handler")
 				w.WriteHeader(http.StatusUnauthorized)
 				return
 			}
@@ -78,7 +78,7 @@ func listTasksHandler(db *gorm.DB) server.GetHandler {
 					w.WriteHeader(http.StatusBadRequest)
 					return
 				}
-				models, err = NewProcessor(d.Logger(), r.Context(), db).ListByDay(authCtx.UserId, day)()
+				models, err = NewProcessor(d.Logger(), r.Context(), db).ListByDay(userId, day)()
 			} else if statusStr != "" {
 				// List by status
 				status := Status(statusStr)
@@ -87,10 +87,10 @@ func listTasksHandler(db *gorm.DB) server.GetHandler {
 					w.WriteHeader(http.StatusBadRequest)
 					return
 				}
-				models, err = NewProcessor(d.Logger(), r.Context(), db).ListByStatus(authCtx.UserId, status)()
+				models, err = NewProcessor(d.Logger(), r.Context(), db).ListByStatus(userId, status)()
 			} else {
 				// List all tasks for user
-				models, err = NewProcessor(d.Logger(), r.Context(), db).List(authCtx.UserId)()
+				models, err = NewProcessor(d.Logger(), r.Context(), db).List(userId)()
 			}
 
 			if err != nil {
@@ -116,15 +116,15 @@ func getTaskHandler(db *gorm.DB) server.GetHandler {
 	return func(d *server.HandlerDependency, c *server.HandlerContext) http.HandlerFunc {
 		return ParseId(d.Logger(), func(taskId uuid.UUID) http.HandlerFunc {
 			return func(w http.ResponseWriter, r *http.Request) {
-				// Extract auth context
-				authCtx, ok := auth.FromContext(r.Context())
+				// Extract user ID from context
+				userId, ok := user.UserIDFromContext(r.Context())
 				if !ok {
-					d.Logger().Error("Auth context not found in /tasks/:id handler")
+					d.Logger().Error("User ID not found in /tasks/:id handler")
 					w.WriteHeader(http.StatusUnauthorized)
 					return
 				}
 
-				model, err := NewProcessor(d.Logger(), r.Context(), db).GetById(taskId, authCtx.UserId)()
+				model, err := NewProcessor(d.Logger(), r.Context(), db).GetById(taskId, userId)()
 				if err != nil {
 					if errors.Is(err, ErrTaskNotFound) {
 						d.Logger().WithError(err).Error("Task not found")
@@ -158,11 +158,19 @@ func getTaskHandler(db *gorm.DB) server.GetHandler {
 func createTaskHandler(db *gorm.DB) server.InputHandler[CreateRequest] {
 	return func(d *server.HandlerDependency, c *server.HandlerContext, req CreateRequest) http.HandlerFunc {
 		return func(w http.ResponseWriter, r *http.Request) {
-			// Extract auth context
-			authCtx, ok := auth.FromContext(r.Context())
+			// Extract user ID from context
+			userId, ok := user.UserIDFromContext(r.Context())
 			if !ok {
-				d.Logger().Error("Auth context not found in create task handler")
+				d.Logger().Error("User ID not found in create task handler")
 				w.WriteHeader(http.StatusUnauthorized)
+				return
+			}
+
+			// Extract household ID from context (provided by users service)
+			householdId, ok := user.HouseholdIDFromContext(r.Context())
+			if !ok || householdId == uuid.Nil {
+				d.Logger().Error("Household ID not found in context - user not associated with household")
+				w.WriteHeader(http.StatusBadRequest)
 				return
 			}
 
@@ -174,30 +182,8 @@ func createTaskHandler(db *gorm.DB) server.InputHandler[CreateRequest] {
 				return
 			}
 
-			// TODO: Get household ID from user or auth context
-			// For now, use a placeholder household ID
-			// In production, this should come from the user's household association
-			var householdId uuid.UUID
-			if authCtx.UserId != uuid.Nil {
-				// Query user's household from database
-				var userHouseholdId *uuid.UUID
-				err := db.Table("users").Select("household_id").Where("id = ?", authCtx.UserId).Scan(&userHouseholdId).Error
-				if err != nil {
-					d.Logger().WithError(err).Error("Failed to fetch user's household")
-					w.WriteHeader(http.StatusInternalServerError)
-					return
-				}
-				if userHouseholdId != nil {
-					householdId = *userHouseholdId
-				} else {
-					d.Logger().Error("User is not associated with a household")
-					w.WriteHeader(http.StatusBadRequest)
-					return
-				}
-			}
-
 			input := CreateInput{
-				UserId:      authCtx.UserId,
+				UserId:      userId,
 				HouseholdId: householdId,
 				Day:         day,
 				Title:       req.Title,
@@ -235,10 +221,10 @@ func updateTaskHandler(db *gorm.DB) server.InputHandler[UpdateRequest] {
 	return func(d *server.HandlerDependency, c *server.HandlerContext, req UpdateRequest) http.HandlerFunc {
 		return ParseId(d.Logger(), func(taskId uuid.UUID) http.HandlerFunc {
 			return func(w http.ResponseWriter, r *http.Request) {
-				// Extract auth context
-				authCtx, ok := auth.FromContext(r.Context())
+				// Extract user ID from context
+				userId, ok := user.UserIDFromContext(r.Context())
 				if !ok {
-					d.Logger().Error("Auth context not found in update task handler")
+					d.Logger().Error("User ID not found in update task handler")
 					w.WriteHeader(http.StatusUnauthorized)
 					return
 				}
@@ -270,7 +256,7 @@ func updateTaskHandler(db *gorm.DB) server.InputHandler[UpdateRequest] {
 					input.Status = &status
 				}
 
-				model, err := NewProcessor(d.Logger(), r.Context(), db).Update(taskId, authCtx.UserId, input)()
+				model, err := NewProcessor(d.Logger(), r.Context(), db).Update(taskId, userId, input)()
 				if err != nil {
 					if errors.Is(err, ErrTaskNotFound) {
 						d.Logger().WithError(err).Errorf("Task not found.")
@@ -311,15 +297,15 @@ func deleteTaskHandler(db *gorm.DB) server.GetHandler {
 	return func(d *server.HandlerDependency, c *server.HandlerContext) http.HandlerFunc {
 		return ParseId(d.Logger(), func(taskId uuid.UUID) http.HandlerFunc {
 			return func(w http.ResponseWriter, r *http.Request) {
-				// Extract auth context
-				authCtx, ok := auth.FromContext(r.Context())
+				// Extract user ID from context
+				userId, ok := user.UserIDFromContext(r.Context())
 				if !ok {
-					d.Logger().Error("Auth context not found in delete task handler")
+					d.Logger().Error("User ID not found in delete task handler")
 					w.WriteHeader(http.StatusUnauthorized)
 					return
 				}
 
-				err := NewProcessor(d.Logger(), r.Context(), db).Delete(taskId, authCtx.UserId)
+				err := NewProcessor(d.Logger(), r.Context(), db).Delete(taskId, userId)
 				if err != nil {
 					if errors.Is(err, ErrTaskNotFound) {
 						d.Logger().WithError(err).Errorf("Task not found.")
@@ -347,15 +333,15 @@ func completeTaskHandler(db *gorm.DB) server.GetHandler {
 	return func(d *server.HandlerDependency, c *server.HandlerContext) http.HandlerFunc {
 		return ParseId(d.Logger(), func(taskId uuid.UUID) http.HandlerFunc {
 			return func(w http.ResponseWriter, r *http.Request) {
-				// Extract auth context
-				authCtx, ok := auth.FromContext(r.Context())
+				// Extract user ID from context
+				userId, ok := user.UserIDFromContext(r.Context())
 				if !ok {
-					d.Logger().Error("Auth context not found in complete task handler")
+					d.Logger().Error("User ID not found in complete task handler")
 					w.WriteHeader(http.StatusUnauthorized)
 					return
 				}
 
-				model, err := NewProcessor(d.Logger(), r.Context(), db).Complete(taskId, authCtx.UserId)()
+				model, err := NewProcessor(d.Logger(), r.Context(), db).Complete(taskId, userId)()
 				if err != nil {
 					if errors.Is(err, ErrTaskNotFound) {
 						d.Logger().WithError(err).Errorf("Task not found.")

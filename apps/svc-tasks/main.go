@@ -1,9 +1,11 @@
 package main
 
 import (
+	"os"
+
 	"github.com/gorilla/mux"
 	"github.com/jtumidanski/home-hub/apps/svc-tasks/task"
-	"github.com/jtumidanski/home-hub/packages/shared-go/auth"
+	"github.com/jtumidanski/home-hub/apps/svc-tasks/user"
 	"github.com/jtumidanski/home-hub/packages/shared-go/database"
 	"github.com/jtumidanski/home-hub/packages/shared-go/logger"
 	"github.com/jtumidanski/home-hub/packages/shared-go/rest/server"
@@ -47,25 +49,27 @@ func main() {
 
 	db := database.Connect(l, database.SetMigrations(Migration()))
 
-	// Create auth providers (reuse svc-users database)
-	userProvider := auth.NewSimpleUserProvider(db)
-	roleProvider := auth.NewSimpleRoleProvider(db)
+	// Get users service base URL from environment
+	usersServiceURL := os.Getenv("SVC_USERS_BASE_URL")
+	if usersServiceURL == "" {
+		usersServiceURL = "http://hh-users:8080" // Default for docker-compose
+	}
 
-	// Create optional auth middleware - allows service-to-service calls without auth
-	// while still authenticating requests that come through nginx
-	authMiddleware := auth.OptionalMiddleware(l, db, userProvider, roleProvider)
+	// Create users service client for resolving user IDs
+	usersClient := user.NewClient(usersServiceURL)
 
-	// Create custom route initializer with auth middleware
-	authRouteInitializer := func(router *mux.Router, logger logrus.FieldLogger) {
-		// Apply optional auth middleware to all routes
-		router.Use(authMiddleware)
+	// Create route initializer (auth is handled by nginx/gateway)
+	// We call the users service to resolve the email to user ID
+	routeInitializer := func(router *mux.Router, logger logrus.FieldLogger) {
+		// Apply user resolver middleware to all routes
+		router.Use(user.UserResolverMiddleware(l, usersClient))
 
 		// Initialize task routes
 		task.InitializeRoutes(GetServer())(db)(router, logger)
 	}
 
 	server.CreateService(l, tdm.Context(), tdm.WaitGroup(), GetServer().GetPrefix(),
-		authRouteInitializer,
+		routeInitializer,
 	)
 
 	tdm.TeardownFunc(tracing.Teardown(l)(tc))

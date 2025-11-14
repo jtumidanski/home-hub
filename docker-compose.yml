@@ -38,6 +38,7 @@ services:
       DB_USER: ${DB_USER}
       DB_PASSWORD: ${DB_PASSWORD}
       LOG_LEVEL: #{LOG_LEVEL}
+      SVC_USERS_BASE_URL: http://hh-users:8080
     networks:
       - internal-net
     container_name: hh-tasks
@@ -190,6 +191,7 @@ services:
       - oauth2-proxy-github
       - svc-users
       - svc-weather
+      - svc-tasks
       - admin
       - kiosk
 networks:

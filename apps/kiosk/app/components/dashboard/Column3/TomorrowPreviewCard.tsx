@@ -116,30 +116,30 @@ export function TomorrowPreviewCard({
             <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
               Tasks
             </span>
-            <span className="text-xs bg-yellow-100 dark:bg-yellow-900/30 text-yellow-800 dark:text-yellow-200 px-2 py-0.5 rounded">
-              Preview
-            </span>
           </div>
-          {tasks && tasks.length > 0 ? (
-            <div className="space-y-1">
-              {tasks.slice(0, 3).map(task => (
-                <div
-                  key={task.id}
-                  className="text-sm text-gray-700 dark:text-gray-300 flex items-center gap-2"
-                >
-                  <span className="w-1.5 h-1.5 bg-gray-400 dark:bg-gray-600 rounded-full"></span>
-                  {task.title}
-                </div>
-              ))}
-              {tasks.length > 3 && (
-                <p className="text-xs text-gray-500 dark:text-gray-400 italic">
-                  +{tasks.length - 3} more
-                </p>
-              )}
-            </div>
-          ) : (
-            <p className="text-sm text-gray-500 dark:text-gray-400 italic">No tasks</p>
-          )}
+          {(() => {
+            const incompleteTasks = tasks?.filter(t => t.status !== 'complete') || [];
+            return incompleteTasks.length > 0 ? (
+              <div className="space-y-1">
+                {incompleteTasks.slice(0, 3).map(task => (
+                  <div
+                    key={task.id}
+                    className="text-sm text-gray-700 dark:text-gray-300 flex items-center gap-2"
+                  >
+                    <span className="w-1.5 h-1.5 bg-gray-400 dark:bg-gray-600 rounded-full"></span>
+                    {task.title}
+                  </div>
+                ))}
+                {incompleteTasks.length > 3 && (
+                  <p className="text-xs text-gray-500 dark:text-gray-400 italic">
+                    +{incompleteTasks.length - 3} more
+                  </p>
+                )}
+              </div>
+            ) : (
+              <p className="text-sm text-gray-500 dark:text-gray-400 italic">No tasks</p>
+            );
+          })()}
         </CardSection>
       </div>
     </Card>
