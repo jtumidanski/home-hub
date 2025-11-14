@@ -48,6 +48,16 @@ func getCombinedHandler(provider Provider, tracker HouseholdTracker) server.GetH
 			combined, stale, err := provider.GetCombined(r.Context(), householdID)
 			if err != nil {
 				d.Logger().WithError(err).WithField("household_id", householdID).Error("Failed to get combined weather")
+
+				// Trigger immediate refresh on cache miss to populate data
+				go func() {
+					if refreshErr := provider.Refresh(context.Background(), householdID); refreshErr != nil {
+						d.Logger().WithError(refreshErr).WithField("household_id", householdID).Warn("Failed to trigger initial refresh")
+					} else {
+						d.Logger().WithField("household_id", householdID).Info("Triggered initial weather refresh")
+					}
+				}()
+
 				w.WriteHeader(http.StatusServiceUnavailable)
 				return
 			}
@@ -74,6 +84,16 @@ func getCurrentHandler(provider Provider, tracker HouseholdTracker) server.GetHa
 			current, stale, err := provider.GetCurrent(r.Context(), householdID)
 			if err != nil {
 				d.Logger().WithError(err).WithField("household_id", householdID).Error("Failed to get current weather")
+
+				// Trigger immediate refresh on cache miss to populate data
+				go func() {
+					if refreshErr := provider.RefreshCurrent(context.Background(), householdID); refreshErr != nil {
+						d.Logger().WithError(refreshErr).WithField("household_id", householdID).Warn("Failed to trigger initial current refresh")
+					} else {
+						d.Logger().WithField("household_id", householdID).Info("Triggered initial current weather refresh")
+					}
+				}()
+
 				w.WriteHeader(http.StatusServiceUnavailable)
 				return
 			}
@@ -123,6 +143,16 @@ func getForecastHandler(provider Provider, tracker HouseholdTracker) server.GetH
 			forecast, stale, err := provider.GetForecast(r.Context(), householdID, days)
 			if err != nil {
 				d.Logger().WithError(err).WithField("household_id", householdID).Error("Failed to get forecast weather")
+
+				// Trigger immediate refresh on cache miss to populate data
+				go func() {
+					if refreshErr := provider.RefreshForecast(context.Background(), householdID); refreshErr != nil {
+						d.Logger().WithError(refreshErr).WithField("household_id", householdID).Warn("Failed to trigger initial forecast refresh")
+					} else {
+						d.Logger().WithField("household_id", householdID).Info("Triggered initial forecast weather refresh")
+					}
+				}()
+
 				w.WriteHeader(http.StatusServiceUnavailable)
 				return
 			}
