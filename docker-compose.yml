@@ -23,6 +23,7 @@ services:
       DB_NAME: svc-users
       DB_USER: ${DB_USER}
       DB_PASSWORD: ${DB_PASSWORD}
+      LOG_LEVEL: #{LOG_LEVEL}
     networks:
       - internal-net
     container_name: hh-users
@@ -36,6 +37,7 @@ services:
       DB_NAME: svc-tasks
       DB_USER: ${DB_USER}
       DB_PASSWORD: ${DB_PASSWORD}
+      LOG_LEVEL: #{LOG_LEVEL}
     networks:
       - internal-net
     container_name: hh-tasks
@@ -61,13 +63,14 @@ services:
       SVC_USERS_BASE_URL: http://hh-users:8080
       SVC_USERS_TIMEOUT: 10s
       HOUSEHOLD_CACHE_TTL: 24h
-      CURRENT_TTL: 5m
-      FORECAST_TTL: 1h
+      CURRENT_TTL: 30s
+      FORECAST_TTL: 30s
       STALE_MAX: 24h
       REFRESH_JITTER: 0.2
       GEOHASH_PRECISION: 5
       OPEN_METEO_BASE_URL: https://api.open-meteo.com
       OPEN_METEO_TIMEOUT: 10s
+      LOG_LEVEL: #{LOG_LEVEL}
     networks:
       - internal-net
     container_name: hh-weather
