@@ -8,6 +8,7 @@ import (
 	"github.com/jtumidanski/home-hub/apps/svc-weather/openmeteo"
 	"github.com/jtumidanski/home-hub/apps/svc-weather/scheduler"
 	"github.com/jtumidanski/home-hub/apps/svc-weather/weather"
+	"github.com/jtumidanski/home-hub/packages/shared-go/health"
 	"github.com/jtumidanski/home-hub/packages/shared-go/logger"
 	"github.com/jtumidanski/home-hub/packages/shared-go/rest/server"
 	"github.com/jtumidanski/home-hub/packages/shared-go/service"
@@ -15,7 +16,10 @@ import (
 	"github.com/sirupsen/logrus"
 )
 
-const serviceName = "svc-weather"
+const (
+	serviceName = "svc-weather"
+	version     = "1.0.0"
+)
 
 type Server struct {
 	baseUrl string
@@ -131,8 +135,16 @@ func main() {
 		}
 	})
 
+	// Create health check aggregator with cache check
+	healthChecker := health.NewAggregator(
+		health.NewCacheCheck(cacheClient),
+	)
+
 	// Create route initializer (auth is handled by nginx/gateway)
 	routeInitializer := func(router *mux.Router, logger logrus.FieldLogger) {
+		// Register health endpoint (unauthenticated)
+		router.HandleFunc("/health", health.Handler(serviceName, version, healthChecker, logger)).Methods("GET")
+
 		// Initialize weather routes (pass scheduler for household tracking)
 		weather.InitializeRoutes(GetServer(), weatherProvider, weatherScheduler)(router, logger)
 	}

@@ -7,6 +7,7 @@ import (
 	"github.com/jtumidanski/home-hub/apps/svc-users/user/preference"
 	"github.com/jtumidanski/home-hub/packages/shared-go/auth"
 	"github.com/jtumidanski/home-hub/packages/shared-go/database"
+	"github.com/jtumidanski/home-hub/packages/shared-go/health"
 	"github.com/jtumidanski/home-hub/packages/shared-go/logger"
 	"github.com/jtumidanski/home-hub/packages/shared-go/rest/server"
 	"github.com/jtumidanski/home-hub/packages/shared-go/service"
@@ -14,7 +15,10 @@ import (
 	"github.com/sirupsen/logrus"
 )
 
-const serviceName = "svc-users"
+const (
+	serviceName = "svc-users"
+	version     = "1.0.0"
+)
 
 type Server struct {
 	baseUrl string
@@ -49,6 +53,11 @@ func main() {
 
 	db := database.Connect(l, database.SetMigrations(Migration()))
 
+	// Create health check aggregator
+	healthChecker := health.NewAggregator(
+		health.NewDatabaseCheck(db),
+	)
+
 	// Create auth providers
 	userProvider := auth.NewSimpleUserProvider(db)
 	roleProvider := auth.NewSimpleRoleProvider(db)
@@ -59,6 +68,9 @@ func main() {
 
 	// Create custom route initializer with auth middleware
 	authRouteInitializer := func(router *mux.Router, logger logrus.FieldLogger) {
+		// Register health endpoint (unauthenticated)
+		router.HandleFunc("/health", health.Handler(serviceName, version, healthChecker, logger)).Methods("GET")
+
 		// Apply optional auth middleware to all routes
 		router.Use(authMiddleware)
 

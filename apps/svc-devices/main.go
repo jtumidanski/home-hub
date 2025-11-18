@@ -8,6 +8,7 @@ import (
 	"github.com/jtumidanski/home-hub/apps/svc-devices/device/preference"
 	"github.com/jtumidanski/home-hub/apps/svc-devices/user"
 	"github.com/jtumidanski/home-hub/packages/shared-go/database"
+	"github.com/jtumidanski/home-hub/packages/shared-go/health"
 	"github.com/jtumidanski/home-hub/packages/shared-go/logger"
 	"github.com/jtumidanski/home-hub/packages/shared-go/rest/server"
 	"github.com/jtumidanski/home-hub/packages/shared-go/service"
@@ -15,7 +16,10 @@ import (
 	"github.com/sirupsen/logrus"
 )
 
-const serviceName = "svc-devices"
+const (
+	serviceName = "svc-devices"
+	version     = "1.0.0"
+)
 
 type Server struct {
 	baseUrl string
@@ -50,6 +54,11 @@ func main() {
 
 	db := database.Connect(l, database.SetMigrations(Migration()))
 
+	// Create health check aggregator
+	healthChecker := health.NewAggregator(
+		health.NewDatabaseCheck(db),
+	)
+
 	// Get users service base URL from environment
 	usersServiceURL := os.Getenv("SVC_USERS_BASE_URL")
 	if usersServiceURL == "" {
@@ -62,6 +71,9 @@ func main() {
 	// Create route initializer (auth is handled by nginx/gateway)
 	// We call the users service to resolve the email to user ID
 	routeInitializer := func(router *mux.Router, logger logrus.FieldLogger) {
+		// Register health endpoint (unauthenticated)
+		router.HandleFunc("/health", health.Handler(serviceName, version, healthChecker, logger)).Methods("GET")
+
 		// Apply user resolver middleware to all routes
 		router.Use(user.UserResolverMiddleware(l, usersClient))
 

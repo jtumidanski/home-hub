@@ -37,3 +37,8 @@ coverage/
 apps/svc-users/svc-users
 apps/svc-weather/svc-weather
 apps/svc-reminders/svc-reminders
+svc-devices
+svc-reminders
+svc-tasks
+svc-users
+svc-weather
