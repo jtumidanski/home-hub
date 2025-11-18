@@ -1,17 +1,39 @@
 'use client';
 
+import { usePathname, useRouter } from 'next/navigation';
+import { ArrowLeft } from 'lucide-react';
 import { UserProfile } from "@/components/auth/UserProfile";
+import { Button } from '@/components/ui/button';
 
 export interface MobileHeaderProps {
   // Future: could add props for title customization, etc.
 }
 
 export function MobileHeader({}: MobileHeaderProps) {
+  const pathname = usePathname();
+  const router = useRouter();
+  const isRootPage = pathname === '/';
+
+  const handleBack = () => {
+    router.push('/');
+  };
+
   return (
     <header className="sticky top-0 z-[60] w-full border-b border-neutral-200 bg-white/95 backdrop-blur supports-[backdrop-filter]:bg-white/60 dark:border-neutral-800 dark:bg-neutral-950/95">
       <div className="flex h-16 items-center justify-between px-4">
-        {/* Logo and Title */}
+        {/* Logo and Title or Back Button */}
         <div className="flex items-center gap-2">
+          {!isRootPage && (
+            <Button
+              variant="ghost"
+              size="icon-sm"
+              onClick={handleBack}
+              className="mr-1"
+              aria-label="Back to dashboard"
+            >
+              <ArrowLeft className="h-5 w-5" />
+            </Button>
+          )}
           <div className="flex h-8 w-8 items-center justify-center rounded-md bg-neutral-900 dark:bg-neutral-100">
             <span className="text-sm font-bold text-white dark:text-neutral-900">
               HH
