@@ -46,6 +46,7 @@ home-hub/
     migrators/               # One per service (AutoMigrate + SQL)
     kiosk/                   # React/Tailwind (Next.js)
     admin/                   # React/Tailwind (Next.js)
+    mobile/                  # React/Tailwind (Next.js) - Mobile dashboard
   docker-compose.yml
   nginx.conf
   Taskfile.yml
@@ -107,7 +108,7 @@ All workers are headless and communicate with their owning service DBs.
 
 ## 7. Local Development Stack
 
-- **Frontend:** kiosk (`5173`), admin (`5174`)
+- **Frontend:** kiosk (`5173`), admin (`5174`), mobile (`5175`)
 - **Backend:** gateway (`8080`)
 - **Proxy:** nginx (`3000`)
 - **Databases:** one Postgres per service
@@ -116,6 +117,7 @@ All workers are headless and communicate with their owning service DBs.
   task dev
   # http://localhost:3000/kiosk/
   # http://localhost:3000/admin/
+  # http://localhost:3000/mobile/
   # API via http://localhost:3000/api/
   ```
 
@@ -149,7 +151,7 @@ All workers are headless and communicate with their owning service DBs.
 
 | Layer | Description |
 |--------|-------------|
-| **Ingress (NGINX / Traefik)** | Handles `/api`, `/kiosk`, `/admin` |
+| **Ingress (NGINX / Traefik)** | Handles `/api`, `/kiosk`, `/admin`, `/mobile` |
 | **Gateway** | Auth, routing, aggregation |
 | **Domain Services** | Isolated per schema |
 | **Workers** | Background jobs per domain |
