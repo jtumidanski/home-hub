@@ -1,7 +1,9 @@
 go 1.24.4
 
 use (
+	./apps/svc-ai
 	./apps/svc-devices
+	./apps/svc-meals
 	./apps/svc-reminders
 	./apps/svc-tasks
 	./apps/svc-users

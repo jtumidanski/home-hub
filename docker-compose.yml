@@ -114,6 +114,45 @@ services:
     depends_on:
       - db
       - svc-users
+  svc-ai:
+    build:
+      context: .
+      dockerfile: apps/svc-ai/Dockerfile
+    environment:
+      AI_INGREDIENT_PROVIDER: ${AI_INGREDIENT_PROVIDER:-disabled}
+      OLLAMA_BASE_URL: ${OLLAMA_BASE_URL:-http://ollama:11434}
+      OLLAMA_MODEL_NAME: ${OLLAMA_MODEL_NAME:-llama3}
+      OLLAMA_TIMEOUT_MS: ${OLLAMA_TIMEOUT_MS:-90000}
+      CLOUD_AI_BASE_URL: ${CLOUD_AI_BASE_URL:-}
+      CLOUD_AI_MODEL_NAME: ${CLOUD_AI_MODEL_NAME:-gpt-4o-mini}
+      CLOUD_AI_API_KEY: ${CLOUD_AI_API_KEY:-}
+      CLOUD_AI_TIMEOUT_MS: ${CLOUD_AI_TIMEOUT_MS:-90000}
+      CLOUD_AI_MAX_RPS: ${CLOUD_AI_MAX_RPS:-1}
+      LOG_LEVEL: #{LOG_LEVEL}
+    networks:
+      - internal-net
+    container_name: hh-ai
+  svc-meals:
+    build:
+      context: .
+      dockerfile: apps/svc-meals/Dockerfile
+    environment:
+      DB_HOST: hh-db
+      DB_PORT: ${DB_PORT}
+      DB_NAME: svc-meals
+      DB_USER: ${DB_USER}
+      DB_PASSWORD: ${DB_PASSWORD}
+      LOG_LEVEL: #{LOG_LEVEL}
+      SVC_USERS_BASE_URL: http://hh-users:8080
+      SVC_AI_BASE_URL: http://hh-ai:8080
+      SVC_AI_TIMEOUT_SECONDS: ${SVC_AI_TIMEOUT_SECONDS:-120}
+    networks:
+      - internal-net
+    container_name: hh-meals
+    depends_on:
+      - db
+      - svc-users
+      - svc-ai
   pgadmin:
     image: dpage/pgadmin4:8
     container_name: hh-pgadmin
@@ -244,6 +283,7 @@ services:
       - svc-tasks
       - svc-reminders
       - svc-devices
+      - svc-meals
       - admin
       - kiosk
       - mobile

@@ -42,3 +42,5 @@ svc-reminders
 svc-tasks
 svc-users
 svc-weather
+apps/svc-ai/svc-ai
+apps/svc-meals/svc-meals
