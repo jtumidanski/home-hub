@@ -87,6 +87,6 @@ export async function fetchMe(): Promise<MeResponse | null> {
  */
 export function logout(provider: 'google' | 'github' = 'google'): void {
   // Redirect to oauth2-proxy sign out endpoint
-  // This will clear the session cookie and redirect back
-  window.location.href = `/oauth2/${provider}/sign_out`;
+  // This will clear the session cookie and redirect back to root landing page
+  window.location.href = `/oauth2/${provider}/sign_out?rd=/`;
 }
