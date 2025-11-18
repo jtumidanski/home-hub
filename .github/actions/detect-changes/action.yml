@@ -1,0 +1,95 @@
+name: 'Detect Changed Services'
+description: 'Detects which services need to be built based on changed files, with special handling for shared-go dependencies'
+outputs:
+  services:
+    description: 'JSON array of services that need to be built'
+    value: ${{ steps.detect.outputs.services }}
+  has_changes:
+    description: 'Boolean indicating if any services need to be built'
+    value: ${{ steps.detect.outputs.has_changes }}
+
+runs:
+  using: 'composite'
+  steps:
+    - name: Get changed files
+      id: changed-files
+      uses: tj-actions/changed-files@v44
+      with:
+        files_yaml: |
+          shared_go:
+            - packages/shared-go/**
+          svc_users:
+            - apps/svc-users/**
+          svc_tasks:
+            - apps/svc-tasks/**
+          svc_weather:
+            - apps/svc-weather/**
+          svc_reminders:
+            - apps/svc-reminders/**
+          admin:
+            - apps/admin/**
+          kiosk:
+            - apps/kiosk/**
+          go_work:
+            - go.work
+            - go.work.sum
+
+    - name: Detect changed services
+      id: detect
+      shell: bash
+      run: |
+        services=()
+
+        # If shared-go or go.work changes, rebuild all Go services
+        if [[ "${{ steps.changed-files.outputs.shared_go_any_changed }}" == "true" ]] || \
+           [[ "${{ steps.changed-files.outputs.go_work_any_changed }}" == "true" ]]; then
+          echo "📦 Shared Go library or workspace changed - rebuilding all Go services"
+          services+=("svc-users" "svc-tasks" "svc-weather" "svc-reminders")
+        else
+          # Check individual Go services
+          if [[ "${{ steps.changed-files.outputs.svc_users_any_changed }}" == "true" ]]; then
+            echo "🔧 svc-users changed"
+            services+=("svc-users")
+          fi
+
+          if [[ "${{ steps.changed-files.outputs.svc_tasks_any_changed }}" == "true" ]]; then
+            echo "🔧 svc-tasks changed"
+            services+=("svc-tasks")
+          fi
+
+          if [[ "${{ steps.changed-files.outputs.svc_weather_any_changed }}" == "true" ]]; then
+            echo "🔧 svc-weather changed"
+            services+=("svc-weather")
+          fi
+
+          if [[ "${{ steps.changed-files.outputs.svc_reminders_any_changed }}" == "true" ]]; then
+            echo "🔧 svc-reminders changed"
+            services+=("svc-reminders")
+          fi
+        fi
+
+        # Check Next.js apps (independent of Go workspace)
+        if [[ "${{ steps.changed-files.outputs.admin_any_changed }}" == "true" ]]; then
+          echo "🖥️  admin changed"
+          services+=("admin")
+        fi
+
+        if [[ "${{ steps.changed-files.outputs.kiosk_any_changed }}" == "true" ]]; then
+          echo "🖥️  kiosk changed"
+          services+=("kiosk")
+        fi
+
+        # Remove duplicates and convert to JSON array
+        unique_services=($(echo "${services[@]}" | tr ' ' '\n' | sort -u | tr '\n' ' '))
+
+        if [ ${#unique_services[@]} -eq 0 ]; then
+          echo "✅ No services changed"
+          echo "services=[]" >> $GITHUB_OUTPUT
+          echo "has_changes=false" >> $GITHUB_OUTPUT
+        else
+          echo "🚀 Services to build: ${unique_services[*]}"
+          # Convert bash array to JSON array
+          json_array=$(printf '%s\n' "${unique_services[@]}" | jq -R . | jq -s -c .)
+          echo "services=$json_array" >> $GITHUB_OUTPUT
+          echo "has_changes=true" >> $GITHUB_OUTPUT
+        fi
