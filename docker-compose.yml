@@ -155,6 +155,20 @@ services:
       - "5173:5173"
     networks:
       - internal-net
+  mobile:
+    build:
+      context: .
+      dockerfile: apps/mobile/Dockerfile
+    container_name: hh-mobile
+    restart: unless-stopped
+    environment:
+      NODE_ENV: production
+      NEXT_PUBLIC_API_URL: http://localhost:3000/api
+      NEXT_PUBLIC_APP_ENV: production
+    ports:
+      - "5175:5175"
+    networks:
+      - internal-net
   oauth2-proxy-google:
     image: quay.io/oauth2-proxy/oauth2-proxy:v7.6.0
     container_name: hh-oauth2-google
@@ -232,6 +246,7 @@ services:
       - svc-devices
       - admin
       - kiosk
+      - mobile
 networks:
   internal-net:
     name: internal-net
