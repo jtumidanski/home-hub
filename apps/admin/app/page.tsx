@@ -13,11 +13,13 @@ import { Building2, Users, Monitor, Activity } from "lucide-react";
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { getHouseholdCount, getUserCount } from "@/lib/api/users";
+import { getDevices } from "@/lib/api/devices";
 
 export default function Home() {
   const { user, loading } = useAuth();
   const [householdCount, setHouseholdCount] = useState<number | null>(null);
   const [userCount, setUserCount] = useState<number | null>(null);
+  const [deviceCount, setDeviceCount] = useState<number | null>(null);
   const [countsLoading, setCountsLoading] = useState(true);
   const [countsError, setCountsError] = useState<string | null>(null);
 
@@ -33,13 +35,15 @@ export default function Home() {
         setCountsLoading(true);
         setCountsError(null);
 
-        const [households, users] = await Promise.all([
+        const [households, users, devices] = await Promise.all([
           getHouseholdCount(),
           getUserCount(),
+          getDevices(),
         ]);
 
         setHouseholdCount(households);
         setUserCount(users);
+        setDeviceCount(devices.length);
       } catch (error) {
         console.error("Failed to fetch counts:", error);
         setCountsError(
@@ -160,11 +164,25 @@ export default function Home() {
             <CardTitle className="text-sm font-medium">
               Registered Devices
             </CardTitle>
-            <Monitor className="h-4 w-4 text-muted-foreground" />
+            <Link href="/devices">
+              <Monitor className="h-4 w-4 text-muted-foreground hover:text-primary transition-colors cursor-pointer" />
+            </Link>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">—</div>
-            <p className="text-xs text-muted-foreground">Placeholder data</p>
+            <div className="text-2xl font-bold">
+              {countsLoading ? (
+                <span className="text-neutral-400">...</span>
+              ) : countsError ? (
+                <span className="text-red-600 text-sm">Error</span>
+              ) : deviceCount !== null ? (
+                deviceCount
+              ) : (
+                "—"
+              )}
+            </div>
+            <p className="text-xs text-muted-foreground">
+              {countsError ? "Unable to fetch data" : "Registered devices"}
+            </p>
           </CardContent>
         </Card>
 
