@@ -3,6 +3,7 @@
 import { useAuth } from '@/lib/auth';
 import { useMobileDashboard } from '@/lib/hooks/useMobileDashboard';
 import { MobileDashboardLayout } from '@/app/components/MobileDashboardLayout';
+import { MobileHeader } from '@/components/layout/MobileHeader';
 import { WeatherCard } from '@/app/components/WeatherCard';
 import { RemindersCountCard } from '@/app/components/RemindersCountCard';
 import { TasksCountCard } from '@/app/components/TasksCountCard';
@@ -79,7 +80,7 @@ function MobileDashboard({ householdId }: MobileDashboardProps) {
   const { data, loading, errors } = useMobileDashboard(householdId);
 
   return (
-    <MobileDashboardLayout>
+    <MobileDashboardLayout header={<MobileHeader />}>
       {/* Weather Card - Top Left */}
       <WeatherCard
         weather={data.weather}

@@ -36,14 +36,14 @@ export function WeatherCard({
 
   if (loading) {
     return (
-      <div className="bg-white border border-gray-200 rounded-lg p-6 shadow-sm">
+      <div className="bg-card border border-border rounded-lg p-6 shadow-sm">
         <div className="animate-pulse space-y-4">
-          <div className="h-8 bg-gray-200 rounded w-1/3"></div>
+          <div className="h-8 bg-muted rounded w-1/3"></div>
           <div className="flex items-center justify-between">
-            <div className="h-24 w-24 bg-gray-200 rounded-full"></div>
-            <div className="h-16 bg-gray-200 rounded w-1/3"></div>
+            <div className="h-24 w-24 bg-muted rounded-full"></div>
+            <div className="h-16 bg-muted rounded w-1/3"></div>
           </div>
-          <div className="h-4 bg-gray-200 rounded w-1/2"></div>
+          <div className="h-4 bg-muted rounded w-1/2"></div>
         </div>
       </div>
     );
@@ -51,17 +51,17 @@ export function WeatherCard({
 
   if (error) {
     return (
-      <div className="bg-white border border-red-300 rounded-lg p-6 shadow-sm">
-        <p className="text-sm text-red-600">Failed to load weather</p>
-        <p className="text-xs text-gray-600 mt-1">{error}</p>
+      <div className="bg-card border border-destructive/30 rounded-lg p-6 shadow-sm">
+        <p className="text-sm text-destructive">Failed to load weather</p>
+        <p className="text-xs text-muted-foreground mt-1">{error}</p>
       </div>
     );
   }
 
   if (!weather || !weather.current) {
     return (
-      <div className="bg-white border border-gray-200 rounded-lg p-6 shadow-sm">
-        <p className="text-sm text-gray-600">No weather data available</p>
+      <div className="bg-card border border-border rounded-lg p-6 shadow-sm">
+        <p className="text-sm text-muted-foreground">No weather data available</p>
       </div>
     );
   }
@@ -70,8 +70,8 @@ export function WeatherCard({
   const todayForecast = daily.length > 0 ? daily[0] : null;
 
   return (
-    <div className="bg-white border border-gray-200 rounded-lg p-6 shadow-sm hover:shadow-md transition-shadow">
-      <h3 className="text-sm font-medium text-gray-600 mb-4">Current Weather</h3>
+    <div className="bg-card text-card-foreground border border-border rounded-lg p-6 shadow-sm hover:shadow-md transition-shadow">
+      <h3 className="text-sm font-medium text-muted-foreground mb-4">Current Weather</h3>
 
       <div className="flex items-center justify-between mb-4">
         <Sun className="w-16 h-16 text-yellow-500" />
@@ -80,7 +80,7 @@ export function WeatherCard({
             {formatTemperature(current.temperature_c)}
           </div>
           {todayForecast && (
-            <div className="text-sm text-gray-600">
+            <div className="text-sm text-muted-foreground">
               H: {formatTemperature(todayForecast.tmax_c)} L: {formatTemperature(todayForecast.tmin_c)}
             </div>
           )}
@@ -88,11 +88,11 @@ export function WeatherCard({
       </div>
 
       <div className="space-y-2">
-        <p className="text-xs text-gray-600">
+        <p className="text-xs text-muted-foreground">
           Updated {formatRelativeTime(current.observed_at)}
         </p>
         {current.stale && (
-          <p className="text-xs text-orange-600">
+          <p className="text-xs text-orange-600 dark:text-orange-500">
             Weather data may be outdated
           </p>
         )}

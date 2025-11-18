@@ -1,6 +1,8 @@
 import type { Metadata } from "next";
 import "./globals.css";
 import { Toaster } from "sonner";
+import { AuthProvider } from "@/lib/auth";
+import { ThemeProvider } from "@/lib/theme/ThemeContext";
 
 export const metadata: Metadata = {
   title: "Home Hub Mobile",
@@ -15,8 +17,12 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body className="antialiased">
-        {children}
-        <Toaster />
+        <AuthProvider>
+          <ThemeProvider>
+            {children}
+            <Toaster />
+          </ThemeProvider>
+        </AuthProvider>
       </body>
     </html>
   );
