@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { getMeal, Meal } from "@/lib/api/meals";
+import { getMeal, Meal, getIngredients, Ingredient } from "@/lib/api/meals";
 import {
   Dialog,
   DialogContent,
@@ -12,10 +12,9 @@ import {
 } from "@/components/ui/dialog";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
-import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { AlertCircle, Edit, Sparkles } from "lucide-react";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { AlertCircle, Edit, Sparkles, Loader2 } from "lucide-react";
+import { IngredientTable } from "./IngredientTable";
 
 interface ViewMealDialogProps {
   mealId: string | null;
@@ -31,14 +30,17 @@ export function ViewMealDialog({
   onEdit,
 }: ViewMealDialogProps) {
   const [meal, setMeal] = useState<Meal | null>(null);
-  const [ingredientCount, setIngredientCount] = useState<number>(0);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [ingredients, setIngredients] = useState<Ingredient[]>([]);
+  const [ingredientsLoading, setIngredientsLoading] = useState(false);
+  const [ingredientsError, setIngredientsError] = useState<string | null>(null);
 
-  // Fetch meal when mealId changes
+  // Fetch meal and ingredients when mealId changes
   useEffect(() => {
     if (open && mealId) {
       fetchData();
+      fetchIngredients();
     }
   }, [open, mealId]);
 
@@ -46,8 +48,9 @@ export function ViewMealDialog({
   useEffect(() => {
     if (!open) {
       setMeal(null);
-      setIngredientCount(0);
       setError(null);
+      setIngredients([]);
+      setIngredientsError(null);
     }
   }, [open]);
 
@@ -58,14 +61,30 @@ export function ViewMealDialog({
       setLoading(true);
       setError(null);
 
-      const { meal: mealData, ingredientCount: count } = await getMeal(mealId);
+      const mealData = await getMeal(mealId);
       setMeal(mealData);
-      setIngredientCount(count);
     } catch (err) {
       console.error("Failed to fetch meal data:", err);
       setError(err instanceof Error ? err.message : "Failed to fetch meal data");
     } finally {
       setLoading(false);
+    }
+  };
+
+  const fetchIngredients = async () => {
+    if (!mealId) return;
+
+    try {
+      setIngredientsLoading(true);
+      setIngredientsError(null);
+
+      const data = await getIngredients(mealId);
+      setIngredients(data);
+    } catch (err) {
+      console.error("Failed to fetch ingredients:", err);
+      setIngredientsError(err instanceof Error ? err.message : "Failed to fetch ingredients");
+    } finally {
+      setIngredientsLoading(false);
     }
   };
 
@@ -90,26 +109,13 @@ export function ViewMealDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
+      <DialogContent className="w-[90vw] max-w-[1400px] sm:w-[90vw] sm:max-w-[1400px] h-[85vh] flex flex-col">
         <DialogHeader>
           <DialogTitle>
             {loading ? "Loading..." : meal?.title || "Meal Details"}
           </DialogTitle>
           <DialogDescription>
-            {meal && (
-              <div className="flex items-center gap-2 mt-1">
-                <span>ID: {meal.id}</span>
-                {ingredientCount > 0 && (
-                  <>
-                    <span>•</span>
-                    <Sparkles className="h-3 w-3 text-purple-500" />
-                    <span className="text-purple-600 dark:text-purple-400">
-                      {ingredientCount} parsed ingredient{ingredientCount !== 1 ? 's' : ''}
-                    </span>
-                  </>
-                )}
-              </div>
-            )}
+            {meal && `ID: ${meal.id}`}
           </DialogDescription>
         </DialogHeader>
 
@@ -131,73 +137,79 @@ export function ViewMealDialog({
 
         {/* Content */}
         {!loading && !error && meal && (
-          <div className="space-y-6 py-4">
-            {/* Meal Information Card */}
-            <Card>
-              <CardHeader>
-                <CardTitle>Meal Information</CardTitle>
-                <CardDescription>Details about this meal</CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="space-y-2">
-                  <Label>Title</Label>
-                  <div className="text-lg font-semibold">{meal.title}</div>
+          <div className="flex-1 overflow-hidden py-4 flex flex-col gap-4">
+            {/* Meal Metadata */}
+            <div className="flex-shrink-0 grid grid-cols-3 gap-4 text-sm">
+              {meal.description && (
+                <div className="col-span-3">
+                  <span className="font-medium text-neutral-700 dark:text-neutral-300">Description: </span>
+                  <span className="text-neutral-600 dark:text-neutral-400">{meal.description}</span>
                 </div>
+              )}
+              <div>
+                <span className="font-medium text-neutral-700 dark:text-neutral-300">Created: </span>
+                <span className="text-neutral-600 dark:text-neutral-400">{formatDate(meal.createdAt)}</span>
+              </div>
+              <div>
+                <span className="font-medium text-neutral-700 dark:text-neutral-300">Last Updated: </span>
+                <span className="text-neutral-600 dark:text-neutral-400">{formatDate(meal.updatedAt)}</span>
+              </div>
+            </div>
 
-                {meal.description && (
-                  <div className="space-y-2">
-                    <Label>Description</Label>
-                    <div className="text-neutral-700 dark:text-neutral-300">
-                      {meal.description}
+            {/* Ingredients Card */}
+            <Card className="flex-1 flex flex-col overflow-hidden">
+              <CardHeader className="flex-shrink-0">
+                <CardTitle className="flex items-center gap-2">
+                  Ingredients
+                  {ingredients.length > 0 && (
+                    <div className="flex items-center gap-1 text-sm font-normal text-purple-600 dark:text-purple-400">
+                      <Sparkles className="h-4 w-4" />
+                      <span>{ingredients.length} parsed</span>
                     </div>
+                  )}
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="flex-1 overflow-hidden">
+                {ingredientsLoading && (
+                  <div className="flex items-center justify-center py-12">
+                    <Loader2 className="h-8 w-8 animate-spin text-neutral-400" />
+                    <span className="ml-2 text-neutral-600 dark:text-neutral-400">
+                      Loading ingredients...
+                    </span>
                   </div>
                 )}
 
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <Label>Created</Label>
-                    <div className="text-sm text-neutral-600 dark:text-neutral-400">
-                      {formatDate(meal.createdAt)}
-                    </div>
-                  </div>
+                {ingredientsError && !ingredientsLoading && (
+                  <Alert variant="destructive">
+                    <AlertCircle className="h-4 w-4" />
+                    <AlertTitle>Error</AlertTitle>
+                    <AlertDescription>
+                      {ingredientsError}
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="mt-2"
+                        onClick={fetchIngredients}
+                      >
+                        Retry
+                      </Button>
+                    </AlertDescription>
+                  </Alert>
+                )}
 
-                  <div className="space-y-2">
-                    <Label>Last Updated</Label>
-                    <div className="text-sm text-neutral-600 dark:text-neutral-400">
-                      {formatDate(meal.updatedAt)}
-                    </div>
+                {!ingredientsLoading && !ingredientsError && ingredients.length > 0 && (
+                  <div className="h-full overflow-auto">
+                    <IngredientTable ingredients={ingredients} />
                   </div>
-                </div>
+                )}
+
+                {!ingredientsLoading && !ingredientsError && ingredients.length === 0 && (
+                  <p className="text-center py-8 text-neutral-500">
+                    No ingredients were parsed for this meal
+                  </p>
+                )}
               </CardContent>
             </Card>
-
-            {/* Ingredients Card */}
-            {meal.rawIngredientText && (
-              <Card>
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2">
-                    Ingredients
-                    {ingredientCount > 0 && (
-                      <div className="flex items-center gap-1 text-sm font-normal text-purple-600 dark:text-purple-400">
-                        <Sparkles className="h-4 w-4" />
-                        <span>{ingredientCount} parsed</span>
-                      </div>
-                    )}
-                  </CardTitle>
-                  <CardDescription>
-                    Raw ingredient list{ingredientCount > 0 ? ' (processed by AI)' : ''}
-                  </CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <Textarea
-                    value={meal.rawIngredientText}
-                    disabled
-                    rows={10}
-                    className="font-mono text-sm"
-                  />
-                </CardContent>
-              </Card>
-            )}
           </div>
         )}
 

@@ -137,12 +137,9 @@ export async function listMeals(): Promise<Meal[]> {
  * Get a single meal by ID
  * @param mealId - Meal ID
  */
-export async function getMeal(mealId: string): Promise<{ meal: Meal; ingredientCount: number }> {
+export async function getMeal(mealId: string): Promise<Meal> {
   const response = await get<JsonApiSingleResponse<MealAttributes>>(`/meals/${mealId}`);
-  return {
-    meal: transformJsonApiSingle(response),
-    ingredientCount: response.meta?.ingredient_count ? parseInt(response.meta.ingredient_count[0]) : 0,
-  };
+  return transformJsonApiSingle(response);
 }
 
 /**
@@ -191,4 +188,27 @@ export async function updateMeal(
  */
 export async function deleteMeal(mealId: string): Promise<void> {
   await del(`/meals/${mealId}`);
+}
+
+/**
+ * Get ingredients for a meal
+ * @param mealId - Meal ID
+ */
+export async function getIngredients(mealId: string): Promise<Ingredient[]> {
+  const response = await get<JsonApiArrayResponse<Ingredient>>(`/meals/${mealId}/ingredients`);
+  return response.data.map(resource => ({
+    id: resource.id,
+    mealId: resource.attributes.mealId,
+    rawLine: resource.attributes.rawLine,
+    quantity: resource.attributes.quantity,
+    quantityRaw: resource.attributes.quantityRaw,
+    unit: resource.attributes.unit,
+    unitRaw: resource.attributes.unitRaw,
+    ingredient: resource.attributes.ingredient,
+    preparation: resource.attributes.preparation,
+    notes: resource.attributes.notes,
+    confidence: resource.attributes.confidence,
+    createdAt: resource.attributes.createdAt,
+    updatedAt: resource.attributes.updatedAt,
+  }));
 }

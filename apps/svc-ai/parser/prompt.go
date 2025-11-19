@@ -93,6 +93,7 @@ CRITICAL RULES:
 7. Ingredient name should be the core ingredient without preparation or notes
 8. Preparation: adjectives/verbs describing ingredient state (diced, minced, fresh, raw, cooked)
 9. Notes: optional qualifiers (optional, to taste, or more, if needed)
+10. AGGREGATE DUPLICATE INGREDIENTS: If the same ingredient appears multiple times with compatible units, sum the quantities and create a single entry. Example: "1/2 tsp kosher salt" + "1 tsp kosher salt" = "1.5 tsp kosher salt". Combine preparation/notes arrays.
 
 JSON SCHEMA (output as array of these objects):
 {

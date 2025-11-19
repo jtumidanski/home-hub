@@ -64,7 +64,7 @@ export function EditMealDialog({
       setLoading(true);
       setError(null);
 
-      const { meal: mealData } = await getMeal(mealId);
+      const mealData = await getMeal(mealId);
       setMeal(mealData);
 
       // Set form state

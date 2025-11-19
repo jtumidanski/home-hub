@@ -96,7 +96,7 @@ func main() {
 		// Apply user resolver middleware to all routes
 		router.Use(user.UserResolverMiddleware(l, usersClient))
 
-		// Initialize meal routes
+		// Initialize meal routes (includes ingredient endpoints)
 		meal.InitializeRoutes(GetServer(), aiClient)(db)(router, logger)
 	}
 

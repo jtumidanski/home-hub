@@ -25,6 +25,9 @@ func InitializeRoutes(si jsonapi.ServerInformation, aiClient *ai.Client) func(db
 			router.HandleFunc("/meals/{id}", server.RegisterHandler(l)(si)("get-meal", getMealHandler(db, aiClient))).Methods(http.MethodGet)
 			router.HandleFunc("/meals/{id}", server.RegisterInputHandler[UpdateRequest](l)(si)("update-meal", updateMealHandler(db, aiClient))).Methods(http.MethodPatch)
 			router.HandleFunc("/meals/{id}", server.RegisterHandler(l)(si)("delete-meal", deleteMealHandler(db, aiClient))).Methods(http.MethodDelete)
+
+			// Ingredient endpoints
+			router.HandleFunc("/meals/{id}/ingredients", server.RegisterHandler(l)(si)("get-meal-ingredients", getIngredientsHandler(db, aiClient))).Methods(http.MethodGet)
 		}
 	}
 }
@@ -110,14 +113,6 @@ func getMealHandler(db *gorm.DB, aiClient *ai.Client) server.GetHandler {
 					return
 				}
 
-				// Get ingredients for this meal
-				ingredients, err := ingredient.GetByMealId(r.Context(), db, mealID)
-				if err != nil {
-					d.Logger().WithError(err).WithField("meal_id", mealID).Error("Failed to get ingredients")
-					w.WriteHeader(http.StatusInternalServerError)
-					return
-				}
-
 				// Transform to REST model
 				res, err := ops.Map(Transform)(ops.FixedProvider(meal))()
 				if err != nil {
@@ -126,12 +121,7 @@ func getMealHandler(db *gorm.DB, aiClient *ai.Client) server.GetHandler {
 					return
 				}
 
-				// Add ingredient count to meta
-				meta := map[string][]string{
-					"ingredient_count": {string(rune(len(ingredients)))},
-				}
-
-				server.MarshalResponse[RestModel](d.Logger())(w)(c.ServerInformation())(meta)(res)
+				server.MarshalResponse[RestModel](d.Logger())(w)(c.ServerInformation())(map[string][]string{})(res)
 			}
 		})
 	}
@@ -314,6 +304,56 @@ func deleteMealHandler(db *gorm.DB, aiClient *ai.Client) server.GetHandler {
 				}
 
 				w.WriteHeader(http.StatusNoContent)
+			}
+		})
+	}
+}
+
+// getIngredientsHandler handles GET /meals/{id}/ingredients
+func getIngredientsHandler(db *gorm.DB, aiClient *ai.Client) server.GetHandler {
+	return func(d *server.HandlerDependency, c *server.HandlerContext) http.HandlerFunc {
+		return ParseId(d.Logger(), func(mealID uuid.UUID) http.HandlerFunc {
+			return func(w http.ResponseWriter, r *http.Request) {
+				// Get user info from context
+				userInfo, ok := user.UserInfoFromContext(r.Context())
+				if !ok {
+					d.Logger().Error("User not authenticated")
+					w.WriteHeader(http.StatusUnauthorized)
+					return
+				}
+
+				// Get meal to verify it exists and user has access
+				meal, err := GetById(r.Context(), db, mealID)
+				if err != nil {
+					d.Logger().WithError(err).WithField("meal_id", mealID).Error("Failed to get meal")
+					w.WriteHeader(http.StatusNotFound)
+					return
+				}
+
+				// Verify user has access (same household)
+				if meal.HouseholdId() != userInfo.HouseholdID {
+					d.Logger().Error("Access denied")
+					w.WriteHeader(http.StatusForbidden)
+					return
+				}
+
+				// Get ingredients for this meal
+				ingredients, err := ingredient.GetByMealId(r.Context(), db, mealID)
+				if err != nil {
+					d.Logger().WithError(err).WithField("meal_id", mealID).Error("Failed to get ingredients")
+					w.WriteHeader(http.StatusInternalServerError)
+					return
+				}
+
+				// Transform to REST models
+				restModels, err := ingredient.TransformSlice(ingredients)
+				if err != nil {
+					d.Logger().WithError(err).Error("Failed to transform ingredients")
+					w.WriteHeader(http.StatusInternalServerError)
+					return
+				}
+
+				server.MarshalResponse[[]ingredient.RestModel](d.Logger())(w)(c.ServerInformation())(map[string][]string{})(restModels)
 			}
 		})
 	}
