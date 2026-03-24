@@ -26,7 +26,7 @@ function RemindersPageSkeleton() {
 }
 
 export function RemindersPage() {
-  const { data, isLoading } = useReminders();
+  const { data, isLoading, isError } = useReminders();
   const snoozeReminder = useSnoozeReminder();
   const dismissReminder = useDismissReminder();
   const deleteReminder = useDeleteReminder();
@@ -63,6 +63,20 @@ export function RemindersPage() {
 
   if (isLoading) {
     return <RemindersPageSkeleton />;
+  }
+
+  if (isError) {
+    return (
+      <div className="p-6">
+        <Card className="border-destructive">
+          <CardContent className="py-3">
+            <p className="text-sm text-destructive">
+              Failed to load reminders. Try refreshing the page.
+            </p>
+          </CardContent>
+        </Card>
+      </div>
+    );
   }
 
   return (

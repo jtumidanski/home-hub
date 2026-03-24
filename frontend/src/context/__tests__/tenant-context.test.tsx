@@ -45,10 +45,18 @@ function buildAppContext(overrides?: {
   const preferenceId = overrides?.preferenceId ?? "preference-1";
 
   return {
+    id: "current" as const,
+    type: "contexts" as const,
+    attributes: {
+      resolvedTheme: "light" as const,
+      resolvedRole: "member",
+      canCreateHousehold: true,
+    },
     relationships: {
-      tenant: { data: { id: tenantId, type: "tenants" } },
-      activeHousehold: { data: { id: householdId, type: "households" } },
-      preference: { data: { id: preferenceId, type: "preferences" } },
+      tenant: { data: { id: tenantId, type: "tenants" as const } },
+      activeHousehold: { data: { id: householdId, type: "households" as const } },
+      preference: { data: { id: preferenceId, type: "preferences" as const } },
+      memberships: { data: [] },
     },
   };
 }
@@ -89,6 +97,16 @@ function createWrapper(queryClient: QueryClient) {
   };
 }
 
+function mockAuthValue(appContext: ReturnType<typeof buildAppContext> | null) {
+  return {
+    user: appContext ? { id: "user-1", type: "users" as const, attributes: { email: "test@example.com", displayName: "Test", givenName: "Test", familyName: "User", avatarUrl: "", createdAt: "2026-01-01T00:00:00Z", updatedAt: "2026-01-01T00:00:00Z" } } : null,
+    appContext,
+    isLoading: false,
+    isAuthenticated: !!appContext,
+    needsOnboarding: false,
+  };
+}
+
 function makeQueryClient() {
   return new QueryClient({
     defaultOptions: { queries: { retry: false } },
@@ -115,7 +133,7 @@ describe("TenantProvider / useTenant", () => {
   });
 
   it("provides tenantId and householdId from appContext relationships", () => {
-    mockUseAuth.mockReturnValue({ appContext: buildAppContext() });
+    mockUseAuth.mockReturnValue(mockAuthValue(buildAppContext()));
     const queryClient = makeQueryClient();
 
     const { result } = renderHook(() => useTenant(), {
@@ -127,7 +145,7 @@ describe("TenantProvider / useTenant", () => {
   });
 
   it("returns null tenantId and householdId when appContext is null", () => {
-    mockUseAuth.mockReturnValue({ appContext: null });
+    mockUseAuth.mockReturnValue(mockAuthValue(null));
     const queryClient = makeQueryClient();
 
     const { result } = renderHook(() => useTenant(), {
@@ -141,7 +159,7 @@ describe("TenantProvider / useTenant", () => {
   });
 
   it("calls api.setTenant when tenantId is available", async () => {
-    mockUseAuth.mockReturnValue({ appContext: buildAppContext() });
+    mockUseAuth.mockReturnValue(mockAuthValue(buildAppContext()));
     const queryClient = makeQueryClient();
 
     renderHook(() => useTenant(), {
@@ -154,7 +172,7 @@ describe("TenantProvider / useTenant", () => {
   });
 
   it("calls api.clearTenant when tenantId is null", async () => {
-    mockUseAuth.mockReturnValue({ appContext: null });
+    mockUseAuth.mockReturnValue(mockAuthValue(null));
     const queryClient = makeQueryClient();
 
     renderHook(() => useTenant(), {
@@ -167,9 +185,7 @@ describe("TenantProvider / useTenant", () => {
   });
 
   it("setActiveHousehold calls accountService and invalidates context queries", async () => {
-    mockUseAuth.mockReturnValue({
-      appContext: buildAppContext({ preferenceId: "pref-42" }),
-    });
+    mockUseAuth.mockReturnValue(mockAuthValue(buildAppContext({ preferenceId: "pref-42" })));
     const queryClient = makeQueryClient();
     const invalidateSpy = vi.spyOn(queryClient, "invalidateQueries");
 
@@ -187,15 +203,15 @@ describe("TenantProvider / useTenant", () => {
       "household-99",
     );
     expect(invalidateSpy).toHaveBeenCalledWith({
-      queryKey: contextKeys.current,
+      queryKey: contextKeys.current(),
     });
   });
 
   it("extracts tenant from included resources in query cache", () => {
-    mockUseAuth.mockReturnValue({ appContext: buildAppContext() });
+    mockUseAuth.mockReturnValue(mockAuthValue(buildAppContext()));
     const queryClient = makeQueryClient();
 
-    queryClient.setQueryData(contextKeys.current, {
+    queryClient.setQueryData(contextKeys.current(), {
       included: [buildIncludedTenant("tenant-1"), buildIncludedHousehold("household-1")],
     });
 
@@ -215,10 +231,10 @@ describe("TenantProvider / useTenant", () => {
   });
 
   it("extracts household from included resources in query cache", () => {
-    mockUseAuth.mockReturnValue({ appContext: buildAppContext() });
+    mockUseAuth.mockReturnValue(mockAuthValue(buildAppContext()));
     const queryClient = makeQueryClient();
 
-    queryClient.setQueryData(contextKeys.current, {
+    queryClient.setQueryData(contextKeys.current(), {
       included: [buildIncludedTenant("tenant-1"), buildIncludedHousehold("household-1")],
     });
 
@@ -240,10 +256,10 @@ describe("TenantProvider / useTenant", () => {
   });
 
   it("returns fallback tenant when included resource is not found", () => {
-    mockUseAuth.mockReturnValue({ appContext: buildAppContext() });
+    mockUseAuth.mockReturnValue(mockAuthValue(buildAppContext()));
     const queryClient = makeQueryClient();
 
-    queryClient.setQueryData(contextKeys.current, { included: [] });
+    queryClient.setQueryData(contextKeys.current(), { included: [] });
 
     const { result } = renderHook(() => useTenant(), {
       wrapper: createWrapper(queryClient),
@@ -257,10 +273,10 @@ describe("TenantProvider / useTenant", () => {
   });
 
   it("returns fallback household when included resource is not found", () => {
-    mockUseAuth.mockReturnValue({ appContext: buildAppContext() });
+    mockUseAuth.mockReturnValue(mockAuthValue(buildAppContext()));
     const queryClient = makeQueryClient();
 
-    queryClient.setQueryData(contextKeys.current, { included: [] });
+    queryClient.setQueryData(contextKeys.current(), { included: [] });
 
     const { result } = renderHook(() => useTenant(), {
       wrapper: createWrapper(queryClient),

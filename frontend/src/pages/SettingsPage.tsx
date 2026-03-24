@@ -26,7 +26,7 @@ export function SettingsPage() {
           appContext.relationships.preference.data.id,
           newTheme
         );
-        await queryClient.invalidateQueries({ queryKey: contextKeys.current });
+        await queryClient.invalidateQueries({ queryKey: contextKeys.current() });
       } catch (error) {
         toast.error(getErrorMessage(error, "Failed to save theme preference"));
       }

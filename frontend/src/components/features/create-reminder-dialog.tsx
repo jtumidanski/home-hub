@@ -33,7 +33,7 @@ export function CreateReminderDialog({ open, onOpenChange }: CreateReminderDialo
     try {
       await createReminder.mutateAsync({
         title: values.title,
-        notes: values.notes,
+        ...(values.notes != null ? { notes: values.notes } : {}),
         scheduledFor: new Date(values.scheduledFor).toISOString(),
       });
       toast.success("Reminder created");
@@ -85,7 +85,7 @@ export function CreateReminderDialog({ open, onOpenChange }: CreateReminderDialo
                 <FormItem>
                   <FormLabel>Scheduled For</FormLabel>
                   <FormControl>
-                    <Input type="datetime-local" {...field} />
+                    <Input type="datetime-local" aria-label="Scheduled For" {...field} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>

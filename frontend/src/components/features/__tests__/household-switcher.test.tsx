@@ -6,7 +6,7 @@ import { HouseholdSwitcher } from "../household-switcher";
 const mockSetActiveHousehold = vi.fn();
 const mockInvalidateAllTasks = vi.fn();
 const mockInvalidateAllReminders = vi.fn();
-const mockUseHouseholds = vi.fn(() => ({ data: null }));
+const mockUseHouseholds = vi.fn((): { data: unknown } => ({ data: null }));
 
 vi.mock("@/components/providers/auth-provider", () => ({
   useAuth: () => ({
@@ -25,7 +25,7 @@ vi.mock("@/context/tenant-context", () => ({
 }));
 
 vi.mock("@/lib/hooks/api/use-households", () => ({
-  useHouseholds: (...args: unknown[]) => mockUseHouseholds(...args),
+  useHouseholds: () => mockUseHouseholds(),
 }));
 
 vi.mock("@/lib/hooks/api/use-tasks", () => ({

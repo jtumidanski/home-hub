@@ -70,7 +70,7 @@ describe("useHouseholds hook", () => {
 
     await waitFor(() => expect(result.current.isSuccess).toBe(true));
     expect(result.current.data?.data).toHaveLength(1);
-    expect(result.current.data?.data[0].attributes.name).toBe("Main Home");
+    expect(result.current.data?.data[0]!.attributes.name).toBe("Main Home");
   });
 
   it("does not fetch when explicitly disabled", async () => {

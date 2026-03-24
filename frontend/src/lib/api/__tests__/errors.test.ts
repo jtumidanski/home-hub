@@ -95,9 +95,9 @@ describe("createErrorFromUnknown", () => {
     expect(result.status).toBe(502);
   });
 
-  it("classifies ApiRequestError 404 as unknown with status", () => {
+  it("classifies ApiRequestError 404 as not-found with status", () => {
     const result = createErrorFromUnknown(new ApiRequestError("Not found", 404));
-    expect(result.type).toBe("unknown");
+    expect(result.type).toBe("not-found");
     expect(result.status).toBe(404);
   });
 

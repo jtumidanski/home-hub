@@ -32,7 +32,7 @@ export const productivityService = {
   },
   restoreTask: (tenantId: string, taskId: string) => {
     api.setTenant(tenantId);
-    return api.post("/tasks/restorations", {
+    return api.post<JsonApiResponse<Task>>("/tasks/restorations", {
       data: {
         type: "task-restorations",
         relationships: { task: { data: { type: "tasks", id: taskId } } },
@@ -67,7 +67,7 @@ export const productivityService = {
   },
   snoozeReminder: (tenantId: string, reminderId: string, durationMinutes: number) => {
     api.setTenant(tenantId);
-    return api.post("/reminders/snoozes", {
+    return api.post<JsonApiResponse<Reminder>>("/reminders/snoozes", {
       data: {
         type: "reminder-snoozes",
         attributes: { durationMinutes },
@@ -77,7 +77,7 @@ export const productivityService = {
   },
   dismissReminder: (tenantId: string, reminderId: string) => {
     api.setTenant(tenantId);
-    return api.post("/reminders/dismissals", {
+    return api.post<JsonApiResponse<Reminder>>("/reminders/dismissals", {
       data: {
         type: "reminder-dismissals",
         relationships: { reminder: { data: { type: "reminders", id: reminderId } } },

@@ -38,7 +38,7 @@ export function useCreateHousehold() {
       accountService.createHousehold(tenantId!, attrs.name, attrs.timezone, attrs.units),
     onSettled: () => {
       qc.invalidateQueries({ queryKey: householdKeys.lists(tenantId) });
-      qc.invalidateQueries({ queryKey: contextKeys.current });
+      qc.invalidateQueries({ queryKey: contextKeys.current() });
     },
   });
 }

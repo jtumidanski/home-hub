@@ -3,7 +3,7 @@ import { ApiRequestError } from "./client";
 export interface AppError {
   message: string;
   status?: number;
-  type: "network" | "auth" | "validation" | "server" | "unknown";
+  type: "network" | "auth" | "not-found" | "validation" | "server" | "unknown";
 }
 
 export function createErrorFromUnknown(
@@ -34,6 +34,7 @@ export function createErrorFromUnknown(
 
 function classifyStatus(status: number): AppError["type"] {
   if (status === 401) return "auth";
+  if (status === 404) return "not-found";
   if (status === 400 || status === 422) return "validation";
   if (status >= 500) return "server";
   return "unknown";

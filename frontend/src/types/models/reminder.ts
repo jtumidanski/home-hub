@@ -14,3 +14,22 @@ export interface Reminder {
   type: "reminders";
   attributes: ReminderAttributes;
 }
+
+// --- Update attributes (F14) ---
+
+export type ReminderUpdateAttributes = Partial<
+  Pick<ReminderAttributes, "title" | "notes" | "scheduledFor">
+>;
+
+// --- Helpers (F16) ---
+
+export function isReminderDismissed(reminder: Reminder): boolean {
+  return !reminder.attributes.active && reminder.attributes.lastDismissedAt != null;
+}
+
+export function isReminderSnoozed(reminder: Reminder): boolean {
+  if (!reminder.attributes.lastSnoozedUntil) {
+    return false;
+  }
+  return new Date(reminder.attributes.lastSnoozedUntil) > new Date();
+}

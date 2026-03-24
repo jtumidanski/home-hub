@@ -5,14 +5,14 @@ import { accountService } from "@/services/api/account";
 
 export const contextKeys = {
   all: ["context"] as const,
-  current: ["context", "current"] as const,
+  current: () => [...contextKeys.all, "current"] as const,
 };
 
 // --- Query hooks ---
 
 export function useAppContext(enabled: boolean = true) {
   return useQuery({
-    queryKey: contextKeys.current,
+    queryKey: contextKeys.current(),
     queryFn: () => accountService.getContext(),
     enabled,
     retry: false,
@@ -29,7 +29,7 @@ export function useInvalidateContext() {
     invalidateAll: () =>
       qc.invalidateQueries({ queryKey: contextKeys.all }),
     invalidateCurrent: () =>
-      qc.invalidateQueries({ queryKey: contextKeys.current }),
+      qc.invalidateQueries({ queryKey: contextKeys.current() }),
   };
 }
 
@@ -41,7 +41,7 @@ export function usePrefetchContext() {
   return {
     prefetch: () =>
       qc.prefetchQuery({
-        queryKey: contextKeys.current,
+        queryKey: contextKeys.current(),
         queryFn: () => accountService.getContext(),
         staleTime: 5 * 60 * 1000,
       }),

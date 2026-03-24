@@ -5,7 +5,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Skeleton } from "@/components/ui/skeleton";
 
 export function LoginPage() {
-  const { data, isLoading } = useProviders();
+  const { data, isLoading, isError } = useProviders();
   const providers = data?.data ?? [];
 
   return (
@@ -18,6 +18,10 @@ export function LoginPage() {
         <CardContent className="space-y-4">
           {isLoading ? (
             <Skeleton className="h-10 w-full" />
+          ) : isError ? (
+            <p className="text-center text-sm text-destructive">
+              Failed to load login providers. Try refreshing the page.
+            </p>
           ) : (
             providers.map((provider) => (
               <a

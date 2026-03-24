@@ -46,16 +46,17 @@ When modifying any service code:
    - Add corresponding function fields to mock struct
    - Implement new methods with nil-check and default behavior
    - See [Testing Conventions](resources/testing-guide.md#interface-change-workflow) for details
-3. **Run tests BEFORE claiming completion**:
+3. **Verify each domain against the Commonly Missed Items Checklist** in [ai-guidance.md](resources/ai-guidance.md#commonly-missed-items-checklist) before moving to the next domain. Do not batch — check domain 1 fully, then domain 2, etc.
+4. **Run tests BEFORE claiming completion**:
    ```bash
    go test ./... -count=1
    ```
-4. **Fix any failures** - Do NOT skip or ignore test failures
-5. **Verify build**:
+5. **Fix any failures** - Do NOT skip or ignore test failures
+6. **Verify build**:
    ```bash
-   go build
+   go build ./...
    ```
-6. **Report test results** with actual command output, not assumptions
+7. **Report test results** with actual command output, not assumptions
 
 ### Critical Rules
 

@@ -59,7 +59,7 @@ describe("CreateTaskDialog", () => {
 
     await user.type(screen.getByPlaceholderText("Enter task title"), "Buy groceries");
     await user.type(screen.getByPlaceholderText("Optional notes"), "Milk and eggs");
-    await user.type(screen.getByPlaceholderText("Enter task title").closest("form")!.querySelector("input[name='dueOn']")!, "2026-04-01");
+    await user.type(screen.getByLabelText("Due Date", { selector: "input" }), "2026-04-01");
     await user.click(screen.getByRole("button", { name: /create task/i }));
 
     await waitFor(() => {

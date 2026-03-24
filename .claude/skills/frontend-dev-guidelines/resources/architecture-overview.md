@@ -65,26 +65,25 @@ frontend/
 
 ```tsx
 // App.tsx
-<TenantProvider>
+<BrowserRouter>
   <QueryProvider>
     <ThemeProvider>
-      <SidebarProvider>
-        <AppSidebar />
-        <main>
-          <BreadcrumbBar />
+      <AuthProvider>
+        <TenantProvider>
           {children}
-        </main>
-      </SidebarProvider>
+        </TenantProvider>
+      </AuthProvider>
     </ThemeProvider>
   </QueryProvider>
-</TenantProvider>
+</BrowserRouter>
 ```
 
-**Order matters:**
-1. `TenantProvider` — outermost, so all children can access tenant context
+**Order matters (outermost → innermost):**
+1. `BrowserRouter` — routing context required by all navigation
 2. `QueryProvider` — wraps React Query client for data fetching
 3. `ThemeProvider` — dark/light mode toggling
-4. `SidebarProvider` — shadcn/ui sidebar state
+4. `AuthProvider` — authentication state (depends on QueryProvider)
+5. `TenantProvider` — tenant context (depends on AuthProvider for `useAuth()`)
 
 ## Key Configuration
 

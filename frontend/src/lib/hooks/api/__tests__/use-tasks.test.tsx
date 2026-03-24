@@ -84,7 +84,7 @@ describe("useTasks hook", () => {
 
     await waitFor(() => expect(result.current.isSuccess).toBe(true));
     expect(result.current.data?.data).toHaveLength(1);
-    expect(result.current.data?.data[0].attributes.title).toBe("Test");
+    expect(result.current.data?.data[0]!.attributes.title).toBe("Test");
   });
 
   it("includes tenant and household in query key for cache isolation", () => {

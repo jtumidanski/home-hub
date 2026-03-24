@@ -17,11 +17,11 @@ describe("authKeys", () => {
   });
 
   it("generates me key", () => {
-    expect(authKeys.me).toEqual(["auth", "me"]);
+    expect(authKeys.me()).toEqual(["auth", "me"]);
   });
 
   it("generates providers key", () => {
-    expect(authKeys.providers).toEqual(["auth", "providers"]);
+    expect(authKeys.providers()).toEqual(["auth", "providers"]);
   });
 });
 
@@ -93,7 +93,7 @@ describe("useProviders hook", () => {
 
     await waitFor(() => expect(result.current.isSuccess).toBe(true));
     expect(result.current.data?.data).toHaveLength(1);
-    expect(result.current.data?.data[0].attributes.displayName).toBe("Google");
+    expect(result.current.data?.data[0]!.attributes.displayName).toBe("Google");
   });
 
   it("reports error state when providers fetch fails", async () => {

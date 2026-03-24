@@ -11,3 +11,22 @@ export interface Household {
   type: "households";
   attributes: HouseholdAttributes;
 }
+
+// --- Update attributes (F14) ---
+
+export type HouseholdUpdateAttributes = Partial<
+  Pick<HouseholdAttributes, "name" | "timezone" | "units">
+>;
+
+// --- Label map (F15) ---
+
+export const unitsLabelMap: Record<HouseholdAttributes["units"], string> = {
+  imperial: "Imperial",
+  metric: "Metric",
+};
+
+// --- Helpers (F16) ---
+
+export function isHouseholdMetric(household: Household): boolean {
+  return household.attributes.units === "metric";
+}

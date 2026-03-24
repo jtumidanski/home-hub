@@ -53,7 +53,7 @@ class ApiClient {
       try {
         const response = await fetch(url, {
           ...init,
-          signal: options.signal,
+          ...(options.signal != null ? { signal: options.signal } : {}),
         });
 
         if (!response.ok && isRetryableStatus(response.status) && attempt < maxRetries) {

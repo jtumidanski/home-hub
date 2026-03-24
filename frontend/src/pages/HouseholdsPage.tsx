@@ -26,7 +26,7 @@ function HouseholdsPageSkeleton() {
 
 export function HouseholdsPage() {
   const { appContext } = useAuth();
-  const { data, isLoading } = useHouseholds();
+  const { data, isLoading, isError } = useHouseholds();
   const [open, setOpen] = useState(false);
 
   const households = data?.data ?? [];
@@ -35,6 +35,20 @@ export function HouseholdsPage() {
 
   if (isLoading) {
     return <HouseholdsPageSkeleton />;
+  }
+
+  if (isError) {
+    return (
+      <div className="p-6">
+        <Card className="border-destructive">
+          <CardContent className="py-3">
+            <p className="text-sm text-destructive">
+              Failed to load households. Try refreshing the page.
+            </p>
+          </CardContent>
+        </Card>
+      </div>
+    );
   }
 
   return (

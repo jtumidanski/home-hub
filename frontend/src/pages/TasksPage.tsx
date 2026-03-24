@@ -27,7 +27,7 @@ function TasksPageSkeleton() {
 }
 
 export function TasksPage() {
-  const { data, isLoading } = useTasks();
+  const { data, isLoading, isError } = useTasks();
   const updateTask = useUpdateTask();
   const deleteTask = useDeleteTask();
   const [open, setOpen] = useState(false);
@@ -57,6 +57,20 @@ export function TasksPage() {
 
   if (isLoading) {
     return <TasksPageSkeleton />;
+  }
+
+  if (isError) {
+    return (
+      <div className="p-6">
+        <Card className="border-destructive">
+          <CardContent className="py-3">
+            <p className="text-sm text-destructive">
+              Failed to load tasks. Try refreshing the page.
+            </p>
+          </CardContent>
+        </Card>
+      </div>
+    );
   }
 
   return (

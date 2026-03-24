@@ -51,7 +51,7 @@ export function OnboardingPage() {
     if (!tenantId) return;
     try {
       await accountService.createHousehold(tenantId, data.name, data.timezone, data.units);
-      await queryClient.invalidateQueries({ queryKey: contextKeys.current });
+      await queryClient.invalidateQueries({ queryKey: contextKeys.current() });
       toast.success("Household created");
       navigate("/app");
     } catch (error) {

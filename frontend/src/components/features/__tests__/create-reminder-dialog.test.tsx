@@ -42,9 +42,7 @@ describe("CreateReminderDialog", () => {
     const user = userEvent.setup();
     render(<CreateReminderDialog open={true} onOpenChange={vi.fn()} />);
 
-    const form = screen.getByRole("dialog").querySelector("form")!;
-    const scheduledInput = form.querySelector("input[name='scheduledFor']")!;
-    await user.type(scheduledInput, "2026-04-01T10:00");
+    await user.type(screen.getByLabelText("Scheduled For", { selector: "input" }), "2026-04-01T10:00");
 
     await user.click(screen.getByRole("button", { name: /create reminder/i }));
 
@@ -74,9 +72,7 @@ describe("CreateReminderDialog", () => {
 
     await user.type(screen.getByPlaceholderText("Enter reminder title"), "Doctor appointment");
     await user.type(screen.getByPlaceholderText("Optional notes"), "Bring insurance card");
-    const form = screen.getByRole("dialog").querySelector("form")!;
-    const scheduledInput = form.querySelector("input[name='scheduledFor']")!;
-    await user.type(scheduledInput, "2026-04-01T10:00");
+    await user.type(screen.getByLabelText("Scheduled For", { selector: "input" }), "2026-04-01T10:00");
 
     await user.click(screen.getByRole("button", { name: /create reminder/i }));
 
@@ -84,7 +80,7 @@ describe("CreateReminderDialog", () => {
       expect(mockMutateAsync).toHaveBeenCalledOnce();
     });
 
-    const call = mockMutateAsync.mock.calls[0][0];
+    const call = mockMutateAsync.mock.calls[0]![0];
     expect(call.title).toBe("Doctor appointment");
     expect(call.notes).toBe("Bring insurance card");
     expect(call.scheduledFor).toBe(new Date("2026-04-01T10:00").toISOString());
@@ -97,9 +93,7 @@ describe("CreateReminderDialog", () => {
     render(<CreateReminderDialog open={true} onOpenChange={onOpenChange} />);
 
     await user.type(screen.getByPlaceholderText("Enter reminder title"), "Buy groceries");
-    const form = screen.getByRole("dialog").querySelector("form")!;
-    const scheduledInput = form.querySelector("input[name='scheduledFor']")!;
-    await user.type(scheduledInput, "2026-04-01T10:00");
+    await user.type(screen.getByLabelText("Scheduled For", { selector: "input" }), "2026-04-01T10:00");
 
     await user.click(screen.getByRole("button", { name: /create reminder/i }));
 
@@ -116,9 +110,7 @@ describe("CreateReminderDialog", () => {
     render(<CreateReminderDialog open={true} onOpenChange={onOpenChange} />);
 
     await user.type(screen.getByPlaceholderText("Enter reminder title"), "Buy groceries");
-    const form = screen.getByRole("dialog").querySelector("form")!;
-    const scheduledInput = form.querySelector("input[name='scheduledFor']")!;
-    await user.type(scheduledInput, "2026-04-01T10:00");
+    await user.type(screen.getByLabelText("Scheduled For", { selector: "input" }), "2026-04-01T10:00");
 
     await user.click(screen.getByRole("button", { name: /create reminder/i }));
 

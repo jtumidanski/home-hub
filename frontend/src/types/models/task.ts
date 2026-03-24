@@ -15,3 +15,30 @@ export interface Task {
   type: "tasks";
   attributes: TaskAttributes;
 }
+
+// --- Update attributes (F14) ---
+
+export type TaskUpdateAttributes = Partial<
+  Pick<TaskAttributes, "title" | "notes" | "dueOn" | "rolloverEnabled">
+>;
+
+// --- Label map (F15) ---
+
+export const taskStatusLabelMap: Record<TaskAttributes["status"], string> = {
+  pending: "Pending",
+  completed: "Completed",
+};
+
+// --- Helpers (F16) ---
+
+export function isTaskOverdue(task: Task): boolean {
+  const { status, dueOn } = task.attributes;
+  if (status !== "pending" || !dueOn) {
+    return false;
+  }
+  return new Date(dueOn) < new Date();
+}
+
+export function isTaskCompleted(task: Task): boolean {
+  return task.attributes.status === "completed";
+}

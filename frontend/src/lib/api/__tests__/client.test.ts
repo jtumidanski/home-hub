@@ -46,7 +46,7 @@ describe("ApiClient", () => {
 
     await api.get("/test");
 
-    const fetchCall = (globalThis.fetch as ReturnType<typeof vi.fn>).mock.calls[0];
+    const fetchCall = (globalThis.fetch as ReturnType<typeof vi.fn>).mock.calls[0]!;
     expect(fetchCall[1].headers["X-Tenant-ID"]).toBe("tenant-123");
   });
 
@@ -62,7 +62,7 @@ describe("ApiClient", () => {
 
     await api.get("/test");
 
-    const fetchCall = (globalThis.fetch as ReturnType<typeof vi.fn>).mock.calls[0];
+    const fetchCall = (globalThis.fetch as ReturnType<typeof vi.fn>).mock.calls[0]!;
     expect(fetchCall[1].headers["X-Tenant-ID"]).toBeUndefined();
   });
 
@@ -76,7 +76,7 @@ describe("ApiClient", () => {
 
     await api.get("/test");
 
-    const fetchCall = (globalThis.fetch as ReturnType<typeof vi.fn>).mock.calls[0];
+    const fetchCall = (globalThis.fetch as ReturnType<typeof vi.fn>).mock.calls[0]!;
     expect(fetchCall[1].headers.Accept).toBe("application/vnd.api+json");
   });
 
@@ -121,7 +121,7 @@ describe("ApiClient", () => {
 
     await api.post("/tasks", { data: { type: "tasks", attributes: { title: "Test" } } });
 
-    const fetchCall = (globalThis.fetch as ReturnType<typeof vi.fn>).mock.calls[0];
+    const fetchCall = (globalThis.fetch as ReturnType<typeof vi.fn>).mock.calls[0]!;
     expect(fetchCall[1].method).toBe("POST");
     expect(fetchCall[1].headers["Content-Type"]).toBe("application/vnd.api+json");
     expect(JSON.parse(fetchCall[1].body)).toEqual({
@@ -139,7 +139,7 @@ describe("ApiClient", () => {
 
     await api.patch("/tasks/1", { data: { type: "tasks", id: "1", attributes: { status: "completed" } } });
 
-    const fetchCall = (globalThis.fetch as ReturnType<typeof vi.fn>).mock.calls[0];
+    const fetchCall = (globalThis.fetch as ReturnType<typeof vi.fn>).mock.calls[0]!;
     expect(fetchCall[1].method).toBe("PATCH");
   });
 
@@ -152,7 +152,7 @@ describe("ApiClient", () => {
 
     await api.delete("/tasks/1");
 
-    const fetchCall = (globalThis.fetch as ReturnType<typeof vi.fn>).mock.calls[0];
+    const fetchCall = (globalThis.fetch as ReturnType<typeof vi.fn>).mock.calls[0]!;
     expect(fetchCall[1].method).toBe("DELETE");
   });
 

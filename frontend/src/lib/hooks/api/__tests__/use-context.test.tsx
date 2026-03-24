@@ -16,7 +16,7 @@ describe("contextKeys", () => {
   });
 
   it("generates current key", () => {
-    expect(contextKeys.current).toEqual(["context", "current"]);
+    expect(contextKeys.current()).toEqual(["context", "current"]);
   });
 });
 

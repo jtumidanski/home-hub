@@ -50,7 +50,7 @@ function isHousehold(resource: IncludedResource): resource is IncludedResource &
 }
 
 function getIncludedResources(queryClient: ReturnType<typeof useQueryClient>): IncludedResource[] {
-  const data = queryClient.getQueryData(contextKeys.current) as ContextQueryData | undefined;
+  const data = queryClient.getQueryData(contextKeys.current()) as ContextQueryData | undefined;
   return data?.included ?? [];
 }
 
@@ -86,7 +86,7 @@ export function TenantProvider({ children }: { children: ReactNode }) {
     async (newHouseholdId: string) => {
       if (!tenantId || !preferenceId) return;
       await accountService.setActiveHousehold(tenantId, preferenceId, newHouseholdId);
-      await queryClient.invalidateQueries({ queryKey: contextKeys.current });
+      await queryClient.invalidateQueries({ queryKey: contextKeys.current() });
     },
     [tenantId, preferenceId, queryClient],
   );

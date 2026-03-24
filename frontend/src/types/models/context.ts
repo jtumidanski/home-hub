@@ -15,3 +15,9 @@ export interface AppContext {
     memberships: { data: Array<{ type: "memberships"; id: string }> };
   };
 }
+
+// --- Helpers (F16) ---
+
+export function isContextAdmin(ctx: AppContext): boolean {
+  return ctx.attributes.resolvedRole === "admin";
+}

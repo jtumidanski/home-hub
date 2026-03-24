@@ -33,8 +33,8 @@ export function CreateTaskDialog({ open, onOpenChange }: CreateTaskDialogProps) 
     try {
       await createTask.mutateAsync({
         title: values.title,
-        notes: values.notes,
-        dueOn: values.dueOn || undefined,
+        ...(values.notes != null ? { notes: values.notes } : {}),
+        ...(values.dueOn ? { dueOn: values.dueOn } : {}),
       });
       toast.success("Task created");
       form.reset(createTaskDefaults);
@@ -85,7 +85,7 @@ export function CreateTaskDialog({ open, onOpenChange }: CreateTaskDialogProps) 
                 <FormItem>
                   <FormLabel>Due Date</FormLabel>
                   <FormControl>
-                    <Input type="date" {...field} />
+                    <Input type="date" aria-label="Due Date" {...field} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>

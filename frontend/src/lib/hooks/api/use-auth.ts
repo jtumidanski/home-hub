@@ -5,15 +5,15 @@ import { authService } from "@/services/api/auth";
 
 export const authKeys = {
   all: ["auth"] as const,
-  me: ["auth", "me"] as const,
-  providers: ["auth", "providers"] as const,
+  me: () => [...authKeys.all, "me"] as const,
+  providers: () => [...authKeys.all, "providers"] as const,
 };
 
 // --- Query hooks ---
 
 export function useMe() {
   return useQuery({
-    queryKey: authKeys.me,
+    queryKey: authKeys.me(),
     queryFn: () => authService.getMe(),
     retry: false,
     staleTime: 5 * 60 * 1000,
@@ -22,7 +22,7 @@ export function useMe() {
 
 export function useProviders() {
   return useQuery({
-    queryKey: authKeys.providers,
+    queryKey: authKeys.providers(),
     queryFn: () => authService.getProviders(),
     staleTime: 10 * 60 * 1000,
   });
@@ -37,9 +37,9 @@ export function useInvalidateAuth() {
     invalidateAll: () =>
       qc.invalidateQueries({ queryKey: authKeys.all }),
     invalidateMe: () =>
-      qc.invalidateQueries({ queryKey: authKeys.me }),
+      qc.invalidateQueries({ queryKey: authKeys.me() }),
     invalidateProviders: () =>
-      qc.invalidateQueries({ queryKey: authKeys.providers }),
+      qc.invalidateQueries({ queryKey: authKeys.providers() }),
   };
 }
 
@@ -51,13 +51,13 @@ export function usePrefetchAuth() {
   return {
     prefetchMe: () =>
       qc.prefetchQuery({
-        queryKey: authKeys.me,
+        queryKey: authKeys.me(),
         queryFn: () => authService.getMe(),
         staleTime: 5 * 60 * 1000,
       }),
     prefetchProviders: () =>
       qc.prefetchQuery({
-        queryKey: authKeys.providers,
+        queryKey: authKeys.providers(),
         queryFn: () => authService.getProviders(),
         staleTime: 10 * 60 * 1000,
       }),
