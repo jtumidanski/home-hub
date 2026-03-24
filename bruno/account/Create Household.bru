@@ -1,0 +1,27 @@
+meta {
+  name: Create Household
+  type: http
+  seq: 5
+}
+
+post {
+  url: {{baseUrl}}/api/v1/households
+  body: json
+}
+
+headers {
+  Content-Type: application/vnd.api+json
+}
+
+body:json {
+  {
+    "data": {
+      "type": "households",
+      "attributes": {
+        "name": "Main Home",
+        "timezone": "America/Detroit",
+        "units": "imperial"
+      }
+    }
+  }
+}

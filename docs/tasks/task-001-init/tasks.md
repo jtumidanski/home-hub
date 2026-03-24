@@ -119,30 +119,30 @@ Last Updated: 2026-03-24
 
 ## Phase 9 — Local Environment
 
-- [ ] 9.1 Create docker-compose.yml
-- [ ] 9.2 Create nginx.conf with path-prefix routing
-- [ ] 9.3 Create .env.example
+- [x] 9.1 Create docker-compose.yml
+- [x] 9.2 Create nginx.conf with path-prefix routing
+- [x] 9.3 Create .env.example
 - [ ] 9.4 Verify end-to-end login flow locally
 - [ ] 9.5 Verify all API endpoints work through proxy
 
 ## Phase 10 — k3s Deployment
 
-- [ ] 10.1 Create k8s manifests for auth-service
-- [ ] 10.2 Create k8s manifests for account-service
-- [ ] 10.3 Create k8s manifests for productivity-service
-- [ ] 10.4 Create k8s manifests for frontend
-- [ ] 10.5 Create Ingress YAML with path-prefix routing
-- [ ] 10.6 Document secret management approach
+- [x] 10.1 Create k8s manifests for auth-service
+- [x] 10.2 Create k8s manifests for account-service
+- [x] 10.3 Create k8s manifests for productivity-service
+- [x] 10.4 Create k8s manifests for frontend
+- [x] 10.5 Create Ingress YAML with path-prefix routing
+- [x] 10.6 Document secret management approach
 
 ## Phase 11 — Bruno Collections
 
-- [ ] 11.1 Create auth collection
-- [ ] 11.2 Create account collection
-- [ ] 11.3 Create productivity collection
-- [ ] 11.4 Create environment files (local, prod)
+- [x] 11.1 Create auth collection
+- [x] 11.2 Create account collection
+- [x] 11.3 Create productivity collection
+- [x] 11.4 Create environment files (local, prod)
 
 ## Phase 12 — Renovate + Maturity
 
-- [ ] 12.1 Create renovate.json
+- [x] 12.1 Create renovate.json
 - [ ] 12.2 Verify all docs are accurate against implementation
 - [ ] 12.3 Verify CI is strict (branch protection)
