@@ -1,11 +1,7 @@
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { toast } from "sonner";
-import { useQueryClient } from "@tanstack/react-query";
-import { useTenant } from "@/context/tenant-context";
-import { accountService } from "@/services/api/account";
-import { useInvalidateHouseholds } from "@/lib/hooks/api/use-households";
-import { contextKeys } from "@/lib/hooks/api/use-context";
+import { useCreateHousehold } from "@/lib/hooks/api/use-households";
 import { createHouseholdSchema, type CreateHouseholdFormData, createHouseholdDefaults } from "@/lib/schemas/household.schema";
 import { getErrorMessage } from "@/lib/api/errors";
 import { Button } from "@/components/ui/button";
@@ -20,9 +16,7 @@ interface CreateHouseholdDialogProps {
 }
 
 export function CreateHouseholdDialog({ open, onOpenChange }: CreateHouseholdDialogProps) {
-  const { tenantId } = useTenant();
-  const queryClient = useQueryClient();
-  const invalidateHouseholds = useInvalidateHouseholds();
+  const createHousehold = useCreateHousehold();
 
   const form = useForm<CreateHouseholdFormData>({
     resolver: zodResolver(createHouseholdSchema),
@@ -36,11 +30,8 @@ export function CreateHouseholdDialog({ open, onOpenChange }: CreateHouseholdDia
   };
 
   const onSubmit = async (values: CreateHouseholdFormData) => {
-    if (!tenantId) return;
     try {
-      await accountService.createHousehold(tenantId, values.name, values.timezone, values.units);
-      invalidateHouseholds.invalidateLists();
-      await queryClient.invalidateQueries({ queryKey: contextKeys.current });
+      await createHousehold.mutateAsync(values);
       toast.success("Household created");
       form.reset(createHouseholdDefaults);
       onOpenChange(false);

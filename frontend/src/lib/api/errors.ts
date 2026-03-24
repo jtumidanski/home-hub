@@ -1,3 +1,5 @@
+import { ApiRequestError } from "./client";
+
 export interface AppError {
   message: string;
   status?: number;
@@ -8,6 +10,14 @@ export function createErrorFromUnknown(
   error: unknown,
   fallbackMessage = "An unexpected error occurred"
 ): AppError {
+  if (error instanceof ApiRequestError) {
+    return {
+      message: error.message || fallbackMessage,
+      status: error.status,
+      type: classifyStatus(error.status),
+    };
+  }
+
   if (error instanceof Error) {
     return {
       message: error.message || fallbackMessage,
@@ -20,6 +30,13 @@ export function createErrorFromUnknown(
   }
 
   return { message: fallbackMessage, type: "unknown" };
+}
+
+function classifyStatus(status: number): AppError["type"] {
+  if (status === 401) return "auth";
+  if (status === 400 || status === 422) return "validation";
+  if (status >= 500) return "server";
+  return "unknown";
 }
 
 function classifyErrorMessage(message: string): AppError["type"] {

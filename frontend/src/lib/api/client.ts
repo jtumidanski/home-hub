@@ -168,14 +168,24 @@ class ApiClient {
     this.pendingRequests.clear();
   }
 
-  private async handleError(response: Response): Promise<Error> {
+  private async handleError(response: Response): Promise<ApiRequestError> {
     try {
       const body = await response.json();
       const detail = body.errors?.[0]?.detail || body.errors?.[0]?.title || "Request failed";
-      return new Error(detail);
+      return new ApiRequestError(detail, response.status);
     } catch {
-      return new Error(`Request failed with status ${response.status}`);
+      return new ApiRequestError(`Request failed with status ${response.status}`, response.status);
     }
+  }
+}
+
+export class ApiRequestError extends Error {
+  readonly status: number;
+
+  constructor(message: string, status: number) {
+    super(message);
+    this.name = "ApiRequestError";
+    this.status = status;
   }
 }
 

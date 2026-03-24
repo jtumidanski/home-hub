@@ -1,6 +1,7 @@
-import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { accountService } from "@/services/api/account";
 import { useTenant } from "@/context/tenant-context";
+import { contextKeys } from "@/lib/hooks/api/use-context";
 
 // --- Key factory ---
 
@@ -9,8 +10,6 @@ export const householdKeys = {
     ["households", tenantId ?? "no-tenant"] as const,
   lists: (tenantId: string | null) =>
     [...householdKeys.all(tenantId), "list"] as const,
-  list: (tenantId: string | null) =>
-    [...householdKeys.lists(tenantId)] as const,
   details: (tenantId: string | null) =>
     [...householdKeys.all(tenantId), "detail"] as const,
   detail: (tenantId: string | null, id: string) =>
@@ -22,10 +21,25 @@ export const householdKeys = {
 export function useHouseholds(enabled: boolean = true) {
   const { tenantId } = useTenant();
   return useQuery({
-    queryKey: householdKeys.list(tenantId),
+    queryKey: householdKeys.lists(tenantId),
     queryFn: () => accountService.listHouseholds(tenantId!),
     enabled: enabled && !!tenantId,
     staleTime: 5 * 60 * 1000,
+  });
+}
+
+// --- Mutation hooks ---
+
+export function useCreateHousehold() {
+  const qc = useQueryClient();
+  const { tenantId } = useTenant();
+  return useMutation({
+    mutationFn: (attrs: { name: string; timezone: string; units: string }) =>
+      accountService.createHousehold(tenantId!, attrs.name, attrs.timezone, attrs.units),
+    onSettled: () => {
+      qc.invalidateQueries({ queryKey: householdKeys.lists(tenantId) });
+      qc.invalidateQueries({ queryKey: contextKeys.current });
+    },
   });
 }
 
@@ -55,7 +69,7 @@ export function usePrefetchHouseholds() {
     prefetch: () => {
       if (!tenantId) return;
       qc.prefetchQuery({
-        queryKey: householdKeys.list(tenantId),
+        queryKey: householdKeys.lists(tenantId),
         queryFn: () => accountService.listHouseholds(tenantId),
         staleTime: 5 * 60 * 1000,
       });

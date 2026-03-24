@@ -1,5 +1,6 @@
 import { describe, it, expect, vi } from "vitest";
-import { render, screen, fireEvent } from "@testing-library/react";
+import { render, screen } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
 import { MemoryRouter } from "react-router-dom";
 import { ErrorPage, Error404Page, Error403Page } from "../error-page";
 
@@ -31,13 +32,14 @@ describe("ErrorPage", () => {
     expect(screen.getByText("Cannot brew coffee")).toBeInTheDocument();
   });
 
-  it("renders retry button when showRetryButton and onRetry provided", () => {
+  it("renders retry button when showRetryButton and onRetry provided", async () => {
+    const user = userEvent.setup();
     const onRetry = vi.fn();
     renderWithRouter(
       <ErrorPage statusCode={500} showRetryButton onRetry={onRetry} />
     );
     const button = screen.getByRole("button", { name: /try again/i });
-    fireEvent.click(button);
+    await user.click(button);
     expect(onRetry).toHaveBeenCalledTimes(1);
   });
 

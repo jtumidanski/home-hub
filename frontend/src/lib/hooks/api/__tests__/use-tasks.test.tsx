@@ -4,7 +4,6 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import type { ReactNode } from "react";
 import { taskKeys } from "../use-tasks";
 
-// Mock useTenant to avoid context dependency in key factory tests
 vi.mock("@/context/tenant-context", () => ({
   useTenant: () => ({
     tenantId: "tenant-1",
@@ -27,38 +26,34 @@ vi.mock("@/services/api/productivity", () => ({
 }));
 
 describe("taskKeys", () => {
-  it("generates all key with household id", () => {
-    expect(taskKeys.all("hh-1")).toEqual(["tasks", "hh-1"]);
+  it("generates all key with tenant and household id", () => {
+    expect(taskKeys.all("t-1", "hh-1")).toEqual(["tasks", "t-1", "hh-1"]);
   });
 
-  it("generates all key with no-household fallback", () => {
-    expect(taskKeys.all(null)).toEqual(["tasks", "no-household"]);
+  it("generates all key with no-tenant and no-household fallbacks", () => {
+    expect(taskKeys.all(null, null)).toEqual(["tasks", "no-tenant", "no-household"]);
   });
 
   it("generates lists key", () => {
-    expect(taskKeys.lists("hh-1")).toEqual(["tasks", "hh-1", "list"]);
-  });
-
-  it("generates list key (same as lists)", () => {
-    expect(taskKeys.list("hh-1")).toEqual(["tasks", "hh-1", "list"]);
+    expect(taskKeys.lists("t-1", "hh-1")).toEqual(["tasks", "t-1", "hh-1", "list"]);
   });
 
   it("generates details key", () => {
-    expect(taskKeys.details("hh-1")).toEqual(["tasks", "hh-1", "detail"]);
+    expect(taskKeys.details("t-1", "hh-1")).toEqual(["tasks", "t-1", "hh-1", "detail"]);
   });
 
   it("generates detail key with id", () => {
-    expect(taskKeys.detail("hh-1", "task-42")).toEqual(["tasks", "hh-1", "detail", "task-42"]);
+    expect(taskKeys.detail("t-1", "hh-1", "task-42")).toEqual(["tasks", "t-1", "hh-1", "detail", "task-42"]);
   });
 
   it("generates summary key", () => {
-    expect(taskKeys.summary("hh-1")).toEqual(["tasks", "hh-1", "summary"]);
+    expect(taskKeys.summary("t-1", "hh-1")).toEqual(["tasks", "t-1", "hh-1", "summary"]);
   });
 
   it("returns readonly tuple arrays", () => {
-    const key = taskKeys.all("hh-1");
+    const key = taskKeys.all("t-1", "hh-1");
     expect(Array.isArray(key)).toBe(true);
-    expect(key).toHaveLength(2);
+    expect(key).toHaveLength(3);
   });
 });
 
@@ -90,5 +85,75 @@ describe("useTasks hook", () => {
     await waitFor(() => expect(result.current.isSuccess).toBe(true));
     expect(result.current.data?.data).toHaveLength(1);
     expect(result.current.data?.data[0].attributes.title).toBe("Test");
+  });
+
+  it("includes tenant and household in query key for cache isolation", () => {
+    expect(taskKeys.lists("tenant-1", "household-1")).toEqual(
+      ["tasks", "tenant-1", "household-1", "list"]
+    );
+    expect(taskKeys.lists("tenant-2", "household-1")).not.toEqual(
+      taskKeys.lists("tenant-1", "household-1")
+    );
+  });
+
+  it("fetches task summary", async () => {
+    const { productivityService } = await import("@/services/api/productivity");
+    (productivityService.getTaskSummary as ReturnType<typeof vi.fn>).mockResolvedValue({
+      data: { id: "s-1", type: "task-summaries", attributes: { pendingCount: 5, completedTodayCount: 2, overdueCount: 1 } },
+    });
+
+    const { useTaskSummary } = await import("../use-tasks");
+    const { result } = renderHook(() => useTaskSummary(), { wrapper: createWrapper() });
+
+    await waitFor(() => expect(result.current.isSuccess).toBe(true));
+    expect(result.current.data?.data.attributes.pendingCount).toBe(5);
+  });
+
+  it("creates a task and invalidates queries", async () => {
+    const { productivityService } = await import("@/services/api/productivity");
+    (productivityService.createTask as ReturnType<typeof vi.fn>).mockResolvedValue({
+      data: { id: "new-1", type: "tasks", attributes: { title: "New Task", status: "pending" } },
+    });
+
+    const { useCreateTask } = await import("../use-tasks");
+    const { result } = renderHook(() => useCreateTask(), { wrapper: createWrapper() });
+
+    await result.current.mutateAsync({ title: "New Task" });
+    expect(productivityService.createTask).toHaveBeenCalledWith("tenant-1", { title: "New Task" });
+  });
+
+  it("deletes a task", async () => {
+    const { productivityService } = await import("@/services/api/productivity");
+    (productivityService.deleteTask as ReturnType<typeof vi.fn>).mockResolvedValue(undefined);
+
+    const { useDeleteTask } = await import("../use-tasks");
+    const { result } = renderHook(() => useDeleteTask(), { wrapper: createWrapper() });
+
+    await result.current.mutateAsync("task-1");
+    expect(productivityService.deleteTask).toHaveBeenCalledWith("tenant-1", "task-1");
+  });
+
+  it("updates a task", async () => {
+    const { productivityService } = await import("@/services/api/productivity");
+    (productivityService.updateTask as ReturnType<typeof vi.fn>).mockResolvedValue({
+      data: { id: "task-1", type: "tasks", attributes: { title: "Updated", status: "completed" } },
+    });
+
+    const { useUpdateTask } = await import("../use-tasks");
+    const { result } = renderHook(() => useUpdateTask(), { wrapper: createWrapper() });
+
+    await result.current.mutateAsync({ id: "task-1", attrs: { status: "completed" } });
+    expect(productivityService.updateTask).toHaveBeenCalledWith("tenant-1", "task-1", { status: "completed" });
+  });
+
+  it("restores a task", async () => {
+    const { productivityService } = await import("@/services/api/productivity");
+    (productivityService.restoreTask as ReturnType<typeof vi.fn>).mockResolvedValue(undefined);
+
+    const { useRestoreTask } = await import("../use-tasks");
+    const { result } = renderHook(() => useRestoreTask(), { wrapper: createWrapper() });
+
+    await result.current.mutateAsync("task-1");
+    expect(productivityService.restoreTask).toHaveBeenCalledWith("tenant-1", "task-1");
   });
 });

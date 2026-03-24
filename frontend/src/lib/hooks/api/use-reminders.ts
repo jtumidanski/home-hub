@@ -6,18 +6,16 @@ import type { ReminderAttributes } from "@/types/models/reminder";
 // --- Key factory ---
 
 export const reminderKeys = {
-  all: (householdId: string | null) =>
-    ["reminders", householdId ?? "no-household"] as const,
-  lists: (householdId: string | null) =>
-    [...reminderKeys.all(householdId), "list"] as const,
-  list: (householdId: string | null) =>
-    [...reminderKeys.lists(householdId)] as const,
-  details: (householdId: string | null) =>
-    [...reminderKeys.all(householdId), "detail"] as const,
-  detail: (householdId: string | null, id: string) =>
-    [...reminderKeys.details(householdId), id] as const,
-  summary: (householdId: string | null) =>
-    [...reminderKeys.all(householdId), "summary"] as const,
+  all: (tenantId: string | null, householdId: string | null) =>
+    ["reminders", tenantId ?? "no-tenant", householdId ?? "no-household"] as const,
+  lists: (tenantId: string | null, householdId: string | null) =>
+    [...reminderKeys.all(tenantId, householdId), "list"] as const,
+  details: (tenantId: string | null, householdId: string | null) =>
+    [...reminderKeys.all(tenantId, householdId), "detail"] as const,
+  detail: (tenantId: string | null, householdId: string | null, id: string) =>
+    [...reminderKeys.details(tenantId, householdId), id] as const,
+  summary: (tenantId: string | null, householdId: string | null) =>
+    [...reminderKeys.all(tenantId, householdId), "summary"] as const,
 };
 
 // --- Query hooks ---
@@ -25,7 +23,7 @@ export const reminderKeys = {
 export function useReminders() {
   const { tenantId, householdId } = useTenant();
   return useQuery({
-    queryKey: reminderKeys.list(householdId),
+    queryKey: reminderKeys.lists(tenantId, householdId),
     queryFn: () => productivityService.listReminders(tenantId!),
     enabled: !!tenantId && !!householdId,
     staleTime: 5 * 60 * 1000,
@@ -35,7 +33,7 @@ export function useReminders() {
 export function useReminderSummary() {
   const { tenantId, householdId } = useTenant();
   return useQuery({
-    queryKey: reminderKeys.summary(householdId),
+    queryKey: reminderKeys.summary(tenantId, householdId),
     queryFn: () => productivityService.getReminderSummary(tenantId!),
     enabled: !!tenantId && !!householdId,
     staleTime: 60 * 1000,
@@ -51,8 +49,8 @@ export function useCreateReminder() {
     mutationFn: (attrs: { title: string; notes?: string; scheduledFor: string }) =>
       productivityService.createReminder(tenantId!, attrs),
     onSettled: () => {
-      qc.invalidateQueries({ queryKey: reminderKeys.lists(householdId) });
-      qc.invalidateQueries({ queryKey: reminderKeys.summary(householdId) });
+      qc.invalidateQueries({ queryKey: reminderKeys.lists(tenantId, householdId) });
+      qc.invalidateQueries({ queryKey: reminderKeys.summary(tenantId, householdId) });
     },
   });
 }
@@ -64,8 +62,8 @@ export function useUpdateReminder() {
     mutationFn: ({ id, attrs }: { id: string; attrs: Partial<ReminderAttributes> }) =>
       productivityService.updateReminder(tenantId!, id, attrs),
     onSettled: () => {
-      qc.invalidateQueries({ queryKey: reminderKeys.lists(householdId) });
-      qc.invalidateQueries({ queryKey: reminderKeys.summary(householdId) });
+      qc.invalidateQueries({ queryKey: reminderKeys.lists(tenantId, householdId) });
+      qc.invalidateQueries({ queryKey: reminderKeys.summary(tenantId, householdId) });
     },
   });
 }
@@ -76,8 +74,8 @@ export function useDeleteReminder() {
   return useMutation({
     mutationFn: (id: string) => productivityService.deleteReminder(tenantId!, id),
     onSettled: () => {
-      qc.invalidateQueries({ queryKey: reminderKeys.lists(householdId) });
-      qc.invalidateQueries({ queryKey: reminderKeys.summary(householdId) });
+      qc.invalidateQueries({ queryKey: reminderKeys.lists(tenantId, householdId) });
+      qc.invalidateQueries({ queryKey: reminderKeys.summary(tenantId, householdId) });
     },
   });
 }
@@ -89,8 +87,8 @@ export function useSnoozeReminder() {
     mutationFn: ({ id, minutes }: { id: string; minutes: number }) =>
       productivityService.snoozeReminder(tenantId!, id, minutes),
     onSettled: () => {
-      qc.invalidateQueries({ queryKey: reminderKeys.lists(householdId) });
-      qc.invalidateQueries({ queryKey: reminderKeys.summary(householdId) });
+      qc.invalidateQueries({ queryKey: reminderKeys.lists(tenantId, householdId) });
+      qc.invalidateQueries({ queryKey: reminderKeys.summary(tenantId, householdId) });
     },
   });
 }
@@ -101,8 +99,8 @@ export function useDismissReminder() {
   return useMutation({
     mutationFn: (id: string) => productivityService.dismissReminder(tenantId!, id),
     onSettled: () => {
-      qc.invalidateQueries({ queryKey: reminderKeys.lists(householdId) });
-      qc.invalidateQueries({ queryKey: reminderKeys.summary(householdId) });
+      qc.invalidateQueries({ queryKey: reminderKeys.lists(tenantId, householdId) });
+      qc.invalidateQueries({ queryKey: reminderKeys.summary(tenantId, householdId) });
     },
   });
 }
@@ -111,17 +109,17 @@ export function useDismissReminder() {
 
 export function useInvalidateReminders() {
   const qc = useQueryClient();
-  const { householdId } = useTenant();
+  const { tenantId, householdId } = useTenant();
 
   return {
     invalidateAll: () =>
-      qc.invalidateQueries({ queryKey: reminderKeys.all(householdId) }),
+      qc.invalidateQueries({ queryKey: reminderKeys.all(tenantId, householdId) }),
     invalidateLists: () =>
-      qc.invalidateQueries({ queryKey: reminderKeys.lists(householdId) }),
+      qc.invalidateQueries({ queryKey: reminderKeys.lists(tenantId, householdId) }),
     invalidateSummary: () =>
-      qc.invalidateQueries({ queryKey: reminderKeys.summary(householdId) }),
+      qc.invalidateQueries({ queryKey: reminderKeys.summary(tenantId, householdId) }),
     invalidateReminder: (id: string) =>
-      qc.invalidateQueries({ queryKey: reminderKeys.detail(householdId, id) }),
+      qc.invalidateQueries({ queryKey: reminderKeys.detail(tenantId, householdId, id) }),
   };
 }
 
@@ -135,7 +133,7 @@ export function usePrefetchReminders() {
     prefetch: () => {
       if (!tenantId || !householdId) return;
       qc.prefetchQuery({
-        queryKey: reminderKeys.list(householdId),
+        queryKey: reminderKeys.lists(tenantId, householdId),
         queryFn: () => productivityService.listReminders(tenantId),
         staleTime: 5 * 60 * 1000,
       });
@@ -143,7 +141,7 @@ export function usePrefetchReminders() {
     prefetchSummary: () => {
       if (!tenantId || !householdId) return;
       qc.prefetchQuery({
-        queryKey: reminderKeys.summary(householdId),
+        queryKey: reminderKeys.summary(tenantId, householdId),
         queryFn: () => productivityService.getReminderSummary(tenantId),
         staleTime: 60 * 1000,
       });

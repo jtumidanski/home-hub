@@ -5,3 +5,7 @@ export const createTenantSchema = z.object({
 });
 
 export type CreateTenantFormData = z.infer<typeof createTenantSchema>;
+
+export const createTenantDefaults: CreateTenantFormData = {
+  name: "",
+};
