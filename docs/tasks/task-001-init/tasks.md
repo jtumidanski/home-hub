@@ -64,17 +64,17 @@ Last Updated: 2026-03-24
 
 ## Phase 5 — Account Service
 
-- [ ] 5.1 Create account schema migrations
-- [ ] 5.2 Implement GORM entities
-- [ ] 5.3 Implement domain models (Tenant, Household, Membership, Preference)
-- [ ] 5.4 Implement tenant CRUD
-- [ ] 5.5 Implement household CRUD
-- [ ] 5.6 Implement membership management
-- [ ] 5.7 Implement preference management
-- [ ] 5.8 Implement GET /contexts/current
-- [ ] 5.9 Implement context includes support
-- [ ] 5.10 Implement fallback when active household is invalid
-- [ ] 5.11 Write unit tests for account domain logic
+- [x] 5.1 Create account schema migrations
+- [x] 5.2 Implement GORM entities
+- [x] 5.3 Implement domain models (Tenant, Household, Membership, Preference)
+- [x] 5.4 Implement tenant CRUD
+- [x] 5.5 Implement household CRUD
+- [x] 5.6 Implement membership management
+- [x] 5.7 Implement preference management
+- [x] 5.8 Implement GET /contexts/current
+- [x] 5.9 Implement context includes support
+- [x] 5.10 Implement fallback when active household is invalid
+- [x] 5.11 Write unit tests for account domain logic
 
 ## Phase 6 — Frontend Auth + Onboarding
 

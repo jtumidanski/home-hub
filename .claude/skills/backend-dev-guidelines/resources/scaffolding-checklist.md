@@ -18,6 +18,7 @@ services/<service-name>/
 │       ├── builder.go
 │       ├── processor.go
 │       ├── provider.go
+│       ├── administrator.go
 │       ├── resource.go
 │       └── rest.go
 ├── migrations/

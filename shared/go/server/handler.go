@@ -1,83 +1,68 @@
 package server
 
 import (
-	"encoding/json"
+	"io"
 	"net/http"
 
+	"github.com/manyminds/api2go/jsonapi"
 	"github.com/sirupsen/logrus"
 )
 
-// jsonapiError represents a JSON:API error object.
-type jsonapiError struct {
-	Status string `json:"status"`
-	Code   string `json:"code,omitempty"`
-	Title  string `json:"title"`
-	Detail string `json:"detail,omitempty"`
+// HandlerDependency provides pre-configured dependencies to handlers.
+type HandlerDependency struct {
+	logger logrus.FieldLogger
 }
 
-type jsonapiErrors struct {
-	Errors []jsonapiError `json:"errors"`
+// Logger returns the pre-configured logger with handler context.
+func (d *HandlerDependency) Logger() logrus.FieldLogger { return d.logger }
+
+// HandlerContext provides JSON:API context to handlers.
+type HandlerContext struct {
+	si jsonapi.ServerInformation
 }
 
-// WriteError writes a JSON:API error response.
-func WriteError(w http.ResponseWriter, status int, title string, detail string) {
-	w.Header().Set("Content-Type", "application/vnd.api+json")
-	w.WriteHeader(status)
-	json.NewEncoder(w).Encode(jsonapiErrors{
-		Errors: []jsonapiError{
-			{
-				Status: http.StatusText(status),
-				Title:  title,
-				Detail: detail,
-			},
-		},
-	})
-}
-
-// MarshalResponse writes a JSON:API success response.
-func MarshalResponse[T any](w http.ResponseWriter, status int, data T) {
-	w.Header().Set("Content-Type", "application/vnd.api+json")
-	w.WriteHeader(status)
-	json.NewEncoder(w).Encode(map[string]T{"data": data})
-}
-
-// MarshalSliceResponse writes a JSON:API success response for a list.
-func MarshalSliceResponse[T any](w http.ResponseWriter, status int, data []T) {
-	w.Header().Set("Content-Type", "application/vnd.api+json")
-	w.WriteHeader(status)
-	json.NewEncoder(w).Encode(map[string][]T{"data": data})
-}
+// ServerInformation returns the JSON:API server configuration.
+func (c *HandlerContext) ServerInformation() jsonapi.ServerInformation { return c.si }
 
 // GetHandler is the signature for handlers that don't accept a request body.
-type GetHandler func(l logrus.FieldLogger, w http.ResponseWriter, r *http.Request)
+type GetHandler func(d *HandlerDependency, c *HandlerContext) http.HandlerFunc
 
 // InputHandler is the signature for handlers that accept a typed request body.
-type InputHandler[T any] func(l logrus.FieldLogger, w http.ResponseWriter, r *http.Request, input T)
+type InputHandler[T any] func(d *HandlerDependency, c *HandlerContext, input T) http.HandlerFunc
 
-// RegisterHandler wraps a GetHandler with logging and error recovery.
-func RegisterHandler(l *logrus.Logger) func(name string, handler GetHandler) http.HandlerFunc {
-	return func(name string, handler GetHandler) http.HandlerFunc {
-		return func(w http.ResponseWriter, r *http.Request) {
-			entry := l.WithField("handler", name)
-			handler(entry, w, r)
+// RegisterHandler wraps a GetHandler with logging, tracing, and JSON:API context.
+func RegisterHandler(l logrus.FieldLogger) func(si jsonapi.ServerInformation) func(name string, handler GetHandler) http.HandlerFunc {
+	return func(si jsonapi.ServerInformation) func(name string, handler GetHandler) http.HandlerFunc {
+		return func(name string, handler GetHandler) http.HandlerFunc {
+			return func(w http.ResponseWriter, r *http.Request) {
+				entry := l.WithField("handler", name)
+				d := &HandlerDependency{logger: entry}
+				c := &HandlerContext{si: si}
+				handler(d, c)(w, r)
+			}
 		}
 	}
 }
 
-// RegisterInputHandler wraps an InputHandler with JSON decoding, logging, and error recovery.
-func RegisterInputHandler[T any](l *logrus.Logger) func(name string, handler InputHandler[T]) http.HandlerFunc {
-	return func(name string, handler InputHandler[T]) http.HandlerFunc {
-		return func(w http.ResponseWriter, r *http.Request) {
-			entry := l.WithField("handler", name)
+// RegisterInputHandler wraps an InputHandler with JSON:API unmarshaling, logging, and context.
+func RegisterInputHandler[T jsonapi.EntityNamer](l logrus.FieldLogger) func(si jsonapi.ServerInformation) func(name string, handler InputHandler[T]) http.HandlerFunc {
+	return func(si jsonapi.ServerInformation) func(name string, handler InputHandler[T]) http.HandlerFunc {
+		return func(name string, handler InputHandler[T]) http.HandlerFunc {
+			return func(w http.ResponseWriter, r *http.Request) {
+				entry := l.WithField("handler", name)
+				d := &HandlerDependency{logger: entry}
+				c := &HandlerContext{si: si}
 
-			var input T
-			if err := json.NewDecoder(r.Body).Decode(&input); err != nil {
-				entry.WithError(err).Warn("invalid request body")
-				WriteError(w, http.StatusBadRequest, "Invalid Request", "Could not parse request body")
-				return
+				var input T
+				body, _ := io.ReadAll(r.Body)
+				if err := jsonapi.Unmarshal(body, &input); err != nil {
+					entry.WithError(err).Warn("invalid request body")
+					WriteError(w, http.StatusBadRequest, "Invalid Request", "Could not parse request body")
+					return
+				}
+
+				handler(d, c, input)(w, r)
 			}
-
-			handler(entry, w, r, input)
 		}
 	}
 }

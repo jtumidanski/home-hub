@@ -59,7 +59,14 @@ type RestModel struct {
 
 func (r RestModel) GetName() string  { return "auth-providers" }
 func (r RestModel) GetID() string    { return r.Id.String() }
-func (r *RestModel) SetID(id string) { r.Id, _ = uuid.Parse(id) }
+func (r *RestModel) SetID(id string) error {
+	parsed, err := uuid.Parse(id)
+	if err != nil {
+		return err
+	}
+	r.Id = parsed
+	return nil
+}
 
 func Transform(m Model) (RestModel, error) {
 	return RestModel{

@@ -1,4 +1,4 @@
-package user
+package tenant
 
 import (
 	"context"
@@ -23,17 +23,8 @@ func (p *Processor) ByIDProvider(id uuid.UUID) model.Provider[Model] {
 	return model.Map(Make)(getByID(id)(p.db.WithContext(p.ctx)))
 }
 
-func (p *Processor) ByEmailProvider(email string) model.Provider[Model] {
-	return model.Map(Make)(getByEmail(email)(p.db.WithContext(p.ctx)))
-}
-
-func (p *Processor) FindOrCreate(email, displayName, givenName, familyName, avatarURL string) (Model, error) {
-	m, err := p.ByEmailProvider(email)()
-	if err == nil {
-		return m, nil
-	}
-
-	e, err := create(p.db.WithContext(p.ctx), email, displayName, givenName, familyName, avatarURL)
+func (p *Processor) Create(name string) (Model, error) {
+	e, err := create(p.db.WithContext(p.ctx), name)
 	if err != nil {
 		return Model{}, err
 	}

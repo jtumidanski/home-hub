@@ -19,7 +19,39 @@ Fluent API for constructing validated domain models. `Build()` enforces invarian
 
 
 ## `processor.go`
-Pure curried business functions for core business logic. Dependency order: `NewProcessor(log, ctx, db)`.
+Business logic orchestration. Dependency order: `NewProcessor(log, ctx, db)`.
+
+**Key Responsibilities:**
+- Orchestrate providers (reads) and administrators (writes)
+- Enforce business rules and invariants
+- Always use `p.db.WithContext(p.ctx)` when calling providers or administrators
+
+**Critical Rules:**
+- ✅ `processor.go` → `provider.go` for reads (correct)
+- ✅ `processor.go` → `administrator.go` for writes (correct)
+- ❌ `processor.go` → direct `db.Create`/`db.Save`/`db.Delete` (WRONG - use administrator functions)
+
+## `administrator.go`
+
+**Write operations** (create, update, delete) that modify database state. This file handles all state-changing database access.
+
+**Key Responsibilities:**
+- Define write functions that accept `*gorm.DB` as the first parameter
+- Create functions take `tenantId` (needed to set entity field)
+- Update/Delete functions do NOT take `tenantId` (automatic via GORM callbacks)
+- Return the modified Entity (not Model) — the processor converts via `Make`
+
+**Typical Signatures:**
+```go
+func create(db *gorm.DB, tenantId uuid.UUID, name string) (Entity, error)
+func update(db *gorm.DB, id uuid.UUID, name string) (Entity, error)
+func deleteByID(db *gorm.DB, id uuid.UUID) error
+```
+
+**Why This Separation:**
+- **Testability** — Read and write operations can be mocked independently
+- **Clear intent** — Code review can quickly identify state-changing operations
+- **Single responsibility** — Each file has one job
 
 ## `provider.go`
 

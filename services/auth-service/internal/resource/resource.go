@@ -30,7 +30,7 @@ func InitializeRoutes(l *logrus.Logger, db *gorm.DB, issuer *authjwt.Issuer) ser
 		api.HandleFunc("/auth/token/refresh", handleRefresh(l, db, issuer)).Methods(http.MethodPost)
 		api.HandleFunc("/auth/logout", handleLogout(l, db)).Methods(http.MethodPost)
 		api.HandleFunc("/auth/.well-known/jwks.json", handleJWKS(issuer)).Methods(http.MethodGet)
-		api.HandleFunc("/users/me", handleGetMe(l, db)).Methods(http.MethodGet)
+		api.HandleFunc("/users/me", server.RegisterHandler(l)(server.GetServerInformation())("GetMe", handleGetMe(l, db))).Methods(http.MethodGet)
 	}
 }
 
@@ -261,25 +261,27 @@ func handleJWKS(issuer *authjwt.Issuer) http.HandlerFunc {
 	}
 }
 
-func handleGetMe(l *logrus.Logger, db *gorm.DB) http.HandlerFunc {
-	return func(w http.ResponseWriter, r *http.Request) {
-		// Extract user from JWT claims
-		claims, err := extractClaimsFromCookie(r)
-		if err != nil {
-			server.WriteError(w, http.StatusUnauthorized, "Unauthorized", "Invalid or missing token")
-			return
-		}
+func handleGetMe(l *logrus.Logger, db *gorm.DB) server.GetHandler {
+	return func(d *server.HandlerDependency, c *server.HandlerContext) http.HandlerFunc {
+		return func(w http.ResponseWriter, r *http.Request) {
+			// Extract user from JWT claims
+			claims, err := extractClaimsFromCookie(r)
+			if err != nil {
+				server.WriteError(w, http.StatusUnauthorized, "Unauthorized", "Invalid or missing token")
+				return
+			}
 
-		ctx := r.Context()
-		proc := user.NewProcessor(l, ctx, db)
-		u, err := proc.ByIDProvider(claims.UserID)()
-		if err != nil {
-			server.WriteError(w, http.StatusNotFound, "Not Found", "User not found")
-			return
-		}
+			ctx := r.Context()
+			proc := user.NewProcessor(l, ctx, db)
+			u, err := proc.ByIDProvider(claims.UserID)()
+			if err != nil {
+				server.WriteError(w, http.StatusNotFound, "Not Found", "User not found")
+				return
+			}
 
-		rest, _ := user.Transform(u)
-		server.MarshalResponse(w, http.StatusOK, rest)
+			rest, _ := user.Transform(u)
+			server.MarshalResponse[user.RestModel](d.Logger())(w)(c.ServerInformation())(map[string][]string{})(rest)
+		}
 	}
 }
 

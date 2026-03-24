@@ -29,24 +29,14 @@ func NewProcessor(l *logrus.Logger, ctx context.Context, db *gorm.DB) *Processor
 }
 
 // Create generates a new refresh token for the given user.
-// Returns the raw token (to be sent to the client) and any error.
 func (p *Processor) Create(userID uuid.UUID) (string, error) {
 	raw, err := generateToken()
 	if err != nil {
 		return "", err
 	}
 
-	now := time.Now().UTC()
-	e := &Entity{
-		Id:        uuid.New(),
-		UserId:    userID,
-		TokenHash: hashToken(raw),
-		ExpiresAt: now.Add(tokenTTL),
-		Revoked:   false,
-		CreatedAt: now,
-		UpdatedAt: now,
-	}
-	if err := p.db.WithContext(p.ctx).Create(e).Error; err != nil {
+	_, err = create(p.db.WithContext(p.ctx), userID, hashToken(raw), time.Now().UTC().Add(tokenTTL))
+	if err != nil {
 		return "", err
 	}
 	return raw, nil
@@ -72,7 +62,7 @@ func (p *Processor) Rotate(oldRaw string) (string, uuid.UUID, error) {
 		return "", uuid.Nil, err
 	}
 
-	if err := p.revokeByHash(hashToken(oldRaw)); err != nil {
+	if err := revokeByHash(p.db.WithContext(p.ctx), hashToken(oldRaw)); err != nil {
 		return "", uuid.Nil, err
 	}
 
@@ -85,17 +75,7 @@ func (p *Processor) Rotate(oldRaw string) (string, uuid.UUID, error) {
 
 // RevokeAllForUser revokes all refresh tokens for a user.
 func (p *Processor) RevokeAllForUser(userID uuid.UUID) error {
-	return p.db.WithContext(p.ctx).
-		Model(&Entity{}).
-		Where("user_id = ? AND revoked = ?", userID, false).
-		Update("revoked", true).Error
-}
-
-func (p *Processor) revokeByHash(hash string) error {
-	return p.db.WithContext(p.ctx).
-		Model(&Entity{}).
-		Where("token_hash = ?", hash).
-		Update("revoked", true).Error
+	return revokeAllForUser(p.db.WithContext(p.ctx), userID)
 }
 
 func generateToken() (string, error) {
