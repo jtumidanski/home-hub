@@ -8,6 +8,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/jtumidanski/home-hub/shared/go/database"
 	"github.com/sirupsen/logrus/hooks/test"
+	"github.com/stretchr/testify/require"
 	"gorm.io/driver/sqlite"
 	"gorm.io/gorm"
 )
@@ -15,121 +16,119 @@ import (
 func setupTestDB(t *testing.T) *gorm.DB {
 	t.Helper()
 	db, err := gorm.Open(sqlite.Open(":memory:"), &gorm.Config{})
-	if err != nil {
-		t.Fatalf("failed to open test db: %v", err)
-	}
+	require.NoError(t, err)
 	l, _ := test.NewNullLogger()
 	database.RegisterTenantCallbacks(l, db)
-	db.AutoMigrate(&Entity{})
+	require.NoError(t, db.AutoMigrate(&Entity{}))
 	return db
+}
+
+func newTestProcessor(t *testing.T, db *gorm.DB) *Processor {
+	t.Helper()
+	l, _ := test.NewNullLogger()
+	return NewProcessor(l, context.Background(), db)
 }
 
 func TestCreate(t *testing.T) {
 	db := setupTestDB(t)
-	l, _ := test.NewNullLogger()
-	p := NewProcessor(l, context.Background(), db)
+	p := newTestProcessor(t, db)
 
 	m, err := p.Create(uuid.New(), uuid.New(), "Test Task", "Some notes", nil, false)
-	if err != nil {
-		t.Fatalf("unexpected error: %v", err)
-	}
-	if m.Title() != "Test Task" {
-		t.Errorf("expected title Test Task, got %s", m.Title())
-	}
-	if m.Status() != "pending" {
-		t.Errorf("expected status pending, got %s", m.Status())
-	}
+	require.NoError(t, err)
+	require.Equal(t, "Test Task", m.Title())
+	require.Equal(t, "pending", m.Status())
+	require.Equal(t, "Some notes", m.Notes())
+	require.False(t, m.RolloverEnabled())
 }
 
-func TestUpdate_Complete(t *testing.T) {
+func TestUpdate_StatusTransitions(t *testing.T) {
 	db := setupTestDB(t)
-	l, _ := test.NewNullLogger()
-	p := NewProcessor(l, context.Background(), db)
+	p := newTestProcessor(t, db)
 	userID := uuid.New()
 
-	m, _ := p.Create(uuid.New(), uuid.New(), "Task", "", nil, false)
-	updated, err := p.Update(m.Id(), "Task", "", "completed", nil, false, userID)
-	if err != nil {
-		t.Fatalf("unexpected error: %v", err)
-	}
-	if !updated.IsCompleted() {
-		t.Error("expected task to be completed")
-	}
-	if updated.CompletedAt() == nil {
-		t.Error("expected completedAt to be set")
-	}
-}
+	m, err := p.Create(uuid.New(), uuid.New(), "Task", "", nil, false)
+	require.NoError(t, err)
 
-func TestUpdate_Reopen(t *testing.T) {
-	db := setupTestDB(t)
-	l, _ := test.NewNullLogger()
-	p := NewProcessor(l, context.Background(), db)
-	userID := uuid.New()
+	tests := []struct {
+		name            string
+		newStatus       string
+		expectCompleted bool
+		expectCompletedAt bool
+	}{
+		{"complete task", "completed", true, true},
+		{"reopen task", "pending", false, false},
+	}
 
-	m, _ := p.Create(uuid.New(), uuid.New(), "Task", "", nil, false)
-	completed, _ := p.Update(m.Id(), "Task", "", "completed", nil, false, userID)
-	reopened, err := p.Update(completed.Id(), "Task", "", "pending", nil, false, userID)
-	if err != nil {
-		t.Fatalf("unexpected error: %v", err)
-	}
-	if reopened.IsCompleted() {
-		t.Error("expected task to be pending")
-	}
-	if reopened.CompletedAt() != nil {
-		t.Error("expected completedAt to be nil after reopen")
+	current := m
+	for _, tc := range tests {
+		t.Run(tc.name, func(t *testing.T) {
+			updated, err := p.Update(current.Id(), "Task", "", tc.newStatus, nil, false, userID)
+			require.NoError(t, err)
+			require.Equal(t, tc.expectCompleted, updated.IsCompleted())
+			if tc.expectCompletedAt {
+				require.NotNil(t, updated.CompletedAt())
+			} else {
+				require.Nil(t, updated.CompletedAt())
+			}
+			current = updated
+		})
 	}
 }
 
 func TestSoftDelete_And_Restore(t *testing.T) {
 	db := setupTestDB(t)
-	l, _ := test.NewNullLogger()
-	p := NewProcessor(l, context.Background(), db)
+	p := newTestProcessor(t, db)
 
-	m, _ := p.Create(uuid.New(), uuid.New(), "Delete Me", "", nil, false)
-	if err := p.Delete(m.Id()); err != nil {
-		t.Fatalf("unexpected error deleting: %v", err)
-	}
+	m, err := p.Create(uuid.New(), uuid.New(), "Delete Me", "", nil, false)
+	require.NoError(t, err)
 
-	deleted, _ := p.ByIDProvider(m.Id())()
-	if !deleted.IsDeleted() {
-		t.Error("expected task to be deleted")
-	}
+	require.NoError(t, p.Delete(m.Id()))
 
-	if err := p.Restore(m.Id()); err != nil {
-		t.Fatalf("unexpected error restoring: %v", err)
-	}
+	deleted, err := p.ByIDProvider(m.Id())()
+	require.NoError(t, err)
+	require.True(t, deleted.IsDeleted())
 
-	restored, _ := p.ByIDProvider(m.Id())()
-	if restored.IsDeleted() {
-		t.Error("expected task to be restored")
-	}
+	require.NoError(t, p.Restore(m.Id()))
+
+	restored, err := p.ByIDProvider(m.Id())()
+	require.NoError(t, err)
+	require.False(t, restored.IsDeleted())
 }
 
-func TestRestore_NotDeleted(t *testing.T) {
+func TestRestore_Errors(t *testing.T) {
 	db := setupTestDB(t)
-	l, _ := test.NewNullLogger()
-	p := NewProcessor(l, context.Background(), db)
+	p := newTestProcessor(t, db)
 
-	m, _ := p.Create(uuid.New(), uuid.New(), "Not Deleted", "", nil, false)
-	err := p.Restore(m.Id())
-	if err != ErrNotDeleted {
-		t.Errorf("expected ErrNotDeleted, got %v", err)
+	tests := []struct {
+		name    string
+		setup   func() uuid.UUID
+		wantErr error
+	}{
+		{
+			name: "not deleted",
+			setup: func() uuid.UUID {
+				m, _ := p.Create(uuid.New(), uuid.New(), "Not Deleted", "", nil, false)
+				return m.Id()
+			},
+			wantErr: ErrNotDeleted,
+		},
+		{
+			name: "restore window expired",
+			setup: func() uuid.UUID {
+				m, _ := p.Create(uuid.New(), uuid.New(), "Old Delete", "", nil, false)
+				oldTime := time.Now().UTC().Add(-4 * 24 * time.Hour)
+				db.Model(&Entity{}).Where("id = ?", m.Id()).Update("deleted_at", oldTime)
+				return m.Id()
+			},
+			wantErr: ErrRestoreWindow,
+		},
 	}
-}
 
-func TestRestore_WindowExpired(t *testing.T) {
-	db := setupTestDB(t)
-	l, _ := test.NewNullLogger()
-	p := NewProcessor(l, context.Background(), db)
-
-	m, _ := p.Create(uuid.New(), uuid.New(), "Old Delete", "", nil, false)
-
-	// Manually set deleted_at to 4 days ago
-	oldTime := time.Now().UTC().Add(-4 * 24 * time.Hour)
-	db.Model(&Entity{}).Where("id = ?", m.Id()).Update("deleted_at", oldTime)
-
-	err := p.Restore(m.Id())
-	if err != ErrRestoreWindow {
-		t.Errorf("expected ErrRestoreWindow, got %v", err)
+	for _, tc := range tests {
+		t.Run(tc.name, func(t *testing.T) {
+			id := tc.setup()
+			err := p.Restore(id)
+			require.ErrorIs(t, err, tc.wantErr)
+		})
 	}
 }

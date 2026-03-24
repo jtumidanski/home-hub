@@ -42,10 +42,17 @@ func update(db *gorm.DB, id uuid.UUID, title, notes string, scheduledFor time.Ti
 
 func dismiss(db *gorm.DB, id uuid.UUID) error {
 	now := time.Now().UTC()
-	return db.Model(&Entity{}).Where("id = ?", id).Updates(map[string]interface{}{
+	result := db.Model(&Entity{}).Where("id = ?", id).Updates(map[string]interface{}{
 		"last_dismissed_at": now,
 		"updated_at":        now,
-	}).Error
+	})
+	if result.Error != nil {
+		return result.Error
+	}
+	if result.RowsAffected == 0 {
+		return gorm.ErrRecordNotFound
+	}
+	return nil
 }
 
 func snooze(db *gorm.DB, id uuid.UUID, snoozedUntil time.Time) error {

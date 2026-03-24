@@ -17,11 +17,12 @@ func InitializeRoutes(db *gorm.DB) func(l logrus.FieldLogger, si jsonapi.ServerI
 	return func(l logrus.FieldLogger, si jsonapi.ServerInformation, api *mux.Router) {
 		rh := server.RegisterHandler(l)(si)
 		rih := server.RegisterInputHandler[CreateRequest](l)(si)
+		rihu := server.RegisterInputHandler[UpdateRequest](l)(si)
 
 		api.HandleFunc("/reminders", rh("ListReminders", listHandler(db))).Methods(http.MethodGet)
 		api.HandleFunc("/reminders", rih("CreateReminder", createHandler(db))).Methods(http.MethodPost)
 		api.HandleFunc("/reminders/{id}", rh("GetReminder", getHandler(db))).Methods(http.MethodGet)
-		api.HandleFunc("/reminders/{id}", rih("UpdateReminder", updateHandler(db))).Methods(http.MethodPatch)
+		api.HandleFunc("/reminders/{id}", rihu("UpdateReminder", updateHandler(db))).Methods(http.MethodPatch)
 		api.HandleFunc("/reminders/{id}", rh("DeleteReminder", deleteHandler(db))).Methods(http.MethodDelete)
 	}
 }
@@ -100,8 +101,8 @@ func getHandler(db *gorm.DB) server.GetHandler {
 	}
 }
 
-func updateHandler(db *gorm.DB) server.InputHandler[CreateRequest] {
-	return func(d *server.HandlerDependency, c *server.HandlerContext, input CreateRequest) http.HandlerFunc {
+func updateHandler(db *gorm.DB) server.InputHandler[UpdateRequest] {
+	return func(d *server.HandlerDependency, c *server.HandlerContext, input UpdateRequest) http.HandlerFunc {
 		return func(w http.ResponseWriter, r *http.Request) {
 			id, err := uuid.Parse(mux.Vars(r)["id"])
 			if err != nil {

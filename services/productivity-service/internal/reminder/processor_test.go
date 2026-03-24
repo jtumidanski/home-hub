@@ -8,6 +8,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/jtumidanski/home-hub/shared/go/database"
 	"github.com/sirupsen/logrus/hooks/test"
+	"github.com/stretchr/testify/require"
 	"gorm.io/driver/sqlite"
 	"gorm.io/gorm"
 )
@@ -15,99 +16,98 @@ import (
 func setupTestDB(t *testing.T) *gorm.DB {
 	t.Helper()
 	db, err := gorm.Open(sqlite.Open(":memory:"), &gorm.Config{})
-	if err != nil {
-		t.Fatalf("failed to open test db: %v", err)
-	}
+	require.NoError(t, err)
 	l, _ := test.NewNullLogger()
 	database.RegisterTenantCallbacks(l, db)
-	db.AutoMigrate(&Entity{})
+	require.NoError(t, db.AutoMigrate(&Entity{}))
 	return db
+}
+
+func newTestProcessor(t *testing.T, db *gorm.DB) *Processor {
+	t.Helper()
+	l, _ := test.NewNullLogger()
+	return NewProcessor(l, context.Background(), db)
 }
 
 func TestCreate(t *testing.T) {
 	db := setupTestDB(t)
-	l, _ := test.NewNullLogger()
-	p := NewProcessor(l, context.Background(), db)
+	p := newTestProcessor(t, db)
 
 	scheduled := time.Now().UTC().Add(1 * time.Hour)
 	m, err := p.Create(uuid.New(), uuid.New(), "Test Reminder", "Notes", scheduled)
-	if err != nil {
-		t.Fatalf("unexpected error: %v", err)
+	require.NoError(t, err)
+	require.Equal(t, "Test Reminder", m.Title())
+	require.Equal(t, "Notes", m.Notes())
+}
+
+func TestIsActive(t *testing.T) {
+	db := setupTestDB(t)
+	p := newTestProcessor(t, db)
+
+	tests := []struct {
+		name         string
+		scheduledFor time.Time
+		expectActive bool
+	}{
+		{"future reminder not active", time.Now().UTC().Add(1 * time.Hour), false},
+		{"past reminder is active", time.Now().UTC().Add(-1 * time.Hour), true},
 	}
-	if m.Title() != "Test Reminder" {
-		t.Errorf("expected title Test Reminder, got %s", m.Title())
+
+	for _, tc := range tests {
+		t.Run(tc.name, func(t *testing.T) {
+			m, err := p.Create(uuid.New(), uuid.New(), tc.name, "", tc.scheduledFor)
+			require.NoError(t, err)
+			require.Equal(t, tc.expectActive, m.IsActive())
+		})
 	}
 }
 
-func TestIsActive_Future(t *testing.T) {
+func TestSnooze(t *testing.T) {
 	db := setupTestDB(t)
-	l, _ := test.NewNullLogger()
-	p := NewProcessor(l, context.Background(), db)
+	p := newTestProcessor(t, db)
 
-	future := time.Now().UTC().Add(1 * time.Hour)
-	m, _ := p.Create(uuid.New(), uuid.New(), "Future", "", future)
-	if m.IsActive() {
-		t.Error("expected future reminder to not be active")
+	tests := []struct {
+		name            string
+		durationMinutes int
+		expectError     bool
+	}{
+		{"valid 10 minutes", 10, false},
+		{"valid 30 minutes", 30, false},
+		{"valid 60 minutes", 60, false},
+		{"invalid 15 minutes", 15, true},
+		{"invalid 0 minutes", 0, true},
+		{"invalid 45 minutes", 45, true},
 	}
-}
 
-func TestIsActive_Past(t *testing.T) {
-	db := setupTestDB(t)
-	l, _ := test.NewNullLogger()
-	p := NewProcessor(l, context.Background(), db)
+	for _, tc := range tests {
+		t.Run(tc.name, func(t *testing.T) {
+			past := time.Now().UTC().Add(-1 * time.Hour)
+			m, err := p.Create(uuid.New(), uuid.New(), tc.name, "", past)
+			require.NoError(t, err)
 
-	past := time.Now().UTC().Add(-1 * time.Hour)
-	m, _ := p.Create(uuid.New(), uuid.New(), "Past", "", past)
-	if !m.IsActive() {
-		t.Error("expected past reminder to be active")
-	}
-}
-
-func TestSnooze_ValidDuration(t *testing.T) {
-	db := setupTestDB(t)
-	l, _ := test.NewNullLogger()
-	p := NewProcessor(l, context.Background(), db)
-
-	past := time.Now().UTC().Add(-1 * time.Hour)
-	m, _ := p.Create(uuid.New(), uuid.New(), "Snooze Me", "", past)
-
-	snoozedUntil, err := p.Snooze(m.Id(), 30)
-	if err != nil {
-		t.Fatalf("unexpected error: %v", err)
-	}
-	if snoozedUntil.Before(time.Now().UTC()) {
-		t.Error("expected snoozedUntil to be in the future")
-	}
-}
-
-func TestSnooze_InvalidDuration(t *testing.T) {
-	db := setupTestDB(t)
-	l, _ := test.NewNullLogger()
-	p := NewProcessor(l, context.Background(), db)
-
-	past := time.Now().UTC().Add(-1 * time.Hour)
-	m, _ := p.Create(uuid.New(), uuid.New(), "Bad Snooze", "", past)
-
-	_, err := p.Snooze(m.Id(), 15)
-	if err == nil {
-		t.Error("expected error for invalid snooze duration")
+			snoozedUntil, err := p.Snooze(m.Id(), tc.durationMinutes)
+			if tc.expectError {
+				require.Error(t, err)
+			} else {
+				require.NoError(t, err)
+				require.True(t, snoozedUntil.After(time.Now().UTC()))
+			}
+		})
 	}
 }
 
 func TestDismiss(t *testing.T) {
 	db := setupTestDB(t)
-	l, _ := test.NewNullLogger()
-	p := NewProcessor(l, context.Background(), db)
+	p := newTestProcessor(t, db)
 
 	past := time.Now().UTC().Add(-1 * time.Hour)
-	m, _ := p.Create(uuid.New(), uuid.New(), "Dismiss Me", "", past)
+	m, err := p.Create(uuid.New(), uuid.New(), "Dismiss Me", "", past)
+	require.NoError(t, err)
+	require.True(t, m.IsActive())
 
-	if err := p.Dismiss(m.Id()); err != nil {
-		t.Fatalf("unexpected error: %v", err)
-	}
+	require.NoError(t, p.Dismiss(m.Id()))
 
-	dismissed, _ := p.ByIDProvider(m.Id())()
-	if dismissed.IsActive() {
-		t.Error("expected dismissed reminder to not be active")
-	}
+	dismissed, err := p.ByIDProvider(m.Id())()
+	require.NoError(t, err)
+	require.False(t, dismissed.IsActive())
 }

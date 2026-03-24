@@ -53,3 +53,14 @@ type CreateRequest struct {
 func (r CreateRequest) GetName() string       { return "reminders" }
 func (r CreateRequest) GetID() string          { return r.Id.String() }
 func (r *CreateRequest) SetID(id string) error { var err error; r.Id, err = uuid.Parse(id); return err }
+
+type UpdateRequest struct {
+	Id           uuid.UUID `json:"-"`
+	Title        string    `json:"title"`
+	Notes        string    `json:"notes"`
+	ScheduledFor string    `json:"scheduledFor"`
+}
+
+func (r UpdateRequest) GetName() string       { return "reminders" }
+func (r UpdateRequest) GetID() string          { return r.Id.String() }
+func (r *UpdateRequest) SetID(id string) error { var err error; r.Id, err = uuid.Parse(id); return err }

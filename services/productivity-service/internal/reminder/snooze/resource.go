@@ -38,7 +38,12 @@ func createHandler(db *gorm.DB) server.InputHandler[CreateRequest] {
 				return
 			}
 
-			rest := RestModel{Id: e.Id, DurationMinutes: e.DurationMinutes, SnoozedUntil: e.SnoozedUntil, CreatedAt: e.CreatedAt}
+			rest, err := Transform(e)
+			if err != nil {
+				d.Logger().WithError(err).Error("Creating REST model")
+				server.WriteError(w, http.StatusInternalServerError, "Error", "")
+				return
+			}
 			server.MarshalCreatedResponse[RestModel](d.Logger())(w)(c.ServerInformation())(rest)
 		}
 	}

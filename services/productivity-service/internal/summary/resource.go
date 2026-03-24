@@ -63,9 +63,24 @@ func taskSummaryHandler(db *gorm.DB) server.GetHandler {
 	return func(d *server.HandlerDependency, c *server.HandlerContext) http.HandlerFunc {
 		return func(w http.ResponseWriter, r *http.Request) {
 			proc := task.NewProcessor(d.Logger(), r.Context(), db)
-			pending, _ := proc.PendingCount()
-			completed, _ := proc.CompletedTodayCount()
-			overdue, _ := proc.OverdueCount()
+			pending, err := proc.PendingCount()
+			if err != nil {
+				d.Logger().WithError(err).Error("Failed to get pending task count")
+				server.WriteError(w, http.StatusInternalServerError, "Error", "")
+				return
+			}
+			completed, err := proc.CompletedTodayCount()
+			if err != nil {
+				d.Logger().WithError(err).Error("Failed to get completed task count")
+				server.WriteError(w, http.StatusInternalServerError, "Error", "")
+				return
+			}
+			overdue, err := proc.OverdueCount()
+			if err != nil {
+				d.Logger().WithError(err).Error("Failed to get overdue task count")
+				server.WriteError(w, http.StatusInternalServerError, "Error", "")
+				return
+			}
 
 			s := TaskSummary{PendingCount: pending, CompletedTodayCount: completed, OverdueCount: overdue}
 			server.MarshalResponse[TaskSummary](d.Logger())(w)(c.ServerInformation())(r.URL.Query())(s)
@@ -77,9 +92,24 @@ func reminderSummaryHandler(db *gorm.DB) server.GetHandler {
 	return func(d *server.HandlerDependency, c *server.HandlerContext) http.HandlerFunc {
 		return func(w http.ResponseWriter, r *http.Request) {
 			proc := reminder.NewProcessor(d.Logger(), r.Context(), db)
-			dueNow, _ := proc.DueNowCount()
-			upcoming, _ := proc.UpcomingCount()
-			snoozed, _ := proc.SnoozedCount()
+			dueNow, err := proc.DueNowCount()
+			if err != nil {
+				d.Logger().WithError(err).Error("Failed to get due-now reminder count")
+				server.WriteError(w, http.StatusInternalServerError, "Error", "")
+				return
+			}
+			upcoming, err := proc.UpcomingCount()
+			if err != nil {
+				d.Logger().WithError(err).Error("Failed to get upcoming reminder count")
+				server.WriteError(w, http.StatusInternalServerError, "Error", "")
+				return
+			}
+			snoozed, err := proc.SnoozedCount()
+			if err != nil {
+				d.Logger().WithError(err).Error("Failed to get snoozed reminder count")
+				server.WriteError(w, http.StatusInternalServerError, "Error", "")
+				return
+			}
 
 			s := ReminderSummary{DueNowCount: dueNow, UpcomingCount: upcoming, SnoozedCount: snoozed}
 			server.MarshalResponse[ReminderSummary](d.Logger())(w)(c.ServerInformation())(r.URL.Query())(s)
@@ -93,8 +123,18 @@ func dashboardSummaryHandler(db *gorm.DB) server.GetHandler {
 			taskProc := task.NewProcessor(d.Logger(), r.Context(), db)
 			remProc := reminder.NewProcessor(d.Logger(), r.Context(), db)
 
-			pending, _ := taskProc.PendingCount()
-			dueNow, _ := remProc.DueNowCount()
+			pending, err := taskProc.PendingCount()
+			if err != nil {
+				d.Logger().WithError(err).Error("Failed to get pending task count")
+				server.WriteError(w, http.StatusInternalServerError, "Error", "")
+				return
+			}
+			dueNow, err := remProc.DueNowCount()
+			if err != nil {
+				d.Logger().WithError(err).Error("Failed to get due-now reminder count")
+				server.WriteError(w, http.StatusInternalServerError, "Error", "")
+				return
+			}
 
 			s := DashboardSummary{
 				PendingTaskCount: pending,
