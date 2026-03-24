@@ -22,3 +22,15 @@ func (m Model) Provider() string       { return m.provider }
 func (m Model) ProviderSubject() string { return m.providerSubject }
 func (m Model) CreatedAt() time.Time   { return m.createdAt }
 func (m Model) UpdatedAt() time.Time   { return m.updatedAt }
+
+// ToEntity converts the domain model back to a database entity.
+func (m Model) ToEntity() Entity {
+	return Entity{
+		Id:              m.id,
+		UserId:          m.userId,
+		Provider:        m.provider,
+		ProviderSubject: m.providerSubject,
+		CreatedAt:       m.createdAt,
+		UpdatedAt:       m.updatedAt,
+	}
+}

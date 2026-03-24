@@ -27,6 +27,8 @@ func InitializeRoutes(db *gorm.DB, issuer *authjwt.Issuer, oidcCfg config.OIDCCo
 
 		api.HandleFunc("/auth/login/{provider}", rh("Login", handleLogin(oidcCfg))).Methods(http.MethodGet)
 		api.HandleFunc("/auth/callback/{provider}", rh("Callback", handleCallback(db, issuer, oidcCfg))).Methods(http.MethodGet)
+		// Note: refresh and logout are POST endpoints with no request body (tokens come from cookies).
+		// RegisterInputHandler requires a JSON:API body, so RegisterHandler is correct here.
 		api.HandleFunc("/auth/token/refresh", rh("Refresh", handleRefresh(db, issuer))).Methods(http.MethodPost)
 		api.HandleFunc("/auth/logout", rh("Logout", handleLogout(db, issuer))).Methods(http.MethodPost)
 		api.HandleFunc("/auth/.well-known/jwks.json", rh("JWKS", handleJWKS(issuer))).Methods(http.MethodGet)
@@ -125,13 +127,15 @@ func handleCallback(db *gorm.DB, issuer *authjwt.Issuer, oidcCfg config.OIDCConf
 				return
 			}
 
-			// Link external identity
+			// Link external identity (idempotent — skip if already linked)
 			eiProc := externalidentity.NewProcessor(d.Logger(), ctx, db)
 			_, linkErr := eiProc.FindByProviderSubject("google", userInfo.Subject)()
 			if linkErr != nil {
 				_, err = eiProc.Create(u.Id(), "google", userInfo.Subject)
 				if err != nil {
 					d.Logger().WithError(err).Error("external identity creation failed")
+					server.WriteError(w, http.StatusInternalServerError, "Identity Error", "")
+					return
 				}
 			}
 

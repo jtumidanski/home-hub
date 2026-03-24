@@ -17,6 +17,17 @@ func (m Model) IssuerURL() string { return m.issuerURL }
 func (m Model) ClientID() string { return m.clientID }
 func (m Model) Enabled() bool   { return m.enabled }
 
+// ToEntity converts the domain model back to a database entity.
+func (m Model) ToEntity() Entity {
+	return Entity{
+		Id:        m.id,
+		Name:      m.name,
+		IssuerURL: m.issuerURL,
+		ClientID:  m.clientID,
+		Enabled:   m.enabled,
+	}
+}
+
 // Make converts an Entity to a Model.
 func Make(e Entity) (Model, error) {
 	return Model{

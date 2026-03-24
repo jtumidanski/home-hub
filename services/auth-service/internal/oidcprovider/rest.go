@@ -26,3 +26,16 @@ func Transform(m Model) (RestModel, error) {
 		DisplayName: m.Name(),
 	}, nil
 }
+
+// TransformSlice converts a slice of domain Models to RestModels.
+func TransformSlice(models []Model) ([]RestModel, error) {
+	restModels := make([]RestModel, len(models))
+	for i, m := range models {
+		rm, err := Transform(m)
+		if err != nil {
+			return nil, err
+		}
+		restModels[i] = rm
+	}
+	return restModels, nil
+}
