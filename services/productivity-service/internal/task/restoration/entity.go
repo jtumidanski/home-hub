@@ -19,3 +19,14 @@ type Entity struct {
 func (Entity) TableName() string { return "task_restorations" }
 
 func Migration(db *gorm.DB) error { return db.AutoMigrate(&Entity{}) }
+
+func Make(e Entity) (Model, error) {
+	return NewBuilder().
+		SetId(e.Id).
+		SetTenantID(e.TenantId).
+		SetHouseholdID(e.HouseholdId).
+		SetTaskID(e.TaskId).
+		SetCreatedByUserID(e.CreatedByUserId).
+		SetCreatedAt(e.CreatedAt).
+		Build()
+}

@@ -42,6 +42,9 @@ func (p *Processor) ByStatusProvider(status string) model.Provider[[]Model] {
 }
 
 func (p *Processor) Create(tenantID, householdID uuid.UUID, title, notes string, dueOn *time.Time, rolloverEnabled bool) (Model, error) {
+	if _, err := NewBuilder().SetTitle(title).Build(); err != nil {
+		return Model{}, err
+	}
 	e, err := create(p.db.WithContext(p.ctx), tenantID, householdID, title, notes, "pending", dueOn, rolloverEnabled)
 	if err != nil {
 		return Model{}, err

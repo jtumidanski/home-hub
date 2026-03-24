@@ -29,7 +29,7 @@ func getAll() func(db *gorm.DB) model.Provider[[]Entity] {
 func countDueNow(db *gorm.DB) (int64, error) {
 	var count int64
 	err := db.Model(&Entity{}).
-		Where("scheduled_for <= NOW() AND last_dismissed_at IS NULL AND (last_snoozed_until IS NULL OR last_snoozed_until <= NOW())").
+		Where("scheduled_for <= CURRENT_TIMESTAMP AND last_dismissed_at IS NULL AND (last_snoozed_until IS NULL OR last_snoozed_until <= CURRENT_TIMESTAMP)").
 		Count(&count).Error
 	return count, err
 }
@@ -37,7 +37,7 @@ func countDueNow(db *gorm.DB) (int64, error) {
 func countUpcoming(db *gorm.DB) (int64, error) {
 	var count int64
 	err := db.Model(&Entity{}).
-		Where("scheduled_for > NOW() AND last_dismissed_at IS NULL").
+		Where("scheduled_for > CURRENT_TIMESTAMP AND last_dismissed_at IS NULL").
 		Count(&count).Error
 	return count, err
 }
@@ -45,7 +45,7 @@ func countUpcoming(db *gorm.DB) (int64, error) {
 func countSnoozed(db *gorm.DB) (int64, error) {
 	var count int64
 	err := db.Model(&Entity{}).
-		Where("last_snoozed_until > NOW() AND last_dismissed_at IS NULL").
+		Where("last_snoozed_until > CURRENT_TIMESTAMP AND last_dismissed_at IS NULL").
 		Count(&count).Error
 	return count, err
 }

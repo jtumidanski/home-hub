@@ -20,6 +20,15 @@ func NewProcessor(l logrus.FieldLogger, ctx context.Context, db *gorm.DB) *Proce
 }
 
 func (p *Processor) Create(tenantID, householdID, reminderID, userID uuid.UUID, durationMinutes int) (Model, error) {
+	if reminderID == uuid.Nil {
+		return Model{}, ErrReminderIDRequired
+	}
+	if userID == uuid.Nil {
+		return Model{}, ErrCreatedByRequired
+	}
+	if durationMinutes <= 0 {
+		return Model{}, ErrDurationMinutesRequired
+	}
 	remProc := reminder.NewProcessor(p.l, p.ctx, p.db)
 	snoozedUntil, err := remProc.Snooze(reminderID, durationMinutes)
 	if err != nil {

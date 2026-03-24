@@ -2,6 +2,7 @@ package dismissal
 
 import (
 	"context"
+	"time"
 
 	"github.com/google/uuid"
 	"github.com/jtumidanski/home-hub/services/productivity-service/internal/reminder"
@@ -20,6 +21,9 @@ func NewProcessor(l logrus.FieldLogger, ctx context.Context, db *gorm.DB) *Proce
 }
 
 func (p *Processor) Create(tenantID, householdID, reminderID, userID uuid.UUID) (Model, error) {
+	if _, err := NewBuilder().SetReminderID(reminderID).SetCreatedByUserID(userID).SetCreatedAt(time.Now()).Build(); err != nil {
+		return Model{}, err
+	}
 	remProc := reminder.NewProcessor(p.l, p.ctx, p.db)
 	if err := remProc.Dismiss(reminderID); err != nil {
 		return Model{}, err

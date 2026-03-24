@@ -21,3 +21,16 @@ type Entity struct {
 func (Entity) TableName() string { return "reminder_snoozes" }
 
 func Migration(db *gorm.DB) error { return db.AutoMigrate(&Entity{}) }
+
+func Make(e Entity) (Model, error) {
+	return NewBuilder().
+		SetId(e.Id).
+		SetTenantID(e.TenantId).
+		SetHouseholdID(e.HouseholdId).
+		SetReminderID(e.ReminderId).
+		SetDurationMinutes(e.DurationMinutes).
+		SetSnoozedUntil(e.SnoozedUntil).
+		SetCreatedByUserID(e.CreatedByUserId).
+		SetCreatedAt(e.CreatedAt).
+		Build()
+}

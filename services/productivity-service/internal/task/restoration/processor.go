@@ -2,6 +2,7 @@ package restoration
 
 import (
 	"context"
+	"time"
 
 	"github.com/google/uuid"
 	"github.com/jtumidanski/home-hub/services/productivity-service/internal/task"
@@ -20,6 +21,9 @@ func NewProcessor(l logrus.FieldLogger, ctx context.Context, db *gorm.DB) *Proce
 }
 
 func (p *Processor) Create(tenantID, householdID, taskID, userID uuid.UUID) (Model, error) {
+	if _, err := NewBuilder().SetTaskID(taskID).SetCreatedByUserID(userID).SetCreatedAt(time.Now()).Build(); err != nil {
+		return Model{}, err
+	}
 	taskProc := task.NewProcessor(p.l, p.ctx, p.db)
 	if err := taskProc.Restore(taskID); err != nil {
 		return Model{}, err

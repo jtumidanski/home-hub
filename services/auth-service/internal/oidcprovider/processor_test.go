@@ -7,42 +7,49 @@ import (
 	"github.com/sirupsen/logrus/hooks/test"
 )
 
-func TestListEnabled_WithClientID(t *testing.T) {
-	l, _ := test.NewNullLogger()
-	cfg := config.OIDCConfig{
-		IssuerURL: "https://accounts.google.com",
-		ClientID:  "test-client-id",
+func TestListEnabled(t *testing.T) {
+	tests := []struct {
+		name      string
+		cfg       config.OIDCConfig
+		wantCount int
+	}{
+		{
+			name: "with client ID returns provider",
+			cfg: config.OIDCConfig{
+				IssuerURL: "https://accounts.google.com",
+				ClientID:  "test-client-id",
+			},
+			wantCount: 1,
+		},
+		{
+			name:      "no client ID returns empty",
+			cfg:       config.OIDCConfig{},
+			wantCount: 0,
+		},
 	}
 
-	p := NewProcessor(l, cfg)
-	models, err := p.ListEnabled()
-	if err != nil {
-		t.Fatalf("unexpected error: %v", err)
-	}
-	if len(models) != 1 {
-		t.Fatalf("expected 1 provider, got %d", len(models))
-	}
-	if models[0].Name() != "Google" {
-		t.Errorf("expected name Google, got %s", models[0].Name())
-	}
-	if models[0].ClientID() != "test-client-id" {
-		t.Errorf("expected client ID test-client-id, got %s", models[0].ClientID())
-	}
-	if !models[0].Enabled() {
-		t.Error("expected provider to be enabled")
-	}
-}
-
-func TestListEnabled_NoClientID(t *testing.T) {
-	l, _ := test.NewNullLogger()
-	cfg := config.OIDCConfig{}
-
-	p := NewProcessor(l, cfg)
-	models, err := p.ListEnabled()
-	if err != nil {
-		t.Fatalf("unexpected error: %v", err)
-	}
-	if len(models) != 0 {
-		t.Errorf("expected 0 providers, got %d", len(models))
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			l, _ := test.NewNullLogger()
+			p := NewProcessor(l, tt.cfg)
+			models, err := p.ListEnabled()
+			if err != nil {
+				t.Fatalf("unexpected error: %v", err)
+			}
+			if len(models) != tt.wantCount {
+				t.Fatalf("expected %d providers, got %d", tt.wantCount, len(models))
+			}
+			if tt.wantCount > 0 {
+				if models[0].Name() != "Google" {
+					t.Errorf("expected name Google, got %s", models[0].Name())
+				}
+				if models[0].ClientID() != tt.cfg.ClientID {
+					t.Errorf("expected client ID %s, got %s", tt.cfg.ClientID, models[0].ClientID())
+				}
+				if !models[0].Enabled() {
+					t.Error("expected provider to be enabled")
+				}
+			}
+		})
 	}
 }

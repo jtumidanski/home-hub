@@ -32,6 +32,9 @@ func (p *Processor) AllProvider() model.Provider[[]Model] {
 }
 
 func (p *Processor) Create(tenantID, householdID uuid.UUID, title, notes string, scheduledFor time.Time) (Model, error) {
+	if _, err := NewBuilder().SetTitle(title).SetScheduledFor(scheduledFor).Build(); err != nil {
+		return Model{}, err
+	}
 	e, err := create(p.db.WithContext(p.ctx), tenantID, householdID, title, notes, scheduledFor)
 	if err != nil {
 		return Model{}, err

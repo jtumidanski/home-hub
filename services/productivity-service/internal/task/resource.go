@@ -1,6 +1,7 @@
 package task
 
 import (
+	"errors"
 	"net/http"
 	"time"
 
@@ -62,6 +63,10 @@ func createHandler(db *gorm.DB) server.InputHandler[CreateRequest] {
 			proc := NewProcessor(d.Logger(), r.Context(), db)
 			m, err := proc.Create(t.Id(), t.HouseholdId(), input.Title, input.Notes, dueOn, input.RolloverEnabled)
 			if err != nil {
+				if errors.Is(err, ErrTitleRequired) {
+					server.WriteError(w, http.StatusBadRequest, "Validation Failed", "Task title is required")
+					return
+				}
 				d.Logger().WithError(err).Error("Failed to create task")
 				server.WriteError(w, http.StatusInternalServerError, "Create Failed", "")
 				return

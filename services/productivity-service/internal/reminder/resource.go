@@ -1,6 +1,7 @@
 package reminder
 
 import (
+	"errors"
 	"net/http"
 	"time"
 
@@ -60,6 +61,10 @@ func createHandler(db *gorm.DB) server.InputHandler[CreateRequest] {
 			proc := NewProcessor(d.Logger(), r.Context(), db)
 			m, err := proc.Create(t.Id(), t.HouseholdId(), input.Title, input.Notes, scheduledFor)
 			if err != nil {
+				if errors.Is(err, ErrTitleRequired) || errors.Is(err, ErrScheduledForRequired) {
+					server.WriteError(w, http.StatusBadRequest, "Validation Failed", "Title and scheduledFor are required")
+					return
+				}
 				d.Logger().WithError(err).Error("Failed to create reminder")
 				server.WriteError(w, http.StatusInternalServerError, "Create Failed", "")
 				return

@@ -38,16 +38,3 @@ func (m Model) ToEntity() Entity {
 		CreatedAt:       m.createdAt,
 	}
 }
-
-func Make(e Entity) (Model, error) {
-	return NewBuilder().
-		SetId(e.Id).
-		SetTenantID(e.TenantId).
-		SetHouseholdID(e.HouseholdId).
-		SetReminderID(e.ReminderId).
-		SetDurationMinutes(e.DurationMinutes).
-		SetSnoozedUntil(e.SnoozedUntil).
-		SetCreatedByUserID(e.CreatedByUserId).
-		SetCreatedAt(e.CreatedAt).
-		Build()
-}

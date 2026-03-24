@@ -32,14 +32,3 @@ func (m Model) ToEntity() Entity {
 		CreatedAt:       m.createdAt,
 	}
 }
-
-func Make(e Entity) (Model, error) {
-	return NewBuilder().
-		SetId(e.Id).
-		SetTenantID(e.TenantId).
-		SetHouseholdID(e.HouseholdId).
-		SetTaskID(e.TaskId).
-		SetCreatedByUserID(e.CreatedByUserId).
-		SetCreatedAt(e.CreatedAt).
-		Build()
-}

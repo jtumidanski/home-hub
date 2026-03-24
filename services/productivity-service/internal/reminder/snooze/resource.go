@@ -1,6 +1,7 @@
 package snooze
 
 import (
+	"errors"
 	"net/http"
 
 	"github.com/google/uuid"
@@ -33,8 +34,12 @@ func createHandler(db *gorm.DB) server.InputHandler[CreateRequest] {
 			proc := NewProcessor(d.Logger(), r.Context(), db)
 			m, err := proc.Create(t.Id(), t.HouseholdId(), reminderID, t.UserId(), input.DurationMinutes)
 			if err != nil {
+				if errors.Is(err, ErrReminderIDRequired) || errors.Is(err, ErrCreatedByRequired) || errors.Is(err, ErrDurationMinutesRequired) {
+					server.WriteError(w, http.StatusBadRequest, "Invalid Request", "Invalid snooze parameters")
+					return
+				}
 				d.Logger().WithError(err).Error("Failed to snooze reminder")
-				server.WriteError(w, http.StatusBadRequest, "Snooze Failed", err.Error())
+				server.WriteError(w, http.StatusBadRequest, "Snooze Failed", "Invalid snooze duration")
 				return
 			}
 
