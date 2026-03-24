@@ -8,12 +8,10 @@ import (
 
 	"github.com/gorilla/mux"
 	"github.com/jtumidanski/api2go/jsonapi"
+	"github.com/jtumidanski/home-hub/services/auth-service/internal/authflow"
 	"github.com/jtumidanski/home-hub/services/auth-service/internal/config"
-	"github.com/jtumidanski/home-hub/services/auth-service/internal/externalidentity"
 	authjwt "github.com/jtumidanski/home-hub/services/auth-service/internal/jwt"
 	"github.com/jtumidanski/home-hub/services/auth-service/internal/oidc"
-	"github.com/jtumidanski/home-hub/services/auth-service/internal/refreshtoken"
-	"github.com/jtumidanski/home-hub/services/auth-service/internal/user"
 	"github.com/jtumidanski/home-hub/shared/go/server"
 	"github.com/sirupsen/logrus"
 	"gorm.io/gorm"
@@ -116,46 +114,15 @@ func handleCallback(db *gorm.DB, issuer *authjwt.Issuer, oidcCfg config.OIDCConf
 				return
 			}
 
-			ctx := r.Context()
-
-			// Find or create user
-			userProc := user.NewProcessor(d.Logger(), ctx, db)
-			u, err := userProc.FindOrCreate(userInfo.Email, userInfo.DisplayName, userInfo.GivenName, userInfo.FamilyName, userInfo.AvatarURL)
+			proc := authflow.NewProcessor(d.Logger(), r.Context(), db, issuer)
+			result, err := proc.HandleCallback(userInfo)
 			if err != nil {
-				d.Logger().WithError(err).Error("user find/create failed")
-				server.WriteError(w, http.StatusInternalServerError, "User Error", "")
+				d.Logger().WithError(err).Error("auth callback processing failed")
+				server.WriteError(w, http.StatusInternalServerError, "Auth Error", "")
 				return
 			}
 
-			// Link external identity (idempotent — skip if already linked)
-			eiProc := externalidentity.NewProcessor(d.Logger(), ctx, db)
-			_, linkErr := eiProc.FindByProviderSubject("google", userInfo.Subject)()
-			if linkErr != nil {
-				_, err = eiProc.Create(u.Id(), "google", userInfo.Subject)
-				if err != nil {
-					d.Logger().WithError(err).Error("external identity creation failed")
-					server.WriteError(w, http.StatusInternalServerError, "Identity Error", "")
-					return
-				}
-			}
-
-			// Issue tokens — tenant/household will be zeros until account-service onboarding
-			accessToken, err := issuer.Issue(u.Id(), [16]byte{}, [16]byte{})
-			if err != nil {
-				d.Logger().WithError(err).Error("JWT issuance failed")
-				server.WriteError(w, http.StatusInternalServerError, "Token Error", "")
-				return
-			}
-
-			rtProc := refreshtoken.NewProcessor(d.Logger(), ctx, db)
-			rawRefresh, err := rtProc.Create(u.Id())
-			if err != nil {
-				d.Logger().WithError(err).Error("refresh token creation failed")
-				server.WriteError(w, http.StatusInternalServerError, "Token Error", "")
-				return
-			}
-
-			setAuthCookies(w, accessToken, rawRefresh)
+			setAuthCookies(w, result.AccessToken, result.RefreshToken)
 
 			// Clear state cookie
 			http.SetCookie(w, &http.Cookie{
@@ -166,10 +133,7 @@ func handleCallback(db *gorm.DB, issuer *authjwt.Issuer, oidcCfg config.OIDCConf
 				MaxAge:   -1,
 			})
 
-			redirect := r.URL.Query().Get("redirect")
-			if redirect == "" {
-				redirect = "/app"
-			}
+			redirect := sanitizeRedirect(r.URL.Query().Get("redirect"))
 			http.Redirect(w, r, redirect, http.StatusFound)
 		}
 	}
@@ -184,24 +148,15 @@ func handleRefresh(db *gorm.DB, issuer *authjwt.Issuer) server.GetHandler {
 				return
 			}
 
-			ctx := r.Context()
-			rtProc := refreshtoken.NewProcessor(d.Logger(), ctx, db)
-			newRaw, userID, err := rtProc.Rotate(cookie.Value)
+			proc := authflow.NewProcessor(d.Logger(), r.Context(), db, issuer)
+			result, err := proc.HandleRefresh(cookie.Value)
 			if err != nil {
 				d.Logger().WithError(err).Warn("refresh token rotation failed")
 				server.WriteError(w, http.StatusUnauthorized, "Unauthorized", "Invalid refresh token")
 				return
 			}
 
-			// Issue new access token — tenant/household zeros (frontend will resolve via context endpoint)
-			accessToken, err := issuer.Issue(userID, [16]byte{}, [16]byte{})
-			if err != nil {
-				d.Logger().WithError(err).Error("JWT issuance failed during refresh")
-				server.WriteError(w, http.StatusInternalServerError, "Token Error", "")
-				return
-			}
-
-			setAuthCookies(w, accessToken, newRaw)
+			setAuthCookies(w, result.AccessToken, result.RefreshToken)
 			w.WriteHeader(http.StatusNoContent)
 		}
 	}
@@ -213,9 +168,8 @@ func handleLogout(db *gorm.DB, issuer *authjwt.Issuer) server.GetHandler {
 			// Extract user from access token to revoke their refresh tokens
 			claims, err := authjwt.ExtractClaimsFromCookie(r, issuer.PublicKey())
 			if err == nil {
-				ctx := r.Context()
-				rtProc := refreshtoken.NewProcessor(d.Logger(), ctx, db)
-				if revokeErr := rtProc.RevokeAllForUser(claims.UserID); revokeErr != nil {
+				proc := authflow.NewProcessor(d.Logger(), r.Context(), db, issuer)
+				if revokeErr := proc.HandleLogout(claims.UserID); revokeErr != nil {
 					d.Logger().WithError(revokeErr).Warn("failed to revoke refresh tokens during logout")
 				}
 			}
@@ -273,6 +227,20 @@ func clearAuthCookies(w http.ResponseWriter) {
 		HttpOnly: true,
 		MaxAge:   -1,
 	})
+}
+
+// sanitizeRedirect ensures the redirect target is a safe relative path.
+// It rejects absolute URLs, protocol-relative URLs, and other unsafe patterns.
+func sanitizeRedirect(target string) string {
+	if target == "" {
+		return "/app"
+	}
+	// Must start with a single slash (relative path).
+	// Reject protocol-relative (//), absolute URLs, and non-slash prefixes.
+	if len(target) < 1 || target[0] != '/' || (len(target) > 1 && target[1] == '/') {
+		return "/app"
+	}
+	return target
 }
 
 func generateState() string {

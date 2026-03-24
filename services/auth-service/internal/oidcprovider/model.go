@@ -28,13 +28,3 @@ func (m Model) ToEntity() Entity {
 	}
 }
 
-// Make converts an Entity to a Model.
-func Make(e Entity) (Model, error) {
-	return Model{
-		id:        e.Id,
-		name:      e.Name,
-		issuerURL: e.IssuerURL,
-		clientID:  e.ClientID,
-		enabled:   e.Enabled,
-	}, nil
-}

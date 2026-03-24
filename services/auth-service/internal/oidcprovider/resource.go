@@ -3,7 +3,6 @@ package oidcprovider
 import (
 	"net/http"
 
-	"github.com/google/uuid"
 	"github.com/gorilla/mux"
 	"github.com/jtumidanski/api2go/jsonapi"
 	"github.com/jtumidanski/home-hub/services/auth-service/internal/config"
@@ -22,14 +21,22 @@ func InitializeRoutes(oidcCfg config.OIDCConfig) func(l logrus.FieldLogger, si j
 func listHandler(oidcCfg config.OIDCConfig) server.GetHandler {
 	return func(d *server.HandlerDependency, c *server.HandlerContext) http.HandlerFunc {
 		return func(w http.ResponseWriter, r *http.Request) {
-			var providers []RestModel
-			if oidcCfg.ClientID != "" {
-				providers = append(providers, RestModel{
-					Id:          uuid.MustParse("00000000-0000-0000-0000-000000000001"),
-					DisplayName: "Google",
-				})
+			proc := NewProcessor(d.Logger(), oidcCfg)
+			models, err := proc.ListEnabled()
+			if err != nil {
+				d.Logger().WithError(err).Error("Failed to list OIDC providers")
+				w.WriteHeader(http.StatusInternalServerError)
+				return
 			}
-			server.MarshalSliceResponse[RestModel](d.Logger())(w)(c.ServerInformation())(providers)
+
+			restModels, err := TransformSlice(models)
+			if err != nil {
+				d.Logger().WithError(err).Error("Creating REST models")
+				w.WriteHeader(http.StatusInternalServerError)
+				return
+			}
+
+			server.MarshalSliceResponse[RestModel](d.Logger())(w)(c.ServerInformation())(restModels)
 		}
 	}
 }

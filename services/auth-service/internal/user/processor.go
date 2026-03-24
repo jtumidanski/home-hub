@@ -20,11 +20,11 @@ func NewProcessor(l logrus.FieldLogger, ctx context.Context, db *gorm.DB) *Proce
 }
 
 func (p *Processor) ByIDProvider(id uuid.UUID) model.Provider[Model] {
-	return model.Map(Make)(getByID(id)(p.db.WithContext(p.ctx)))
+	return byIDProvider(id)(p.db.WithContext(p.ctx))
 }
 
 func (p *Processor) ByEmailProvider(email string) model.Provider[Model] {
-	return model.Map(Make)(getByEmail(email)(p.db.WithContext(p.ctx)))
+	return byEmailProvider(email)(p.db.WithContext(p.ctx))
 }
 
 func (p *Processor) FindOrCreate(email, displayName, givenName, familyName, avatarURL string) (Model, error) {

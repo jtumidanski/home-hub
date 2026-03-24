@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"github.com/google/uuid"
+	"github.com/jtumidanski/home-hub/shared/go/model"
 	"github.com/sirupsen/logrus"
 	"gorm.io/gorm"
 )
@@ -29,6 +30,7 @@ func NewProcessor(l logrus.FieldLogger, ctx context.Context, db *gorm.DB) *Proce
 }
 
 // Create generates a new refresh token for the given user.
+// Returns the raw token string (for cookie) and the domain model.
 func (p *Processor) Create(userID uuid.UUID) (string, error) {
 	raw, err := generateToken()
 	if err != nil {
@@ -44,11 +46,11 @@ func (p *Processor) Create(userID uuid.UUID) (string, error) {
 
 // Validate checks a raw refresh token, returning the associated user ID.
 func (p *Processor) Validate(raw string) (uuid.UUID, error) {
-	e, err := getByHash(hashToken(raw))(p.db.WithContext(p.ctx))()
+	m, err := model.Map(Make)(getByHash(hashToken(raw))(p.db.WithContext(p.ctx)))()
 	if err != nil {
 		return uuid.Nil, errors.New("invalid or expired refresh token")
 	}
-	return e.UserId, nil
+	return m.UserId(), nil
 }
 
 // Rotate validates the old token, revokes it, and issues a new one.
