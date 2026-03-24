@@ -15,15 +15,15 @@ import (
 )
 
 type TaskSummary struct {
-	Id                uuid.UUID `json:"-"`
-	PendingCount      int64     `json:"pendingCount"`
-	CompletedTodayCount int64   `json:"completedTodayCount"`
-	OverdueCount      int64     `json:"overdueCount"`
+	Id                  uuid.UUID `json:"-"`
+	PendingCount        int64     `json:"pendingCount"`
+	CompletedTodayCount int64     `json:"completedTodayCount"`
+	OverdueCount        int64     `json:"overdueCount"`
 }
 
-func (r TaskSummary) GetName() string       { return "task-summaries" }
-func (r TaskSummary) GetID() string          { return "current" }
-func (r *TaskSummary) SetID(_ string) error  { return nil }
+func (r TaskSummary) GetName() string      { return "task-summaries" }
+func (r TaskSummary) GetID() string         { return "current" }
+func (r *TaskSummary) SetID(_ string) error { return nil }
 
 type ReminderSummary struct {
 	Id            uuid.UUID `json:"-"`
@@ -32,9 +32,9 @@ type ReminderSummary struct {
 	SnoozedCount  int64     `json:"snoozedCount"`
 }
 
-func (r ReminderSummary) GetName() string       { return "reminder-summaries" }
-func (r ReminderSummary) GetID() string          { return "current" }
-func (r *ReminderSummary) SetID(_ string) error  { return nil }
+func (r ReminderSummary) GetName() string      { return "reminder-summaries" }
+func (r ReminderSummary) GetID() string         { return "current" }
+func (r *ReminderSummary) SetID(_ string) error { return nil }
 
 type DashboardSummary struct {
 	Id               uuid.UUID `json:"-"`
@@ -45,9 +45,9 @@ type DashboardSummary struct {
 	GeneratedAt      time.Time `json:"generatedAt"`
 }
 
-func (r DashboardSummary) GetName() string       { return "dashboard-summaries" }
-func (r DashboardSummary) GetID() string          { return "current" }
-func (r *DashboardSummary) SetID(_ string) error  { return nil }
+func (r DashboardSummary) GetName() string      { return "dashboard-summaries" }
+func (r DashboardSummary) GetID() string         { return "current" }
+func (r *DashboardSummary) SetID(_ string) error { return nil }
 
 func InitializeRoutes(db *gorm.DB) func(l logrus.FieldLogger, si jsonapi.ServerInformation, api *mux.Router) {
 	return func(l logrus.FieldLogger, si jsonapi.ServerInformation, api *mux.Router) {
@@ -62,7 +62,7 @@ func InitializeRoutes(db *gorm.DB) func(l logrus.FieldLogger, si jsonapi.ServerI
 func taskSummaryHandler(db *gorm.DB) server.GetHandler {
 	return func(d *server.HandlerDependency, c *server.HandlerContext) http.HandlerFunc {
 		return func(w http.ResponseWriter, r *http.Request) {
-			proc := task.NewProcessor(logrus.StandardLogger(), r.Context(), db)
+			proc := task.NewProcessor(d.Logger(), r.Context(), db)
 			pending, _ := proc.PendingCount()
 			completed, _ := proc.CompletedTodayCount()
 			overdue, _ := proc.OverdueCount()
@@ -76,7 +76,7 @@ func taskSummaryHandler(db *gorm.DB) server.GetHandler {
 func reminderSummaryHandler(db *gorm.DB) server.GetHandler {
 	return func(d *server.HandlerDependency, c *server.HandlerContext) http.HandlerFunc {
 		return func(w http.ResponseWriter, r *http.Request) {
-			proc := reminder.NewProcessor(logrus.StandardLogger(), r.Context(), db)
+			proc := reminder.NewProcessor(d.Logger(), r.Context(), db)
 			dueNow, _ := proc.DueNowCount()
 			upcoming, _ := proc.UpcomingCount()
 			snoozed, _ := proc.SnoozedCount()
@@ -90,8 +90,8 @@ func reminderSummaryHandler(db *gorm.DB) server.GetHandler {
 func dashboardSummaryHandler(db *gorm.DB) server.GetHandler {
 	return func(d *server.HandlerDependency, c *server.HandlerContext) http.HandlerFunc {
 		return func(w http.ResponseWriter, r *http.Request) {
-			taskProc := task.NewProcessor(logrus.StandardLogger(), r.Context(), db)
-			remProc := reminder.NewProcessor(logrus.StandardLogger(), r.Context(), db)
+			taskProc := task.NewProcessor(d.Logger(), r.Context(), db)
+			remProc := reminder.NewProcessor(d.Logger(), r.Context(), db)
 
 			pending, _ := taskProc.PendingCount()
 			dueNow, _ := remProc.DueNowCount()

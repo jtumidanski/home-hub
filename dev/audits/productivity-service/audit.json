@@ -1,0 +1,201 @@
+{
+  "service": "productivity-service",
+  "path": "services/productivity-service",
+  "guidelinesSource": "CLAUDE.md",
+  "overallStatus": "needs-work",
+  "confidence": "high",
+  "checks": [
+    {
+      "id": "ARCH-001",
+      "status": "pass",
+      "impact": "low",
+      "markdownSection": "ARCH-001: Immutable Domain Models",
+      "evidence": [
+        { "file": "task/model.go", "symbol": "Model", "note": "Private fields with value-receiver getters, no setters" },
+        { "file": "reminder/model.go", "symbol": "Model", "note": "Private fields with value-receiver getters, no setters" }
+      ],
+      "recommendedAction": "None",
+      "estimatedEffort": "S"
+    },
+    {
+      "id": "ARCH-002",
+      "status": "warn",
+      "impact": "low",
+      "markdownSection": "ARCH-002: Entity Pattern",
+      "evidence": [
+        { "file": "task/entity.go", "symbol": "Make", "note": "Make present but no ToEntity() on Model" },
+        { "file": "reminder/entity.go", "symbol": "Make", "note": "Make present but no ToEntity() on Model" }
+      ],
+      "recommendedAction": "Add ToEntity() methods to task.Model and reminder.Model",
+      "estimatedEffort": "S"
+    },
+    {
+      "id": "ARCH-003",
+      "status": "fail",
+      "impact": "medium",
+      "markdownSection": "ARCH-003: Builder Pattern",
+      "evidence": [
+        { "file": "task/", "symbol": "builder.go", "note": "File does not exist" },
+        { "file": "reminder/", "symbol": "builder.go", "note": "File does not exist" }
+      ],
+      "recommendedAction": "Create builder.go with fluent API and Build() validation for task and reminder domains",
+      "estimatedEffort": "M"
+    },
+    {
+      "id": "ARCH-004",
+      "status": "warn",
+      "impact": "high",
+      "markdownSection": "ARCH-004: Processor Pattern",
+      "evidence": [
+        { "file": "task/processor.go", "symbol": "Processor", "note": "Struct-based processor, correct WithContext usage" },
+        { "file": "taskrestoration/resource.go", "symbol": "createHandler", "note": "No processor — business logic in handler" },
+        { "file": "remindersnooze/resource.go", "symbol": "createHandler", "note": "No processor — business logic in handler" },
+        { "file": "reminderdismissal/resource.go", "symbol": "createHandler", "note": "No processor — business logic in handler" }
+      ],
+      "recommendedAction": "Create processors for sub-domain packages to encapsulate business logic",
+      "estimatedEffort": "M"
+    },
+    {
+      "id": "ARCH-005",
+      "status": "warn",
+      "impact": "medium",
+      "markdownSection": "ARCH-005: Provider Pattern (Lazy Evaluation)",
+      "evidence": [
+        { "file": "task/provider.go", "symbol": "getByID", "note": "Executes query eagerly, returns FixedProvider instead of lazy provider" },
+        { "file": "reminder/provider.go", "symbol": "getByID", "note": "Same eager execution pattern" },
+        { "file": "task/provider.go", "symbol": "countByStatus", "note": "Plain function, not a provider" }
+      ],
+      "recommendedAction": "Migrate to database.Query/database.SliceQuery for lazy evaluation",
+      "estimatedEffort": "M"
+    },
+    {
+      "id": "ARCH-006",
+      "status": "fail",
+      "impact": "high",
+      "markdownSection": "ARCH-006: Resource / Route Registration",
+      "evidence": [
+        { "file": "task/resource.go", "symbol": "InitializeRoutes", "note": "Correct use of RegisterHandler and RegisterInputHandler" },
+        { "file": "taskrestoration/resource.go", "symbol": "InitializeRoutes", "note": "Uses RegisterHandler (GetHandler) for POST endpoint" },
+        { "file": "remindersnooze/resource.go", "symbol": "InitializeRoutes", "note": "Uses RegisterHandler (GetHandler) for POST endpoint" },
+        { "file": "reminderdismissal/resource.go", "symbol": "InitializeRoutes", "note": "Uses RegisterHandler (GetHandler) for POST endpoint" }
+      ],
+      "recommendedAction": "Refactor sub-domains to use server.RegisterInputHandler with proper request DTOs",
+      "estimatedEffort": "M"
+    },
+    {
+      "id": "ARCH-007",
+      "status": "warn",
+      "impact": "low",
+      "markdownSection": "ARCH-007: REST / JSON:API DTOs",
+      "evidence": [
+        { "file": "task/rest.go", "symbol": "RestModel", "note": "Correct JSON:API interface but no TransformSlice" },
+        { "file": "task/rest.go", "symbol": "CreateRequest.Status", "note": "Status field in CreateRequest is unused by createHandler" },
+        { "file": "reminder/rest.go", "symbol": "RestModel", "note": "Correct JSON:API interface but no TransformSlice" }
+      ],
+      "recommendedAction": "Add TransformSlice functions. Remove unused Status from task CreateRequest",
+      "estimatedEffort": "S"
+    },
+    {
+      "id": "ARCH-008",
+      "status": "warn",
+      "impact": "medium",
+      "markdownSection": "ARCH-008: Multi-Tenancy Context",
+      "evidence": [
+        { "file": "task/processor_test.go", "symbol": "setupTestDB", "note": "SQLite DB created without RegisterTenantCallbacks" },
+        { "file": "reminder/processor_test.go", "symbol": "setupTestDB", "note": "SQLite DB created without RegisterTenantCallbacks" }
+      ],
+      "recommendedAction": "Add database.RegisterTenantCallbacks(l, db) to all test setupTestDB functions",
+      "estimatedEffort": "S"
+    },
+    {
+      "id": "ARCH-009",
+      "status": "fail",
+      "impact": "high",
+      "markdownSection": "ARCH-009: Layer Separation",
+      "evidence": [
+        { "file": "taskrestoration/resource.go", "symbol": "createHandler", "note": "Direct io.ReadAll + json.Unmarshal + entity creation in handler" },
+        { "file": "remindersnooze/resource.go", "symbol": "createHandler", "note": "Direct io.ReadAll + db.Create in handler" },
+        { "file": "reminderdismissal/resource.go", "symbol": "createHandler", "note": "Direct io.ReadAll + db.Create in handler" }
+      ],
+      "recommendedAction": "Move business logic and entity creation into processors/administrators. Use RegisterInputHandler for request parsing",
+      "estimatedEffort": "L"
+    },
+    {
+      "id": "ARCH-010",
+      "status": "fail",
+      "impact": "high",
+      "markdownSection": "ARCH-010: Manual JSON:API Envelope Handling",
+      "evidence": [
+        { "file": "taskrestoration/resource.go", "symbol": "extractTaskRelationship", "note": "Manual nested Data.Relationships parsing" },
+        { "file": "remindersnooze/resource.go", "symbol": "extractSnoozeRequest", "note": "Manual nested Data.Attributes + Data.Relationships parsing" },
+        { "file": "reminderdismissal/resource.go", "symbol": "extractReminderRelationship", "note": "Manual nested Data.Relationships parsing" }
+      ],
+      "recommendedAction": "Use flat request DTOs with server.RegisterInputHandler for automatic deserialization",
+      "estimatedEffort": "M"
+    },
+    {
+      "id": "ARCH-011",
+      "status": "warn",
+      "impact": "medium",
+      "markdownSection": "ARCH-011: Error Handling & Logging",
+      "evidence": [
+        { "file": "task/resource.go", "symbol": "listHandler", "note": "Generic error message, no d.Logger().WithError(err) logging" },
+        { "file": "task/resource.go", "symbol": "createHandler", "note": "Transform error silently ignored" },
+        { "file": "reminder/resource.go", "symbol": "listHandler", "note": "Same patterns" }
+      ],
+      "recommendedAction": "Add d.Logger().WithError(err) logging. Handle transform errors",
+      "estimatedEffort": "S"
+    },
+    {
+      "id": "ARCH-012",
+      "status": "warn",
+      "impact": "medium",
+      "markdownSection": "ARCH-012: Testing Conventions",
+      "evidence": [
+        { "file": "task/processor_test.go", "symbol": "TestCreate", "note": "Individual test functions, not table-driven" },
+        { "file": "reminder/processor_test.go", "symbol": "TestCreate", "note": "Individual test functions, not table-driven" },
+        { "file": "taskrestoration/", "symbol": "N/A", "note": "No test files" },
+        { "file": "remindersnooze/", "symbol": "N/A", "note": "No test files" },
+        { "file": "reminderdismissal/", "symbol": "N/A", "note": "No test files" }
+      ],
+      "recommendedAction": "Convert to table-driven tests, add tenant callbacks, add sub-domain and REST tests",
+      "estimatedEffort": "M"
+    },
+    {
+      "id": "ARCH-013",
+      "status": "warn",
+      "impact": "low",
+      "markdownSection": "ARCH-013: Logger Usage in Handlers",
+      "evidence": [
+        { "file": "task/resource.go", "symbol": "listHandler", "note": "Uses logrus.StandardLogger() instead of d.Logger()" },
+        { "file": "reminder/resource.go", "symbol": "listHandler", "note": "Uses logrus.StandardLogger() instead of d.Logger()" }
+      ],
+      "recommendedAction": "Use d.Logger() from HandlerDependency instead of logrus.StandardLogger()",
+      "estimatedEffort": "S"
+    }
+  ],
+  "blockingIssues": [
+    "ARCH-009: Sub-domain handlers (taskrestoration, remindersnooze, reminderdismissal) contain business logic, manual JSON parsing, and direct DB writes — critical layer separation violation",
+    "ARCH-006/ARCH-010: Sub-domains use RegisterHandler (GET) for POST endpoints with manual JSON:API envelope parsing"
+  ],
+  "nonBlockingIssues": [
+    "ARCH-003: Missing builder.go for task and reminder domains",
+    "ARCH-002: Missing ToEntity() on domain models",
+    "ARCH-005: Providers execute eagerly instead of lazily via database.Query/database.SliceQuery",
+    "ARCH-007: Missing TransformSlice functions; unused Status field in task CreateRequest",
+    "ARCH-008: Tests missing database.RegisterTenantCallbacks for SQLite DBs",
+    "ARCH-011: No structured error logging; transform errors silently ignored",
+    "ARCH-012: Tests not table-driven; no sub-domain or REST layer tests",
+    "ARCH-013: Handlers use logrus.StandardLogger() instead of d.Logger()"
+  ],
+  "devDocsSeeds": [
+    { "objective": "Refactor sub-domain packages to use proper processor layer and RegisterInputHandler", "priority": "P0" },
+    { "objective": "Add builder.go with fluent API and validation for task and reminder domains", "priority": "P1" },
+    { "objective": "Migrate providers to lazy evaluation using database.Query/database.SliceQuery", "priority": "P1" },
+    { "objective": "Fix test infrastructure: tenant callbacks, table-driven style, sub-domain coverage", "priority": "P1" },
+    { "objective": "Add ToEntity() methods to domain models", "priority": "P2" },
+    { "objective": "Add TransformSlice functions and clean up unused request fields", "priority": "P2" },
+    { "objective": "Replace logrus.StandardLogger() with d.Logger() in handlers", "priority": "P2" },
+    { "objective": "Add structured error logging with d.Logger().WithError(err)", "priority": "P2" }
+  ]
+}

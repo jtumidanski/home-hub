@@ -1,4 +1,4 @@
-package taskrestoration
+package restoration
 
 import (
 	"time"

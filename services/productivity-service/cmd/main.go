@@ -6,11 +6,11 @@ import (
 	"github.com/gorilla/mux"
 	"github.com/jtumidanski/home-hub/services/productivity-service/internal/config"
 	"github.com/jtumidanski/home-hub/services/productivity-service/internal/reminder"
-	"github.com/jtumidanski/home-hub/services/productivity-service/internal/reminderdismissal"
-	"github.com/jtumidanski/home-hub/services/productivity-service/internal/remindersnooze"
+	"github.com/jtumidanski/home-hub/services/productivity-service/internal/reminder/dismissal"
+	"github.com/jtumidanski/home-hub/services/productivity-service/internal/reminder/snooze"
 	"github.com/jtumidanski/home-hub/services/productivity-service/internal/summary"
 	"github.com/jtumidanski/home-hub/services/productivity-service/internal/task"
-	"github.com/jtumidanski/home-hub/services/productivity-service/internal/taskrestoration"
+	"github.com/jtumidanski/home-hub/services/productivity-service/internal/task/restoration"
 	sharedauth "github.com/jtumidanski/home-hub/shared/go/auth"
 	"github.com/jtumidanski/home-hub/shared/go/database"
 	"github.com/jtumidanski/home-hub/shared/go/logging"
@@ -27,10 +27,10 @@ func main() {
 	db := database.Connect(l, cfg.DB,
 		database.SetMigrations(
 			task.Migration,
-			taskrestoration.Migration,
+			restoration.Migration,
 			reminder.Migration,
-			remindersnooze.Migration,
-			reminderdismissal.Migration,
+			snooze.Migration,
+			dismissal.Migration,
 		),
 	)
 
@@ -44,10 +44,10 @@ func main() {
 			api.Use(sharedauth.Middleware(l, authValidator))
 
 			task.InitializeRoutes(db)(l, si, api)
-			taskrestoration.InitializeRoutes(db)(l, si, api)
+			restoration.InitializeRoutes(db)(l, si, api)
 			reminder.InitializeRoutes(db)(l, si, api)
-			remindersnooze.InitializeRoutes(db)(l, si, api)
-			reminderdismissal.InitializeRoutes(db)(l, si, api)
+			snooze.InitializeRoutes(db)(l, si, api)
+			dismissal.InitializeRoutes(db)(l, si, api)
 			summary.InitializeRoutes(db)(l, si, api)
 		}).
 		Run()

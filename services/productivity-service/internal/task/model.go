@@ -37,3 +37,13 @@ func (m Model) CreatedAt() time.Time     { return m.createdAt }
 func (m Model) UpdatedAt() time.Time     { return m.updatedAt }
 func (m Model) IsDeleted() bool          { return m.deletedAt != nil }
 func (m Model) IsCompleted() bool        { return m.status == "completed" }
+
+func (m Model) ToEntity() Entity {
+	return Entity{
+		Id: m.id, TenantId: m.tenantID, HouseholdId: m.householdID,
+		Title: m.title, Notes: m.notes, Status: m.status,
+		DueOn: m.dueOn, RolloverEnabled: m.rolloverEnabled,
+		CompletedAt: m.completedAt, CompletedByUserId: m.completedByUID,
+		DeletedAt: m.deletedAt, CreatedAt: m.createdAt, UpdatedAt: m.updatedAt,
+	}
+}

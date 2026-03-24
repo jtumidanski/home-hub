@@ -25,10 +25,16 @@ func (Entity) TableName() string { return "reminders" }
 func Migration(db *gorm.DB) error { return db.AutoMigrate(&Entity{}) }
 
 func Make(e Entity) (Model, error) {
-	return Model{
-		id: e.Id, tenantID: e.TenantId, householdID: e.HouseholdId,
-		title: e.Title, notes: e.Notes, scheduledFor: e.ScheduledFor,
-		lastDismissedAt: e.LastDismissedAt, lastSnoozedUntil: e.LastSnoozedUntil,
-		createdAt: e.CreatedAt, updatedAt: e.UpdatedAt,
-	}, nil
+	return NewBuilder().
+		SetId(e.Id).
+		SetTenantID(e.TenantId).
+		SetHouseholdID(e.HouseholdId).
+		SetTitle(e.Title).
+		SetNotes(e.Notes).
+		SetScheduledFor(e.ScheduledFor).
+		SetLastDismissedAt(e.LastDismissedAt).
+		SetLastSnoozedUntil(e.LastSnoozedUntil).
+		SetCreatedAt(e.CreatedAt).
+		SetUpdatedAt(e.UpdatedAt).
+		Build()
 }

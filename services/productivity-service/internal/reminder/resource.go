@@ -29,16 +29,18 @@ func InitializeRoutes(db *gorm.DB) func(l logrus.FieldLogger, si jsonapi.ServerI
 func listHandler(db *gorm.DB) server.GetHandler {
 	return func(d *server.HandlerDependency, c *server.HandlerContext) http.HandlerFunc {
 		return func(w http.ResponseWriter, r *http.Request) {
-			proc := NewProcessor(logrus.StandardLogger(), r.Context(), db)
+			proc := NewProcessor(d.Logger(), r.Context(), db)
 			models, err := proc.AllProvider()()
 			if err != nil {
+				d.Logger().WithError(err).Error("Failed to list reminders")
 				server.WriteError(w, http.StatusInternalServerError, "Error", "")
 				return
 			}
-			var rest []RestModel
-			for _, m := range models {
-				rm, _ := Transform(m)
-				rest = append(rest, rm)
+			rest, err := TransformSlice(models)
+			if err != nil {
+				d.Logger().WithError(err).Error("Creating REST models")
+				server.WriteError(w, http.StatusInternalServerError, "Error", "")
+				return
 			}
 			server.MarshalSliceResponse[RestModel](d.Logger())(w)(c.ServerInformation())(rest)
 		}
@@ -54,13 +56,19 @@ func createHandler(db *gorm.DB) server.InputHandler[CreateRequest] {
 				server.WriteError(w, http.StatusBadRequest, "Invalid Date", "scheduledFor must be ISO-8601")
 				return
 			}
-			proc := NewProcessor(logrus.StandardLogger(), r.Context(), db)
+			proc := NewProcessor(d.Logger(), r.Context(), db)
 			m, err := proc.Create(t.Id(), t.HouseholdId(), input.Title, input.Notes, scheduledFor)
 			if err != nil {
+				d.Logger().WithError(err).Error("Failed to create reminder")
 				server.WriteError(w, http.StatusInternalServerError, "Create Failed", "")
 				return
 			}
-			rest, _ := Transform(m)
+			rest, err := Transform(m)
+			if err != nil {
+				d.Logger().WithError(err).Error("Creating REST model")
+				server.WriteError(w, http.StatusInternalServerError, "Error", "")
+				return
+			}
 			server.MarshalCreatedResponse[RestModel](d.Logger())(w)(c.ServerInformation())(rest)
 		}
 	}
@@ -74,13 +82,19 @@ func getHandler(db *gorm.DB) server.GetHandler {
 				server.WriteError(w, http.StatusBadRequest, "Invalid ID", "")
 				return
 			}
-			proc := NewProcessor(logrus.StandardLogger(), r.Context(), db)
+			proc := NewProcessor(d.Logger(), r.Context(), db)
 			m, err := proc.ByIDProvider(id)()
 			if err != nil {
+				d.Logger().WithError(err).Error("Reminder not found")
 				server.WriteError(w, http.StatusNotFound, "Not Found", "")
 				return
 			}
-			rest, _ := Transform(m)
+			rest, err := Transform(m)
+			if err != nil {
+				d.Logger().WithError(err).Error("Creating REST model")
+				server.WriteError(w, http.StatusInternalServerError, "Error", "")
+				return
+			}
 			server.MarshalResponse[RestModel](d.Logger())(w)(c.ServerInformation())(map[string][]string{})(rest)
 		}
 	}
@@ -99,13 +113,19 @@ func updateHandler(db *gorm.DB) server.InputHandler[CreateRequest] {
 				server.WriteError(w, http.StatusBadRequest, "Invalid Date", "")
 				return
 			}
-			proc := NewProcessor(logrus.StandardLogger(), r.Context(), db)
+			proc := NewProcessor(d.Logger(), r.Context(), db)
 			m, err := proc.Update(id, input.Title, input.Notes, scheduledFor)
 			if err != nil {
+				d.Logger().WithError(err).Error("Failed to update reminder")
 				server.WriteError(w, http.StatusInternalServerError, "Update Failed", "")
 				return
 			}
-			rest, _ := Transform(m)
+			rest, err := Transform(m)
+			if err != nil {
+				d.Logger().WithError(err).Error("Creating REST model")
+				server.WriteError(w, http.StatusInternalServerError, "Error", "")
+				return
+			}
 			server.MarshalResponse[RestModel](d.Logger())(w)(c.ServerInformation())(map[string][]string{})(rest)
 		}
 	}
@@ -119,8 +139,9 @@ func deleteHandler(db *gorm.DB) server.GetHandler {
 				server.WriteError(w, http.StatusBadRequest, "Invalid ID", "")
 				return
 			}
-			proc := NewProcessor(logrus.StandardLogger(), r.Context(), db)
+			proc := NewProcessor(d.Logger(), r.Context(), db)
 			if err := proc.Delete(id); err != nil {
+				d.Logger().WithError(err).Error("Failed to delete reminder")
 				server.WriteError(w, http.StatusInternalServerError, "Delete Failed", "")
 				return
 			}

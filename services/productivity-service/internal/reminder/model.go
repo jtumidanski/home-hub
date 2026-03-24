@@ -30,6 +30,15 @@ func (m Model) LastSnoozedUntil() *time.Time  { return m.lastSnoozedUntil }
 func (m Model) CreatedAt() time.Time         { return m.createdAt }
 func (m Model) UpdatedAt() time.Time         { return m.updatedAt }
 
+func (m Model) ToEntity() Entity {
+	return Entity{
+		Id: m.id, TenantId: m.tenantID, HouseholdId: m.householdID,
+		Title: m.title, Notes: m.notes, ScheduledFor: m.scheduledFor,
+		LastDismissedAt: m.lastDismissedAt, LastSnoozedUntil: m.lastSnoozedUntil,
+		CreatedAt: m.createdAt, UpdatedAt: m.updatedAt,
+	}
+}
+
 func (m Model) IsActive() bool {
 	now := time.Now().UTC()
 	if m.lastDismissedAt != nil {

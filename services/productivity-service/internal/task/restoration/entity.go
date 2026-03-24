@@ -1,4 +1,4 @@
-package reminderdismissal
+package restoration
 
 import (
 	"time"
@@ -11,11 +11,11 @@ type Entity struct {
 	Id              uuid.UUID `gorm:"type:uuid;primaryKey"`
 	TenantId        uuid.UUID `gorm:"type:uuid;not null;index"`
 	HouseholdId     uuid.UUID `gorm:"type:uuid;not null;index"`
-	ReminderId      uuid.UUID `gorm:"type:uuid;not null"`
+	TaskId          uuid.UUID `gorm:"type:uuid;not null"`
 	CreatedByUserId uuid.UUID `gorm:"type:uuid;not null"`
 	CreatedAt       time.Time `gorm:"not null"`
 }
 
-func (Entity) TableName() string { return "reminder_dismissals" }
+func (Entity) TableName() string { return "task_restorations" }
 
 func Migration(db *gorm.DB) error { return db.AutoMigrate(&Entity{}) }

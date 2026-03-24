@@ -1,4 +1,4 @@
-package remindersnooze
+package snooze
 
 import (
 	"time"

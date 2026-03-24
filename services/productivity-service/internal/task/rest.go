@@ -37,7 +37,31 @@ func Transform(m Model) (RestModel, error) {
 	}, nil
 }
 
+func TransformSlice(models []Model) ([]RestModel, error) {
+	result := make([]RestModel, len(models))
+	for i, m := range models {
+		rm, err := Transform(m)
+		if err != nil {
+			return nil, err
+		}
+		result[i] = rm
+	}
+	return result, nil
+}
+
 type CreateRequest struct {
+	Id              uuid.UUID `json:"-"`
+	Title           string    `json:"title"`
+	Notes           string    `json:"notes"`
+	DueOn           *string   `json:"dueOn,omitempty"`
+	RolloverEnabled bool      `json:"rolloverEnabled"`
+}
+
+func (r CreateRequest) GetName() string       { return "tasks" }
+func (r CreateRequest) GetID() string          { return r.Id.String() }
+func (r *CreateRequest) SetID(id string) error { var err error; r.Id, err = uuid.Parse(id); return err }
+
+type UpdateRequest struct {
 	Id              uuid.UUID `json:"-"`
 	Title           string    `json:"title"`
 	Notes           string    `json:"notes"`
@@ -46,6 +70,6 @@ type CreateRequest struct {
 	RolloverEnabled bool      `json:"rolloverEnabled"`
 }
 
-func (r CreateRequest) GetName() string       { return "tasks" }
-func (r CreateRequest) GetID() string          { return r.Id.String() }
-func (r *CreateRequest) SetID(id string) error { var err error; r.Id, err = uuid.Parse(id); return err }
+func (r UpdateRequest) GetName() string       { return "tasks" }
+func (r UpdateRequest) GetID() string          { return r.Id.String() }
+func (r *UpdateRequest) SetID(id string) error { var err error; r.Id, err = uuid.Parse(id); return err }

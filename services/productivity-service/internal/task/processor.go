@@ -20,12 +20,12 @@ var (
 const restoreWindowDays = 3
 
 type Processor struct {
-	l   *logrus.Logger
+	l   logrus.FieldLogger
 	ctx context.Context
 	db  *gorm.DB
 }
 
-func NewProcessor(l *logrus.Logger, ctx context.Context, db *gorm.DB) *Processor {
+func NewProcessor(l logrus.FieldLogger, ctx context.Context, db *gorm.DB) *Processor {
 	return &Processor{l: l, ctx: ctx, db: db}
 }
 
