@@ -6,6 +6,35 @@ description: Testing patterns and practices for Home Hub Golang microservices.
 
 # Testing Conventions
 
+## Mandatory Test DB Setup
+
+**Every test file** that creates an in-memory SQLite database **must** register tenant callbacks. This was the single most commonly missed requirement across all service audits.
+
+```go
+import (
+    "testing"
+    database "shared/go/database"
+    "github.com/sirupsen/logrus/hooks/test"
+    "gorm.io/driver/sqlite"
+    "gorm.io/gorm"
+)
+
+func setupTestDB(t *testing.T) *gorm.DB {
+    db, err := gorm.Open(sqlite.Open(":memory:"), &gorm.Config{})
+    require.NoError(t, err)
+
+    l, _ := test.NewNullLogger()
+    database.RegisterTenantCallbacks(l, db)  // ← MANDATORY — do not omit
+
+    err = db.AutoMigrate(&Entity{})
+    require.NoError(t, err)
+    return db
+}
+```
+
+**Why:** Without `RegisterTenantCallbacks`, tests bypass tenant isolation entirely. Tests pass in isolation but mask real bugs where queries would return cross-tenant data in production.
+
+---
 
 ## Focus Areas
 

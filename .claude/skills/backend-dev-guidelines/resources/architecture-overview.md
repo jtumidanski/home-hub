@@ -29,6 +29,23 @@ Services follow a strict layered design with functional composition and immutabi
 - **Functional Composition:** Use `Provider`, `Map`, and `ParallelMap` for chaining.
 - **Stateless Services:** All state in database, services are stateless.
 
+## Sub-Domain / Action-Event Packages
+
+Some services have lightweight sub-domain packages that record action events (e.g., `taskrestoration`, `remindersnooze`, `reminderdismissal`). These packages **still must follow layer separation**:
+
+- If the action is simple (single entity write), **fold it into the parent domain's processor** as a method rather than creating a separate package that violates layers.
+- If a separate package is warranted, it must have its own `processor.go` and `administrator.go`. Handlers must not create entities directly or parse JSON manually.
+- Sub-domain POST endpoints must use `server.RegisterInputHandler[T]`, not `server.RegisterHandler`.
+
+**Guideline:** Prefer fewer, well-structured packages over many thin packages that cut corners on layer separation.
+
+## Cross-Domain Orchestration
+
+When a handler needs to coordinate across multiple domains (e.g., creating a household also creates a membership):
+
+- **Move the orchestration to the processor layer.** The household processor should call the membership processor — not the handler.
+- The only exception is read-only aggregation handlers (e.g., dashboard summaries) which may call multiple processors directly. See [anti-patterns.md](anti-patterns.md) for the documented exception.
+
 ## Startup Example
 
 ```go

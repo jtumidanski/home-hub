@@ -11,10 +11,17 @@ description: Common pitfalls to avoid when implementing Golang microservices.
 |---------------|----------------|
 | Business logic in handlers | Breaks separation of concerns |
 | **Handlers calling provider functions directly** | **Breaks layer separation - handlers must call processors, not providers** |
+| **Direct entity creation in handlers** (`db.Create(&e)` in resource.go) | **Bypasses both processor and administrator layers — all writes must go through administrator functions called by processors** |
+| **Cross-domain business logic in handlers** (e.g., handler creating records in another domain) | **Move cross-domain orchestration to the processor layer** |
 | Mutable public fields | Violates immutability |
 | Database logic in processors | Violates functional purity |
-
 | Missing validation | Allows invalid domain states |
+| **`logrus.StandardLogger()` in handlers** | **Use `d.Logger()` from `HandlerDependency` — it carries trace context and tenant info** |
+| **`*logrus.Logger` in processor constructors** | **Use `logrus.FieldLogger` interface — enables `d.Logger()` compatibility and testability** |
+| **`server.RegisterHandler` (GET signature) for POST/PATCH endpoints** | **Use `server.RegisterInputHandler[T]` — GET handlers have no request body, forcing manual `io.ReadAll`/`json.Unmarshal`** |
+| **Discarding Transform errors with `_`** (e.g., `rm, _ := Transform(m)`) | **Always check and log Transform errors — silent failures mask data conversion bugs** |
+| **`os.Getenv()` in handlers** | **Read env vars once at startup via config struct, inject through constructors — per-request `os.Getenv` is wasteful and hard to test** |
+| **Eager provider execution** (query immediately, wrap in `FixedProvider`) | **Use `database.Query`/`database.SliceQuery` for lazy (deferred) evaluation — enables composition with `model.Map` and `model.ParallelMap`** |
 | Passing TenantId to providers/update/delete | Automatic via GORM callbacks — only pass to create functions |
 | Manual `Where("tenant_id = ?", ...)` in queries | Use `db.WithContext(ctx)` — GORM callback injects tenant filter |
 | Adding `RegisterTenantCallbacks` to main.go | `database.Connect()` already registers them — only use in test files |
@@ -26,13 +33,132 @@ description: Common pitfalls to avoid when implementing Golang microservices.
 | Custom error response helpers | Just write status codes directly |
 | jsonapi struct tags on REST models | Use interface methods (`GetName`, `GetID`, `SetID`) |
 | Plain http.HandlerFunc for routes | Use `server.RegisterHandler` for automatic tenant/tracing |
-
 | Type aliases for library migrations | Adds indirection; we control all services — update call sites directly |
 | Leaving dead code after refactoring | Unused constants/structs/functions clutter the codebase and cause confusion |
 
 **Always** prefer pure, context-aware, curried, and testable functions.
 
 **For REST:** Use `server.RegisterHandler` and `server.RegisterInputHandler` with flat JSON:API-compliant models.
+
+---
+
+## Handler Logger Anti-Pattern
+
+### ❌ Using `logrus.StandardLogger()` in Handlers
+
+**WRONG:**
+```go
+// resource.go - ANTI-PATTERN
+func handleCreateItem(db *gorm.DB) server.InputHandler[CreateRequest] {
+    return func(d *server.HandlerDependency, c *server.HandlerContext, req CreateRequest) http.HandlerFunc {
+        return func(w http.ResponseWriter, r *http.Request) {
+            // ❌ WRONG - loses trace context, tenant info, and structured fields
+            p := NewProcessor(logrus.StandardLogger(), r.Context(), db)
+        }
+    }
+}
+```
+
+**✅ CORRECT:**
+```go
+// resource.go - CORRECT
+func handleCreateItem(db *gorm.DB) server.InputHandler[CreateRequest] {
+    return func(d *server.HandlerDependency, c *server.HandlerContext, req CreateRequest) http.HandlerFunc {
+        return func(w http.ResponseWriter, r *http.Request) {
+            // ✅ CORRECT - d.Logger() carries trace ID, tenant context, handler name
+            p := NewProcessor(d.Logger(), r.Context(), db)
+        }
+    }
+}
+```
+
+This requires processors to accept `logrus.FieldLogger` (not `*logrus.Logger`):
+```go
+// processor.go - CORRECT
+type Processor struct {
+    l   logrus.FieldLogger  // ✅ interface, not concrete type
+    ctx context.Context
+    db  *gorm.DB
+}
+
+func NewProcessor(l logrus.FieldLogger, ctx context.Context, db *gorm.DB) *Processor {
+    return &Processor{l: l, ctx: ctx, db: db}
+}
+```
+
+---
+
+## Wrong Handler Type for POST/PATCH Endpoints
+
+### ❌ Using `RegisterHandler` (GET) for Write Operations
+
+**WRONG:**
+```go
+// resource.go - ANTI-PATTERN: forces manual body parsing
+router.HandleFunc("/items", server.RegisterHandler(l)(si)("create-item", createHandler(db))).Methods(http.MethodPost)
+
+func createHandler(db *gorm.DB) server.GetHandler {  // ❌ GetHandler has no request body
+    return func(d *server.HandlerDependency, c *server.HandlerContext) http.HandlerFunc {
+        return func(w http.ResponseWriter, r *http.Request) {
+            body, _ := io.ReadAll(r.Body)           // ❌ manual body reading
+            var req CreateRequest
+            json.Unmarshal(body, &req)               // ❌ manual JSON parsing
+        }
+    }
+}
+```
+
+**✅ CORRECT:**
+```go
+// resource.go - CORRECT: automatic deserialization
+router.HandleFunc("/items", server.RegisterInputHandler[CreateRequest](l)(si)("create-item", createHandler(db))).Methods(http.MethodPost)
+
+func createHandler(db *gorm.DB) server.InputHandler[CreateRequest] {  // ✅ typed request
+    return func(d *server.HandlerDependency, c *server.HandlerContext, req CreateRequest) http.HandlerFunc {
+        return func(w http.ResponseWriter, r *http.Request) {
+            // req is already deserialized — use it directly
+        }
+    }
+}
+```
+
+---
+
+## Transform Error Handling
+
+### ❌ Discarding Transform Errors
+
+**WRONG:**
+```go
+// resource.go - ANTI-PATTERN
+rm, _ := Transform(m)  // ❌ error silently discarded
+server.MarshalResponse[RestModel](d.Logger())(w)(c.ServerInformation())(map[string][]string{})(rm)
+```
+
+**✅ CORRECT:**
+```go
+// resource.go - CORRECT
+rm, err := Transform(m)
+if err != nil {
+    d.Logger().WithError(err).Error("Creating REST model.")
+    w.WriteHeader(http.StatusInternalServerError)
+    return
+}
+server.MarshalResponse[RestModel](d.Logger())(w)(c.ServerInformation())(map[string][]string{})(rm)
+```
+
+---
+
+## Sub-Domain / Action-Event Packages
+
+Even lightweight packages (e.g., `taskrestoration`, `remindersnooze`, `reminderdismissal`) that record action events **must follow layer separation**:
+
+- **Must have** a `processor.go` (or use the parent domain's processor) for business logic
+- **Must have** an `administrator.go` for write operations
+- **Must use** `server.RegisterInputHandler[T]` for POST endpoints
+- **Must NOT** create entities directly in handlers or parse JSON manually
+
+If the sub-domain is simple enough that a standalone processor adds no value, fold the action into the parent domain's processor as a method instead of creating a separate package with layer violations.
 
 ---
 

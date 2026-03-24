@@ -11,7 +11,13 @@ Defines immutable domain objects with private fields and accessor methods.
 
 ## `entity.go`
 
-Database entity definitions and migration helpers using GORM. Provides `Make(Entity) (Model, error)` and `Model.ToEntity()`.
+Database entity definitions and migration helpers using GORM.
+
+**Required functions:**
+- `Make(Entity) (Model, error)` — converts a database entity to an immutable domain model
+- `ToEntity() Entity` — method on Model that converts back to a database entity
+
+Both directions are mandatory. `Make` is used after reads; `ToEntity()` is used before writes.
 
 ## `builder.go`
 
@@ -19,7 +25,10 @@ Fluent API for constructing validated domain models. `Build()` enforces invarian
 
 
 ## `processor.go`
-Business logic orchestration. Dependency order: `NewProcessor(log, ctx, db)`.
+Business logic orchestration.
+
+**Constructor signature:** `NewProcessor(l logrus.FieldLogger, ctx context.Context, db *gorm.DB)`
+- The logger parameter **must** be `logrus.FieldLogger` (interface), **not** `*logrus.Logger` (concrete type). This ensures compatibility with `d.Logger()` from handlers.
 
 **Key Responsibilities:**
 - Orchestrate providers (reads) and administrators (writes)
@@ -114,6 +123,7 @@ Serialization and transformation between domain models and JSON:API.
 - Mark ID field with `json:"-"` tag (set via SetID)
 - Use pointer fields for optional attributes with `omitempty`
 
+**Both `Transform` and `TransformSlice` are mandatory.** List handlers must use `TransformSlice` — do not inline transform loops in resource.go.
 
 **Pattern:** JSON:API-compliant DTOs with automatic marshaling/unmarshaling via api2go library. No tenant data in payloads.
 

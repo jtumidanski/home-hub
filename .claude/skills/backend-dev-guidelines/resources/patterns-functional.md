@@ -25,6 +25,24 @@ m, err := NewBuilder().
 - `Model.Builder()` supports modification flows.
 
 
+## Processor Constructor Pattern
+
+All processors must accept `logrus.FieldLogger` (interface), **not** `*logrus.Logger` (concrete type):
+
+```go
+type Processor struct {
+    l   logrus.FieldLogger
+    ctx context.Context
+    db  *gorm.DB
+}
+
+func NewProcessor(l logrus.FieldLogger, ctx context.Context, db *gorm.DB) *Processor {
+    return &Processor{l: l, ctx: ctx, db: db}
+}
+```
+
+This ensures handlers can pass `d.Logger()` (which returns `logrus.FieldLogger` with trace/tenant context) directly to processors.
+
 ## Curried Function Pattern
 ```go
 func Create(db *gorm.DB, log logrus.FieldLogger) func(input CreateParams) model.Provider[Entity]

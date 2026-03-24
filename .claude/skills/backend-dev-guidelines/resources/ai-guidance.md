@@ -167,19 +167,39 @@ When migrating types/functions to a shared library, update ALL service call site
 ### Clean Up Dead Code After Extraction
 After extracting code to a shared library, review every modified service file for symbols that are no longer referenced: unused constants, structs, functions, imports, and variables. Use `grep` across the service to confirm nothing depends on them, then delete. Do not leave dead code behind.
 
+## Commonly Missed Items Checklist
+
+Before reporting any domain package as complete, verify **every item** below. These are the items most frequently missed across all service audits:
+
+- [ ] **`builder.go` exists** for every domain with a model — with `NewBuilder()`, fluent setters, and `Build()` that validates invariants
+- [ ] **`ToEntity()` method** exists on the Model type in `entity.go` (not just `Make(Entity) Model`)
+- [ ] **`TransformSlice`** exists in `rest.go` alongside `Transform` — list handlers use it (no inline loops)
+- [ ] **Processor accepts `logrus.FieldLogger`** (not `*logrus.Logger`) in its constructor
+- [ ] **Handlers pass `d.Logger()`** to processors (not `logrus.StandardLogger()`)
+- [ ] **POST/PATCH routes use `RegisterInputHandler[T]`** (not `RegisterHandler` which is for GET/DELETE only)
+- [ ] **Transform errors are checked and logged** (never `rm, _ := Transform(m)`)
+- [ ] **Test `setupTestDB` calls `database.RegisterTenantCallbacks(l, db)`**
+- [ ] **Providers use lazy evaluation** via `database.Query`/`database.SliceQuery` (not eager execution wrapped in `FixedProvider`)
+- [ ] **No `os.Getenv()` in handlers** — env vars read once in config, injected via constructors
+- [ ] **No cross-domain business logic in handlers** — orchestration belongs in the processor layer
+- [ ] **Sub-domain packages have proper layers** — even simple action-event packages need processor + administrator (or fold into parent domain processor)
+
+---
+
 ## Generation Workflow
 1. **Validate dependencies** - Verify all types/operations you plan to use exist
 2. Create `model.go` - Immutable domain model with accessors
-3. Map `entity.go` to DB - GORM entities with migrations
-4. Implement `builder.go` - Fluent API for model construction
-5. Define processors and providers - Pure business logic
-6. Add `rest.go` - JSON:API DTOs with Transform functions
-7. Add `resource.go` - Route registration and thin handlers
-8. Write table-driven tests
-9. **Build ALL affected services** - From workspace root, build every service touched
-10. **Run tests for ALL affected services** - Verify nothing broke
-11. **Report build/test results** - Show pass/fail status for EACH service to user
-12. **Fix ALL issues before proceeding** - No partial implementations allowed
+3. Map `entity.go` to DB - GORM entities with migrations, including `Make()` and `ToEntity()`
+4. Implement `builder.go` - Fluent API for model construction with `Build()` validation
+5. Define processors and providers - Pure business logic, `logrus.FieldLogger` in constructors
+6. Add `rest.go` - JSON:API DTOs with `Transform` AND `TransformSlice` functions
+7. Add `resource.go` - Route registration and thin handlers using `d.Logger()` and correct handler types
+8. Write table-driven tests with `RegisterTenantCallbacks` in test DB setup
+9. **Run the Commonly Missed Items Checklist above**
+10. **Build ALL affected services** - From workspace root, build every service touched
+11. **Run tests for ALL affected services** - Verify nothing broke
+12. **Report build/test results** - Show pass/fail status for EACH service to user
+13. **Fix ALL issues before proceeding** - No partial implementations allowed
 
 ## REST Generation Specifics
 

@@ -130,6 +130,23 @@ After scaffolding is complete, run these skills to verify the work:
 1. `/service-doc` — generates/verifies service documentation
 2. `/backend-audit` — audits against Home Hub backend developer guidelines
 
+## 9. Compliance Checklist (Commonly Missed Items)
+
+Before marking scaffolding complete, verify each domain package against these items that are frequently missed during initial implementation:
+
+| Check | File | Requirement |
+|-------|------|-------------|
+| `builder.go` exists | `builder.go` | Every domain with a model must have a fluent builder with `Build()` validation |
+| `ToEntity()` method | `entity.go` | Model must have `ToEntity() Entity` method (not just `Make(Entity) Model`) |
+| `TransformSlice` function | `rest.go` | Must exist alongside `Transform` — list handlers must not inline loops |
+| `logrus.FieldLogger` | `processor.go` | Constructor must accept `logrus.FieldLogger`, not `*logrus.Logger` |
+| `d.Logger()` in handlers | `resource.go` | Handlers must pass `d.Logger()` to processors, not `logrus.StandardLogger()` |
+| `RegisterInputHandler[T]` | `resource.go` | POST/PATCH routes must use `RegisterInputHandler[T]`, not `RegisterHandler` |
+| Transform error handling | `resource.go` | Never discard Transform errors with `_` — check and log them |
+| `RegisterTenantCallbacks` | `*_test.go` | Every test `setupTestDB` must call `database.RegisterTenantCallbacks(l, db)` |
+| Lazy providers | `provider.go` | Use `database.Query`/`database.SliceQuery`, not eager execution with `FixedProvider` |
+| No `os.Getenv()` in handlers | `resource.go` | Read env vars in config at startup, inject via constructors |
+
 ## Database & Tenant Filtering Notes
 - Each service owns its own database schema (e.g., `auth.*`, `account.*`, `productivity.*`)
 - All tables use UUID primary keys generated in the application
