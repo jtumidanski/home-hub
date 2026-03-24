@@ -80,25 +80,24 @@ func createHandler(db *gorm.DB) server.InputHandler[CreateRequest] {
 func getHandler(db *gorm.DB) server.GetHandler {
 	return func(d *server.HandlerDependency, c *server.HandlerContext) http.HandlerFunc {
 		return func(w http.ResponseWriter, r *http.Request) {
-			id, err := uuid.Parse(mux.Vars(r)["id"])
-			if err != nil {
-				server.WriteError(w, http.StatusBadRequest, "Invalid ID", "")
-				return
-			}
-			proc := NewProcessor(d.Logger(), r.Context(), db)
-			m, err := proc.ByIDProvider(id)()
-			if err != nil {
-				d.Logger().WithError(err).Error("Task not found")
-				server.WriteError(w, http.StatusNotFound, "Not Found", "")
-				return
-			}
-			rest, err := Transform(m)
-			if err != nil {
-				d.Logger().WithError(err).Error("Creating REST model")
-				server.WriteError(w, http.StatusInternalServerError, "Error", "")
-				return
-			}
-			server.MarshalResponse[RestModel](d.Logger())(w)(c.ServerInformation())(map[string][]string{})(rest)
+			server.ParseID(r, w, "id", func(id uuid.UUID) http.HandlerFunc {
+				return func(w http.ResponseWriter, r *http.Request) {
+					proc := NewProcessor(d.Logger(), r.Context(), db)
+					m, err := proc.ByIDProvider(id)()
+					if err != nil {
+						d.Logger().WithError(err).Error("Task not found")
+						server.WriteError(w, http.StatusNotFound, "Not Found", "")
+						return
+					}
+					rest, err := Transform(m)
+					if err != nil {
+						d.Logger().WithError(err).Error("Creating REST model")
+						server.WriteError(w, http.StatusInternalServerError, "Error", "")
+						return
+					}
+					server.MarshalResponse[RestModel](d.Logger())(w)(c.ServerInformation())(map[string][]string{})(rest)
+				}
+			})(w, r)
 		}
 	}
 }
@@ -106,33 +105,32 @@ func getHandler(db *gorm.DB) server.GetHandler {
 func updateHandler(db *gorm.DB) server.InputHandler[UpdateRequest] {
 	return func(d *server.HandlerDependency, c *server.HandlerContext, input UpdateRequest) http.HandlerFunc {
 		return func(w http.ResponseWriter, r *http.Request) {
-			id, err := uuid.Parse(mux.Vars(r)["id"])
-			if err != nil {
-				server.WriteError(w, http.StatusBadRequest, "Invalid ID", "")
-				return
-			}
-			t := tenantctx.MustFromContext(r.Context())
-			var dueOn *time.Time
-			if input.DueOn != nil {
-				parsed, err := time.Parse("2006-01-02", *input.DueOn)
-				if err == nil {
-					dueOn = &parsed
+			server.ParseID(r, w, "id", func(id uuid.UUID) http.HandlerFunc {
+				return func(w http.ResponseWriter, r *http.Request) {
+					t := tenantctx.MustFromContext(r.Context())
+					var dueOn *time.Time
+					if input.DueOn != nil {
+						parsed, err := time.Parse("2006-01-02", *input.DueOn)
+						if err == nil {
+							dueOn = &parsed
+						}
+					}
+					proc := NewProcessor(d.Logger(), r.Context(), db)
+					m, err := proc.Update(id, input.Title, input.Notes, input.Status, dueOn, input.RolloverEnabled, t.UserId())
+					if err != nil {
+						d.Logger().WithError(err).Error("Failed to update task")
+						server.WriteError(w, http.StatusInternalServerError, "Update Failed", "")
+						return
+					}
+					rest, err := Transform(m)
+					if err != nil {
+						d.Logger().WithError(err).Error("Creating REST model")
+						server.WriteError(w, http.StatusInternalServerError, "Error", "")
+						return
+					}
+					server.MarshalResponse[RestModel](d.Logger())(w)(c.ServerInformation())(map[string][]string{})(rest)
 				}
-			}
-			proc := NewProcessor(d.Logger(), r.Context(), db)
-			m, err := proc.Update(id, input.Title, input.Notes, input.Status, dueOn, input.RolloverEnabled, t.UserId())
-			if err != nil {
-				d.Logger().WithError(err).Error("Failed to update task")
-				server.WriteError(w, http.StatusInternalServerError, "Update Failed", "")
-				return
-			}
-			rest, err := Transform(m)
-			if err != nil {
-				d.Logger().WithError(err).Error("Creating REST model")
-				server.WriteError(w, http.StatusInternalServerError, "Error", "")
-				return
-			}
-			server.MarshalResponse[RestModel](d.Logger())(w)(c.ServerInformation())(map[string][]string{})(rest)
+			})(w, r)
 		}
 	}
 }
@@ -140,18 +138,17 @@ func updateHandler(db *gorm.DB) server.InputHandler[UpdateRequest] {
 func deleteHandler(db *gorm.DB) server.GetHandler {
 	return func(d *server.HandlerDependency, c *server.HandlerContext) http.HandlerFunc {
 		return func(w http.ResponseWriter, r *http.Request) {
-			id, err := uuid.Parse(mux.Vars(r)["id"])
-			if err != nil {
-				server.WriteError(w, http.StatusBadRequest, "Invalid ID", "")
-				return
-			}
-			proc := NewProcessor(d.Logger(), r.Context(), db)
-			if err := proc.Delete(id); err != nil {
-				d.Logger().WithError(err).Error("Failed to delete task")
-				server.WriteError(w, http.StatusInternalServerError, "Delete Failed", "")
-				return
-			}
-			w.WriteHeader(http.StatusNoContent)
+			server.ParseID(r, w, "id", func(id uuid.UUID) http.HandlerFunc {
+				return func(w http.ResponseWriter, r *http.Request) {
+					proc := NewProcessor(d.Logger(), r.Context(), db)
+					if err := proc.Delete(id); err != nil {
+						d.Logger().WithError(err).Error("Failed to delete task")
+						server.WriteError(w, http.StatusInternalServerError, "Delete Failed", "")
+						return
+					}
+					w.WriteHeader(http.StatusNoContent)
+				}
+			})(w, r)
 		}
 	}
 }
