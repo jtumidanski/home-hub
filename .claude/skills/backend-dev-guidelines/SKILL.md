@@ -1,0 +1,169 @@
+---
+name: golang-microservice
+description: Skill for creating and modifying Golang microservices using DDD, immutable models, functional composition, GORM entities, JSON:API transport, and Kafka messaging with context based multi tenancy.
+---
+
+
+# Golang Microservice Skill
+
+## Purpose
+Provide a composable entry point that activates when working on any Golang service. This skill aligns development and AI generation with architecture patterns and conventions.
+
+## When to Use
+Activate when working on:
+- Any Go microservice
+- Files: `model.go`, `entity.go`, `builder.go`, `processor.go`, `provider.go`, `producer.go`, `resource.go`, `rest.go`, `requests.go`, `state.go`, or `cache.go`
+- Kafka producers/consumers
+- Caching layers and singleton patterns
+- REST JSON:API endpoints
+- Cross-service REST client calls
+- Multi-tenancy context logic
+- **Saga actions and distributed transactions**
+- Testing domain logic, providers, or emission paths
+
+---
+
+## Quick Start Checklist
+- [ ] Immutable **Model** with accessors
+- [ ] **Entity** with GORM tags and migrations
+- [ ] Fluent **Builder** enforcing invariants
+- [ ] Pure **Processor** functions and `AndEmit` variants
+- [ ] Lazy **Provider** for data access
+- [ ] Kafka **Producer** initialized with context decorators
+- [ ] **Resource** file for route registration and handlers
+- [ ] **Ingress configuration** updated if REST endpoints added/modified
+- [ ] **Service README** updated if API contracts changed
+- [ ] **Requests** + **rest.go** for cross-service REST calls (if needed)
+- [ ] Context-based multi-tenancy (`tenant.MustFromContext`)
+- [ ] Table-driven **tests** for all logic layers
+
+**For Saga Actions (if implementing distributed transactions):**
+- [ ] **Saga handler** registered in orchestrator `handler.go`
+- [ ] **Step completion mechanism** verified (async consumer OR sync immediate)
+- [ ] **Orchestrator consumer** exists and registered for async actions
+- [ ] **Error event handling** implemented for failure scenarios
+- [ ] **Saga tests** cover success and rollback paths
+
+
+---
+
+## Standard Implementation Workflow
+
+**MANDATORY:** Follow this workflow for ALL code changes to ensure quality and prevent regressions.
+
+### Implementation Steps
+
+When modifying any service code:
+
+1. **Implement changes** to primary files (model.go, processor.go, etc.)
+2. **Update ingress configuration** if REST endpoints were added/modified
+   - Open `atlas-ingress.yml` at the root of the atlas directory
+   - Check if a location block exists for your service's `/api/<service-name>` path
+   - If missing, add a new nginx location block following the existing pattern:
+     ```nginx
+     location ~ ^/api/<service-name>(/.*)?$ {
+       proxy_pass http://atlas-<service-name>.atlas.svc.cluster.local:8080;
+     }
+     ```
+   - Place it alphabetically among other service routes for maintainability
+3. **Update service README** if API contracts changed
+   - Navigate to the service's README.md (e.g., `services/atlas-<service>/atlas.com/<service>/README.md`)
+   - Update the REST Endpoints table with correct paths, methods, and query parameters
+   - Ensure endpoint paths match actual implementation (check path vs query parameters)
+   - Update Kafka Commands/Events tables if message types were added/modified
+   - Verify all documented endpoints are accurate and complete
+4. **Update mocks immediately** if any interfaces changed
+   - Add corresponding function fields to mock struct
+   - Implement new methods with nil-check and default behavior
+   - See [Testing Conventions](resources/testing-guide.md#interface-change-workflow) for details
+5. **Run tests BEFORE claiming completion**:
+   ```bash
+   go test ./... -count=1
+   ```
+6. **Fix any failures** - Do NOT skip or ignore test failures
+7. **Verify build**:
+   ```bash
+   go build
+   ```
+8. **Report test results** with actual command output, not assumptions
+
+### Critical Rules
+
+- ❌ **Never skip test execution** - Running tests is mandatory, not optional
+- ❌ **Never assume tests will pass** - Always verify with actual execution
+- ❌ **Never update interface without updating mocks** - Causes immediate test failures
+- ❌ **Never add/modify REST endpoints without updating ingress** - Endpoints won't be accessible
+- ❌ **Never change API contracts without updating README** - Documentation becomes stale and misleading
+- ❌ **Never add saga action without step completion** - Saga will remain stuck forever
+- ✅ **Always run full test suite** (`go test ./...`) not just modified packages
+- ✅ **Always use `-count=1` flag** to disable test caching
+- ✅ **Always verify test output** before marking work complete
+- ✅ **Always check ingress configuration** when working with REST endpoints
+- ✅ **Always update service documentation** when changing APIs
+- ✅ **Always verify orchestrator consumer exists** for saga async actions
+
+### When Tests Fail
+
+If `go test ./... -count=1` reports failures:
+
+1. **Read the error message completely** - Understand what broke
+2. **Check for missing mock methods** - Most common cause of failures
+3. **Update mocks to match interface** - Add/modify methods as needed
+4. **Re-run tests** - Verify the fix didn't break other tests
+5. **Do not proceed** until all tests pass
+
+See [Testing Conventions](resources/testing-guide.md) for comprehensive testing guidelines.
+
+---
+
+## Key Principles
+1. **Immutability** — Models never mutate; all state changes yield new instances.
+2. **Functional Composition** — Use curried functions and providers for composition.
+3. **Event-Driven Design** — Kafka coordinates inter-service communication.
+4. **Context Isolation** — Tenant and trace always derived from context.
+5. **Layer Separation** — Each file type has a clear single responsibility.
+6. **Pure Logic First** — Business logic runs without side effects unless explicitly wrapped in `AndEmit`.
+
+
+---
+
+## File Responsibilities
+
+| File | Primary Responsibility | Key Dependencies |
+|------|-------------------------|------------------|
+| `model.go` | Domain model definition | None |
+| `entity.go` | Database schema and migrations | GORM |
+| `builder.go` | Fluent construction of valid models | Model |
+| `processor.go` | Core business logic | Model, Provider |
+| `provider.go` | Lazy database access | GORM, Entity |
+| `producer.go` | Kafka event creation | Kafka, Provider |
+| `cache.go` | Singleton cache implementation | sync.Once, sync.RWMutex |
+| `resource.go` | Route registration and handlers | REST, Processor |
+| `rest.go` | JSON:API resource mappings | Model |
+| `requests.go` | Cross-service REST client functions | atlas-rest, rest.go |
+| `state.go` | Domain states or enums | Model |
+
+---
+
+
+## Navigation Guide
+
+| Topic | Reference |
+|-------|------------|
+| Architecture Overview | [resources/architecture-overview.md](resources/architecture-overview.md) |
+| File Responsibilities | [resources/file-responsibilities.md](resources/file-responsibilities.md) |
+| Functional & Builder Patterns | [resources/patterns-functional.md](resources/patterns-functional.md) |
+| Provider Pattern | [resources/patterns-provider.md](resources/patterns-provider.md) |
+| **Cache Patterns** | **[resources/patterns-cache.md](resources/patterns-cache.md)** |
+| Kafka Integration | [resources/patterns-kafka.md](resources/patterns-kafka.md) |
+| **Saga Patterns & Step Completion** | **[resources/patterns-saga.md](resources/patterns-saga.md)** |
+| REST JSON:API | [resources/patterns-rest-jsonapi.md](resources/patterns-rest-jsonapi.md) |
+| **Ingress & Documentation** | **[resources/patterns-ingress-documentation.md](resources/patterns-ingress-documentation.md)** |
+| Multi-Tenancy Context | [resources/patterns-multitenancy-context.md](resources/patterns-multitenancy-context.md) |
+| Testing Conventions | [resources/testing-guide.md](resources/testing-guide.md) |
+| **Cross-Service Implementation** | **[resources/cross-service-implementation.md](resources/cross-service-implementation.md)** |
+| **Service Scaffolding** | **[resources/scaffolding-checklist.md](resources/scaffolding-checklist.md)** |
+| AI Code Guidance | [resources/ai-guidance.md](resources/ai-guidance.md) |
+| Anti-Patterns | [resources/anti-patterns.md](resources/anti-patterns.md) |
+
+---
