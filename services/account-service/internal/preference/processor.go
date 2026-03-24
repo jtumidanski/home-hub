@@ -10,12 +10,12 @@ import (
 )
 
 type Processor struct {
-	l   *logrus.Logger
+	l   logrus.FieldLogger
 	ctx context.Context
 	db  *gorm.DB
 }
 
-func NewProcessor(l *logrus.Logger, ctx context.Context, db *gorm.DB) *Processor {
+func NewProcessor(l logrus.FieldLogger, ctx context.Context, db *gorm.DB) *Processor {
 	return &Processor{l: l, ctx: ctx, db: db}
 }
 
@@ -23,12 +23,12 @@ func (p *Processor) ByIDProvider(id uuid.UUID) model.Provider[Model] {
 	return model.Map(Make)(getByID(id)(p.db.WithContext(p.ctx)))
 }
 
-func (p *Processor) ByTenantAndUserProvider(tenantID, userID uuid.UUID) model.Provider[Model] {
-	return model.Map(Make)(getByTenantAndUser(tenantID, userID)(p.db.WithContext(p.ctx)))
+func (p *Processor) ByUserProvider(userID uuid.UUID) model.Provider[Model] {
+	return model.Map(Make)(getByUser(userID)(p.db.WithContext(p.ctx)))
 }
 
 func (p *Processor) FindOrCreate(tenantID, userID uuid.UUID) (Model, error) {
-	m, err := p.ByTenantAndUserProvider(tenantID, userID)()
+	m, err := p.ByUserProvider(userID)()
 	if err == nil {
 		return m, nil
 	}

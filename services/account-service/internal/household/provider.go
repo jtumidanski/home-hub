@@ -17,10 +17,12 @@ func getByID(id uuid.UUID) func(db *gorm.DB) model.Provider[Entity] {
 	}
 }
 
-func getByTenantID(tenantID uuid.UUID) func(db *gorm.DB) model.Provider[[]Entity] {
+// getAll returns all households for the current tenant.
+// Tenant filtering is automatic via GORM callbacks when db.WithContext(ctx) is used.
+func getAll() func(db *gorm.DB) model.Provider[[]Entity] {
 	return func(db *gorm.DB) model.Provider[[]Entity] {
 		var results []Entity
-		err := db.Where("tenant_id = ?", tenantID).Find(&results).Error
+		err := db.Find(&results).Error
 		if err != nil {
 			return model.ErrorProvider[[]Entity](err)
 		}

@@ -5,13 +5,13 @@ go 1.26.1
 require (
 	github.com/google/uuid v1.6.0
 	github.com/gorilla/mux v1.8.1
+	github.com/jtumidanski/api2go v1.0.4
 	github.com/jtumidanski/home-hub/shared/go/auth v0.0.0-00010101000000-000000000000
 	github.com/jtumidanski/home-hub/shared/go/database v0.0.0
 	github.com/jtumidanski/home-hub/shared/go/logging v0.0.0
 	github.com/jtumidanski/home-hub/shared/go/model v0.0.0
 	github.com/jtumidanski/home-hub/shared/go/server v0.0.0
 	github.com/jtumidanski/home-hub/shared/go/tenant v0.0.0
-	github.com/manyminds/api2go v0.0.0-20220325145637-95b4fb838cf6
 	github.com/sirupsen/logrus v1.9.3
 	gorm.io/driver/sqlite v1.6.0
 	gorm.io/gorm v1.30.0

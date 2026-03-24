@@ -26,8 +26,9 @@ func Transform(m Model) (RestModel, error) {
 }
 
 type UpdateRequest struct {
-	Id    uuid.UUID `json:"-"`
-	Theme *string   `json:"theme,omitempty"`
+	Id                uuid.UUID  `json:"-"`
+	Theme             *string    `json:"theme,omitempty"`
+	ActiveHouseholdId *uuid.UUID `json:"active_household_id,omitempty"`
 }
 
 func (r UpdateRequest) GetName() string { return "preferences" }

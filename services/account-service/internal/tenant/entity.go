@@ -19,8 +19,10 @@ func (Entity) TableName() string { return "tenants" }
 func Migration(db *gorm.DB) error { return db.AutoMigrate(&Entity{}) }
 
 func Make(e Entity) (Model, error) {
-	return Model{
-		id: e.Id, name: e.Name,
-		createdAt: e.CreatedAt, updatedAt: e.UpdatedAt,
-	}, nil
+	return NewBuilder().
+		SetId(e.Id).
+		SetName(e.Name).
+		SetCreatedAt(e.CreatedAt).
+		SetUpdatedAt(e.UpdatedAt).
+		Build()
 }

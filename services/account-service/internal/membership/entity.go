@@ -22,9 +22,13 @@ func (Entity) TableName() string { return "memberships" }
 func Migration(db *gorm.DB) error { return db.AutoMigrate(&Entity{}) }
 
 func Make(e Entity) (Model, error) {
-	return Model{
-		id: e.Id, tenantID: e.TenantId, householdID: e.HouseholdId,
-		userID: e.UserId, role: e.Role,
-		createdAt: e.CreatedAt, updatedAt: e.UpdatedAt,
-	}, nil
+	return NewBuilder().
+		SetId(e.Id).
+		SetTenantID(e.TenantId).
+		SetHouseholdID(e.HouseholdId).
+		SetUserID(e.UserId).
+		SetRole(e.Role).
+		SetCreatedAt(e.CreatedAt).
+		SetUpdatedAt(e.UpdatedAt).
+		Build()
 }

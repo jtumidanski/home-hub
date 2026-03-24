@@ -5,6 +5,7 @@ import (
 	"testing"
 
 	"github.com/google/uuid"
+	"github.com/jtumidanski/home-hub/shared/go/database"
 	"github.com/sirupsen/logrus/hooks/test"
 	"gorm.io/driver/sqlite"
 	"gorm.io/gorm"
@@ -16,6 +17,8 @@ func setupTestDB(t *testing.T) *gorm.DB {
 	if err != nil {
 		t.Fatalf("failed to open test db: %v", err)
 	}
+	l, _ := test.NewNullLogger()
+	database.RegisterTenantCallbacks(l, db)
 	db.AutoMigrate(&Entity{})
 	return db
 }
@@ -72,7 +75,7 @@ func TestDelete(t *testing.T) {
 	}
 }
 
-func TestByUserAndTenantProvider(t *testing.T) {
+func TestByUserProvider(t *testing.T) {
 	db := setupTestDB(t)
 	l, _ := test.NewNullLogger()
 	p := NewProcessor(l, context.Background(), db)
@@ -81,9 +84,9 @@ func TestByUserAndTenantProvider(t *testing.T) {
 	userID := uuid.New()
 	p.Create(tenantID, uuid.New(), userID, "owner")
 	p.Create(tenantID, uuid.New(), userID, "editor")
-	p.Create(uuid.New(), uuid.New(), userID, "viewer") // different tenant
+	p.Create(uuid.New(), uuid.New(), uuid.New(), "viewer") // different user
 
-	models, err := p.ByUserAndTenantProvider(userID, tenantID)()
+	models, err := p.ByUserProvider(userID)()
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}

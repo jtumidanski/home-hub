@@ -5,6 +5,7 @@ go 1.26.1
 require (
 	github.com/google/uuid v1.6.0
 	github.com/gorilla/mux v1.8.1
+	github.com/jtumidanski/api2go v1.0.4
 	github.com/jtumidanski/home-hub/shared/go/auth v0.0.0-00010101000000-000000000000
 	github.com/jtumidanski/home-hub/shared/go/database v0.0.0
 	github.com/jtumidanski/home-hub/shared/go/logging v0.0.0
@@ -19,6 +20,7 @@ require (
 require (
 	github.com/cenkalti/backoff/v5 v5.0.3 // indirect
 	github.com/cespare/xxhash/v2 v2.3.0 // indirect
+	github.com/gedex/inflector v0.0.0-20170307190818-16278e9db813 // indirect
 	github.com/go-logr/logr v1.4.3 // indirect
 	github.com/go-logr/stdr v1.2.2 // indirect
 	github.com/golang-jwt/jwt/v5 v5.2.1 // indirect

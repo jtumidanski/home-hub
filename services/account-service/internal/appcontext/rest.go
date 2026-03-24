@@ -5,7 +5,7 @@ import (
 	"github.com/jtumidanski/home-hub/services/account-service/internal/membership"
 	"github.com/jtumidanski/home-hub/services/account-service/internal/preference"
 	"github.com/jtumidanski/home-hub/services/account-service/internal/tenant"
-	"github.com/manyminds/api2go/jsonapi"
+	"github.com/jtumidanski/api2go/jsonapi"
 )
 
 // RestModel represents the /contexts/current resource in JSON:API format.
@@ -84,9 +84,15 @@ func (r RestModel) GetReferencedStructs() []jsonapi.MarshalIdentifier {
 }
 
 // TransformContext converts a Resolved domain object into a RestModel.
-func TransformContext(resolved *Resolved) RestModel {
-	tenantRest, _ := tenant.Transform(resolved.Tenant)
-	prefRest, _ := preference.Transform(resolved.Preference)
+func TransformContext(resolved *Resolved) (RestModel, error) {
+	tenantRest, err := tenant.Transform(resolved.Tenant)
+	if err != nil {
+		return RestModel{}, err
+	}
+	prefRest, err := preference.Transform(resolved.Preference)
+	if err != nil {
+		return RestModel{}, err
+	}
 
 	rm := RestModel{
 		ResolvedTheme:      resolved.Preference.Theme(),
@@ -97,14 +103,18 @@ func TransformContext(resolved *Resolved) RestModel {
 	}
 
 	if resolved.ActiveHousehold != nil {
-		hhRest, _ := household.Transform(*resolved.ActiveHousehold)
+		hhRest, err := household.Transform(*resolved.ActiveHousehold)
+		if err != nil {
+			return RestModel{}, err
+		}
 		rm.ActiveHousehold = &hhRest
 	}
 
-	for _, m := range resolved.Memberships {
-		memRest, _ := membership.Transform(m)
-		rm.Memberships = append(rm.Memberships, memRest)
+	memRest, err := membership.TransformSlice(resolved.Memberships)
+	if err != nil {
+		return RestModel{}, err
 	}
+	rm.Memberships = memRest
 
-	return rm
+	return rm, nil
 }

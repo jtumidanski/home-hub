@@ -17,10 +17,12 @@ func getByID(id uuid.UUID) func(db *gorm.DB) model.Provider[Entity] {
 	}
 }
 
-func getByUserAndTenant(userID, tenantID uuid.UUID) func(db *gorm.DB) model.Provider[[]Entity] {
+// getByUser returns memberships for a user.
+// Tenant filtering is automatic via GORM callbacks when db.WithContext(ctx) is used.
+func getByUser(userID uuid.UUID) func(db *gorm.DB) model.Provider[[]Entity] {
 	return func(db *gorm.DB) model.Provider[[]Entity] {
 		var results []Entity
-		err := db.Where("user_id = ? AND tenant_id = ?", userID, tenantID).Find(&results).Error
+		err := db.Where("user_id = ?", userID).Find(&results).Error
 		if err != nil {
 			return model.ErrorProvider[[]Entity](err)
 		}

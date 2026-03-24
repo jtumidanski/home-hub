@@ -5,6 +5,8 @@ import (
 	"testing"
 
 	"github.com/google/uuid"
+	"github.com/jtumidanski/home-hub/shared/go/database"
+	"github.com/jtumidanski/home-hub/services/account-service/internal/membership"
 	"github.com/sirupsen/logrus/hooks/test"
 	"gorm.io/driver/sqlite"
 	"gorm.io/gorm"
@@ -16,7 +18,10 @@ func setupTestDB(t *testing.T) *gorm.DB {
 	if err != nil {
 		t.Fatalf("failed to open test db: %v", err)
 	}
+	l, _ := test.NewNullLogger()
+	database.RegisterTenantCallbacks(l, db)
 	db.AutoMigrate(&Entity{})
+	db.AutoMigrate(&membership.Entity{})
 	return db
 }
 
@@ -41,7 +46,7 @@ func TestCreate(t *testing.T) {
 	}
 }
 
-func TestByTenantIDProvider(t *testing.T) {
+func TestAllProvider(t *testing.T) {
 	db := setupTestDB(t)
 	l, _ := test.NewNullLogger()
 	p := NewProcessor(l, context.Background(), db)
@@ -49,9 +54,8 @@ func TestByTenantIDProvider(t *testing.T) {
 	tenantID := uuid.New()
 	p.Create(tenantID, "Home 1", "UTC", "metric")
 	p.Create(tenantID, "Home 2", "UTC", "metric")
-	p.Create(uuid.New(), "Other Tenant Home", "UTC", "metric")
 
-	models, err := p.ByTenantIDProvider(tenantID)()
+	models, err := p.AllProvider()()
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
@@ -75,5 +79,31 @@ func TestUpdate(t *testing.T) {
 	}
 	if updated.Timezone() != "America/Chicago" {
 		t.Errorf("expected timezone America/Chicago, got %s", updated.Timezone())
+	}
+}
+
+func TestCreateWithOwner(t *testing.T) {
+	db := setupTestDB(t)
+	l, _ := test.NewNullLogger()
+	p := NewProcessor(l, context.Background(), db)
+
+	tenantID := uuid.New()
+	userID := uuid.New()
+	m, err := p.CreateWithOwner(tenantID, userID, "My House", "UTC", "metric")
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if m.Name() != "My House" {
+		t.Errorf("expected name My House, got %s", m.Name())
+	}
+
+	// Verify owner membership was created
+	memProc := membership.NewProcessor(l, context.Background(), db)
+	mem, err := memProc.ByHouseholdAndUserProvider(m.Id(), userID)()
+	if err != nil {
+		t.Fatalf("expected owner membership, got error: %v", err)
+	}
+	if mem.Role() != "owner" {
+		t.Errorf("expected role owner, got %s", mem.Role())
 	}
 }

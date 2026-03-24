@@ -22,7 +22,7 @@ type Resolved struct {
 }
 
 // Resolve builds the current application context for the given user and tenant.
-func Resolve(l *logrus.Logger, ctx context.Context, db *gorm.DB, tenantID, userID uuid.UUID) (*Resolved, error) {
+func Resolve(l logrus.FieldLogger, ctx context.Context, db *gorm.DB, tenantID, userID uuid.UUID) (*Resolved, error) {
 	// Get tenant
 	tenantProc := tenant.NewProcessor(l, ctx, db)
 	t, err := tenantProc.ByIDProvider(tenantID)()
@@ -39,7 +39,7 @@ func Resolve(l *logrus.Logger, ctx context.Context, db *gorm.DB, tenantID, userI
 
 	// Get memberships
 	memProc := membership.NewProcessor(l, ctx, db)
-	memberships, err := memProc.ByUserAndTenantProvider(userID, tenantID)()
+	memberships, err := memProc.ByUserProvider(userID)()
 	if err != nil {
 		return nil, err
 	}

@@ -1,0 +1,196 @@
+{
+  "service": "account-service",
+  "path": "services/account-service",
+  "guidelinesSource": "CLAUDE.md",
+  "overallStatus": "needs-work",
+  "confidence": "high",
+  "checks": [
+    {
+      "id": "ARCH-001",
+      "status": "fail",
+      "impact": "high",
+      "markdownSection": "3. Findings by Check ID > ARCH-001: Layer Separation",
+      "evidence": [
+        { "file": "household/resource.go", "symbol": "createHandler", "note": "Cross-domain business logic: calls membership.NewProcessor directly from handler (lines 60-61)" },
+        { "file": "membership/resource.go", "symbol": "createHandler", "note": "Returns server.GetHandler instead of server.InputHandler[CreateRequest]; manually reads body with io.ReadAll (line 49-56)" },
+        { "file": "membership/resource.go", "symbol": "updateHandler", "note": "Returns server.GetHandler; manually reads body instead of using RegisterInputHandler (line 79-93)" },
+        { "file": "preference/resource.go", "symbol": "updateHandler", "note": "Returns server.GetHandler; manually reads body instead of using RegisterInputHandler (line 42-83)" }
+      ],
+      "recommendedAction": "Refactor membership/preference handlers to use server.RegisterInputHandler[T]. Move membership auto-creation into household processor.",
+      "estimatedEffort": "M"
+    },
+    {
+      "id": "ARCH-002",
+      "status": "pass",
+      "impact": "low",
+      "markdownSection": "3. Findings by Check ID > ARCH-002: Immutable Models",
+      "evidence": [
+        { "file": "household/model.go", "symbol": "Model", "note": "Private fields with value-receiver accessors — correct" },
+        { "file": "membership/model.go", "symbol": "Model", "note": "Private fields with value-receiver accessors — correct" },
+        { "file": "preference/model.go", "symbol": "Model", "note": "Private fields with value-receiver accessors — correct" },
+        { "file": "tenant/model.go", "symbol": "Model", "note": "Private fields with value-receiver accessors — correct" }
+      ],
+      "recommendedAction": "None",
+      "estimatedEffort": "S"
+    },
+    {
+      "id": "ARCH-003",
+      "status": "fail",
+      "impact": "high",
+      "markdownSection": "3. Findings by Check ID > ARCH-003: Builder Pattern",
+      "evidence": [
+        { "file": "household/", "symbol": "builder.go", "note": "Missing — no fluent builder or invariant validation" },
+        { "file": "membership/", "symbol": "builder.go", "note": "Missing" },
+        { "file": "preference/", "symbol": "builder.go", "note": "Missing" },
+        { "file": "tenant/", "symbol": "builder.go", "note": "Missing" }
+      ],
+      "recommendedAction": "Add builder.go with fluent API and Build() validation for all four domains",
+      "estimatedEffort": "M"
+    },
+    {
+      "id": "ARCH-004",
+      "status": "warn",
+      "impact": "medium",
+      "markdownSection": "3. Findings by Check ID > ARCH-004: Provider Pattern",
+      "evidence": [
+        { "file": "household/provider.go", "symbol": "getByTenantID", "note": "Accepts tenantID parameter and manually filters — should rely on GORM callback" },
+        { "file": "membership/provider.go", "symbol": "getByUserAndTenant", "note": "Manually filters by tenant_id in WHERE clause" },
+        { "file": "preference/provider.go", "symbol": "getByTenantAndUser", "note": "Manually filters by tenant_id in WHERE clause" }
+      ],
+      "recommendedAction": "Remove tenantID parameters from providers; rely on automatic GORM tenant callback filtering via db.WithContext(ctx)",
+      "estimatedEffort": "M"
+    },
+    {
+      "id": "ARCH-005",
+      "status": "pass",
+      "impact": "low",
+      "markdownSection": "3. Findings by Check ID > ARCH-005: Administrator Pattern",
+      "evidence": [
+        { "file": "household/administrator.go", "symbol": "create/update", "note": "Correct separation — create takes tenantID, update does not" },
+        { "file": "membership/administrator.go", "symbol": "create/updateRole/deleteByID", "note": "Correct separation" },
+        { "file": "preference/administrator.go", "symbol": "create/updateTheme/setActiveHousehold", "note": "Correct separation" }
+      ],
+      "recommendedAction": "None",
+      "estimatedEffort": "S"
+    },
+    {
+      "id": "ARCH-006",
+      "status": "warn",
+      "impact": "medium",
+      "markdownSection": "3. Findings by Check ID > ARCH-006: REST/JSON:API Compliance",
+      "evidence": [
+        { "file": "membership/resource.go", "symbol": "extractRelationships", "note": "Manual JSON:API envelope parsing — anti-pattern" },
+        { "file": "preference/resource.go", "symbol": "extractActiveHouseholdRelationship", "note": "Manual JSON:API envelope parsing; uses json.Unmarshal(nil,nil) as error hack" },
+        { "file": "all rest.go", "symbol": "TransformSlice", "note": "Missing from all domains — inline loops used in handlers" }
+      ],
+      "recommendedAction": "Eliminate manual envelope parsing by using RegisterInputHandler. Add TransformSlice functions.",
+      "estimatedEffort": "M"
+    },
+    {
+      "id": "ARCH-007",
+      "status": "warn",
+      "impact": "medium",
+      "markdownSection": "3. Findings by Check ID > ARCH-007: Multi-Tenancy Context",
+      "evidence": [
+        { "file": "household/resource.go", "symbol": "listHandler/createHandler/getHandler/updateHandler", "note": "Uses logrus.StandardLogger() instead of d.Logger() — loses request context" },
+        { "file": "membership/resource.go", "symbol": "all handlers", "note": "Same — logrus.StandardLogger() instead of d.Logger()" },
+        { "file": "preference/resource.go", "symbol": "all handlers", "note": "Same" },
+        { "file": "tenant/resource.go", "symbol": "all handlers", "note": "Same" },
+        { "file": "appcontext/resource.go", "symbol": "getHandler", "note": "Same" }
+      ],
+      "recommendedAction": "Replace logrus.StandardLogger() with d.Logger() in all handlers",
+      "estimatedEffort": "S"
+    },
+    {
+      "id": "ARCH-008",
+      "status": "warn",
+      "impact": "medium",
+      "markdownSection": "3. Findings by Check ID > ARCH-008: Testing",
+      "evidence": [
+        { "file": "household/processor_test.go", "symbol": "setupTestDB", "note": "Missing database.RegisterTenantCallbacks(l, db)" },
+        { "file": "membership/processor_test.go", "symbol": "setupTestDB", "note": "Missing database.RegisterTenantCallbacks(l, db)" },
+        { "file": "preference/processor_test.go", "symbol": "setupTestDB", "note": "Missing database.RegisterTenantCallbacks(l, db)" },
+        { "file": "tenant/processor_test.go", "symbol": "setupTestDB", "note": "Missing database.RegisterTenantCallbacks(l, db)" }
+      ],
+      "recommendedAction": "Add database.RegisterTenantCallbacks to all test setupTestDB functions. Add table-driven tests, handler tests, and provider tests.",
+      "estimatedEffort": "M"
+    },
+    {
+      "id": "ARCH-009",
+      "status": "warn",
+      "impact": "low",
+      "markdownSection": "3. Findings by Check ID > ARCH-009: Dead Code",
+      "evidence": [
+        { "file": "tenant/provider.go", "symbol": "getByUserID", "note": "Function defined but never called — dead code" }
+      ],
+      "recommendedAction": "Remove unused getByUserID function",
+      "estimatedEffort": "S"
+    },
+    {
+      "id": "ARCH-010",
+      "status": "warn",
+      "impact": "medium",
+      "markdownSection": "3. Findings by Check ID > ARCH-010: Processor Logger Type",
+      "evidence": [
+        { "file": "household/processor.go", "symbol": "Processor.l", "note": "*logrus.Logger instead of logrus.FieldLogger" },
+        { "file": "membership/processor.go", "symbol": "Processor.l", "note": "*logrus.Logger instead of logrus.FieldLogger" },
+        { "file": "preference/processor.go", "symbol": "Processor.l", "note": "*logrus.Logger instead of logrus.FieldLogger" },
+        { "file": "tenant/processor.go", "symbol": "Processor.l", "note": "*logrus.Logger instead of logrus.FieldLogger" },
+        { "file": "appcontext/context.go", "symbol": "Resolve", "note": "*logrus.Logger instead of logrus.FieldLogger" }
+      ],
+      "recommendedAction": "Change processor logger fields and function parameters to logrus.FieldLogger",
+      "estimatedEffort": "S"
+    },
+    {
+      "id": "ARCH-011",
+      "status": "warn",
+      "impact": "low",
+      "markdownSection": "3. Findings by Check ID > ARCH-011: Error Handling in Handlers",
+      "evidence": [
+        { "file": "household/resource.go", "symbol": "listHandler/createHandler/getHandler/updateHandler", "note": "Transform errors silently discarded with _" },
+        { "file": "membership/resource.go", "symbol": "multiple handlers", "note": "Transform errors silently discarded" },
+        { "file": "appcontext/rest.go", "symbol": "TransformContext", "note": "All sub-Transform errors discarded" }
+      ],
+      "recommendedAction": "Handle Transform errors — return 500 if transformation fails",
+      "estimatedEffort": "S"
+    },
+    {
+      "id": "ARCH-012",
+      "status": "warn",
+      "impact": "low",
+      "markdownSection": "3. Findings by Check ID > ARCH-012: Dockerfile",
+      "evidence": [
+        { "file": "Dockerfile", "symbol": "FROM golang:1.26-alpine", "note": "Go 1.26 does not exist; guidelines specify 1.24+" }
+      ],
+      "recommendedAction": "Fix Dockerfile to use golang:1.24-alpine",
+      "estimatedEffort": "S"
+    }
+  ],
+  "blockingIssues": [
+    "ARCH-001: Membership/preference handlers manually parse JSON:API bodies instead of using server.RegisterInputHandler[T]",
+    "ARCH-001: Household create handler contains cross-domain business logic (membership creation) in handler layer",
+    "ARCH-003: No builder.go in any domain — models can be constructed in invalid states",
+    "ARCH-008: Test DBs missing RegisterTenantCallbacks — tenant filtering is untested"
+  ],
+  "nonBlockingIssues": [
+    "ARCH-004: Providers manually filter by tenant_id where GORM callbacks should handle it",
+    "ARCH-007/010: All handlers use logrus.StandardLogger() instead of d.Logger()",
+    "ARCH-009: Dead code getByUserID in tenant/provider.go",
+    "ARCH-011: Transform errors silently discarded in handlers",
+    "ARCH-006: Missing TransformSlice functions",
+    "ARCH-012: Dockerfile references non-existent Go 1.26",
+    "ARCH-008: Tests not table-driven; no handler or provider tests"
+  ],
+  "devDocsSeeds": [
+    { "objective": "Add builder.go with fluent builders and invariant validation for all 4 domains", "priority": "P0" },
+    { "objective": "Refactor membership/preference handlers to use server.RegisterInputHandler[T]", "priority": "P0" },
+    { "objective": "Move membership auto-creation from household handler to household processor", "priority": "P0" },
+    { "objective": "Add database.RegisterTenantCallbacks to all test setupTestDB functions", "priority": "P0" },
+    { "objective": "Remove manual tenant_id filtering from providers (rely on GORM callbacks)", "priority": "P1" },
+    { "objective": "Replace logrus.StandardLogger() with d.Logger() and change processor logger type to logrus.FieldLogger", "priority": "P1" },
+    { "objective": "Remove dead getByUserID from tenant/provider.go", "priority": "P1" },
+    { "objective": "Add TransformSlice functions and handle Transform errors", "priority": "P2" },
+    { "objective": "Expand test coverage: table-driven tests, handler tests, provider tests", "priority": "P2" },
+    { "objective": "Fix Dockerfile Go version to valid release", "priority": "P2" }
+  ]
+}

@@ -6,10 +6,12 @@ import (
 	"gorm.io/gorm"
 )
 
-func getByTenantAndUser(tenantID, userID uuid.UUID) func(db *gorm.DB) model.Provider[Entity] {
+// getByUser returns a preference for a user.
+// Tenant filtering is automatic via GORM callbacks when db.WithContext(ctx) is used.
+func getByUser(userID uuid.UUID) func(db *gorm.DB) model.Provider[Entity] {
 	return func(db *gorm.DB) model.Provider[Entity] {
 		var result Entity
-		err := db.Where("tenant_id = ? AND user_id = ?", tenantID, userID).First(&result).Error
+		err := db.Where("user_id = ?", userID).First(&result).Error
 		if err != nil {
 			return model.ErrorProvider[Entity](err)
 		}
