@@ -1,6 +1,7 @@
 package household
 
 import (
+	"errors"
 	"net/http"
 
 	"github.com/google/uuid"
@@ -53,6 +54,11 @@ func createHandler(db *gorm.DB) server.InputHandler[CreateRequest] {
 			proc := NewProcessor(d.Logger(), r.Context(), db)
 			m, err := proc.CreateWithOwner(t.Id(), t.UserId(), input.Name, input.Timezone, input.Units)
 			if err != nil {
+				if errors.Is(err, ErrNameRequired) || errors.Is(err, ErrTimezoneRequired) || errors.Is(err, ErrUnitsRequired) {
+					d.Logger().WithError(err).Error("Validation failed")
+					server.WriteError(w, http.StatusBadRequest, "Validation Failed", err.Error())
+					return
+				}
 				d.Logger().WithError(err).Error("Failed to create household")
 				server.WriteError(w, http.StatusInternalServerError, "Create Failed", "")
 				return
@@ -98,6 +104,16 @@ func updateHandler(db *gorm.DB) server.InputHandler[UpdateRequest] {
 				proc := NewProcessor(d.Logger(), r.Context(), db)
 				m, err := proc.Update(id, input.Name, input.Timezone, input.Units)
 				if err != nil {
+					if errors.Is(err, gorm.ErrRecordNotFound) {
+						d.Logger().WithError(err).Error("Household not found")
+						server.WriteError(w, http.StatusNotFound, "Not Found", "")
+						return
+					}
+					if errors.Is(err, ErrNameRequired) || errors.Is(err, ErrTimezoneRequired) || errors.Is(err, ErrUnitsRequired) {
+						d.Logger().WithError(err).Error("Validation failed")
+						server.WriteError(w, http.StatusBadRequest, "Validation Failed", err.Error())
+						return
+					}
 					d.Logger().WithError(err).Error("Failed to update household")
 					server.WriteError(w, http.StatusInternalServerError, "Update Failed", "")
 					return

@@ -1,6 +1,7 @@
 package tenant
 
 import (
+	"errors"
 	"net/http"
 
 	"github.com/google/uuid"
@@ -51,6 +52,11 @@ func createHandler(db *gorm.DB) server.InputHandler[CreateRequest] {
 			proc := NewProcessor(d.Logger(), r.Context(), db)
 			m, err := proc.Create(input.Name)
 			if err != nil {
+				if errors.Is(err, ErrNameRequired) {
+					d.Logger().WithError(err).Error("Validation failed")
+					server.WriteError(w, http.StatusBadRequest, "Validation Failed", err.Error())
+					return
+				}
 				d.Logger().WithError(err).Error("Failed to create tenant")
 				server.WriteError(w, http.StatusInternalServerError, "Create Failed", "")
 				return

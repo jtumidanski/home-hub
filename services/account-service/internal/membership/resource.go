@@ -1,6 +1,7 @@
 package membership
 
 import (
+	"errors"
 	"net/http"
 
 	"github.com/google/uuid"
@@ -54,6 +55,11 @@ func createHandler(db *gorm.DB) server.InputHandler[CreateRequest] {
 			proc := NewProcessor(d.Logger(), r.Context(), db)
 			m, err := proc.Create(t.Id(), input.HouseholdId, input.UserId, input.Role)
 			if err != nil {
+				if errors.Is(err, ErrHouseholdIDRequired) || errors.Is(err, ErrUserIDRequired) || errors.Is(err, ErrRoleRequired) {
+					d.Logger().WithError(err).Error("Validation failed")
+					server.WriteError(w, http.StatusBadRequest, "Validation Failed", err.Error())
+					return
+				}
 				d.Logger().WithError(err).Error("Failed to create membership")
 				server.WriteError(w, http.StatusInternalServerError, "Create Failed", "")
 				return
@@ -76,6 +82,16 @@ func updateHandler(db *gorm.DB) server.InputHandler[UpdateRequest] {
 				proc := NewProcessor(d.Logger(), r.Context(), db)
 				m, err := proc.UpdateRole(id, input.Role)
 				if err != nil {
+					if errors.Is(err, gorm.ErrRecordNotFound) {
+						d.Logger().WithError(err).Error("Membership not found")
+						server.WriteError(w, http.StatusNotFound, "Not Found", "")
+						return
+					}
+					if errors.Is(err, ErrRoleRequired) {
+						d.Logger().WithError(err).Error("Validation failed")
+						server.WriteError(w, http.StatusBadRequest, "Validation Failed", err.Error())
+						return
+					}
 					d.Logger().WithError(err).Error("Failed to update membership")
 					server.WriteError(w, http.StatusInternalServerError, "Update Failed", "")
 					return
@@ -98,6 +114,11 @@ func deleteHandler(db *gorm.DB) server.GetHandler {
 			return func(w http.ResponseWriter, r *http.Request) {
 				proc := NewProcessor(d.Logger(), r.Context(), db)
 				if err := proc.Delete(id); err != nil {
+					if errors.Is(err, gorm.ErrRecordNotFound) {
+						d.Logger().WithError(err).Error("Membership not found")
+						server.WriteError(w, http.StatusNotFound, "Not Found", "")
+						return
+					}
 					d.Logger().WithError(err).Error("Failed to delete membership")
 					server.WriteError(w, http.StatusInternalServerError, "Delete Failed", "")
 					return
