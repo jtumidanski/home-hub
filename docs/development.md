@@ -37,8 +37,12 @@ This guide assumes:
 
     shared/go/
       auth/
+      database/
       http/
       logging/
+      model/
+      server/
+      tenant/
       testing/
 
     deploy/
@@ -46,6 +50,8 @@ This guide assumes:
       k8s/
 
     scripts/
+
+    dev/
 
     docs/
 
@@ -261,8 +267,12 @@ Do not put business logic in shared.
 Shared is for:
 
 - auth helpers
+- database helpers
 - http helpers
 - logging
+- model types
+- server lifecycle
+- tenant context
 - testing
 
 ---
@@ -271,9 +281,7 @@ Shared is for:
 
 Each service owns its schema.
 
-Location:
-
-    services/<service>/migrations/
+Migrations are defined in each domain's `entity.go` via GORM AutoMigrate. There are no separate SQL migration files.
 
 Migrations run on startup.
 
@@ -282,7 +290,7 @@ Migrations must be:
 - forward safe
 - idempotent
 
-Do not modify old migrations.
+Do not modify old entity migration definitions.
 
 ---
 
@@ -419,7 +427,21 @@ Metrics optional.
 
 ---
 
-## 21. General Rules
+## 21. Service Documentation
+
+Each service maintains documentation per the DOCS.md contract:
+
+    services/<service>/docs/domain.md
+    services/<service>/docs/rest.md
+    services/<service>/docs/storage.md
+
+Update documentation when adding or modifying domains, endpoints, or schema.
+
+See DOCS.md for the full documentation contract.
+
+---
+
+## 22. General Rules
 
 - keep services small
 - keep APIs versioned

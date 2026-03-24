@@ -28,6 +28,8 @@ Core services:
 
 Shared modules provide common functionality but do not contain business logic.
 
+Each service maintains its own documentation under `docs/` per the DOCS.md contract.
+
 ---
 
 ## 2. High Level Architecture
@@ -94,10 +96,10 @@ Responsibilities:
 
 Schema:
 
-    auth.user
-    auth.external_identity
-    auth.oidc_provider
-    auth.refresh_token
+    auth.users
+    auth.external_identities
+    auth.oidc_providers
+    auth.refresh_tokens
 
 Auth model:
 
@@ -125,10 +127,10 @@ Responsibilities:
 
 Schema:
 
-    account.tenant
-    account.household
-    account.membership
-    account.preference
+    account.tenants
+    account.households
+    account.memberships
+    account.preferences
 
 Rules:
 
@@ -154,11 +156,11 @@ Responsibilities:
 
 Schema:
 
-    productivity.task
-    productivity.task_restoration
-    productivity.reminder
-    productivity.reminder_snooze
-    productivity.reminder_dismissal
+    productivity.tasks
+    productivity.task_restorations
+    productivity.reminders
+    productivity.reminder_snoozes
+    productivity.reminder_dismissals
 
 Rules:
 
@@ -289,12 +291,13 @@ No cross-service tables.
 Migrations:
 
 - per service
-- run on startup
+- run on startup via GORM AutoMigrate in each domain's entity.go
 - forward-only acceptable
+- no separate SQL migration files
 
 ORM:
 
-- Gorm
+- GORM
 
 IDs:
 
@@ -420,7 +423,56 @@ Used for manual endpoint testing.
 
 ---
 
-## 16. Design Principles
+## 16. Shared Modules
+
+Shared Go modules live under:
+
+    shared/go/
+
+Modules:
+
+- auth — JWT validation and auth middleware
+- database — GORM connection, migration orchestration, tenant callbacks
+- http — HTTP utilities
+- logging — Logrus structured logging
+- model — shared domain model types
+- server — HTTP server lifecycle, handler registration, JSON:API response helpers, health checks, middleware, tracing
+- tenant — tenant context extraction and validation
+- testing — test helpers and fixtures
+
+No business logic in shared modules.
+
+---
+
+## 17. Service Code Pattern
+
+Each service domain follows a consistent file structure:
+
+    model.go       — immutable domain model with accessors
+    entity.go      — GORM entity with Migration() function
+    builder.go     — fluent builder enforcing invariants
+    processor.go   — pure business logic
+    provider.go    — lazy database access
+    resource.go    — route registration and HTTP handlers
+    rest.go        — JSON:API resource mappings
+
+Details in DOCS.md contract and per-service documentation.
+
+---
+
+## 18. Service Documentation
+
+Each service maintains its own documentation per the DOCS.md contract:
+
+    services/<service>/docs/domain.md
+    services/<service>/docs/rest.md
+    services/<service>/docs/storage.md
+
+These are the authoritative source for domain logic, REST endpoints, and database schema per service.
+
+---
+
+## 19. Design Principles
 
 - strict service boundaries
 - versioned APIs
