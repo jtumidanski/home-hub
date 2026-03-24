@@ -1,6 +1,7 @@
 import { useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { useAuth } from "@/components/providers/auth-provider";
+import { useTenant } from "@/context/tenant-context";
 import { useTheme } from "@/components/providers/theme-provider";
 import { accountService } from "@/services/api/account";
 import { contextKeys } from "@/lib/hooks/api/use-context";
@@ -11,15 +12,17 @@ import { Moon, Sun } from "lucide-react";
 
 export function SettingsPage() {
   const { user, appContext } = useAuth();
+  const { tenantId } = useTenant();
   const { theme, setTheme } = useTheme();
   const queryClient = useQueryClient();
 
   const handleThemeToggle = async () => {
     const newTheme = theme === "light" ? "dark" : "light";
     setTheme(newTheme);
-    if (appContext?.relationships?.preference?.data?.id) {
+    if (tenantId && appContext?.relationships?.preference?.data?.id) {
       try {
         await accountService.updatePreferenceTheme(
+          tenantId,
           appContext.relationships.preference.data.id,
           newTheme
         );

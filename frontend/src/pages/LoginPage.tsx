@@ -2,6 +2,7 @@ import { useProviders } from "@/lib/hooks/api/use-auth";
 import { authService } from "@/services/api/auth";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Skeleton } from "@/components/ui/skeleton";
 
 export function LoginPage() {
   const { data, isLoading } = useProviders();
@@ -16,7 +17,7 @@ export function LoginPage() {
         </CardHeader>
         <CardContent className="space-y-4">
           {isLoading ? (
-            <div className="h-10 animate-pulse rounded bg-muted" />
+            <Skeleton className="h-10 w-full" />
           ) : (
             providers.map((provider) => (
               <a

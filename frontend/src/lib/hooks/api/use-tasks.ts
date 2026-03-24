@@ -1,69 +1,80 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { productivityService } from "@/services/api/productivity";
+import { useTenant } from "@/context/tenant-context";
 
 export const taskKeys = {
-  list: ["tasks"] as const,
-  detail: (id: string) => ["tasks", id] as const,
-  summary: ["tasks", "summary"] as const,
+  all: (householdId: string | null) => ["tasks", householdId ?? "no-household"] as const,
+  list: (householdId: string | null) => [...taskKeys.all(householdId), "list"] as const,
+  detail: (householdId: string | null, id: string) => [...taskKeys.all(householdId), id] as const,
+  summary: (householdId: string | null) => [...taskKeys.all(householdId), "summary"] as const,
 };
 
 export function useTasks() {
+  const { tenantId, householdId } = useTenant();
   return useQuery({
-    queryKey: taskKeys.list,
-    queryFn: () => productivityService.listTasks(),
+    queryKey: taskKeys.list(householdId),
+    queryFn: () => productivityService.listTasks(tenantId!),
+    enabled: !!tenantId && !!householdId,
     staleTime: 5 * 60 * 1000,
   });
 }
 
 export function useCreateTask() {
   const qc = useQueryClient();
+  const { tenantId, householdId } = useTenant();
   return useMutation({
-    mutationFn: productivityService.createTask,
-    onSuccess: () => {
-      qc.invalidateQueries({ queryKey: taskKeys.list });
-      qc.invalidateQueries({ queryKey: taskKeys.summary });
+    mutationFn: (attrs: { title: string; notes?: string; dueOn?: string; rolloverEnabled?: boolean }) =>
+      productivityService.createTask(tenantId!, attrs),
+    onSettled: () => {
+      qc.invalidateQueries({ queryKey: taskKeys.list(householdId) });
+      qc.invalidateQueries({ queryKey: taskKeys.summary(householdId) });
     },
   });
 }
 
 export function useUpdateTask() {
   const qc = useQueryClient();
+  const { tenantId, householdId } = useTenant();
   return useMutation({
     mutationFn: ({ id, attrs }: { id: string; attrs: Record<string, unknown> }) =>
-      productivityService.updateTask(id, attrs),
-    onSuccess: () => {
-      qc.invalidateQueries({ queryKey: taskKeys.list });
-      qc.invalidateQueries({ queryKey: taskKeys.summary });
+      productivityService.updateTask(tenantId!, id, attrs),
+    onSettled: () => {
+      qc.invalidateQueries({ queryKey: taskKeys.list(householdId) });
+      qc.invalidateQueries({ queryKey: taskKeys.summary(householdId) });
     },
   });
 }
 
 export function useDeleteTask() {
   const qc = useQueryClient();
+  const { tenantId, householdId } = useTenant();
   return useMutation({
-    mutationFn: productivityService.deleteTask,
-    onSuccess: () => {
-      qc.invalidateQueries({ queryKey: taskKeys.list });
-      qc.invalidateQueries({ queryKey: taskKeys.summary });
+    mutationFn: (id: string) => productivityService.deleteTask(tenantId!, id),
+    onSettled: () => {
+      qc.invalidateQueries({ queryKey: taskKeys.list(householdId) });
+      qc.invalidateQueries({ queryKey: taskKeys.summary(householdId) });
     },
   });
 }
 
 export function useRestoreTask() {
   const qc = useQueryClient();
+  const { tenantId, householdId } = useTenant();
   return useMutation({
-    mutationFn: productivityService.restoreTask,
-    onSuccess: () => {
-      qc.invalidateQueries({ queryKey: taskKeys.list });
-      qc.invalidateQueries({ queryKey: taskKeys.summary });
+    mutationFn: (taskId: string) => productivityService.restoreTask(tenantId!, taskId),
+    onSettled: () => {
+      qc.invalidateQueries({ queryKey: taskKeys.list(householdId) });
+      qc.invalidateQueries({ queryKey: taskKeys.summary(householdId) });
     },
   });
 }
 
 export function useTaskSummary() {
+  const { tenantId, householdId } = useTenant();
   return useQuery({
-    queryKey: taskKeys.summary,
-    queryFn: () => productivityService.getTaskSummary(),
+    queryKey: taskKeys.summary(householdId),
+    queryFn: () => productivityService.getTaskSummary(tenantId!),
+    enabled: !!tenantId && !!householdId,
     staleTime: 60 * 1000,
   });
 }

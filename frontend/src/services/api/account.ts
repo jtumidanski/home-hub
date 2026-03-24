@@ -1,5 +1,5 @@
 import { api } from "@/lib/api/client";
-import type { JsonApiResponse } from "@/types/api/responses";
+import type { JsonApiResponse, JsonApiListResponse } from "@/types/api/responses";
 import type { AppContext } from "@/types/models/context";
 import type { Tenant } from "@/types/models/tenant";
 import type { Household } from "@/types/models/household";
@@ -16,18 +16,28 @@ export const accountService = {
       data: { type: "tenants", attributes: { name } },
     }),
 
-  createHousehold: (name: string, timezone: string, units: string) =>
-    api.post<JsonApiResponse<Household>>("/households", {
+  listHouseholds: (tenantId: string) => {
+    api.setTenant(tenantId);
+    return api.get<JsonApiListResponse<Household>>("/households");
+  },
+
+  createHousehold: (tenantId: string, name: string, timezone: string, units: string) => {
+    api.setTenant(tenantId);
+    return api.post<JsonApiResponse<Household>>("/households", {
       data: { type: "households", attributes: { name, timezone, units } },
-    }),
+    });
+  },
 
-  updatePreferenceTheme: (preferenceId: string, theme: "light" | "dark") =>
-    api.patch<JsonApiResponse<Preference>>(`/preferences/${preferenceId}`, {
+  updatePreferenceTheme: (tenantId: string, preferenceId: string, theme: "light" | "dark") => {
+    api.setTenant(tenantId);
+    return api.patch<JsonApiResponse<Preference>>(`/preferences/${preferenceId}`, {
       data: { type: "preferences", id: preferenceId, attributes: { theme } },
-    }),
+    });
+  },
 
-  setActiveHousehold: (preferenceId: string, householdId: string) =>
-    api.patch<JsonApiResponse<Preference>>(`/preferences/${preferenceId}`, {
+  setActiveHousehold: (tenantId: string, preferenceId: string, householdId: string) => {
+    api.setTenant(tenantId);
+    return api.patch<JsonApiResponse<Preference>>(`/preferences/${preferenceId}`, {
       data: {
         type: "preferences",
         id: preferenceId,
@@ -37,5 +47,6 @@ export const accountService = {
           },
         },
       },
-    }),
+    });
+  },
 };

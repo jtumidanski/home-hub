@@ -3,6 +3,7 @@ import { Toaster } from "sonner";
 import { QueryProvider } from "@/components/providers/query-provider";
 import { ThemeProvider } from "@/components/providers/theme-provider";
 import { AuthProvider } from "@/components/providers/auth-provider";
+import { TenantProvider } from "@/context/tenant-context";
 import { ProtectedRoute } from "@/components/features/protected-route";
 import { AppShell } from "@/components/features/app-shell";
 import { LoginPage } from "@/pages/LoginPage";
@@ -19,26 +20,28 @@ export function App() {
       <QueryProvider>
         <ThemeProvider>
           <AuthProvider>
-            <Toaster richColors closeButton />
-            <Routes>
-              <Route path="/login" element={<LoginPage />} />
-              <Route path="/onboarding" element={<OnboardingPage />} />
-              <Route
-                path="/app"
-                element={
-                  <ProtectedRoute>
-                    <AppShell />
-                  </ProtectedRoute>
-                }
-              >
-                <Route index element={<DashboardPage />} />
-                <Route path="tasks" element={<TasksPage />} />
-                <Route path="reminders" element={<RemindersPage />} />
-                <Route path="settings" element={<SettingsPage />} />
-                <Route path="households" element={<HouseholdsPage />} />
-              </Route>
-              <Route path="*" element={<Navigate to="/app" replace />} />
-            </Routes>
+            <TenantProvider>
+              <Toaster richColors closeButton />
+              <Routes>
+                <Route path="/login" element={<LoginPage />} />
+                <Route path="/onboarding" element={<OnboardingPage />} />
+                <Route
+                  path="/app"
+                  element={
+                    <ProtectedRoute>
+                      <AppShell />
+                    </ProtectedRoute>
+                  }
+                >
+                  <Route index element={<DashboardPage />} />
+                  <Route path="tasks" element={<TasksPage />} />
+                  <Route path="reminders" element={<RemindersPage />} />
+                  <Route path="settings" element={<SettingsPage />} />
+                  <Route path="households" element={<HouseholdsPage />} />
+                </Route>
+                <Route path="*" element={<Navigate to="/app" replace />} />
+              </Routes>
+            </TenantProvider>
           </AuthProvider>
         </ThemeProvider>
       </QueryProvider>

@@ -4,6 +4,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { toast } from "sonner";
 import { useQueryClient } from "@tanstack/react-query";
 import { useAuth } from "@/components/providers/auth-provider";
+import { useTenant } from "@/context/tenant-context";
 import { useHouseholds, householdKeys } from "@/lib/hooks/api/use-households";
 import { accountService } from "@/services/api/account";
 import { contextKeys } from "@/lib/hooks/api/use-context";
@@ -36,6 +37,7 @@ function HouseholdsPageSkeleton() {
 
 export function HouseholdsPage() {
   const { appContext } = useAuth();
+  const { tenantId } = useTenant();
   const { data, isLoading } = useHouseholds();
   const queryClient = useQueryClient();
   const [open, setOpen] = useState(false);
@@ -50,9 +52,10 @@ export function HouseholdsPage() {
   const canCreate = appContext?.attributes.canCreateHousehold;
 
   const onSubmit = async (values: CreateHouseholdFormData) => {
+    if (!tenantId) return;
     try {
-      await accountService.createHousehold(values.name, values.timezone, values.units);
-      await queryClient.invalidateQueries({ queryKey: householdKeys.list });
+      await accountService.createHousehold(tenantId, values.name, values.timezone, values.units);
+      await queryClient.invalidateQueries({ queryKey: householdKeys.list(tenantId) });
       await queryClient.invalidateQueries({ queryKey: contextKeys.current });
       toast.success("Household created");
       form.reset(createHouseholdDefaults);

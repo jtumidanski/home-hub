@@ -6,55 +6,96 @@ import type { TaskSummary, ReminderSummary, DashboardSummary } from "@/types/mod
 
 export const productivityService = {
   // Tasks
-  listTasks: () => api.get<JsonApiListResponse<Task>>("/tasks"),
-  getTask: (id: string) => api.get<JsonApiResponse<Task>>(`/tasks/${id}`),
-  createTask: (attrs: { title: string; notes?: string; dueOn?: string; rolloverEnabled?: boolean }) =>
-    api.post<JsonApiResponse<Task>>("/tasks", {
+  listTasks: (tenantId: string) => {
+    api.setTenant(tenantId);
+    return api.get<JsonApiListResponse<Task>>("/tasks");
+  },
+  getTask: (tenantId: string, id: string) => {
+    api.setTenant(tenantId);
+    return api.get<JsonApiResponse<Task>>(`/tasks/${id}`);
+  },
+  createTask: (tenantId: string, attrs: { title: string; notes?: string; dueOn?: string; rolloverEnabled?: boolean }) => {
+    api.setTenant(tenantId);
+    return api.post<JsonApiResponse<Task>>("/tasks", {
       data: { type: "tasks", attributes: { status: "pending", ...attrs } },
-    }),
-  updateTask: (id: string, attrs: Record<string, unknown>) =>
-    api.patch<JsonApiResponse<Task>>(`/tasks/${id}`, {
+    });
+  },
+  updateTask: (tenantId: string, id: string, attrs: Record<string, unknown>) => {
+    api.setTenant(tenantId);
+    return api.patch<JsonApiResponse<Task>>(`/tasks/${id}`, {
       data: { type: "tasks", id, attributes: attrs },
-    }),
-  deleteTask: (id: string) => api.delete(`/tasks/${id}`),
-  restoreTask: (taskId: string) =>
-    api.post("/tasks/restorations", {
+    });
+  },
+  deleteTask: (tenantId: string, id: string) => {
+    api.setTenant(tenantId);
+    return api.delete(`/tasks/${id}`);
+  },
+  restoreTask: (tenantId: string, taskId: string) => {
+    api.setTenant(tenantId);
+    return api.post("/tasks/restorations", {
       data: {
         type: "task-restorations",
         relationships: { task: { data: { type: "tasks", id: taskId } } },
       },
-    }),
+    });
+  },
 
   // Reminders
-  listReminders: () => api.get<JsonApiListResponse<Reminder>>("/reminders"),
-  getReminder: (id: string) => api.get<JsonApiResponse<Reminder>>(`/reminders/${id}`),
-  createReminder: (attrs: { title: string; notes?: string; scheduledFor: string }) =>
-    api.post<JsonApiResponse<Reminder>>("/reminders", {
+  listReminders: (tenantId: string) => {
+    api.setTenant(tenantId);
+    return api.get<JsonApiListResponse<Reminder>>("/reminders");
+  },
+  getReminder: (tenantId: string, id: string) => {
+    api.setTenant(tenantId);
+    return api.get<JsonApiResponse<Reminder>>(`/reminders/${id}`);
+  },
+  createReminder: (tenantId: string, attrs: { title: string; notes?: string; scheduledFor: string }) => {
+    api.setTenant(tenantId);
+    return api.post<JsonApiResponse<Reminder>>("/reminders", {
       data: { type: "reminders", attributes: attrs },
-    }),
-  updateReminder: (id: string, attrs: Record<string, unknown>) =>
-    api.patch<JsonApiResponse<Reminder>>(`/reminders/${id}`, {
+    });
+  },
+  updateReminder: (tenantId: string, id: string, attrs: Record<string, unknown>) => {
+    api.setTenant(tenantId);
+    return api.patch<JsonApiResponse<Reminder>>(`/reminders/${id}`, {
       data: { type: "reminders", id, attributes: attrs },
-    }),
-  deleteReminder: (id: string) => api.delete(`/reminders/${id}`),
-  snoozeReminder: (reminderId: string, durationMinutes: number) =>
-    api.post("/reminders/snoozes", {
+    });
+  },
+  deleteReminder: (tenantId: string, id: string) => {
+    api.setTenant(tenantId);
+    return api.delete(`/reminders/${id}`);
+  },
+  snoozeReminder: (tenantId: string, reminderId: string, durationMinutes: number) => {
+    api.setTenant(tenantId);
+    return api.post("/reminders/snoozes", {
       data: {
         type: "reminder-snoozes",
         attributes: { durationMinutes },
         relationships: { reminder: { data: { type: "reminders", id: reminderId } } },
       },
-    }),
-  dismissReminder: (reminderId: string) =>
-    api.post("/reminders/dismissals", {
+    });
+  },
+  dismissReminder: (tenantId: string, reminderId: string) => {
+    api.setTenant(tenantId);
+    return api.post("/reminders/dismissals", {
       data: {
         type: "reminder-dismissals",
         relationships: { reminder: { data: { type: "reminders", id: reminderId } } },
       },
-    }),
+    });
+  },
 
   // Summaries
-  getTaskSummary: () => api.get<JsonApiResponse<TaskSummary>>("/summary/tasks"),
-  getReminderSummary: () => api.get<JsonApiResponse<ReminderSummary>>("/summary/reminders"),
-  getDashboardSummary: () => api.get<JsonApiResponse<DashboardSummary>>("/summary/dashboard"),
+  getTaskSummary: (tenantId: string) => {
+    api.setTenant(tenantId);
+    return api.get<JsonApiResponse<TaskSummary>>("/summary/tasks");
+  },
+  getReminderSummary: (tenantId: string) => {
+    api.setTenant(tenantId);
+    return api.get<JsonApiResponse<ReminderSummary>>("/summary/reminders");
+  },
+  getDashboardSummary: (tenantId: string) => {
+    api.setTenant(tenantId);
+    return api.get<JsonApiResponse<DashboardSummary>>("/summary/dashboard");
+  },
 };

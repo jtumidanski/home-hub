@@ -3,6 +3,7 @@ import { useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { Home, CheckSquare, Bell, Settings, LogOut, Moon, Sun } from "lucide-react";
 import { useAuth } from "@/components/providers/auth-provider";
+import { useTenant } from "@/context/tenant-context";
 import { useTheme } from "@/components/providers/theme-provider";
 import { authService } from "@/services/api/auth";
 import { accountService } from "@/services/api/account";
@@ -22,6 +23,7 @@ const navItems = [
 
 export function AppShell() {
   const { user, appContext } = useAuth();
+  const { tenantId } = useTenant();
   const { theme, setTheme } = useTheme();
   const queryClient = useQueryClient();
 
@@ -36,9 +38,10 @@ export function AppShell() {
   const handleThemeToggle = async () => {
     const newTheme = theme === "light" ? "dark" : "light";
     setTheme(newTheme);
-    if (appContext?.relationships?.preference?.data?.id) {
+    if (tenantId && appContext?.relationships?.preference?.data?.id) {
       try {
         await accountService.updatePreferenceTheme(
+          tenantId,
           appContext.relationships.preference.data.id,
           newTheme
         );

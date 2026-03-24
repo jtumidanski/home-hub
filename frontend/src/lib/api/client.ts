@@ -2,15 +2,31 @@ const BASE_URL = "/api/v1";
 
 class ApiClient {
   private baseUrl: string;
+  private tenantId: string | null = null;
 
   constructor(baseUrl: string = BASE_URL) {
     this.baseUrl = baseUrl;
   }
 
+  setTenant(tenantId: string) {
+    this.tenantId = tenantId;
+  }
+
+  clearTenant() {
+    this.tenantId = null;
+  }
+
+  private buildHeaders(contentType?: string): Record<string, string> {
+    const headers: Record<string, string> = { Accept: "application/vnd.api+json" };
+    if (contentType) headers["Content-Type"] = contentType;
+    if (this.tenantId) headers["X-Tenant-ID"] = this.tenantId;
+    return headers;
+  }
+
   async get<T>(path: string): Promise<T> {
     const response = await fetch(`${this.baseUrl}${path}`, {
       credentials: "include",
-      headers: { Accept: "application/vnd.api+json" },
+      headers: this.buildHeaders(),
     });
     if (!response.ok) {
       throw await this.handleError(response);
@@ -22,10 +38,7 @@ class ApiClient {
     const response = await fetch(`${this.baseUrl}${path}`, {
       method: "POST",
       credentials: "include",
-      headers: {
-        "Content-Type": "application/vnd.api+json",
-        Accept: "application/vnd.api+json",
-      },
+      headers: this.buildHeaders("application/vnd.api+json"),
       body: JSON.stringify(body),
     });
     if (!response.ok) {
@@ -38,10 +51,7 @@ class ApiClient {
     const response = await fetch(`${this.baseUrl}${path}`, {
       method: "PATCH",
       credentials: "include",
-      headers: {
-        "Content-Type": "application/vnd.api+json",
-        Accept: "application/vnd.api+json",
-      },
+      headers: this.buildHeaders("application/vnd.api+json"),
       body: JSON.stringify(body),
     });
     if (!response.ok) {
@@ -54,6 +64,7 @@ class ApiClient {
     const response = await fetch(`${this.baseUrl}${path}`, {
       method: "DELETE",
       credentials: "include",
+      headers: this.buildHeaders(),
     });
     if (!response.ok) {
       throw await this.handleError(response);
@@ -64,6 +75,7 @@ class ApiClient {
     const response = await fetch(`${this.baseUrl}${path}`, {
       method: "POST",
       credentials: "include",
+      headers: this.buildHeaders(),
     });
     if (!response.ok) {
       throw await this.handleError(response);

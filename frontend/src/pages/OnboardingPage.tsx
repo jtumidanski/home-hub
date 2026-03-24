@@ -21,6 +21,7 @@ export function OnboardingPage() {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const [step, setStep] = useState<"tenant" | "household">("tenant");
+  const [tenantId, setTenantId] = useState<string | null>(null);
 
   const tenantForm = useForm<CreateTenantFormData>({
     resolver: zodResolver(createTenantSchema),
@@ -37,7 +38,8 @@ export function OnboardingPage() {
 
   const onTenantSubmit = async (data: CreateTenantFormData) => {
     try {
-      await accountService.createTenant(data.name);
+      const result = await accountService.createTenant(data.name);
+      setTenantId(result.data.id);
       toast.success("Account created");
       setStep("household");
     } catch (error) {
@@ -46,8 +48,9 @@ export function OnboardingPage() {
   };
 
   const onHouseholdSubmit = async (data: CreateHouseholdFormData) => {
+    if (!tenantId) return;
     try {
-      await accountService.createHousehold(data.name, data.timezone, data.units);
+      await accountService.createHousehold(tenantId, data.name, data.timezone, data.units);
       await queryClient.invalidateQueries({ queryKey: contextKeys.current });
       toast.success("Household created");
       navigate("/app");
