@@ -8,8 +8,9 @@ import (
 
 // Config holds all configuration for the productivity service.
 type Config struct {
-	DB   database.Config
-	Port string
+	DB      database.Config
+	Port    string
+	JWKSURL string
 }
 
 // Load reads configuration from environment variables.
@@ -23,7 +24,8 @@ func Load() Config {
 			DBName:   envOrDefault("DB_NAME", "home_hub"),
 			Schema:   "productivity",
 		},
-		Port: envOrDefault("PORT", "8080"),
+		Port:    envOrDefault("PORT", "8080"),
+		JWKSURL: envOrDefault("JWKS_URL", "http://auth-service:8080/api/v1/auth/.well-known/jwks.json"),
 	}
 }
 

@@ -90,19 +90,19 @@ Last Updated: 2026-03-24
 
 ## Phase 7 — Productivity Service
 
-- [ ] 7.1 Create productivity schema migrations
-- [ ] 7.2 Implement GORM entities
-- [ ] 7.3 Implement domain models (Task, Reminder, etc.)
-- [ ] 7.4 Implement task CRUD
-- [ ] 7.5 Implement task restoration
-- [ ] 7.6 Implement reminder CRUD
-- [ ] 7.7 Implement reminder snooze
-- [ ] 7.8 Implement reminder dismissal
-- [ ] 7.9 Implement task summary
-- [ ] 7.10 Implement reminder summary
-- [ ] 7.11 Implement dashboard summary
-- [ ] 7.12 Implement include support for summary endpoints
-- [ ] 7.13 Write unit tests for productivity domain logic
+- [x] 7.1 Create productivity schema migrations
+- [x] 7.2 Implement GORM entities
+- [x] 7.3 Implement domain models (Task, Reminder, etc.)
+- [x] 7.4 Implement task CRUD
+- [x] 7.5 Implement task restoration
+- [x] 7.6 Implement reminder CRUD
+- [x] 7.7 Implement reminder snooze
+- [x] 7.8 Implement reminder dismissal
+- [x] 7.9 Implement task summary
+- [x] 7.10 Implement reminder summary
+- [x] 7.11 Implement dashboard summary
+- [x] 7.12 Implement include support for summary endpoints
+- [x] 7.13 Write unit tests for productivity domain logic
 
 ## Phase 8 — Frontend Productivity UI
 
