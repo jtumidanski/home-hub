@@ -1,23 +1,34 @@
 import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { z } from "zod";
+import { toast } from "sonner";
 import { useTasks, useCreateTask, useUpdateTask, useDeleteTask } from "@/lib/hooks/api/use-tasks";
+import { createTaskSchema, type CreateTaskFormData, createTaskDefaults } from "@/lib/schemas/task.schema";
+import { getErrorMessage } from "@/lib/api/errors";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { Label } from "@/components/ui/label";
-import { Plus, Check, Trash2 } from "lucide-react";
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
+import { Skeleton } from "@/components/ui/skeleton";
+import { Plus, Check, Trash2, Loader2 } from "lucide-react";
 
-const taskSchema = z.object({
-  title: z.string().min(1, "Title is required"),
-  notes: z.string().optional(),
-  dueOn: z.string().optional(),
-});
-
-type TaskForm = z.infer<typeof taskSchema>;
+function TasksPageSkeleton() {
+  return (
+    <div className="p-6 space-y-4">
+      <div className="flex items-center justify-between">
+        <Skeleton className="h-8 w-32" />
+        <Skeleton className="h-9 w-28" />
+      </div>
+      <div className="space-y-2">
+        {Array.from({ length: 4 }).map((_, i) => (
+          <Skeleton key={i} className="h-16 w-full" />
+        ))}
+      </div>
+    </div>
+  );
+}
 
 export function TasksPage() {
   const { data, isLoading } = useTasks();
@@ -26,32 +37,51 @@ export function TasksPage() {
   const deleteTask = useDeleteTask();
   const [open, setOpen] = useState(false);
 
-  const form = useForm<TaskForm>({
-    resolver: zodResolver(taskSchema),
-    defaultValues: { title: "", notes: "", dueOn: "" },
+  const form = useForm<CreateTaskFormData>({
+    resolver: zodResolver(createTaskSchema),
+    defaultValues: createTaskDefaults,
   });
 
   const tasks = data?.data ?? [];
 
-  const onSubmit = async (values: TaskForm) => {
-    await createTask.mutateAsync({
-      title: values.title,
-      notes: values.notes,
-      dueOn: values.dueOn || undefined,
-    });
-    form.reset();
-    setOpen(false);
+  const onSubmit = async (values: CreateTaskFormData) => {
+    try {
+      await createTask.mutateAsync({
+        title: values.title,
+        notes: values.notes,
+        dueOn: values.dueOn || undefined,
+      });
+      toast.success("Task created");
+      form.reset(createTaskDefaults);
+      setOpen(false);
+    } catch (error) {
+      toast.error(getErrorMessage(error, "Failed to create task"));
+    }
   };
 
-  const toggleComplete = (id: string, currentStatus: string) => {
-    updateTask.mutate({
-      id,
-      attrs: { status: currentStatus === "completed" ? "pending" : "completed" },
-    });
+  const toggleComplete = async (id: string, currentStatus: string) => {
+    try {
+      await updateTask.mutateAsync({
+        id,
+        attrs: { status: currentStatus === "completed" ? "pending" : "completed" },
+      });
+      toast.success(currentStatus === "completed" ? "Task reopened" : "Task completed");
+    } catch (error) {
+      toast.error(getErrorMessage(error, "Failed to update task"));
+    }
+  };
+
+  const handleDelete = async (id: string) => {
+    try {
+      await deleteTask.mutateAsync(id);
+      toast.success("Task deleted");
+    } catch (error) {
+      toast.error(getErrorMessage(error, "Failed to delete task"));
+    }
   };
 
   if (isLoading) {
-    return <div className="p-6"><div className="h-8 w-48 animate-pulse rounded bg-muted" /></div>;
+    return <TasksPageSkeleton />;
   }
 
   return (
@@ -66,33 +96,64 @@ export function TasksPage() {
             <DialogHeader>
               <DialogTitle>Create Task</DialogTitle>
             </DialogHeader>
-            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-              <div className="space-y-2">
-                <Label htmlFor="title">Title</Label>
-                <Input id="title" {...form.register("title")} />
-                {form.formState.errors.title && (
-                  <p className="text-sm text-destructive">{form.formState.errors.title.message}</p>
-                )}
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="notes">Notes</Label>
-                <Input id="notes" {...form.register("notes")} />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="dueOn">Due Date</Label>
-                <Input id="dueOn" type="date" {...form.register("dueOn")} />
-              </div>
-              <Button type="submit" className="w-full" disabled={createTask.isPending}>
-                {createTask.isPending ? "Creating..." : "Create Task"}
-              </Button>
-            </form>
+            <Form {...form}>
+              <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+                <FormField
+                  control={form.control}
+                  name="title"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Title</FormLabel>
+                      <FormControl>
+                        <Input placeholder="Enter task title" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={form.control}
+                  name="notes"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Notes</FormLabel>
+                      <FormControl>
+                        <Input placeholder="Optional notes" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={form.control}
+                  name="dueOn"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Due Date</FormLabel>
+                      <FormControl>
+                        <Input type="date" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <Button type="submit" className="w-full" disabled={form.formState.isSubmitting}>
+                  {form.formState.isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                  Create Task
+                </Button>
+              </form>
+            </Form>
           </DialogContent>
         </Dialog>
       </div>
 
       {tasks.length === 0 ? (
-        <div className="text-center py-12 text-muted-foreground">
-          No tasks yet. Create your first task to get started.
+        <div className="flex flex-col items-center justify-center py-12 text-center">
+          <p className="text-muted-foreground">No tasks yet. Create your first task to get started.</p>
+          <Button variant="outline" className="mt-4" onClick={() => setOpen(true)}>
+            <Plus className="mr-2 h-4 w-4" />
+            Create First Task
+          </Button>
         </div>
       ) : (
         <div className="space-y-2">
@@ -105,10 +166,10 @@ export function TasksPage() {
                     size="sm"
                     onClick={() => toggleComplete(task.id, task.attributes.status)}
                   >
-                    <Check className={`h-4 w-4 ${task.attributes.status === "completed" ? "text-green-500" : "text-muted-foreground"}`} />
+                    <Check className={task.attributes.status === "completed" ? "h-4 w-4 text-green-500" : "h-4 w-4 text-muted-foreground"} />
                   </Button>
                   <div>
-                    <p className={`font-medium ${task.attributes.status === "completed" ? "line-through text-muted-foreground" : ""}`}>
+                    <p className={task.attributes.status === "completed" ? "font-medium line-through text-muted-foreground" : "font-medium"}>
                       {task.attributes.title}
                     </p>
                     {task.attributes.dueOn && (
@@ -120,7 +181,7 @@ export function TasksPage() {
                   <Badge variant={task.attributes.status === "completed" ? "secondary" : "default"}>
                     {task.attributes.status}
                   </Badge>
-                  <Button variant="ghost" size="sm" onClick={() => deleteTask.mutate(task.id)}>
+                  <Button variant="ghost" size="sm" onClick={() => handleDelete(task.id)}>
                     <Trash2 className="h-4 w-4 text-destructive" />
                   </Button>
                 </div>

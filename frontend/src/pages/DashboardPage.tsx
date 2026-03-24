@@ -2,15 +2,37 @@ import { useTaskSummary } from "@/lib/hooks/api/use-tasks";
 import { useReminderSummary } from "@/lib/hooks/api/use-reminders";
 import { useAuth } from "@/components/providers/auth-provider";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Skeleton } from "@/components/ui/skeleton";
 import { CheckSquare, Bell, AlertTriangle } from "lucide-react";
+
+function DashboardSkeleton() {
+  return (
+    <div className="p-6 space-y-6">
+      <div>
+        <Skeleton className="h-8 w-40" />
+        <Skeleton className="mt-1 h-4 w-32" />
+      </div>
+      <div className="grid gap-4 md:grid-cols-3">
+        {Array.from({ length: 3 }).map((_, i) => (
+          <Skeleton key={i} className="h-28" />
+        ))}
+      </div>
+    </div>
+  );
+}
 
 export function DashboardPage() {
   const { appContext } = useAuth();
-  const { data: taskData } = useTaskSummary();
-  const { data: reminderData } = useReminderSummary();
+  const { data: taskData, isLoading: taskLoading, isError: taskError } = useTaskSummary();
+  const { data: reminderData, isLoading: reminderLoading, isError: reminderError } = useReminderSummary();
 
+  const isLoading = taskLoading || reminderLoading;
   const taskSummary = taskData?.data?.attributes;
   const reminderSummary = reminderData?.data?.attributes;
+
+  if (isLoading) {
+    return <DashboardSkeleton />;
+  }
 
   return (
     <div className="p-6 space-y-6">
@@ -20,6 +42,16 @@ export function DashboardPage() {
           {appContext?.attributes.resolvedRole && `You are ${appContext.attributes.resolvedRole}`}
         </p>
       </div>
+
+      {(taskError || reminderError) && (
+        <Card className="border-destructive">
+          <CardContent className="py-3">
+            <p className="text-sm text-destructive">
+              Failed to load some dashboard data. Try refreshing the page.
+            </p>
+          </CardContent>
+        </Card>
+      )}
 
       <div className="grid gap-4 md:grid-cols-3">
         <Card>

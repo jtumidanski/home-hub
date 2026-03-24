@@ -1,8 +1,10 @@
 import { useQueryClient } from "@tanstack/react-query";
+import { toast } from "sonner";
 import { useAuth } from "@/components/providers/auth-provider";
 import { useHouseholds } from "@/lib/hooks/api/use-households";
 import { accountService } from "@/services/api/account";
 import { contextKeys } from "@/lib/hooks/api/use-context";
+import { getErrorMessage } from "@/lib/api/errors";
 import {
   Select,
   SelectContent,
@@ -24,8 +26,13 @@ export function HouseholdSwitcher() {
 
   const handleChange = async (householdId: string | null) => {
     if (!preferenceId || !householdId || householdId === activeId) return;
-    await accountService.setActiveHousehold(preferenceId, householdId);
-    await queryClient.invalidateQueries({ queryKey: contextKeys.current });
+    try {
+      await accountService.setActiveHousehold(preferenceId, householdId);
+      await queryClient.invalidateQueries({ queryKey: contextKeys.current });
+      toast.success("Household switched");
+    } catch (error) {
+      toast.error(getErrorMessage(error, "Failed to switch household"));
+    }
   };
 
   return (

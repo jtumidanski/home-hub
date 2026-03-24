@@ -1,6 +1,10 @@
+import { useQueryClient } from "@tanstack/react-query";
+import { toast } from "sonner";
 import { useAuth } from "@/components/providers/auth-provider";
 import { useTheme } from "@/components/providers/theme-provider";
 import { accountService } from "@/services/api/account";
+import { contextKeys } from "@/lib/hooks/api/use-context";
+import { getErrorMessage } from "@/lib/api/errors";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Moon, Sun } from "lucide-react";
@@ -8,15 +12,21 @@ import { Moon, Sun } from "lucide-react";
 export function SettingsPage() {
   const { user, appContext } = useAuth();
   const { theme, setTheme } = useTheme();
+  const queryClient = useQueryClient();
 
   const handleThemeToggle = async () => {
     const newTheme = theme === "light" ? "dark" : "light";
     setTheme(newTheme);
     if (appContext?.relationships?.preference?.data?.id) {
-      await accountService.updatePreferenceTheme(
-        appContext.relationships.preference.data.id,
-        newTheme
-      );
+      try {
+        await accountService.updatePreferenceTheme(
+          appContext.relationships.preference.data.id,
+          newTheme
+        );
+        await queryClient.invalidateQueries({ queryKey: contextKeys.current });
+      } catch (error) {
+        toast.error(getErrorMessage(error, "Failed to save theme preference"));
+      }
     }
   };
 

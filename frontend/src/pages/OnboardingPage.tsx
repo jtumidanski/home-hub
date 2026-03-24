@@ -3,66 +3,56 @@ import { useNavigate } from "react-router-dom";
 import { useQueryClient } from "@tanstack/react-query";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { z } from "zod";
+import { toast } from "sonner";
 import { useAuth } from "@/components/providers/auth-provider";
 import { accountService } from "@/services/api/account";
 import { contextKeys } from "@/lib/hooks/api/use-context";
+import { createTenantSchema, type CreateTenantFormData } from "@/lib/schemas/tenant.schema";
+import { createHouseholdSchema, type CreateHouseholdFormData, createHouseholdDefaults } from "@/lib/schemas/household.schema";
+import { getErrorMessage } from "@/lib/api/errors";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-
-const tenantSchema = z.object({
-  name: z.string().min(1, "Name is required"),
-});
-
-const householdSchema = z.object({
-  name: z.string().min(1, "Name is required"),
-  timezone: z.string().min(1, "Timezone is required"),
-  units: z.enum(["imperial", "metric"]),
-});
-
-type TenantForm = z.infer<typeof tenantSchema>;
-type HouseholdForm = z.infer<typeof householdSchema>;
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
+import { Loader2 } from "lucide-react";
 
 export function OnboardingPage() {
   const { user } = useAuth();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const [step, setStep] = useState<"tenant" | "household">("tenant");
-  const [error, setError] = useState<string | null>(null);
 
-  const tenantForm = useForm<TenantForm>({
-    resolver: zodResolver(tenantSchema),
+  const tenantForm = useForm<CreateTenantFormData>({
+    resolver: zodResolver(createTenantSchema),
     defaultValues: { name: user?.attributes.displayName ? `${user.attributes.displayName}'s Home` : "" },
   });
 
-  const householdForm = useForm<HouseholdForm>({
-    resolver: zodResolver(householdSchema),
+  const householdForm = useForm<CreateHouseholdFormData>({
+    resolver: zodResolver(createHouseholdSchema),
     defaultValues: {
+      ...createHouseholdDefaults,
       name: "Main Home",
-      timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
-      units: "imperial",
     },
   });
 
-  const onTenantSubmit = async (data: TenantForm) => {
+  const onTenantSubmit = async (data: CreateTenantFormData) => {
     try {
-      setError(null);
       await accountService.createTenant(data.name);
+      toast.success("Account created");
       setStep("household");
-    } catch (e) {
-      setError(e instanceof Error ? e.message : "Failed to create tenant");
+    } catch (error) {
+      toast.error(getErrorMessage(error, "Failed to create account"));
     }
   };
 
-  const onHouseholdSubmit = async (data: HouseholdForm) => {
+  const onHouseholdSubmit = async (data: CreateHouseholdFormData) => {
     try {
-      setError(null);
       await accountService.createHousehold(data.name, data.timezone, data.units);
       await queryClient.invalidateQueries({ queryKey: contextKeys.current });
+      toast.success("Household created");
       navigate("/app");
-    } catch (e) {
-      setError(e instanceof Error ? e.message : "Failed to create household");
+    } catch (error) {
+      toast.error(getErrorMessage(error, "Failed to create household"));
     }
   };
 
@@ -76,74 +66,95 @@ export function OnboardingPage() {
           </CardDescription>
         </CardHeader>
         <CardContent>
-          {error && (
-            <div className="mb-4 rounded border border-destructive p-3 text-sm text-destructive">
-              {error}
-            </div>
-          )}
-
           {step === "tenant" && (
-            <form onSubmit={tenantForm.handleSubmit(onTenantSubmit)} className="space-y-4">
-              <div className="space-y-2">
-                <label htmlFor="tenant-name" className="text-sm font-medium">
-                  Account Name
-                </label>
-                <Input
-                  id="tenant-name"
-                  placeholder="e.g., The Smith Family"
-                  {...tenantForm.register("name")}
+            <Form {...tenantForm}>
+              <form onSubmit={tenantForm.handleSubmit(onTenantSubmit)} className="space-y-4">
+                <FormField
+                  control={tenantForm.control}
+                  name="name"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Account Name</FormLabel>
+                      <FormControl>
+                        <Input placeholder="e.g., The Smith Family" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
                 />
-                {tenantForm.formState.errors.name && (
-                  <p className="text-sm text-destructive">{tenantForm.formState.errors.name.message}</p>
-                )}
-              </div>
-              <Button type="submit" className="w-full" disabled={tenantForm.formState.isSubmitting}>
-                {tenantForm.formState.isSubmitting ? "Creating..." : "Continue"}
-              </Button>
-            </form>
+                <Button type="submit" className="w-full" disabled={tenantForm.formState.isSubmitting}>
+                  {tenantForm.formState.isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                  Continue
+                </Button>
+              </form>
+            </Form>
           )}
 
           {step === "household" && (
-            <form onSubmit={householdForm.handleSubmit(onHouseholdSubmit)} className="space-y-4">
-              <div className="space-y-2">
-                <label htmlFor="hh-name" className="text-sm font-medium">
-                  Household Name
-                </label>
-                <Input
-                  id="hh-name"
-                  placeholder="e.g., Main Home"
-                  {...householdForm.register("name")}
+            <Form {...householdForm}>
+              <form onSubmit={householdForm.handleSubmit(onHouseholdSubmit)} className="space-y-4">
+                <FormField
+                  control={householdForm.control}
+                  name="name"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Household Name</FormLabel>
+                      <FormControl>
+                        <Input placeholder="e.g., Main Home" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
                 />
-                {householdForm.formState.errors.name && (
-                  <p className="text-sm text-destructive">{householdForm.formState.errors.name.message}</p>
-                )}
-              </div>
-              <div className="space-y-2">
-                <label htmlFor="hh-timezone" className="text-sm font-medium">
-                  Timezone
-                </label>
-                <Input
-                  id="hh-timezone"
-                  {...householdForm.register("timezone")}
+                <FormField
+                  control={householdForm.control}
+                  name="timezone"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Timezone</FormLabel>
+                      <FormControl>
+                        <Input {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
                 />
-              </div>
-              <div className="space-y-2">
-                <label className="text-sm font-medium">Units</label>
-                <div className="flex gap-4">
-                  <label className="flex items-center gap-2">
-                    <input type="radio" value="imperial" {...householdForm.register("units")} />
-                    <span className="text-sm">Imperial</span>
-                  </label>
-                  <label className="flex items-center gap-2">
-                    <input type="radio" value="metric" {...householdForm.register("units")} />
-                    <span className="text-sm">Metric</span>
-                  </label>
-                </div>
-              </div>
-              <Button type="submit" className="w-full" disabled={householdForm.formState.isSubmitting}>
-                {householdForm.formState.isSubmitting ? "Creating..." : "Get Started"}
-              </Button>
-            </form>
+                <FormField
+                  control={householdForm.control}
+                  name="units"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Units</FormLabel>
+                      <div className="flex gap-4">
+                        <label className="flex items-center gap-2">
+                          <input
+                            type="radio"
+                            value="imperial"
+                            checked={field.value === "imperial"}
+                            onChange={() => field.onChange("imperial")}
+                          />
+                          <span className="text-sm">Imperial</span>
+                        </label>
+                        <label className="flex items-center gap-2">
+                          <input
+                            type="radio"
+                            value="metric"
+                            checked={field.value === "metric"}
+                            onChange={() => field.onChange("metric")}
+                          />
+                          <span className="text-sm">Metric</span>
+                        </label>
+                      </div>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <Button type="submit" className="w-full" disabled={householdForm.formState.isSubmitting}>
+                  {householdForm.formState.isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                  Get Started
+                </Button>
+              </form>
+            </Form>
           )}
         </CardContent>
       </Card>
