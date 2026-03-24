@@ -11,8 +11,8 @@ import (
 type Entity struct {
 	Id              uuid.UUID `gorm:"type:uuid;primaryKey"`
 	UserId          uuid.UUID `gorm:"type:uuid;not null"`
-	Provider        string    `gorm:"type:text;not null"`
-	ProviderSubject string    `gorm:"type:text;not null;uniqueIndex:idx_provider_subject"`
+	Provider        string    `gorm:"type:text;not null;uniqueIndex:idx_provider_subject,priority:1"`
+	ProviderSubject string    `gorm:"type:text;not null;uniqueIndex:idx_provider_subject,priority:2"`
 	CreatedAt       time.Time `gorm:"not null"`
 	UpdatedAt       time.Time `gorm:"not null"`
 }

@@ -87,35 +87,15 @@ func handleCallback(db *gorm.DB, issuer *authjwt.Issuer, oidcCfg config.OIDCConf
 				return
 			}
 
-			disc, err := oidc.Discover(oidcCfg.IssuerURL)
-			if err != nil {
-				d.Logger().WithError(err).Error("OIDC discovery failed")
-				server.WriteError(w, http.StatusInternalServerError, "Discovery Failed", "")
-				return
-			}
-
 			cfg := oidc.ProviderConfig{
+				IssuerURL:    oidcCfg.IssuerURL,
 				ClientID:     oidcCfg.ClientID,
 				ClientSecret: oidcCfg.ClientSecret,
 				RedirectURL:  oidcCfg.RedirectURI,
 			}
 
-			tokenResp, err := oidc.ExchangeCode(r.Context(), disc, cfg, code)
-			if err != nil {
-				d.Logger().WithError(err).Error("code exchange failed")
-				server.WriteError(w, http.StatusInternalServerError, "Token Exchange Failed", "")
-				return
-			}
-
-			userInfo, err := oidc.FetchUserInfo(r.Context(), disc, tokenResp.AccessToken)
-			if err != nil {
-				d.Logger().WithError(err).Error("userinfo fetch failed")
-				server.WriteError(w, http.StatusInternalServerError, "UserInfo Failed", "")
-				return
-			}
-
 			proc := authflow.NewProcessor(d.Logger(), r.Context(), db, issuer)
-			result, err := proc.HandleCallback(userInfo)
+			result, err := proc.HandleCallback(cfg, code)
 			if err != nil {
 				d.Logger().WithError(err).Error("auth callback processing failed")
 				server.WriteError(w, http.StatusInternalServerError, "Auth Error", "")

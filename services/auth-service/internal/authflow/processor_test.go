@@ -66,7 +66,7 @@ func TestHandleCallback(t *testing.T) {
 		AvatarURL:   "https://example.com/avatar.png",
 	}
 
-	result, err := p.HandleCallback(userInfo)
+	result, err := p.HandleCallbackWithUserInfo(userInfo)
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
@@ -93,13 +93,13 @@ func TestHandleCallback_IdempotentIdentityLink(t *testing.T) {
 	}
 
 	// First callback creates user and identity
-	_, err := p.HandleCallback(userInfo)
+	_, err := p.HandleCallbackWithUserInfo(userInfo)
 	if err != nil {
 		t.Fatalf("first callback: %v", err)
 	}
 
 	// Second callback should succeed (identity already linked)
-	result, err := p.HandleCallback(userInfo)
+	result, err := p.HandleCallbackWithUserInfo(userInfo)
 	if err != nil {
 		t.Fatalf("second callback: %v", err)
 	}

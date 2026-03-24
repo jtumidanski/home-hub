@@ -2,6 +2,7 @@ package authflow
 
 import (
 	"context"
+	"fmt"
 
 	"github.com/google/uuid"
 	"github.com/jtumidanski/home-hub/services/auth-service/internal/externalidentity"
@@ -36,9 +37,31 @@ func NewProcessor(l logrus.FieldLogger, ctx context.Context, db *gorm.DB, issuer
 	return &Processor{l: l, ctx: ctx, db: db, issuer: issuer}
 }
 
-// HandleCallback processes an OIDC callback: finds or creates a user, links
-// the external identity, and issues access + refresh tokens.
-func (p *Processor) HandleCallback(userInfo *oidc.UserInfo) (CallbackResult, error) {
+// HandleCallback processes an OIDC callback: exchanges the authorization code,
+// fetches user info, finds or creates a user, links the external identity,
+// and issues access + refresh tokens.
+func (p *Processor) HandleCallback(oidcCfg oidc.ProviderConfig, code string) (CallbackResult, error) {
+	disc, err := oidc.Discover(oidcCfg.IssuerURL)
+	if err != nil {
+		return CallbackResult{}, fmt.Errorf("OIDC discovery failed: %w", err)
+	}
+
+	tokenResp, err := oidc.ExchangeCode(p.ctx, disc, oidcCfg, code)
+	if err != nil {
+		return CallbackResult{}, fmt.Errorf("code exchange failed: %w", err)
+	}
+
+	userInfo, err := oidc.FetchUserInfo(p.ctx, disc, tokenResp.AccessToken)
+	if err != nil {
+		return CallbackResult{}, fmt.Errorf("userinfo fetch failed: %w", err)
+	}
+
+	return p.HandleCallbackWithUserInfo(userInfo)
+}
+
+// HandleCallbackWithUserInfo performs the user/identity/token steps given resolved user info.
+// Exported for testing the business logic without OIDC protocol mocking.
+func (p *Processor) HandleCallbackWithUserInfo(userInfo *oidc.UserInfo) (CallbackResult, error) {
 	// Find or create user
 	userProc := user.NewProcessor(p.l, p.ctx, p.db)
 	u, err := userProc.FindOrCreate(userInfo.Email, userInfo.DisplayName, userInfo.GivenName, userInfo.FamilyName, userInfo.AvatarURL)
