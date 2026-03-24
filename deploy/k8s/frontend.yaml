@@ -15,7 +15,7 @@ spec:
     spec:
       containers:
       - name: frontend
-        image: ghcr.io/jtumidanski/home-hub-frontend:latest
+        image: ghcr.io/jtumidanski/home-hub-frontend:main
         ports:
         - containerPort: 80
         livenessProbe:

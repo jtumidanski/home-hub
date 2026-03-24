@@ -15,7 +15,7 @@ spec:
     spec:
       containers:
       - name: account-service
-        image: ghcr.io/jtumidanski/home-hub-account-service:latest
+        image: ghcr.io/jtumidanski/home-hub-account-service:main
         ports:
         - containerPort: 8080
         env:

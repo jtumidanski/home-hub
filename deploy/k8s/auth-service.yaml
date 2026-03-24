@@ -15,7 +15,7 @@ spec:
     spec:
       containers:
       - name: auth-service
-        image: ghcr.io/jtumidanski/home-hub-auth-service:latest
+        image: ghcr.io/jtumidanski/home-hub-auth-service:main
         ports:
         - containerPort: 8080
         env:
