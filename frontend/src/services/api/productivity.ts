@@ -1,7 +1,7 @@
 import { api } from "@/lib/api/client";
 import type { JsonApiResponse, JsonApiListResponse } from "@/types/api/responses";
-import type { Task } from "@/types/models/task";
-import type { Reminder } from "@/types/models/reminder";
+import type { Task, TaskAttributes } from "@/types/models/task";
+import type { Reminder, ReminderAttributes } from "@/types/models/reminder";
 import type { TaskSummary, ReminderSummary, DashboardSummary } from "@/types/models/summary";
 
 export const productivityService = {
@@ -20,7 +20,7 @@ export const productivityService = {
       data: { type: "tasks", attributes: { status: "pending", ...attrs } },
     });
   },
-  updateTask: (tenantId: string, id: string, attrs: Record<string, unknown>) => {
+  updateTask: (tenantId: string, id: string, attrs: Partial<TaskAttributes>) => {
     api.setTenant(tenantId);
     return api.patch<JsonApiResponse<Task>>(`/tasks/${id}`, {
       data: { type: "tasks", id, attributes: attrs },
@@ -55,7 +55,7 @@ export const productivityService = {
       data: { type: "reminders", attributes: attrs },
     });
   },
-  updateReminder: (tenantId: string, id: string, attrs: Record<string, unknown>) => {
+  updateReminder: (tenantId: string, id: string, attrs: Partial<ReminderAttributes>) => {
     api.setTenant(tenantId);
     return api.patch<JsonApiResponse<Reminder>>(`/reminders/${id}`, {
       data: { type: "reminders", id, attributes: attrs },
