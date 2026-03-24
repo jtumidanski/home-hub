@@ -56,3 +56,18 @@ func (r *CreateRequest) SetID(id string) error {
 	r.Id, err = uuid.Parse(id)
 	return err
 }
+
+type UpdateRequest struct {
+	Id       uuid.UUID `json:"-"`
+	Name     string    `json:"name"`
+	Timezone string    `json:"timezone"`
+	Units    string    `json:"units"`
+}
+
+func (r UpdateRequest) GetName() string { return "households" }
+func (r UpdateRequest) GetID() string   { return r.Id.String() }
+func (r *UpdateRequest) SetID(id string) error {
+	var err error
+	r.Id, err = uuid.Parse(id)
+	return err
+}

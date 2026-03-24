@@ -25,6 +25,18 @@ func Transform(m Model) (RestModel, error) {
 	return RestModel{Id: m.Id(), Theme: m.Theme(), CreatedAt: m.CreatedAt(), UpdatedAt: m.UpdatedAt()}, nil
 }
 
+func TransformSlice(models []Model) ([]RestModel, error) {
+	result := make([]RestModel, len(models))
+	for i, m := range models {
+		rm, err := Transform(m)
+		if err != nil {
+			return nil, err
+		}
+		result[i] = rm
+	}
+	return result, nil
+}
+
 type UpdateRequest struct {
 	Id                uuid.UUID  `json:"-"`
 	Theme             *string    `json:"theme,omitempty"`

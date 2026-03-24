@@ -53,6 +53,11 @@ func updateHandler(db *gorm.DB) server.InputHandler[UpdateRequest] {
 				return
 			}
 
+			if input.Theme == nil && input.ActiveHouseholdId == nil {
+				server.WriteError(w, http.StatusBadRequest, "Bad Request", "at least one field (theme or active_household_id) is required")
+				return
+			}
+
 			proc := NewProcessor(d.Logger(), r.Context(), db)
 			var m Model
 

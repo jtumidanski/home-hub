@@ -15,12 +15,13 @@ import (
 func InitializeRoutes(db *gorm.DB) func(l logrus.FieldLogger, si jsonapi.ServerInformation, api *mux.Router) {
 	return func(l logrus.FieldLogger, si jsonapi.ServerInformation, api *mux.Router) {
 		rh := server.RegisterHandler(l)(si)
-		rih := server.RegisterInputHandler[CreateRequest](l)(si)
+		rihCreate := server.RegisterInputHandler[CreateRequest](l)(si)
+		rihUpdate := server.RegisterInputHandler[UpdateRequest](l)(si)
 
 		api.HandleFunc("/households", rh("ListHouseholds", listHandler(db))).Methods(http.MethodGet)
-		api.HandleFunc("/households", rih("CreateHousehold", createHandler(db))).Methods(http.MethodPost)
+		api.HandleFunc("/households", rihCreate("CreateHousehold", createHandler(db))).Methods(http.MethodPost)
 		api.HandleFunc("/households/{id}", rh("GetHousehold", getHandler(db))).Methods(http.MethodGet)
-		api.HandleFunc("/households/{id}", rih("UpdateHousehold", updateHandler(db))).Methods(http.MethodPatch)
+		api.HandleFunc("/households/{id}", rihUpdate("UpdateHousehold", updateHandler(db))).Methods(http.MethodPatch)
 	}
 }
 
@@ -93,8 +94,8 @@ func getHandler(db *gorm.DB) server.GetHandler {
 	}
 }
 
-func updateHandler(db *gorm.DB) server.InputHandler[CreateRequest] {
-	return func(d *server.HandlerDependency, c *server.HandlerContext, input CreateRequest) http.HandlerFunc {
+func updateHandler(db *gorm.DB) server.InputHandler[UpdateRequest] {
+	return func(d *server.HandlerDependency, c *server.HandlerContext, input UpdateRequest) http.HandlerFunc {
 		return func(w http.ResponseWriter, r *http.Request) {
 			id, err := uuid.Parse(mux.Vars(r)["id"])
 			if err != nil {
