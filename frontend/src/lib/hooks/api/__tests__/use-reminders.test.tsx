@@ -143,4 +143,65 @@ describe("useReminders hook", () => {
     await result.current.mutateAsync("rem-1");
     expect(productivityService.dismissReminder).toHaveBeenCalledWith("tenant-1", "rem-1");
   });
+
+  it("reports error state when fetch fails", async () => {
+    const { productivityService } = await import("@/services/api/productivity");
+    (productivityService.listReminders as ReturnType<typeof vi.fn>).mockRejectedValue(new Error("network error"));
+
+    const { useReminders } = await import("../use-reminders");
+    const { result } = renderHook(() => useReminders(), { wrapper: createWrapper() });
+
+    await waitFor(() => expect(result.current.isError).toBe(true));
+    expect(result.current.error).toBeInstanceOf(Error);
+  });
+
+  it("reports loading state initially", async () => {
+    const { productivityService } = await import("@/services/api/productivity");
+    (productivityService.listReminders as ReturnType<typeof vi.fn>).mockReturnValue(new Promise(() => {}));
+
+    const { useReminders } = await import("../use-reminders");
+    const { result } = renderHook(() => useReminders(), { wrapper: createWrapper() });
+
+    expect(result.current.isLoading).toBe(true);
+  });
+
+  it("rejects when createReminder mutation fails", async () => {
+    const { productivityService } = await import("@/services/api/productivity");
+    (productivityService.createReminder as ReturnType<typeof vi.fn>).mockRejectedValue(new Error("create failed"));
+
+    const { useCreateReminder } = await import("../use-reminders");
+    const { result } = renderHook(() => useCreateReminder(), { wrapper: createWrapper() });
+
+    await expect(result.current.mutateAsync({ title: "Fail", scheduledFor: "2026-03-25T09:00:00Z" })).rejects.toThrow("create failed");
+  });
+
+  it("rejects when deleteReminder mutation fails", async () => {
+    const { productivityService } = await import("@/services/api/productivity");
+    (productivityService.deleteReminder as ReturnType<typeof vi.fn>).mockRejectedValue(new Error("delete failed"));
+
+    const { useDeleteReminder } = await import("../use-reminders");
+    const { result } = renderHook(() => useDeleteReminder(), { wrapper: createWrapper() });
+
+    await expect(result.current.mutateAsync("rem-1")).rejects.toThrow("delete failed");
+  });
+
+  it("rejects when snoozeReminder mutation fails", async () => {
+    const { productivityService } = await import("@/services/api/productivity");
+    (productivityService.snoozeReminder as ReturnType<typeof vi.fn>).mockRejectedValue(new Error("snooze failed"));
+
+    const { useSnoozeReminder } = await import("../use-reminders");
+    const { result } = renderHook(() => useSnoozeReminder(), { wrapper: createWrapper() });
+
+    await expect(result.current.mutateAsync({ id: "rem-1", minutes: 10 })).rejects.toThrow("snooze failed");
+  });
+
+  it("rejects when dismissReminder mutation fails", async () => {
+    const { productivityService } = await import("@/services/api/productivity");
+    (productivityService.dismissReminder as ReturnType<typeof vi.fn>).mockRejectedValue(new Error("dismiss failed"));
+
+    const { useDismissReminder } = await import("../use-reminders");
+    const { result } = renderHook(() => useDismissReminder(), { wrapper: createWrapper() });
+
+    await expect(result.current.mutateAsync("rem-1")).rejects.toThrow("dismiss failed");
+  });
 });

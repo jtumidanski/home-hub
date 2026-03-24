@@ -94,4 +94,37 @@ describe("useHouseholds hook", () => {
     await result.current.mutateAsync({ name: "Beach House", timezone: "America/New_York", units: "metric" });
     expect(accountService.createHousehold).toHaveBeenCalledWith("tenant-1", "Beach House", "America/New_York", "metric");
   });
+
+  it("reports error state when fetch fails", async () => {
+    const { accountService } = await import("@/services/api/account");
+    (accountService.listHouseholds as ReturnType<typeof vi.fn>).mockRejectedValue(new Error("network error"));
+
+    const { useHouseholds } = await import("../use-households");
+    const { result } = renderHook(() => useHouseholds(), { wrapper: createWrapper() });
+
+    await waitFor(() => expect(result.current.isError).toBe(true));
+    expect(result.current.error).toBeInstanceOf(Error);
+  });
+
+  it("reports loading state initially", async () => {
+    const { accountService } = await import("@/services/api/account");
+    (accountService.listHouseholds as ReturnType<typeof vi.fn>).mockReturnValue(new Promise(() => {}));
+
+    const { useHouseholds } = await import("../use-households");
+    const { result } = renderHook(() => useHouseholds(), { wrapper: createWrapper() });
+
+    expect(result.current.isLoading).toBe(true);
+  });
+
+  it("rejects when createHousehold mutation fails", async () => {
+    const { accountService } = await import("@/services/api/account");
+    (accountService.createHousehold as ReturnType<typeof vi.fn>).mockRejectedValue(new Error("create failed"));
+
+    const { useCreateHousehold } = await import("../use-households");
+    const { result } = renderHook(() => useCreateHousehold(), { wrapper: createWrapper() });
+
+    await expect(
+      result.current.mutateAsync({ name: "Fail", timezone: "UTC", units: "metric" })
+    ).rejects.toThrow("create failed");
+  });
 });

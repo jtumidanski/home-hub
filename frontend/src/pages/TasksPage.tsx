@@ -8,6 +8,7 @@ import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Plus, Check, Trash2 } from "lucide-react";
+import { cn } from "@/lib/utils";
 
 function TasksPageSkeleton() {
   return (
@@ -88,10 +89,10 @@ export function TasksPage() {
                     size="sm"
                     onClick={() => toggleComplete(task.id, task.attributes.status)}
                   >
-                    <Check className={task.attributes.status === "completed" ? "h-4 w-4 text-primary" : "h-4 w-4 text-muted-foreground"} />
+                    <Check className={cn("h-4 w-4", task.attributes.status === "completed" ? "text-primary" : "text-muted-foreground")} />
                   </Button>
                   <div>
-                    <p className={task.attributes.status === "completed" ? "font-medium line-through text-muted-foreground" : "font-medium"}>
+                    <p className={cn("font-medium", task.attributes.status === "completed" && "line-through text-muted-foreground")}>
                       {task.attributes.title}
                     </p>
                     {task.attributes.dueOn && (

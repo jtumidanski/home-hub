@@ -156,4 +156,65 @@ describe("useTasks hook", () => {
     await result.current.mutateAsync("task-1");
     expect(productivityService.restoreTask).toHaveBeenCalledWith("tenant-1", "task-1");
   });
+
+  it("reports error state when fetch fails", async () => {
+    const { productivityService } = await import("@/services/api/productivity");
+    (productivityService.listTasks as ReturnType<typeof vi.fn>).mockRejectedValue(new Error("network error"));
+
+    const { useTasks } = await import("../use-tasks");
+    const { result } = renderHook(() => useTasks(), { wrapper: createWrapper() });
+
+    await waitFor(() => expect(result.current.isError).toBe(true));
+    expect(result.current.error).toBeInstanceOf(Error);
+  });
+
+  it("reports loading state initially", async () => {
+    const { productivityService } = await import("@/services/api/productivity");
+    (productivityService.listTasks as ReturnType<typeof vi.fn>).mockReturnValue(new Promise(() => {}));
+
+    const { useTasks } = await import("../use-tasks");
+    const { result } = renderHook(() => useTasks(), { wrapper: createWrapper() });
+
+    expect(result.current.isLoading).toBe(true);
+  });
+
+  it("rejects when createTask mutation fails", async () => {
+    const { productivityService } = await import("@/services/api/productivity");
+    (productivityService.createTask as ReturnType<typeof vi.fn>).mockRejectedValue(new Error("create failed"));
+
+    const { useCreateTask } = await import("../use-tasks");
+    const { result } = renderHook(() => useCreateTask(), { wrapper: createWrapper() });
+
+    await expect(result.current.mutateAsync({ title: "Fail" })).rejects.toThrow("create failed");
+  });
+
+  it("rejects when deleteTask mutation fails", async () => {
+    const { productivityService } = await import("@/services/api/productivity");
+    (productivityService.deleteTask as ReturnType<typeof vi.fn>).mockRejectedValue(new Error("delete failed"));
+
+    const { useDeleteTask } = await import("../use-tasks");
+    const { result } = renderHook(() => useDeleteTask(), { wrapper: createWrapper() });
+
+    await expect(result.current.mutateAsync("task-1")).rejects.toThrow("delete failed");
+  });
+
+  it("rejects when updateTask mutation fails", async () => {
+    const { productivityService } = await import("@/services/api/productivity");
+    (productivityService.updateTask as ReturnType<typeof vi.fn>).mockRejectedValue(new Error("update failed"));
+
+    const { useUpdateTask } = await import("../use-tasks");
+    const { result } = renderHook(() => useUpdateTask(), { wrapper: createWrapper() });
+
+    await expect(result.current.mutateAsync({ id: "task-1", attrs: { status: "completed" } })).rejects.toThrow("update failed");
+  });
+
+  it("rejects when restoreTask mutation fails", async () => {
+    const { productivityService } = await import("@/services/api/productivity");
+    (productivityService.restoreTask as ReturnType<typeof vi.fn>).mockRejectedValue(new Error("restore failed"));
+
+    const { useRestoreTask } = await import("../use-tasks");
+    const { result } = renderHook(() => useRestoreTask(), { wrapper: createWrapper() });
+
+    await expect(result.current.mutateAsync("task-1")).rejects.toThrow("restore failed");
+  });
 });

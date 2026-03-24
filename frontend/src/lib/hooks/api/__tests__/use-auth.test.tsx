@@ -95,4 +95,25 @@ describe("useProviders hook", () => {
     expect(result.current.data?.data).toHaveLength(1);
     expect(result.current.data?.data[0].attributes.displayName).toBe("Google");
   });
+
+  it("reports error state when providers fetch fails", async () => {
+    const { authService } = await import("@/services/api/auth");
+    (authService.getProviders as ReturnType<typeof vi.fn>).mockRejectedValue(new Error("providers error"));
+
+    const { useProviders } = await import("../use-auth");
+    const { result } = renderHook(() => useProviders(), { wrapper: createWrapper() });
+
+    await waitFor(() => expect(result.current.isError).toBe(true));
+    expect(result.current.error).toBeInstanceOf(Error);
+  });
+
+  it("reports loading state initially", async () => {
+    const { authService } = await import("@/services/api/auth");
+    (authService.getProviders as ReturnType<typeof vi.fn>).mockReturnValue(new Promise(() => {}));
+
+    const { useProviders } = await import("../use-auth");
+    const { result } = renderHook(() => useProviders(), { wrapper: createWrapper() });
+
+    expect(result.current.isLoading).toBe(true);
+  });
 });

@@ -76,4 +76,26 @@ describe("useAppContext hook", () => {
     await waitFor(() => expect(result.current.isError).toBe(true));
     expect(accountService.getContext).toHaveBeenCalledTimes(1);
   });
+
+  it("reports loading state initially", async () => {
+    const { accountService } = await import("@/services/api/account");
+    (accountService.getContext as ReturnType<typeof vi.fn>).mockReturnValue(new Promise(() => {}));
+
+    const { useAppContext } = await import("../use-context");
+    const { result } = renderHook(() => useAppContext(), { wrapper: createWrapper() });
+
+    expect(result.current.isLoading).toBe(true);
+  });
+
+  it("exposes error details on failure", async () => {
+    const { accountService } = await import("@/services/api/account");
+    (accountService.getContext as ReturnType<typeof vi.fn>).mockRejectedValue(new Error("server error"));
+
+    const { useAppContext } = await import("../use-context");
+    const { result } = renderHook(() => useAppContext(), { wrapper: createWrapper() });
+
+    await waitFor(() => expect(result.current.isError).toBe(true));
+    expect(result.current.error).toBeInstanceOf(Error);
+    expect((result.current.error as Error).message).toBe("server error");
+  });
 });
