@@ -4,6 +4,8 @@ import (
 	"io"
 	"net/http"
 
+	"github.com/google/uuid"
+	"github.com/gorilla/mux"
 	"github.com/jtumidanski/api2go/jsonapi"
 	"github.com/sirupsen/logrus"
 )
@@ -42,6 +44,19 @@ func RegisterHandler(l logrus.FieldLogger) func(si jsonapi.ServerInformation) fu
 			}
 		}
 	}
+}
+
+// ParseID extracts a UUID route variable from the request. If the variable is
+// missing or not a valid UUID, it writes a 400 response and returns a no-op
+// handler. Otherwise it calls fn with the parsed UUID.
+func ParseID(r *http.Request, w http.ResponseWriter, param string, fn func(id uuid.UUID) http.HandlerFunc) http.HandlerFunc {
+	raw := mux.Vars(r)[param]
+	id, err := uuid.Parse(raw)
+	if err != nil {
+		WriteError(w, http.StatusBadRequest, "Invalid ID", param+" must be a valid UUID")
+		return func(http.ResponseWriter, *http.Request) {}
+	}
+	return fn(id)
 }
 
 // RegisterInputHandler wraps an InputHandler with JSON:API unmarshaling, logging, and context.

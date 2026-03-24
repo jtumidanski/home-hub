@@ -71,25 +71,24 @@ func createHandler(db *gorm.DB) server.InputHandler[CreateRequest] {
 func getHandler(db *gorm.DB) server.GetHandler {
 	return func(d *server.HandlerDependency, c *server.HandlerContext) http.HandlerFunc {
 		return func(w http.ResponseWriter, r *http.Request) {
-			id, err := uuid.Parse(mux.Vars(r)["id"])
-			if err != nil {
-				server.WriteError(w, http.StatusBadRequest, "Invalid ID", "")
-				return
-			}
-			proc := NewProcessor(d.Logger(), r.Context(), db)
-			m, err := proc.ByIDProvider(id)()
-			if err != nil {
-				d.Logger().WithError(err).Error("Household not found")
-				server.WriteError(w, http.StatusNotFound, "Not Found", "")
-				return
-			}
-			rest, err := Transform(m)
-			if err != nil {
-				d.Logger().WithError(err).Error("Creating REST model")
-				w.WriteHeader(http.StatusInternalServerError)
-				return
-			}
-			server.MarshalResponse[RestModel](d.Logger())(w)(c.ServerInformation())(map[string][]string{})(rest)
+			server.ParseID(r, w, "id", func(id uuid.UUID) http.HandlerFunc {
+				return func(w http.ResponseWriter, r *http.Request) {
+					proc := NewProcessor(d.Logger(), r.Context(), db)
+					m, err := proc.ByIDProvider(id)()
+					if err != nil {
+						d.Logger().WithError(err).Error("Household not found")
+						server.WriteError(w, http.StatusNotFound, "Not Found", "")
+						return
+					}
+					rest, err := Transform(m)
+					if err != nil {
+						d.Logger().WithError(err).Error("Creating REST model")
+						w.WriteHeader(http.StatusInternalServerError)
+						return
+					}
+					server.MarshalResponse[RestModel](d.Logger())(w)(c.ServerInformation())(map[string][]string{})(rest)
+				}
+			})(w, r)
 		}
 	}
 }
@@ -97,25 +96,24 @@ func getHandler(db *gorm.DB) server.GetHandler {
 func updateHandler(db *gorm.DB) server.InputHandler[UpdateRequest] {
 	return func(d *server.HandlerDependency, c *server.HandlerContext, input UpdateRequest) http.HandlerFunc {
 		return func(w http.ResponseWriter, r *http.Request) {
-			id, err := uuid.Parse(mux.Vars(r)["id"])
-			if err != nil {
-				server.WriteError(w, http.StatusBadRequest, "Invalid ID", "")
-				return
-			}
-			proc := NewProcessor(d.Logger(), r.Context(), db)
-			m, err := proc.Update(id, input.Name, input.Timezone, input.Units)
-			if err != nil {
-				d.Logger().WithError(err).Error("Failed to update household")
-				server.WriteError(w, http.StatusInternalServerError, "Update Failed", "")
-				return
-			}
-			rest, err := Transform(m)
-			if err != nil {
-				d.Logger().WithError(err).Error("Creating REST model")
-				w.WriteHeader(http.StatusInternalServerError)
-				return
-			}
-			server.MarshalResponse[RestModel](d.Logger())(w)(c.ServerInformation())(map[string][]string{})(rest)
+			server.ParseID(r, w, "id", func(id uuid.UUID) http.HandlerFunc {
+				return func(w http.ResponseWriter, r *http.Request) {
+					proc := NewProcessor(d.Logger(), r.Context(), db)
+					m, err := proc.Update(id, input.Name, input.Timezone, input.Units)
+					if err != nil {
+						d.Logger().WithError(err).Error("Failed to update household")
+						server.WriteError(w, http.StatusInternalServerError, "Update Failed", "")
+						return
+					}
+					rest, err := Transform(m)
+					if err != nil {
+						d.Logger().WithError(err).Error("Creating REST model")
+						w.WriteHeader(http.StatusInternalServerError)
+						return
+					}
+					server.MarshalResponse[RestModel](d.Logger())(w)(c.ServerInformation())(map[string][]string{})(rest)
+				}
+			})(w, r)
 		}
 	}
 }
