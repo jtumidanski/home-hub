@@ -1,0 +1,151 @@
+name: PR Validation
+
+on:
+  pull_request:
+    branches: [main]
+
+jobs:
+  detect-changes:
+    runs-on: ubuntu-latest
+    outputs:
+      auth: ${{ steps.changes.outputs.auth }}
+      account: ${{ steps.changes.outputs.account }}
+      productivity: ${{ steps.changes.outputs.productivity }}
+      frontend: ${{ steps.changes.outputs.frontend }}
+      shared: ${{ steps.changes.outputs.shared }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dorny/paths-filter@v3
+        id: changes
+        with:
+          filters: |
+            auth:
+              - 'services/auth-service/**'
+              - 'shared/go/**'
+            account:
+              - 'services/account-service/**'
+              - 'shared/go/**'
+            productivity:
+              - 'services/productivity-service/**'
+              - 'shared/go/**'
+            frontend:
+              - 'frontend/**'
+            shared:
+              - 'shared/go/**'
+
+  build-auth:
+    needs: detect-changes
+    if: needs.detect-changes.outputs.auth == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version: '1.26'
+      - name: Build
+        run: go build ./services/auth-service/...
+      - name: Test
+        run: |
+          cd services/auth-service
+          go test ./... -count=1
+
+  build-account:
+    needs: detect-changes
+    if: needs.detect-changes.outputs.account == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version: '1.26'
+      - name: Build
+        run: go build ./services/account-service/...
+      - name: Test
+        run: |
+          cd services/account-service
+          go test ./... -count=1
+
+  build-productivity:
+    needs: detect-changes
+    if: needs.detect-changes.outputs.productivity == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version: '1.26'
+      - name: Build
+        run: go build ./services/productivity-service/...
+      - name: Test
+        run: |
+          cd services/productivity-service
+          go test ./... -count=1
+
+  build-shared:
+    needs: detect-changes
+    if: needs.detect-changes.outputs.shared == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version: '1.26'
+      - name: Build shared modules
+        run: |
+          for pkg in model tenant logging database server auth http testing; do
+            echo "Building shared/go/$pkg..."
+            go build ./shared/go/$pkg/...
+          done
+      - name: Test shared modules
+        run: |
+          for pkg in model tenant logging database server auth http testing; do
+            echo "Testing shared/go/$pkg..."
+            cd shared/go/$pkg
+            go test ./... -count=1
+            cd ../../..
+          done
+
+  build-frontend:
+    needs: detect-changes
+    if: needs.detect-changes.outputs.frontend == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+          cache: 'npm'
+          cache-dependency-path: frontend/package-lock.json
+      - name: Install
+        run: cd frontend && npm ci
+      - name: Build
+        run: cd frontend && npm run build
+
+  docker-build:
+    needs: [detect-changes]
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        include:
+          - service: auth-service
+            context: .
+            dockerfile: services/auth-service/Dockerfile
+            changed: auth
+          - service: account-service
+            context: .
+            dockerfile: services/account-service/Dockerfile
+            changed: account
+          - service: productivity-service
+            context: .
+            dockerfile: services/productivity-service/Dockerfile
+            changed: productivity
+          - service: frontend
+            context: frontend
+            dockerfile: frontend/Dockerfile
+            changed: frontend
+    steps:
+      - uses: actions/checkout@v4
+        if: needs.detect-changes.outputs[matrix.changed] == 'true'
+      - name: Build Docker image
+        if: needs.detect-changes.outputs[matrix.changed] == 'true'
+        run: docker build -f ${{ matrix.dockerfile }} -t home-hub-${{ matrix.service }}:pr ${{ matrix.context }}

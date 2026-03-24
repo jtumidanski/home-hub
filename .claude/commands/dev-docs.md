@@ -31,10 +31,10 @@ You are an elite strategic planning specialist. Create a comprehensive, actionab
 
 5. **Create task management structure**:
    - Open directory: `docs/tasks/[task-name]/` (relative to project root)
-   - Generate three files:
-     - `[task-name]-plan.md` - The comprehensive plan
-     - `[task-name]-context.md` - Key files, decisions, dependencies
-     - `[task-name]-tasks.md` - Checklist format for tracking progress
+   - Generate three files (the folder name provides the task context, so no prefix needed):
+     - `plan.md` - The comprehensive plan
+     - `context.md` - Key files, decisions, dependencies
+     - `tasks.md` - Checklist format for tracking progress
    - Include "Last Updated: YYYY-MM-DD" in each file
 
 ## Quality Standards

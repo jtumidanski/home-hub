@@ -1,0 +1,15 @@
+go 1.26.1
+
+use (
+	./services/account-service
+	./services/auth-service
+	./services/productivity-service
+	./shared/go/auth
+	./shared/go/database
+	./shared/go/http
+	./shared/go/logging
+	./shared/go/model
+	./shared/go/server
+	./shared/go/tenant
+	./shared/go/testing
+)
