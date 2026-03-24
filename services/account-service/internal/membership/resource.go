@@ -71,43 +71,39 @@ func createHandler(db *gorm.DB) server.InputHandler[CreateRequest] {
 
 func updateHandler(db *gorm.DB) server.InputHandler[UpdateRequest] {
 	return func(d *server.HandlerDependency, c *server.HandlerContext, input UpdateRequest) http.HandlerFunc {
-		return func(w http.ResponseWriter, r *http.Request) {
-			server.ParseID(r, w, "id", func(id uuid.UUID) http.HandlerFunc {
-				return func(w http.ResponseWriter, r *http.Request) {
-					proc := NewProcessor(d.Logger(), r.Context(), db)
-					m, err := proc.UpdateRole(id, input.Role)
-					if err != nil {
-						d.Logger().WithError(err).Error("Failed to update membership")
-						server.WriteError(w, http.StatusInternalServerError, "Update Failed", "")
-						return
-					}
-					rest, err := Transform(m)
-					if err != nil {
-						d.Logger().WithError(err).Error("Creating REST model")
-						w.WriteHeader(http.StatusInternalServerError)
-						return
-					}
-					server.MarshalResponse[RestModel](d.Logger())(w)(c.ServerInformation())(map[string][]string{})(rest)
+		return server.ParseID("id", func(id uuid.UUID) http.HandlerFunc {
+			return func(w http.ResponseWriter, r *http.Request) {
+				proc := NewProcessor(d.Logger(), r.Context(), db)
+				m, err := proc.UpdateRole(id, input.Role)
+				if err != nil {
+					d.Logger().WithError(err).Error("Failed to update membership")
+					server.WriteError(w, http.StatusInternalServerError, "Update Failed", "")
+					return
 				}
-			})(w, r)
-		}
+				rest, err := Transform(m)
+				if err != nil {
+					d.Logger().WithError(err).Error("Creating REST model")
+					w.WriteHeader(http.StatusInternalServerError)
+					return
+				}
+				server.MarshalResponse[RestModel](d.Logger())(w)(c.ServerInformation())(map[string][]string{})(rest)
+			}
+		})
 	}
 }
 
 func deleteHandler(db *gorm.DB) server.GetHandler {
 	return func(d *server.HandlerDependency, c *server.HandlerContext) http.HandlerFunc {
-		return func(w http.ResponseWriter, r *http.Request) {
-			server.ParseID(r, w, "id", func(id uuid.UUID) http.HandlerFunc {
-				return func(w http.ResponseWriter, r *http.Request) {
-					proc := NewProcessor(d.Logger(), r.Context(), db)
-					if err := proc.Delete(id); err != nil {
-						d.Logger().WithError(err).Error("Failed to delete membership")
-						server.WriteError(w, http.StatusInternalServerError, "Delete Failed", "")
-						return
-					}
-					w.WriteHeader(http.StatusNoContent)
+		return server.ParseID("id", func(id uuid.UUID) http.HandlerFunc {
+			return func(w http.ResponseWriter, r *http.Request) {
+				proc := NewProcessor(d.Logger(), r.Context(), db)
+				if err := proc.Delete(id); err != nil {
+					d.Logger().WithError(err).Error("Failed to delete membership")
+					server.WriteError(w, http.StatusInternalServerError, "Delete Failed", "")
+					return
 				}
-			})(w, r)
-		}
+				w.WriteHeader(http.StatusNoContent)
+			}
+		})
 	}
 }

@@ -77,73 +77,67 @@ func createHandler(db *gorm.DB) server.InputHandler[CreateRequest] {
 
 func getHandler(db *gorm.DB) server.GetHandler {
 	return func(d *server.HandlerDependency, c *server.HandlerContext) http.HandlerFunc {
-		return func(w http.ResponseWriter, r *http.Request) {
-			server.ParseID(r, w, "id", func(id uuid.UUID) http.HandlerFunc {
-				return func(w http.ResponseWriter, r *http.Request) {
-					proc := NewProcessor(d.Logger(), r.Context(), db)
-					m, err := proc.ByIDProvider(id)()
-					if err != nil {
-						d.Logger().WithError(err).Error("Reminder not found")
-						server.WriteError(w, http.StatusNotFound, "Not Found", "")
-						return
-					}
-					rest, err := Transform(m)
-					if err != nil {
-						d.Logger().WithError(err).Error("Creating REST model")
-						server.WriteError(w, http.StatusInternalServerError, "Error", "")
-						return
-					}
-					server.MarshalResponse[RestModel](d.Logger())(w)(c.ServerInformation())(map[string][]string{})(rest)
+		return server.ParseID("id", func(id uuid.UUID) http.HandlerFunc {
+			return func(w http.ResponseWriter, r *http.Request) {
+				proc := NewProcessor(d.Logger(), r.Context(), db)
+				m, err := proc.ByIDProvider(id)()
+				if err != nil {
+					d.Logger().WithError(err).Error("Reminder not found")
+					server.WriteError(w, http.StatusNotFound, "Not Found", "")
+					return
 				}
-			})(w, r)
-		}
+				rest, err := Transform(m)
+				if err != nil {
+					d.Logger().WithError(err).Error("Creating REST model")
+					server.WriteError(w, http.StatusInternalServerError, "Error", "")
+					return
+				}
+				server.MarshalResponse[RestModel](d.Logger())(w)(c.ServerInformation())(map[string][]string{})(rest)
+			}
+		})
 	}
 }
 
 func updateHandler(db *gorm.DB) server.InputHandler[UpdateRequest] {
 	return func(d *server.HandlerDependency, c *server.HandlerContext, input UpdateRequest) http.HandlerFunc {
-		return func(w http.ResponseWriter, r *http.Request) {
-			server.ParseID(r, w, "id", func(id uuid.UUID) http.HandlerFunc {
-				return func(w http.ResponseWriter, r *http.Request) {
-					scheduledFor, err := time.Parse(time.RFC3339, input.ScheduledFor)
-					if err != nil {
-						server.WriteError(w, http.StatusBadRequest, "Invalid Date", "")
-						return
-					}
-					proc := NewProcessor(d.Logger(), r.Context(), db)
-					m, err := proc.Update(id, input.Title, input.Notes, scheduledFor)
-					if err != nil {
-						d.Logger().WithError(err).Error("Failed to update reminder")
-						server.WriteError(w, http.StatusInternalServerError, "Update Failed", "")
-						return
-					}
-					rest, err := Transform(m)
-					if err != nil {
-						d.Logger().WithError(err).Error("Creating REST model")
-						server.WriteError(w, http.StatusInternalServerError, "Error", "")
-						return
-					}
-					server.MarshalResponse[RestModel](d.Logger())(w)(c.ServerInformation())(map[string][]string{})(rest)
+		return server.ParseID("id", func(id uuid.UUID) http.HandlerFunc {
+			return func(w http.ResponseWriter, r *http.Request) {
+				scheduledFor, err := time.Parse(time.RFC3339, input.ScheduledFor)
+				if err != nil {
+					server.WriteError(w, http.StatusBadRequest, "Invalid Date", "")
+					return
 				}
-			})(w, r)
-		}
+				proc := NewProcessor(d.Logger(), r.Context(), db)
+				m, err := proc.Update(id, input.Title, input.Notes, scheduledFor)
+				if err != nil {
+					d.Logger().WithError(err).Error("Failed to update reminder")
+					server.WriteError(w, http.StatusInternalServerError, "Update Failed", "")
+					return
+				}
+				rest, err := Transform(m)
+				if err != nil {
+					d.Logger().WithError(err).Error("Creating REST model")
+					server.WriteError(w, http.StatusInternalServerError, "Error", "")
+					return
+				}
+				server.MarshalResponse[RestModel](d.Logger())(w)(c.ServerInformation())(map[string][]string{})(rest)
+			}
+		})
 	}
 }
 
 func deleteHandler(db *gorm.DB) server.GetHandler {
 	return func(d *server.HandlerDependency, c *server.HandlerContext) http.HandlerFunc {
-		return func(w http.ResponseWriter, r *http.Request) {
-			server.ParseID(r, w, "id", func(id uuid.UUID) http.HandlerFunc {
-				return func(w http.ResponseWriter, r *http.Request) {
-					proc := NewProcessor(d.Logger(), r.Context(), db)
-					if err := proc.Delete(id); err != nil {
-						d.Logger().WithError(err).Error("Failed to delete reminder")
-						server.WriteError(w, http.StatusInternalServerError, "Delete Failed", "")
-						return
-					}
-					w.WriteHeader(http.StatusNoContent)
+		return server.ParseID("id", func(id uuid.UUID) http.HandlerFunc {
+			return func(w http.ResponseWriter, r *http.Request) {
+				proc := NewProcessor(d.Logger(), r.Context(), db)
+				if err := proc.Delete(id); err != nil {
+					d.Logger().WithError(err).Error("Failed to delete reminder")
+					server.WriteError(w, http.StatusInternalServerError, "Delete Failed", "")
+					return
 				}
-			})(w, r)
-		}
+				w.WriteHeader(http.StatusNoContent)
+			}
+		})
 	}
 }

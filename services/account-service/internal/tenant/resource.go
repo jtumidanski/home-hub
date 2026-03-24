@@ -68,25 +68,23 @@ func createHandler(db *gorm.DB) server.InputHandler[CreateRequest] {
 
 func getHandler(db *gorm.DB) server.GetHandler {
 	return func(d *server.HandlerDependency, c *server.HandlerContext) http.HandlerFunc {
-		return func(w http.ResponseWriter, r *http.Request) {
-			server.ParseID(r, w, "id", func(id uuid.UUID) http.HandlerFunc {
-				return func(w http.ResponseWriter, r *http.Request) {
-					proc := NewProcessor(d.Logger(), r.Context(), db)
-					m, err := proc.ByIDProvider(id)()
-					if err != nil {
-						d.Logger().WithError(err).Error("Tenant not found")
-						server.WriteError(w, http.StatusNotFound, "Not Found", "")
-						return
-					}
-					rest, err := Transform(m)
-					if err != nil {
-						d.Logger().WithError(err).Error("Creating REST model")
-						w.WriteHeader(http.StatusInternalServerError)
-						return
-					}
-					server.MarshalResponse[RestModel](d.Logger())(w)(c.ServerInformation())(map[string][]string{})(rest)
+		return server.ParseID("id", func(id uuid.UUID) http.HandlerFunc {
+			return func(w http.ResponseWriter, r *http.Request) {
+				proc := NewProcessor(d.Logger(), r.Context(), db)
+				m, err := proc.ByIDProvider(id)()
+				if err != nil {
+					d.Logger().WithError(err).Error("Tenant not found")
+					server.WriteError(w, http.StatusNotFound, "Not Found", "")
+					return
 				}
-			})(w, r)
-		}
+				rest, err := Transform(m)
+				if err != nil {
+					d.Logger().WithError(err).Error("Creating REST model")
+					w.WriteHeader(http.StatusInternalServerError)
+					return
+				}
+				server.MarshalResponse[RestModel](d.Logger())(w)(c.ServerInformation())(map[string][]string{})(rest)
+			}
+		})
 	}
 }
