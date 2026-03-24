@@ -12,6 +12,7 @@ const navItems = [
   { to: "/app", icon: Home, label: "Dashboard", end: true },
   { to: "/app/tasks", icon: CheckSquare, label: "Tasks", end: false },
   { to: "/app/reminders", icon: Bell, label: "Reminders", end: false },
+  { to: "/app/households", icon: Home, label: "Households", end: false },
   { to: "/app/settings", icon: Settings, label: "Settings", end: false },
 ];
 

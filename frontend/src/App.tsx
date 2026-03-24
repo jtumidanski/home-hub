@@ -7,6 +7,10 @@ import { AppShell } from "@/components/features/app-shell";
 import { LoginPage } from "@/pages/LoginPage";
 import { OnboardingPage } from "@/pages/OnboardingPage";
 import { DashboardPage } from "@/pages/DashboardPage";
+import { TasksPage } from "@/pages/TasksPage";
+import { RemindersPage } from "@/pages/RemindersPage";
+import { SettingsPage } from "@/pages/SettingsPage";
+import { HouseholdsPage } from "@/pages/HouseholdsPage";
 
 export function App() {
   return (
@@ -26,9 +30,10 @@ export function App() {
                 }
               >
                 <Route index element={<DashboardPage />} />
-                <Route path="tasks" element={<div className="p-6"><h1 className="text-2xl font-semibold">Tasks</h1></div>} />
-                <Route path="reminders" element={<div className="p-6"><h1 className="text-2xl font-semibold">Reminders</h1></div>} />
-                <Route path="settings" element={<div className="p-6"><h1 className="text-2xl font-semibold">Settings</h1></div>} />
+                <Route path="tasks" element={<TasksPage />} />
+                <Route path="reminders" element={<RemindersPage />} />
+                <Route path="settings" element={<SettingsPage />} />
+                <Route path="households" element={<HouseholdsPage />} />
               </Route>
               <Route path="*" element={<Navigate to="/app" replace />} />
             </Routes>

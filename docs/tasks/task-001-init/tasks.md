@@ -106,16 +106,16 @@ Last Updated: 2026-03-24
 
 ## Phase 8 — Frontend Productivity UI
 
-- [ ] 8.1 Implement dashboard page
-- [ ] 8.2 Implement tasks list page
-- [ ] 8.3 Implement task detail/edit view
-- [ ] 8.4 Implement task restore UI
-- [ ] 8.5 Implement reminders list page
-- [ ] 8.6 Implement reminder detail/edit view
-- [ ] 8.7 Implement snooze UI
-- [ ] 8.8 Implement dismiss UI
-- [ ] 8.9 Implement settings page
-- [ ] 8.10 Implement households management page
+- [x] 8.1 Implement dashboard page
+- [x] 8.2 Implement tasks list page
+- [x] 8.3 Implement task detail/edit view
+- [x] 8.4 Implement task restore UI
+- [x] 8.5 Implement reminders list page
+- [x] 8.6 Implement reminder detail/edit view
+- [x] 8.7 Implement snooze UI
+- [x] 8.8 Implement dismiss UI
+- [x] 8.9 Implement settings page
+- [x] 8.10 Implement households management page
 
 ## Phase 9 — Local Environment
 
