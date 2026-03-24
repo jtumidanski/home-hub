@@ -10,26 +10,24 @@ import (
 // and the database connection is provided later.
 type EntityProvider[T any] func(db *gorm.DB) model.Provider[T]
 
-// Query executes a single-entity query and returns a Provider.
+// Query returns a lazy Provider that executes a single-entity query when invoked.
 func Query[T any](queryFn func(db *gorm.DB) *gorm.DB) EntityProvider[T] {
 	return func(db *gorm.DB) model.Provider[T] {
-		var result T
-		err := queryFn(db).First(&result).Error
-		if err != nil {
-			return model.ErrorProvider[T](err)
+		return func() (T, error) {
+			var result T
+			err := queryFn(db).First(&result).Error
+			return result, err
 		}
-		return model.FixedProvider(result)
 	}
 }
 
-// SliceQuery executes a multi-entity query and returns a Provider of slices.
+// SliceQuery returns a lazy Provider that executes a multi-entity query when invoked.
 func SliceQuery[T any](queryFn func(db *gorm.DB) *gorm.DB) EntityProvider[[]T] {
 	return func(db *gorm.DB) model.Provider[[]T] {
-		var results []T
-		err := queryFn(db).Find(&results).Error
-		if err != nil {
-			return model.ErrorProvider[[]T](err)
+		return func() ([]T, error) {
+			var results []T
+			err := queryFn(db).Find(&results).Error
+			return results, err
 		}
-		return model.FixedProvider(results)
 	}
 }

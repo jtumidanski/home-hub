@@ -30,121 +30,120 @@ func setupTestDB(t *testing.T) *gorm.DB {
 	return db
 }
 
-func TestResolve_HappyPath(t *testing.T) {
-	db := setupTestDB(t)
-	l, _ := test.NewNullLogger()
-	ctx := context.Background()
-
-	// Create tenant
-	tenantProc := tenant.NewProcessor(l, ctx, db)
-	ten, err := tenantProc.Create("Test Tenant")
-	if err != nil {
-		t.Fatalf("failed to create tenant: %v", err)
+func TestResolve(t *testing.T) {
+	tests := []struct {
+		name               string
+		setup              func(t *testing.T, db *gorm.DB) (tenantID, userID uuid.UUID)
+		wantErr            bool
+		wantActiveHH       bool
+		wantRole           string
+		wantCanCreate      bool
+		wantMembershipCount int
+	}{
+		{
+			name: "happy path with owner membership",
+			setup: func(t *testing.T, db *gorm.DB) (uuid.UUID, uuid.UUID) {
+				l, _ := test.NewNullLogger()
+				ctx := context.Background()
+				tenantProc := tenant.NewProcessor(l, ctx, db)
+				ten, err := tenantProc.Create("Test Tenant")
+				if err != nil {
+					t.Fatalf("failed to create tenant: %v", err)
+				}
+				userID := uuid.New()
+				hhProc := household.NewProcessor(l, ctx, db)
+				if _, err := hhProc.CreateWithOwner(ten.Id(), userID, "Test Home", "UTC", "metric"); err != nil {
+					t.Fatalf("failed to create household: %v", err)
+				}
+				return ten.Id(), userID
+			},
+			wantActiveHH:        true,
+			wantRole:            "owner",
+			wantCanCreate:       true,
+			wantMembershipCount: 1,
+		},
+		{
+			name: "no memberships",
+			setup: func(t *testing.T, db *gorm.DB) (uuid.UUID, uuid.UUID) {
+				l, _ := test.NewNullLogger()
+				ctx := context.Background()
+				tenantProc := tenant.NewProcessor(l, ctx, db)
+				ten, err := tenantProc.Create("Empty Tenant")
+				if err != nil {
+					t.Fatalf("failed to create tenant: %v", err)
+				}
+				return ten.Id(), uuid.New()
+			},
+			wantActiveHH:        false,
+			wantRole:            "",
+			wantCanCreate:       false,
+			wantMembershipCount: 0,
+		},
+		{
+			name: "resolves first household when no active set",
+			setup: func(t *testing.T, db *gorm.DB) (uuid.UUID, uuid.UUID) {
+				l, _ := test.NewNullLogger()
+				ctx := context.Background()
+				tenantProc := tenant.NewProcessor(l, ctx, db)
+				ten, err := tenantProc.Create("Resolve Tenant")
+				if err != nil {
+					t.Fatalf("failed to create tenant: %v", err)
+				}
+				userID := uuid.New()
+				hhProc := household.NewProcessor(l, ctx, db)
+				if _, err := hhProc.CreateWithOwner(ten.Id(), userID, "First Home", "UTC", "metric"); err != nil {
+					t.Fatalf("failed to create household: %v", err)
+				}
+				return ten.Id(), userID
+			},
+			wantActiveHH:        true,
+			wantRole:            "owner",
+			wantCanCreate:       true,
+			wantMembershipCount: 1,
+		},
+		{
+			name: "tenant not found",
+			setup: func(_ *testing.T, _ *gorm.DB) (uuid.UUID, uuid.UUID) {
+				return uuid.New(), uuid.New()
+			},
+			wantErr: true,
+		},
 	}
 
-	userID := uuid.New()
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			db := setupTestDB(t)
+			l, _ := test.NewNullLogger()
+			ctx := context.Background()
 
-	// Create household with owner
-	hhProc := household.NewProcessor(l, ctx, db)
-	hh, err := hhProc.CreateWithOwner(ten.Id(), userID, "Test Home", "UTC", "metric")
-	if err != nil {
-		t.Fatalf("failed to create household: %v", err)
-	}
+			tenantID, userID := tt.setup(t, db)
+			resolved, err := Resolve(l, ctx, db, tenantID, userID)
 
-	resolved, err := Resolve(l, ctx, db, ten.Id(), userID)
-	if err != nil {
-		t.Fatalf("unexpected error: %v", err)
-	}
+			if tt.wantErr {
+				if err == nil {
+					t.Error("expected error")
+				}
+				return
+			}
+			if err != nil {
+				t.Fatalf("unexpected error: %v", err)
+			}
 
-	if resolved.Tenant.Id() != ten.Id() {
-		t.Errorf("expected tenant %s, got %s", ten.Id(), resolved.Tenant.Id())
-	}
-	if resolved.ActiveHousehold == nil {
-		t.Fatal("expected active household")
-	}
-	if resolved.ActiveHousehold.Id() != hh.Id() {
-		t.Errorf("expected household %s, got %s", hh.Id(), resolved.ActiveHousehold.Id())
-	}
-	if resolved.ResolvedRole != "owner" {
-		t.Errorf("expected role owner, got %s", resolved.ResolvedRole)
-	}
-	if !resolved.CanCreateHousehold {
-		t.Error("expected canCreateHousehold to be true for owner")
-	}
-	if len(resolved.Memberships) != 1 {
-		t.Errorf("expected 1 membership, got %d", len(resolved.Memberships))
-	}
-}
-
-func TestResolve_NoMemberships(t *testing.T) {
-	db := setupTestDB(t)
-	l, _ := test.NewNullLogger()
-	ctx := context.Background()
-
-	tenantProc := tenant.NewProcessor(l, ctx, db)
-	ten, err := tenantProc.Create("Empty Tenant")
-	if err != nil {
-		t.Fatalf("failed to create tenant: %v", err)
-	}
-
-	userID := uuid.New()
-
-	resolved, err := Resolve(l, ctx, db, ten.Id(), userID)
-	if err != nil {
-		t.Fatalf("unexpected error: %v", err)
-	}
-
-	if resolved.ActiveHousehold != nil {
-		t.Error("expected nil active household when no memberships")
-	}
-	if resolved.ResolvedRole != "" {
-		t.Errorf("expected empty role, got %s", resolved.ResolvedRole)
-	}
-	if resolved.CanCreateHousehold {
-		t.Error("expected canCreateHousehold to be false with no memberships")
-	}
-}
-
-func TestResolve_ResolvesFirstHouseholdWhenNoActiveSet(t *testing.T) {
-	db := setupTestDB(t)
-	l, _ := test.NewNullLogger()
-	ctx := context.Background()
-
-	tenantProc := tenant.NewProcessor(l, ctx, db)
-	ten, err := tenantProc.Create("Resolve Tenant")
-	if err != nil {
-		t.Fatalf("failed to create tenant: %v", err)
-	}
-
-	userID := uuid.New()
-
-	// Create household with owner — preference will have no activeHouseholdId
-	hhProc := household.NewProcessor(l, ctx, db)
-	hh, err := hhProc.CreateWithOwner(ten.Id(), userID, "First Home", "UTC", "metric")
-	if err != nil {
-		t.Fatalf("failed to create household: %v", err)
-	}
-
-	resolved, err := Resolve(l, ctx, db, ten.Id(), userID)
-	if err != nil {
-		t.Fatalf("unexpected error: %v", err)
-	}
-
-	if resolved.ActiveHousehold == nil {
-		t.Fatal("expected active household to be resolved from first membership")
-	}
-	if resolved.ActiveHousehold.Id() != hh.Id() {
-		t.Errorf("expected household %s, got %s", hh.Id(), resolved.ActiveHousehold.Id())
-	}
-}
-
-func TestResolve_TenantNotFound(t *testing.T) {
-	db := setupTestDB(t)
-	l, _ := test.NewNullLogger()
-	ctx := context.Background()
-
-	_, err := Resolve(l, ctx, db, uuid.New(), uuid.New())
-	if err == nil {
-		t.Error("expected error for non-existent tenant")
+			if tt.wantActiveHH && resolved.ActiveHousehold == nil {
+				t.Error("expected active household")
+			}
+			if !tt.wantActiveHH && resolved.ActiveHousehold != nil {
+				t.Error("expected nil active household")
+			}
+			if resolved.ResolvedRole != tt.wantRole {
+				t.Errorf("expected role %q, got %q", tt.wantRole, resolved.ResolvedRole)
+			}
+			if resolved.CanCreateHousehold != tt.wantCanCreate {
+				t.Errorf("expected canCreateHousehold=%v, got %v", tt.wantCanCreate, resolved.CanCreateHousehold)
+			}
+			if len(resolved.Memberships) != tt.wantMembershipCount {
+				t.Errorf("expected %d memberships, got %d", tt.wantMembershipCount, len(resolved.Memberships))
+			}
+		})
 	}
 }

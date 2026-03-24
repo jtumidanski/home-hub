@@ -8,23 +8,21 @@ import (
 
 func getByID(id uuid.UUID) func(db *gorm.DB) model.Provider[Entity] {
 	return func(db *gorm.DB) model.Provider[Entity] {
-		var result Entity
-		err := db.Where("id = ?", id).First(&result).Error
-		if err != nil {
-			return model.ErrorProvider[Entity](err)
+		return func() (Entity, error) {
+			var result Entity
+			err := db.Where("id = ?", id).First(&result).Error
+			return result, err
 		}
-		return model.FixedProvider(result)
 	}
 }
 
 func getAll() func(db *gorm.DB) model.Provider[[]Entity] {
 	return func(db *gorm.DB) model.Provider[[]Entity] {
-		var results []Entity
-		err := db.Find(&results).Error
-		if err != nil {
-			return model.ErrorProvider[[]Entity](err)
+		return func() ([]Entity, error) {
+			var results []Entity
+			err := db.Find(&results).Error
+			return results, err
 		}
-		return model.FixedProvider(results)
 	}
 }
 

@@ -67,7 +67,7 @@ func Resolve(l logrus.FieldLogger, ctx context.Context, db *gorm.DB, tenantID, u
 			resolved.ActiveHousehold = &hh
 			// Persist the resolved household
 			if _, err := prefProc.SetActiveHousehold(pref.Id(), hh.Id()); err != nil {
-				l.WithError(err).Error("Failed to persist resolved active household")
+				return nil, err
 			}
 		}
 	}

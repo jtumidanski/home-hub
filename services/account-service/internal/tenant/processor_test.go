@@ -23,45 +23,72 @@ func setupTestDB(t *testing.T) *gorm.DB {
 	return db
 }
 
-func TestCreate(t *testing.T) {
-	db := setupTestDB(t)
-	l, _ := test.NewNullLogger()
-	p := NewProcessor(l, context.Background(), db)
+func TestProcessor(t *testing.T) {
+	t.Run("Create", func(t *testing.T) {
+		tests := []struct {
+			name     string
+			input    string
+			wantName string
+		}{
+			{"valid tenant", "Test Tenant", "Test Tenant"},
+			{"unicode name", "Haus Müller", "Haus Müller"},
+		}
+		for _, tt := range tests {
+			t.Run(tt.name, func(t *testing.T) {
+				db := setupTestDB(t)
+				l, _ := test.NewNullLogger()
+				p := NewProcessor(l, context.Background(), db)
 
-	m, err := p.Create("Test Tenant")
-	if err != nil {
-		t.Fatalf("unexpected error: %v", err)
-	}
-	if m.Name() != "Test Tenant" {
-		t.Errorf("expected name Test Tenant, got %s", m.Name())
-	}
-	if m.Id() == uuid.Nil {
-		t.Error("expected non-nil UUID")
-	}
-}
+				m, err := p.Create(tt.input)
+				if err != nil {
+					t.Fatalf("unexpected error: %v", err)
+				}
+				if m.Name() != tt.wantName {
+					t.Errorf("expected name %s, got %s", tt.wantName, m.Name())
+				}
+				if m.Id() == uuid.Nil {
+					t.Error("expected non-nil UUID")
+				}
+			})
+		}
+	})
 
-func TestByIDProvider(t *testing.T) {
-	db := setupTestDB(t)
-	l, _ := test.NewNullLogger()
-	p := NewProcessor(l, context.Background(), db)
+	t.Run("ByIDProvider", func(t *testing.T) {
+		tests := []struct {
+			name    string
+			setup   func(p *Processor) uuid.UUID
+			wantErr bool
+		}{
+			{
+				name: "existing tenant",
+				setup: func(p *Processor) uuid.UUID {
+					m, _ := p.Create("Lookup Tenant")
+					return m.Id()
+				},
+			},
+			{
+				name: "non-existent tenant",
+				setup: func(_ *Processor) uuid.UUID {
+					return uuid.New()
+				},
+				wantErr: true,
+			},
+		}
+		for _, tt := range tests {
+			t.Run(tt.name, func(t *testing.T) {
+				db := setupTestDB(t)
+				l, _ := test.NewNullLogger()
+				p := NewProcessor(l, context.Background(), db)
 
-	created, _ := p.Create("Lookup Tenant")
-	found, err := p.ByIDProvider(created.Id())()
-	if err != nil {
-		t.Fatalf("unexpected error: %v", err)
-	}
-	if found.Name() != "Lookup Tenant" {
-		t.Errorf("expected name Lookup Tenant, got %s", found.Name())
-	}
-}
-
-func TestByIDProvider_NotFound(t *testing.T) {
-	db := setupTestDB(t)
-	l, _ := test.NewNullLogger()
-	p := NewProcessor(l, context.Background(), db)
-
-	_, err := p.ByIDProvider(uuid.New())()
-	if err == nil {
-		t.Error("expected error for non-existent tenant")
-	}
+				id := tt.setup(p)
+				_, err := p.ByIDProvider(id)()
+				if tt.wantErr && err == nil {
+					t.Error("expected error")
+				}
+				if !tt.wantErr && err != nil {
+					t.Fatalf("unexpected error: %v", err)
+				}
+			})
+		}
+	})
 }
