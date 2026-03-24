@@ -31,14 +31,14 @@ func createHandler(db *gorm.DB) server.InputHandler[CreateRequest] {
 			}
 
 			proc := NewProcessor(d.Logger(), r.Context(), db)
-			e, err := proc.Create(t.Id(), t.HouseholdId(), reminderID, t.UserId(), input.DurationMinutes)
+			m, err := proc.Create(t.Id(), t.HouseholdId(), reminderID, t.UserId(), input.DurationMinutes)
 			if err != nil {
 				d.Logger().WithError(err).Error("Failed to snooze reminder")
 				server.WriteError(w, http.StatusBadRequest, "Snooze Failed", err.Error())
 				return
 			}
 
-			rest, err := Transform(e)
+			rest, err := Transform(m)
 			if err != nil {
 				d.Logger().WithError(err).Error("Creating REST model")
 				server.WriteError(w, http.StatusInternalServerError, "Error", "")

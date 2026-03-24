@@ -83,20 +83,20 @@ func TestProcessor_Create(t *testing.T) {
 				reminderID = uuid.New()
 			}
 
-			e, err := p.Create(tenantID, householdID, reminderID, userID, tt.durationMinutes)
+			m, err := p.Create(tenantID, householdID, reminderID, userID, tt.durationMinutes)
 
 			if tt.wantErr {
 				require.Error(t, err)
-				require.Equal(t, Entity{}, e)
+				require.Equal(t, Model{}, m)
 			} else {
 				require.NoError(t, err)
-				require.Equal(t, reminderID, e.ReminderId)
-				require.Equal(t, tt.durationMinutes, e.DurationMinutes)
-				require.Equal(t, tenantID, e.TenantId)
-				require.Equal(t, householdID, e.HouseholdId)
-				require.Equal(t, userID, e.CreatedByUserId)
-				require.True(t, e.SnoozedUntil.After(time.Now().UTC()), "snoozedUntil should be in the future")
-				require.NotEqual(t, uuid.Nil, e.Id)
+				require.Equal(t, reminderID, m.ReminderID())
+				require.Equal(t, tt.durationMinutes, m.DurationMinutes())
+				require.Equal(t, tenantID, m.TenantID())
+				require.Equal(t, householdID, m.HouseholdID())
+				require.Equal(t, userID, m.CreatedByUserID())
+				require.True(t, m.SnoozedUntil().After(time.Now().UTC()), "snoozedUntil should be in the future")
+				require.NotEqual(t, uuid.Nil, m.Id())
 			}
 		})
 	}

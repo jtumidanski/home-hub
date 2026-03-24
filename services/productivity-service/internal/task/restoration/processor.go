@@ -19,10 +19,14 @@ func NewProcessor(l logrus.FieldLogger, ctx context.Context, db *gorm.DB) *Proce
 	return &Processor{l: l, ctx: ctx, db: db}
 }
 
-func (p *Processor) Create(tenantID, householdID, taskID, userID uuid.UUID) (Entity, error) {
+func (p *Processor) Create(tenantID, householdID, taskID, userID uuid.UUID) (Model, error) {
 	taskProc := task.NewProcessor(p.l, p.ctx, p.db)
 	if err := taskProc.Restore(taskID); err != nil {
-		return Entity{}, err
+		return Model{}, err
 	}
-	return create(p.db.WithContext(p.ctx), tenantID, householdID, taskID, userID)
+	e, err := create(p.db.WithContext(p.ctx), tenantID, householdID, taskID, userID)
+	if err != nil {
+		return Model{}, err
+	}
+	return Make(e)
 }

@@ -33,7 +33,7 @@ func createHandler(db *gorm.DB) server.InputHandler[CreateRequest] {
 			}
 
 			proc := NewProcessor(d.Logger(), r.Context(), db)
-			e, err := proc.Create(t.Id(), t.HouseholdId(), taskID, t.UserId())
+			m, err := proc.Create(t.Id(), t.HouseholdId(), taskID, t.UserId())
 			if err != nil {
 				if errors.Is(err, task.ErrNotFound) {
 					server.WriteError(w, http.StatusNotFound, "Not Found", "Task not found")
@@ -48,7 +48,7 @@ func createHandler(db *gorm.DB) server.InputHandler[CreateRequest] {
 				return
 			}
 
-			rest, err := Transform(e)
+			rest, err := Transform(m)
 			if err != nil {
 				d.Logger().WithError(err).Error("Creating REST model")
 				server.WriteError(w, http.StatusInternalServerError, "Error", "")

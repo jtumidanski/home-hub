@@ -40,14 +40,14 @@ func TestCreate_SuccessfulDismissal(t *testing.T) {
 	require.NoError(t, err)
 
 	dismissalProc := NewProcessor(l, ctx, db)
-	dismissalEntity, err := dismissalProc.Create(tenantID, householdID, rem.Id(), userID)
+	m, err := dismissalProc.Create(tenantID, householdID, rem.Id(), userID)
 	require.NoError(t, err)
-	require.Equal(t, rem.Id(), dismissalEntity.ReminderId)
-	require.Equal(t, tenantID, dismissalEntity.TenantId)
-	require.Equal(t, householdID, dismissalEntity.HouseholdId)
-	require.Equal(t, userID, dismissalEntity.CreatedByUserId)
-	require.False(t, dismissalEntity.Id == uuid.Nil)
-	require.False(t, dismissalEntity.CreatedAt.IsZero())
+	require.Equal(t, rem.Id(), m.ReminderID())
+	require.Equal(t, tenantID, m.TenantID())
+	require.Equal(t, householdID, m.HouseholdID())
+	require.Equal(t, userID, m.CreatedByUserID())
+	require.NotEqual(t, uuid.Nil, m.Id())
+	require.False(t, m.CreatedAt().IsZero())
 }
 
 func TestCreate_NonExistentReminder_ReturnsError(t *testing.T) {

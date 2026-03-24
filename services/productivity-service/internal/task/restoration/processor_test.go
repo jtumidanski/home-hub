@@ -19,8 +19,8 @@ func setupTestDB(t *testing.T) *gorm.DB {
 	require.NoError(t, err, "failed to open test db")
 	l, _ := test.NewNullLogger()
 	database.RegisterTenantCallbacks(l, db)
-	db.AutoMigrate(&task.Entity{})
-	db.AutoMigrate(&Entity{})
+	require.NoError(t, db.AutoMigrate(&task.Entity{}))
+	require.NoError(t, db.AutoMigrate(&Entity{}))
 	return db
 }
 
@@ -34,7 +34,7 @@ func TestRestorationProcessor_Create(t *testing.T) {
 		setup     func(t *testing.T, db *gorm.DB) uuid.UUID
 		wantErr   bool
 		checkErr  func(t *testing.T, err error)
-		checkResult func(t *testing.T, e Entity)
+		checkResult func(t *testing.T, m Model)
 	}{
 		{
 			name: "successful restoration of a soft-deleted task",
@@ -48,12 +48,12 @@ func TestRestorationProcessor_Create(t *testing.T) {
 				return m.Id()
 			},
 			wantErr: false,
-			checkResult: func(t *testing.T, e Entity) {
-				require.NotEqual(t, uuid.Nil, e.Id)
-				require.Equal(t, tenantID, e.TenantId)
-				require.Equal(t, householdID, e.HouseholdId)
-				require.Equal(t, userID, e.CreatedByUserId)
-				require.False(t, e.CreatedAt.IsZero())
+			checkResult: func(t *testing.T, m Model) {
+				require.NotEqual(t, uuid.Nil, m.Id())
+				require.Equal(t, tenantID, m.TenantID())
+				require.Equal(t, householdID, m.HouseholdID())
+				require.Equal(t, userID, m.CreatedByUserID())
+				require.False(t, m.CreatedAt().IsZero())
 			},
 		},
 		{

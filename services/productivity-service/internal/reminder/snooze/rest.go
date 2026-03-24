@@ -17,12 +17,12 @@ func (r RestModel) GetName() string       { return "reminder-snoozes" }
 func (r RestModel) GetID() string          { return r.Id.String() }
 func (r *RestModel) SetID(id string) error { var err error; r.Id, err = uuid.Parse(id); return err }
 
-func Transform(e Entity) (RestModel, error) {
+func Transform(m Model) (RestModel, error) {
 	return RestModel{
-		Id:              e.Id,
-		DurationMinutes: e.DurationMinutes,
-		SnoozedUntil:    e.SnoozedUntil,
-		CreatedAt:       e.CreatedAt,
+		Id:              m.Id(),
+		DurationMinutes: m.DurationMinutes(),
+		SnoozedUntil:    m.SnoozedUntil(),
+		CreatedAt:       m.CreatedAt(),
 	}, nil
 }
 

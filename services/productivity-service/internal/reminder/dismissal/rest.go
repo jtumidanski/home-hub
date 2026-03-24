@@ -15,10 +15,10 @@ func (r RestModel) GetName() string       { return "reminder-dismissals" }
 func (r RestModel) GetID() string          { return r.Id.String() }
 func (r *RestModel) SetID(id string) error { var err error; r.Id, err = uuid.Parse(id); return err }
 
-func Transform(e Entity) (RestModel, error) {
+func Transform(m Model) (RestModel, error) {
 	return RestModel{
-		Id:        e.Id,
-		CreatedAt: e.CreatedAt,
+		Id:        m.Id(),
+		CreatedAt: m.CreatedAt(),
 	}, nil
 }
 
