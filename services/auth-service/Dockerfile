@@ -13,10 +13,7 @@ COPY shared/go/auth/ shared/go/auth/
 # Copy service
 COPY services/auth-service/ services/auth-service/
 
-# Copy workspace file
-COPY go.work .
-
-RUN cd services/auth-service && go build -o /server ./cmd
+RUN cd services/auth-service && GOWORK=off go build -o /server ./cmd
 
 FROM alpine:latest
 

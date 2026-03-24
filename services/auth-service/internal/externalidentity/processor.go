@@ -10,19 +10,23 @@ import (
 )
 
 type Processor struct {
-	l   *logrus.Logger
+	l   logrus.FieldLogger
 	ctx context.Context
 	db  *gorm.DB
 }
 
-func NewProcessor(l *logrus.Logger, ctx context.Context, db *gorm.DB) *Processor {
+func NewProcessor(l logrus.FieldLogger, ctx context.Context, db *gorm.DB) *Processor {
 	return &Processor{l: l, ctx: ctx, db: db}
 }
 
-func (p *Processor) FindByProviderSubject(provider, subject string) model.Provider[Entity] {
-	return getByProviderAndSubject(provider, subject)(p.db.WithContext(p.ctx))
+func (p *Processor) FindByProviderSubject(provider, subject string) model.Provider[Model] {
+	return model.Map(Make)(getByProviderAndSubject(provider, subject)(p.db.WithContext(p.ctx)))
 }
 
-func (p *Processor) Create(userID uuid.UUID, provider, subject string) (Entity, error) {
-	return create(p.db.WithContext(p.ctx), userID, provider, subject)
+func (p *Processor) Create(userID uuid.UUID, provider, subject string) (Model, error) {
+	e, err := create(p.db.WithContext(p.ctx), userID, provider, subject)
+	if err != nil {
+		return Model{}, err
+	}
+	return Make(e)
 }

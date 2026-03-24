@@ -30,14 +30,14 @@ func Migration(db *gorm.DB) error {
 
 // Make converts an Entity to a Model.
 func Make(e Entity) (Model, error) {
-	return Model{
-		id:          e.Id,
-		email:       e.Email,
-		displayName: e.DisplayName,
-		givenName:   e.GivenName,
-		familyName:  e.FamilyName,
-		avatarURL:   e.AvatarURL,
-		createdAt:   e.CreatedAt,
-		updatedAt:   e.UpdatedAt,
-	}, nil
+	return NewBuilder().
+		SetId(e.Id).
+		SetEmail(e.Email).
+		SetDisplayName(e.DisplayName).
+		SetGivenName(e.GivenName).
+		SetFamilyName(e.FamilyName).
+		SetAvatarURL(e.AvatarURL).
+		SetCreatedAt(e.CreatedAt).
+		SetUpdatedAt(e.UpdatedAt).
+		Build()
 }

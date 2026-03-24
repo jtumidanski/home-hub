@@ -24,3 +24,15 @@ func (Entity) TableName() string {
 func Migration(db *gorm.DB) error {
 	return db.AutoMigrate(&Entity{})
 }
+
+// Make converts an Entity to a Model.
+func Make(e Entity) (Model, error) {
+	return Model{
+		id:              e.Id,
+		userId:          e.UserId,
+		provider:        e.Provider,
+		providerSubject: e.ProviderSubject,
+		createdAt:       e.CreatedAt,
+		updatedAt:       e.UpdatedAt,
+	}, nil
+}

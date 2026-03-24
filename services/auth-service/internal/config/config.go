@@ -12,6 +12,15 @@ type Config struct {
 	Port          string
 	JWTPrivateKey string
 	JWTKeyID      string
+	OIDC          OIDCConfig
+}
+
+// OIDCConfig holds OIDC provider configuration.
+type OIDCConfig struct {
+	IssuerURL    string
+	ClientID     string
+	ClientSecret string
+	RedirectURI  string
 }
 
 // Load reads configuration from environment variables.
@@ -28,6 +37,12 @@ func Load() Config {
 		Port:          envOrDefault("PORT", "8080"),
 		JWTPrivateKey: os.Getenv("JWT_PRIVATE_KEY"),
 		JWTKeyID:      envOrDefault("JWT_KEY_ID", "home-hub-1"),
+		OIDC: OIDCConfig{
+			IssuerURL:    envOrDefault("OIDC_ISSUER_URL", "https://accounts.google.com"),
+			ClientID:     os.Getenv("OIDC_CLIENT_ID"),
+			ClientSecret: os.Getenv("OIDC_CLIENT_SECRET"),
+			RedirectURI:  os.Getenv("OIDC_REDIRECT_URI"),
+		},
 	}
 }
 

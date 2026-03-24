@@ -19,12 +19,12 @@ const (
 )
 
 type Processor struct {
-	l   *logrus.Logger
+	l   logrus.FieldLogger
 	ctx context.Context
 	db  *gorm.DB
 }
 
-func NewProcessor(l *logrus.Logger, ctx context.Context, db *gorm.DB) *Processor {
+func NewProcessor(l logrus.FieldLogger, ctx context.Context, db *gorm.DB) *Processor {
 	return &Processor{l: l, ctx: ctx, db: db}
 }
 
@@ -44,11 +44,7 @@ func (p *Processor) Create(userID uuid.UUID) (string, error) {
 
 // Validate checks a raw refresh token, returning the associated user ID.
 func (p *Processor) Validate(raw string) (uuid.UUID, error) {
-	hash := hashToken(raw)
-	var e Entity
-	err := p.db.WithContext(p.ctx).
-		Where("token_hash = ? AND revoked = ? AND expires_at > ?", hash, false, time.Now().UTC()).
-		First(&e).Error
+	e, err := getByHash(hashToken(raw))(p.db.WithContext(p.ctx))()
 	if err != nil {
 		return uuid.Nil, errors.New("invalid or expired refresh token")
 	}

@@ -1,0 +1,236 @@
+{
+  "service": "auth-service",
+  "path": "services/auth-service",
+  "guidelinesSource": "CLAUDE.md",
+  "overallStatus": "pass",
+  "confidence": "high",
+  "checks": [
+    {
+      "id": "ARCH-001",
+      "status": "pass",
+      "impact": "medium",
+      "markdownSection": "ARCH-001: Immutable Domain Models",
+      "evidence": [
+        { "file": "internal/user/model.go", "symbol": "Model", "note": "Correct: private fields, accessor methods" },
+        { "file": "internal/externalidentity/model.go", "symbol": "Model", "note": "NEW: immutable domain model" },
+        { "file": "internal/oidcprovider/model.go", "symbol": "Model", "note": "Split from entity.go" }
+      ],
+      "recommendedAction": "None",
+      "estimatedEffort": "S"
+    },
+    {
+      "id": "ARCH-002",
+      "status": "pass",
+      "impact": "low",
+      "markdownSection": "ARCH-002: Entity/Model File Separation",
+      "evidence": [
+        { "file": "internal/oidcprovider/entity.go", "symbol": "Entity", "note": "Now contains only Entity, TableName, Migration" },
+        { "file": "internal/oidcprovider/model.go", "symbol": "Model", "note": "Split from entity.go" },
+        { "file": "internal/oidcprovider/rest.go", "symbol": "RestModel", "note": "Split from entity.go" }
+      ],
+      "recommendedAction": "None",
+      "estimatedEffort": "S"
+    },
+    {
+      "id": "ARCH-003",
+      "status": "pass",
+      "impact": "medium",
+      "markdownSection": "ARCH-003: Builder Pattern",
+      "evidence": [
+        { "file": "internal/user/builder.go", "symbol": "Builder", "note": "NEW: fluent builder with email/displayName validation" },
+        { "file": "internal/user/entity.go", "symbol": "Make", "note": "Updated to use builder" }
+      ],
+      "recommendedAction": "None",
+      "estimatedEffort": "S"
+    },
+    {
+      "id": "ARCH-004",
+      "status": "pass",
+      "impact": "medium",
+      "markdownSection": "ARCH-004: Provider Pattern",
+      "evidence": [
+        { "file": "internal/refreshtoken/provider.go", "symbol": "getByHash", "note": "NEW: curried provider for token lookup" },
+        { "file": "internal/refreshtoken/processor.go", "symbol": "Validate", "note": "Now uses getByHash provider" }
+      ],
+      "recommendedAction": "None",
+      "estimatedEffort": "S"
+    },
+    {
+      "id": "ARCH-005",
+      "status": "pass",
+      "impact": "low",
+      "markdownSection": "ARCH-005: Administrator Pattern",
+      "evidence": [
+        { "file": "internal/user/administrator.go", "symbol": "create", "note": "Correct pattern" },
+        { "file": "internal/externalidentity/administrator.go", "symbol": "create", "note": "Correct pattern" },
+        { "file": "internal/refreshtoken/administrator.go", "symbol": "create", "note": "Correct pattern" }
+      ],
+      "recommendedAction": "None",
+      "estimatedEffort": "S"
+    },
+    {
+      "id": "ARCH-006",
+      "status": "pass",
+      "impact": "medium",
+      "markdownSection": "ARCH-006: Processor Orchestration",
+      "evidence": [
+        { "file": "internal/refreshtoken/processor.go", "symbol": "Validate", "note": "Now uses provider, not direct DB" }
+      ],
+      "recommendedAction": "None",
+      "estimatedEffort": "S"
+    },
+    {
+      "id": "ARCH-007",
+      "status": "pass",
+      "impact": "high",
+      "markdownSection": "ARCH-007: Resource/Handler Structure",
+      "evidence": [
+        { "file": "internal/user/resource.go", "symbol": "InitializeRoutes", "note": "NEW: /users/me handler" },
+        { "file": "internal/oidcprovider/resource.go", "symbol": "InitializeRoutes", "note": "NEW: /auth/providers handler" },
+        { "file": "internal/resource/resource.go", "symbol": "InitializeRoutes", "note": "Auth flow handlers (documented exception)" }
+      ],
+      "recommendedAction": "None — auth flow handlers remain centralized as documented exception",
+      "estimatedEffort": "S"
+    },
+    {
+      "id": "REST-001",
+      "status": "pass",
+      "impact": "high",
+      "markdownSection": "REST-001: JSON:API Compliance",
+      "evidence": [
+        { "file": "internal/oidcprovider/resource.go", "symbol": "listHandler", "note": "Uses server.MarshalSliceResponse[RestModel]" }
+      ],
+      "recommendedAction": "None",
+      "estimatedEffort": "S"
+    },
+    {
+      "id": "REST-002",
+      "status": "pass",
+      "impact": "high",
+      "markdownSection": "REST-002: Handler Registration Pattern",
+      "evidence": [
+        { "file": "internal/resource/resource.go", "symbol": "InitializeRoutes", "note": "All handlers use server.RegisterHandler" },
+        { "file": "internal/user/resource.go", "symbol": "InitializeRoutes", "note": "Uses server.RegisterHandler" },
+        { "file": "internal/oidcprovider/resource.go", "symbol": "InitializeRoutes", "note": "Uses server.RegisterHandler" }
+      ],
+      "recommendedAction": "None",
+      "estimatedEffort": "S"
+    },
+    {
+      "id": "MT-001",
+      "status": "pass",
+      "impact": "low",
+      "markdownSection": "MT-001: Multi-Tenancy Context",
+      "evidence": [
+        { "file": "(entire service)", "symbol": "", "note": "Accepted exception: auth service operates before tenant context exists" }
+      ],
+      "recommendedAction": "None — documented exception",
+      "estimatedEffort": "S"
+    },
+    {
+      "id": "TEST-001",
+      "status": "pass",
+      "impact": "medium",
+      "markdownSection": "TEST-001: Test Coverage",
+      "evidence": [
+        { "file": "internal/user/processor_test.go", "symbol": "(4 tests)", "note": "Passes" },
+        { "file": "internal/refreshtoken/processor_test.go", "symbol": "(7 tests)", "note": "Passes" },
+        { "file": "internal/jwt/issuer_test.go", "symbol": "(5 tests)", "note": "Passes" },
+        { "file": "internal/externalidentity/processor_test.go", "symbol": "(4 tests)", "note": "NEW: covers Create, FindByProviderSubject, duplicate" }
+      ],
+      "recommendedAction": "None",
+      "estimatedEffort": "S"
+    },
+    {
+      "id": "TEST-002",
+      "status": "warn",
+      "impact": "low",
+      "markdownSection": "TEST-002: Table-Driven Tests",
+      "evidence": [
+        { "file": "(all test files)", "symbol": "", "note": "Individual test functions, not table-driven — cosmetic" }
+      ],
+      "recommendedAction": "Refactor to table-driven style incrementally",
+      "estimatedEffort": "S"
+    },
+    {
+      "id": "TEST-003",
+      "status": "pass",
+      "impact": "medium",
+      "markdownSection": "TEST-003: Test DB Setup",
+      "evidence": [
+        { "file": "internal/user/processor_test.go", "symbol": "setupTestDB", "note": "Now calls database.RegisterTenantCallbacks" },
+        { "file": "internal/refreshtoken/processor_test.go", "symbol": "setupTestDB", "note": "Now calls database.RegisterTenantCallbacks" },
+        { "file": "internal/externalidentity/processor_test.go", "symbol": "setupTestDB", "note": "NEW: includes RegisterTenantCallbacks" }
+      ],
+      "recommendedAction": "None",
+      "estimatedEffort": "S"
+    },
+    {
+      "id": "SEC-001",
+      "status": "pass",
+      "impact": "high",
+      "markdownSection": "SEC-001: JWT Validation",
+      "evidence": [
+        { "file": "internal/jwt/issuer.go", "symbol": "ExtractClaimsFromCookie", "note": "NEW: validates JWT signature with RSA public key" },
+        { "file": "internal/user/resource.go", "symbol": "getMeHandler", "note": "Uses ExtractClaimsFromCookie for validated claims" },
+        { "file": "internal/resource/resource.go", "symbol": "handleLogout", "note": "Uses ExtractClaimsFromCookie for validated claims" }
+      ],
+      "recommendedAction": "None",
+      "estimatedEffort": "S"
+    },
+    {
+      "id": "SEC-002",
+      "status": "pass",
+      "impact": "high",
+      "markdownSection": "SEC-002: Logout Token Revocation",
+      "evidence": [
+        { "file": "internal/resource/resource.go", "symbol": "handleLogout", "note": "Extracts user ID from validated JWT, passes to RevokeAllForUser" }
+      ],
+      "recommendedAction": "None",
+      "estimatedEffort": "S"
+    },
+    {
+      "id": "STRUCT-001",
+      "status": "pass",
+      "impact": "medium",
+      "markdownSection": "STRUCT-001: Standard Domain Files",
+      "evidence": [
+        { "file": "internal/user/builder.go", "symbol": "Builder", "note": "NEW" },
+        { "file": "internal/user/resource.go", "symbol": "InitializeRoutes", "note": "NEW" },
+        { "file": "internal/externalidentity/model.go", "symbol": "Model", "note": "NEW" },
+        { "file": "internal/refreshtoken/provider.go", "symbol": "getByHash", "note": "NEW" },
+        { "file": "internal/oidcprovider/model.go", "symbol": "Model", "note": "NEW (split)" },
+        { "file": "internal/oidcprovider/rest.go", "symbol": "RestModel", "note": "NEW (split)" },
+        { "file": "internal/oidcprovider/resource.go", "symbol": "InitializeRoutes", "note": "NEW" }
+      ],
+      "recommendedAction": "None",
+      "estimatedEffort": "S"
+    },
+    {
+      "id": "STRUCT-002",
+      "status": "warn",
+      "impact": "low",
+      "markdownSection": "STRUCT-002: oidcprovider Partially Wired",
+      "evidence": [
+        { "file": "cmd/main.go", "symbol": "oidcprovider.Migration", "note": "Table migrated but handler reads from env vars" }
+      ],
+      "recommendedAction": "Wire oidcprovider from database or remove dead code",
+      "estimatedEffort": "M"
+    }
+  ],
+  "blockingIssues": [],
+  "nonBlockingIssues": [
+    "STRUCT-002: oidcprovider table migrated but handler reads from env vars",
+    "TEST-002: Tests use individual functions, not table-driven style",
+    "Environment variables read per-request in auth flow handlers",
+    "No OIDC package tests (requires HTTP mocking)",
+    "No HTTP handler integration tests for auth flows"
+  ],
+  "devDocsSeeds": [
+    { "objective": "Wire oidcprovider from database or remove dead code", "priority": "P2" },
+    { "objective": "Centralize env var reads to config (remove os.Getenv from handlers)", "priority": "P2" },
+    { "objective": "Add HTTP handler integration tests for auth flows", "priority": "P2" },
+    { "objective": "Add OIDC package tests with HTTP mocking", "priority": "P2" },
+    { "objective": "Refactor existing tests to table-driven style", "priority": "P2" }
+  ]
+}

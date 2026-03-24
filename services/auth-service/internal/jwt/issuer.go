@@ -5,6 +5,7 @@ import (
 	"crypto/x509"
 	"encoding/pem"
 	"errors"
+	"net/http"
 	"time"
 
 	jwtgo "github.com/golang-jwt/jwt/v5"
@@ -79,4 +80,28 @@ func (i *Issuer) PublicKey() *rsa.PublicKey {
 // Kid returns the key ID.
 func (i *Issuer) Kid() string {
 	return i.kid
+}
+
+// ExtractClaimsFromCookie validates the JWT from the access_token cookie
+// using the given public key and returns the claims.
+func ExtractClaimsFromCookie(r *http.Request, publicKey *rsa.PublicKey) (*Claims, error) {
+	cookie, err := r.Cookie("access_token")
+	if err != nil {
+		return nil, err
+	}
+
+	claims := &Claims{}
+	token, err := jwtgo.ParseWithClaims(cookie.Value, claims, func(token *jwtgo.Token) (interface{}, error) {
+		if _, ok := token.Method.(*jwtgo.SigningMethodRSA); !ok {
+			return nil, errors.New("unexpected signing method")
+		}
+		return publicKey, nil
+	})
+	if err != nil {
+		return nil, err
+	}
+	if !token.Valid {
+		return nil, errors.New("invalid token")
+	}
+	return claims, nil
 }

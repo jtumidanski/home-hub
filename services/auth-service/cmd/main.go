@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 
+	"github.com/gorilla/mux"
 	"github.com/jtumidanski/home-hub/services/auth-service/internal/config"
 	"github.com/jtumidanski/home-hub/services/auth-service/internal/externalidentity"
 	authjwt "github.com/jtumidanski/home-hub/services/auth-service/internal/jwt"
@@ -36,8 +37,16 @@ func main() {
 		l.WithError(err).Fatal("failed to initialize JWT issuer")
 	}
 
+	si := server.GetServerInformation()
+
 	server.New(l).
 		WithAddr(":" + cfg.Port).
-		AddRouteInitializer(resource.InitializeRoutes(l, db, issuer)).
+		AddRouteInitializer(func(router *mux.Router) {
+			api := router.PathPrefix("/api/v1").Subrouter()
+
+			oidcprovider.InitializeRoutes(cfg.OIDC)(l, si, api)
+			resource.InitializeRoutes(db, issuer, cfg.OIDC)(l, si, api)
+			user.InitializeRoutes(db, issuer)(l, si, api)
+		}).
 		Run()
 }
