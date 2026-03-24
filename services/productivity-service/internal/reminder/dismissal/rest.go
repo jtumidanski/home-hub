@@ -22,6 +22,18 @@ func Transform(m Model) (RestModel, error) {
 	}, nil
 }
 
+func TransformSlice(models []Model) ([]RestModel, error) {
+	result := make([]RestModel, len(models))
+	for i, m := range models {
+		rm, err := Transform(m)
+		if err != nil {
+			return nil, err
+		}
+		result[i] = rm
+	}
+	return result, nil
+}
+
 type CreateRequest struct {
 	Id         uuid.UUID `json:"-"`
 	ReminderId string    `json:"reminderId"`

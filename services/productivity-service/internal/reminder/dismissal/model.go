@@ -34,12 +34,12 @@ func (m Model) ToEntity() Entity {
 }
 
 func Make(e Entity) (Model, error) {
-	return Model{
-		id:              e.Id,
-		tenantID:        e.TenantId,
-		householdID:     e.HouseholdId,
-		reminderID:      e.ReminderId,
-		createdByUserID: e.CreatedByUserId,
-		createdAt:       e.CreatedAt,
-	}, nil
+	return NewBuilder().
+		SetId(e.Id).
+		SetTenantID(e.TenantId).
+		SetHouseholdID(e.HouseholdId).
+		SetReminderID(e.ReminderId).
+		SetCreatedByUserID(e.CreatedByUserId).
+		SetCreatedAt(e.CreatedAt).
+		Build()
 }
