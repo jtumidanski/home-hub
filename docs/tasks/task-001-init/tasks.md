@@ -78,15 +78,15 @@ Last Updated: 2026-03-24
 
 ## Phase 6 — Frontend Auth + Onboarding
 
-- [ ] 6.1 Set up React Router with routes
-- [ ] 6.2 Implement JSON:API client
-- [ ] 6.3 Implement login page
-- [ ] 6.4 Implement auth bootstrap (users/me + contexts/current)
-- [ ] 6.5 Implement onboarding flow
-- [ ] 6.6 Implement ShadCN theme toggle
-- [ ] 6.7 Implement household switcher
-- [ ] 6.8 Implement protected route wrapper
-- [ ] 6.9 Implement app shell (sidebar/nav, layout)
+- [x] 6.1 Set up React Router with routes
+- [x] 6.2 Implement JSON:API client
+- [x] 6.3 Implement login page
+- [x] 6.4 Implement auth bootstrap (users/me + contexts/current)
+- [x] 6.5 Implement onboarding flow
+- [x] 6.6 Implement ShadCN theme toggle
+- [x] 6.7 Implement household switcher
+- [x] 6.8 Implement protected route wrapper
+- [x] 6.9 Implement app shell (sidebar/nav, layout)
 
 ## Phase 7 — Productivity Service
 

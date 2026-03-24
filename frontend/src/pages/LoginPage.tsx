@@ -1,0 +1,42 @@
+import { useProviders } from "@/lib/hooks/api/use-auth";
+import { authService } from "@/services/api/auth";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+
+export function LoginPage() {
+  const { data, isLoading } = useProviders();
+  const providers = data?.data ?? [];
+
+  return (
+    <div className="flex min-h-screen items-center justify-center bg-background">
+      <Card className="w-full max-w-md">
+        <CardHeader className="text-center">
+          <CardTitle className="text-2xl">Home Hub</CardTitle>
+          <CardDescription>Sign in to manage your household</CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          {isLoading ? (
+            <div className="h-10 animate-pulse rounded bg-muted" />
+          ) : (
+            providers.map((provider) => (
+              <a
+                key={provider.id}
+                href={authService.getLoginUrl(provider.id)}
+                className="block"
+              >
+                <Button variant="outline" className="w-full">
+                  Sign in with {provider.attributes.displayName}
+                </Button>
+              </a>
+            ))
+          )}
+          {!isLoading && providers.length === 0 && (
+            <p className="text-center text-sm text-muted-foreground">
+              No login providers configured
+            </p>
+          )}
+        </CardContent>
+      </Card>
+    </div>
+  );
+}
