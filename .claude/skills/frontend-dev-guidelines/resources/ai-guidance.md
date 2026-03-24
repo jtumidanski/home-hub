@@ -2,7 +2,7 @@
 
 ## Mandatory Implementation Workflow
 
-When generating or modifying Atlas UI code, **always** follow this sequence:
+When generating or modifying Home Hub UI code, **always** follow this sequence:
 
 1. **Read existing files** before editing — understand current patterns
 2. **Check the component location** — `ui/`, `common/`, or `features/`?
@@ -52,7 +52,7 @@ Define Zod schemas in `lib/schemas/`. Use `zodResolver`. Use shadcn/ui `Form` co
 Never mutate state. Use spread operators, `Array.filter()`, `Array.map()` for new arrays.
 
 ### 12. Named Exports
-Use named exports for all components. Default exports only for Next.js pages/layouts.
+Use named exports for all components.
 
 ## Generation Workflow
 
@@ -108,10 +108,9 @@ components/features/resource/
 
 ### Step 6: Pages
 ```
-app/resources/
-├── page.tsx               (list page)
-└── [id]/
-    └── page.tsx           (detail page)
+pages/
+├── ResourcesPage.tsx        (list page)
+└── ResourceDetailPage.tsx   (detail page)
 ```
 
 ### Step 7: Navigation
@@ -135,7 +134,7 @@ Before submitting code, verify:
 | Tenant guards present | All hooks have `enabled: !!tenant` |
 | `cn()` used for classes | No manual string concatenation |
 | Forms use Zod | All `useForm` have `zodResolver` |
-| Named exports | No `export default function` (except pages) |
+| Named exports | No `export default function` |
 | Error handling | All async ops have catch/error handling |
 | Skeleton loading | No raw spinners in content areas |
 

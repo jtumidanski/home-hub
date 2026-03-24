@@ -181,8 +181,6 @@ export default function BanList() { ... }
 export function BanList() { ... }
 ```
 
-**Exception:** Next.js `page.tsx` and `layout.tsx` files use default exports as required by the framework.
-
 ### 12. Forgetting `enabled` Guard in Hooks
 
 ```typescript

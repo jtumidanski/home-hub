@@ -10,13 +10,13 @@ description: Testing patterns and practices for Home Hub Golang microservices.
 ## Focus Areas
 
 1. **Builders** — Validate invariants.
-2. **Processors** — Test pure and `AndEmit` forms separately.
+2. **Processors** — Test pure business logic functions.
 3. **Providers** — Validate retrieval and error paths.
 4. **REST** — Verify status mapping and JSON:API output.
 
 ## Guidelines
 - Prefer table-driven tests.
-- Mock Kafka producers and DB providers.
+- Mock DB providers.
 - Verify tenant + span propagation.
 
 ## Example
@@ -54,27 +54,25 @@ When adding a method to an interface, the mock must include:
 1. **Function field** in the mock struct:
 ```go
 type ProcessorMock struct {
-    AwardFameAndEmitFunc func(transactionId uuid.UUID, worldId world.Id, characterId uint32, channelId channel.Id, amount int16) error
-    AwardFameFunc        func(mb *message.Buffer) func(transactionId uuid.UUID, worldId world.Id, characterId uint32, channelId channel.Id, amount int16) error
+    GetByIdFunc func(id uuid.UUID) (Model, error)
+    CreateFunc  func(input CreateInput) (Model, error)
 }
 ```
 
 2. **Method implementation** with nil-check:
 ```go
-func (m *ProcessorMock) AwardFameAndEmit(transactionId uuid.UUID, worldId world.Id, characterId uint32, channelId channel.Id, amount int16) error {
-    if m.AwardFameAndEmitFunc != nil {
-        return m.AwardFameAndEmitFunc(transactionId, worldId, characterId, channelId, amount)
+func (m *ProcessorMock) GetById(id uuid.UUID) (Model, error) {
+    if m.GetByIdFunc != nil {
+        return m.GetByIdFunc(id)
     }
-    return nil
+    return Model{}, nil
 }
 
-func (m *ProcessorMock) AwardFame(mb *message.Buffer) func(transactionId uuid.UUID, worldId world.Id, characterId uint32, channelId channel.Id, amount int16) error {
-    if m.AwardFameFunc != nil {
-        return m.AwardFameFunc(mb)
+func (m *ProcessorMock) Create(input CreateInput) (Model, error) {
+    if m.CreateFunc != nil {
+        return m.CreateFunc(input)
     }
-    return func(transactionId uuid.UUID, worldId world.Id, characterId uint32, channelId channel.Id, amount int16) error {
-        return nil
-    }
+    return Model{}, nil
 }
 ```
 
@@ -95,7 +93,7 @@ Common locations for mocks that must be updated:
 
 Run the **full test suite** before committing in these situations:
 
-1. **Interface modifications** - Any change to a Processor, Provider, or Administrator interface
+1. **Interface modifications** - Any change to a Processor or Provider interface
 2. **Shared package changes** - Modifications to code used across multiple services
 3. **Business logic changes** - Any processor or administrator function modification
 4. **Breaking changes** - Changes that could affect callers or consumers
@@ -202,7 +200,7 @@ Consider adding a pre-commit hook to automatically run tests:
 ```bash
 # .git/hooks/pre-commit
 #!/bin/bash
-cd services/atlas-{service-name}/atlas.com/{service-name}
+cd services/{service-name}
 go test ./... -count=1
 if [ $? -ne 0 ]; then
     echo "Tests failed. Commit aborted."

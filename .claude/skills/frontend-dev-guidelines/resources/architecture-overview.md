@@ -2,27 +2,26 @@
 
 ## Tech Stack
 
-| Technology | Version | Purpose |
-|-----------|---------|---------|
-| Next.js | 16 | App Router, SSR, routing |
-| React | 19 | UI framework |
-| TypeScript | strict | Type safety |
-| Tailwind CSS | 4 | Utility-first styling |
-| shadcn/ui | 3.8 | Radix-based component library |
-| TanStack React Query | 5 | Server state management |
-| TanStack React Table | 8 | Data table rendering |
-| react-hook-form | 7 | Form state management |
-| Zod | 4 | Schema validation |
-| sonner | 2 | Toast notifications |
-| Lucide React | - | Icon library |
-| next-themes | - | Dark/light mode |
-| tailwind-nord | - | Nordic color palette |
+| Technology | Purpose |
+|-----------|---------|
+| React | UI framework |
+| Vite | Build tool, dev server |
+| TypeScript | Type safety (strict mode) |
+| React Router | Client-side routing |
+| Tailwind CSS | Utility-first styling |
+| shadcn/ui | Radix-based component library |
+| TanStack React Query | Server state management |
+| TanStack React Table | Data table rendering |
+| react-hook-form | Form state management |
+| Zod | Schema validation |
+| sonner | Toast notifications |
+| Lucide React | Icon library |
 
 ## Project Structure
 
 ```
 frontend/
-├── app/                    # Next.js App Router (pages + layouts)
+├── pages/                  # Route pages
 ├── components/
 │   ├── ui/                 # shadcn/ui base primitives
 │   ├── common/             # Shared presentational components
@@ -46,7 +45,7 @@ frontend/
 
 ```
 ┌─────────────────────────────────────────────┐
-│  App Router Pages (app/*/page.tsx)           │  ← Data fetching, composition
+│  Route Pages (pages/*.tsx)                    │  ← Data fetching, composition
 ├─────────────────────────────────────────────┤
 │  Feature Components (components/features/)   │  ← Business UI logic
 ├─────────────────────────────────────────────┤
@@ -65,7 +64,7 @@ frontend/
 ## Provider Hierarchy (Root Layout)
 
 ```tsx
-// app/layout.tsx
+// App.tsx
 <TenantProvider>
   <QueryProvider>
     <ThemeProvider>
@@ -84,7 +83,7 @@ frontend/
 **Order matters:**
 1. `TenantProvider` — outermost, so all children can access tenant context
 2. `QueryProvider` — wraps React Query client for data fetching
-3. `ThemeProvider` — dark/light mode via `next-themes`
+3. `ThemeProvider` — dark/light mode toggling
 4. `SidebarProvider` — shadcn/ui sidebar state
 
 ## Key Configuration
@@ -103,8 +102,7 @@ frontend/
 - `refetchOnWindowFocus: false`
 - Mutations: 1 retry, 1s delay
 
-### Next.js (next.config.ts)
-- Image optimization from `maplestory.io`
-- Container-aware configuration (Docker/K8s)
-- Turbopack bundler
-- Image formats: WebP, AVIF
+### Vite (vite.config.ts)
+- React plugin enabled
+- Path alias: `@/*` maps to project root
+- Dev server proxy for API routes

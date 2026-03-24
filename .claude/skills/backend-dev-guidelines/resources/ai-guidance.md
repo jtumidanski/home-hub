@@ -22,15 +22,12 @@ description: Rules for AI agents generating or editing Golang services.
 1. Respect file responsibilities (see file-responsibilities.md).
 2. Maintain immutability and functional composition.
 3. Use curried functions for dependency injection.
-4. Only emit messages via `AndEmit` + buffer.
 5. Never include tenant fields in public APIs.
 6. Use `server.RegisterHandler` and `server.RegisterInputHandler` for REST endpoints.
 7. Implement JSON:API interface methods on all REST models and request types.
-8. **Caches MUST be singletons** - Never create cache in processor constructor; use `GetCache()` pattern (see [patterns-cache.md](patterns-cache.md)).
 9. **Always verify referenced types exist before using them** - Never assume a type/constant/operation exists.
 10. **Always run builds AND tests after code changes** - Verify ALL affected services compile and pass tests.
 11. **Always ask before implementing new features** - Get user approval before adding new functionality.
-12. **Follow cross-service implementation guidelines** - See [cross-service-implementation.md](cross-service-implementation.md) when working across multiple services.
 
 ## Validation Rules
 
@@ -72,8 +69,7 @@ operation := Operation{
 3. If not found: "The operation 'gain_closeness' doesn't exist in operation_executor.go.
    To implement it, I would need to:
    - Add case in operation_executor.go
-   - Add action/payload to saga model
-   - Create Kafka producer for pets service
+   - Add the necessary domain model and processor methods
 
    Should I implement this feature first?"
 ```
@@ -93,9 +89,9 @@ operation := Operation{
 cd /path/to/workspace/root
 
 # Build ALL affected services (not just one!)
-go build ./services/atlas-character/atlas.com/character/...
-go build ./services/atlas-npc-conversations/atlas.com/npc/...
-go build ./services/atlas-saga-orchestrator/atlas.com/saga-orchestrator/...
+go build ./services/auth-service/...
+go build ./services/account-service/...
+go build ./services/productivity-service/...
 
 # If ANY build fails:
 # 1. Report the failure to the user with error details
@@ -104,7 +100,7 @@ go build ./services/atlas-saga-orchestrator/atlas.com/saga-orchestrator/...
 # 4. Only proceed when ALL services build successfully
 
 # After successful builds, run tests
-cd services/atlas-saga-orchestrator/atlas.com/saga-orchestrator
+cd services/auth-service
 go test ./...
 
 # If tests fail:
@@ -120,7 +116,6 @@ go test ./...
 | `missing method ChangeFace` | Interface updated but mock not updated | Add method to mock struct and implement it |
 | `redeclared in this block` | Duplicate function declarations | Remove old/duplicate version |
 | `cannot use X as Y value` | Function signature changed incompletely | Update ALL call sites (use `grep -r`) |
-| `undefined: saga.ChangeHair` | Type used before defined | Add type to saga model FIRST |
 
 ### When to Run Tests:
 - ✅ After adding new files (model.go, processor.go, etc.)
@@ -141,27 +136,25 @@ go test ./...
 ### Example Dialog:
 ❌ **WRONG** - Implementing without asking:
 ```
-"I noticed the 'gain_closeness' operation doesn't exist. Let me implement it for you..."
+"I noticed the notification feature doesn't exist. Let me implement it for you..."
 [Proceeds to implement without approval]
 ```
 
 ✅ **CORRECT** - Ask first:
 ```
-"I need to use the 'gain_closeness' operation for this NPC conversion, but it doesn't
-exist in operation_executor.go yet.
+"I need to add a notification feature for this task update, but there is no
+notification system implemented yet.
 
 To implement it, I would need to:
-1. Add 'gain_closeness' case to operation_executor.go (npc-conversations service)
-2. Add GainCloseness action and payload to saga/model.go (saga-orchestrator service)
-3. Add handleGainCloseness to saga/handler.go (saga-orchestrator service)
-4. Create pet/producer.go for Kafka messages (saga-orchestrator service)
-5. Possibly add petCount condition to validation (query-aggregator service)
+1. Add a notification model and entity to productivity-service
+2. Add processor methods for creating notifications
+3. Add REST endpoints for retrieving notifications
 
-This would touch 3 services and require coordination with the pets service.
+This would add a new domain to the productivity-service.
 
 How would you like to proceed?
-1. Implement the missing features first
-2. Skip this NPC for now
+1. Implement the notification feature first
+2. Skip notifications for now
 3. Use a different approach
 "
 ```
@@ -175,27 +168,18 @@ When migrating types/functions to a shared library, update ALL service call site
 After extracting code to a shared library, review every modified service file for symbols that are no longer referenced: unused constants, structs, functions, imports, and variables. Use `grep` across the service to confirm nothing depends on them, then delete. Do not leave dead code behind.
 
 ## Generation Workflow
-0. **Validate dependencies** - Verify all types/operations you plan to use exist
-1. Create `model.go` - Immutable domain model with accessors
-2. Map `entity.go` to DB - GORM entities with migrations
-3. Implement `builder.go` - Fluent API for model construction
-4. Define processors and providers - Pure business logic
-5. Add `rest.go` - JSON:API DTOs with Transform functions
-6. Add `resource.go` - Route registration and thin handlers
-7. Add Kafka producers (if needed) - Event emission
+1. **Validate dependencies** - Verify all types/operations you plan to use exist
+2. Create `model.go` - Immutable domain model with accessors
+3. Map `entity.go` to DB - GORM entities with migrations
+4. Implement `builder.go` - Fluent API for model construction
+5. Define processors and providers - Pure business logic
+6. Add `rest.go` - JSON:API DTOs with Transform functions
+7. Add `resource.go` - Route registration and thin handlers
 8. Write table-driven tests
 9. **Build ALL affected services** - From workspace root, build every service touched
 10. **Run tests for ALL affected services** - Verify nothing broke
 11. **Report build/test results** - Show pass/fail status for EACH service to user
 12. **Fix ALL issues before proceeding** - No partial implementations allowed
-
-### For Cross-Service Features:
-See [cross-service-implementation.md](cross-service-implementation.md) for detailed checklist including:
-- Implementation order (types → implementations → mocks)
-- Interface change verification
-- Mock synchronization
-- Build verification for all services
-- Test execution for all services
 
 ## REST Generation Specifics
 
@@ -238,47 +222,6 @@ res, err := ops.SliceMap(Transform)(ops.FixedProvider(models))(ops.ParallelMap()
 
 
 ## Common Anti-Patterns to Avoid
-
-### ❌ Cache in Processor Constructor
-```go
-// DON'T DO THIS - Cache is created per-request!
-type ProcessorImpl struct {
-    l     logrus.FieldLogger
-    ctx   context.Context
-    cache map[uint32]interface{}  // ❌ Per-instance cache
-    mu    sync.RWMutex
-}
-
-func NewProcessor(l logrus.FieldLogger, ctx context.Context) Processor {
-    return &ProcessorImpl{
-        l:     l,
-        ctx:   ctx,
-        cache: make(map[uint32]interface{}),  // ❌ Fresh cache every request
-    }
-}
-```
-
-### ✅ Use Singleton Cache
-```go
-// DO THIS - Cache is shared across all requests
-type ProcessorImpl struct {
-    l     logrus.FieldLogger
-    ctx   context.Context
-    cache CacheInterface  // ✅ Reference to singleton
-}
-
-func NewProcessor(l logrus.FieldLogger, ctx context.Context) Processor {
-    return &ProcessorImpl{
-        l:     l,
-        ctx:   ctx,
-        cache: GetCache(),  // ✅ Get singleton instance
-    }
-}
-```
-
-**Rule:** Caches MUST be application-scoped singletons, never request-scoped instances. See [patterns-cache.md](patterns-cache.md) for complete implementation guide.
-
----
 
 ### ❌ Manual JSON:API Envelope Handling
 ```go

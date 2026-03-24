@@ -2,24 +2,32 @@
 
 When scaffolding a new Home Hub service, complete ALL of these steps. Do not skip any.
 
-## 1. GitHub Actions — services.json
-**File:** `.github/config/services.json`
+## 1. Service Directory
+**Directory:** `services/<service-name>/`
 
-Add entry to the `services` array:
-```json
-{
-  "name": "<service>",
-  "type": "go-service",
-  "path": "services/<service>",
-  "module_path": "services/<service>/jtumidanski/<service>",
-  "docker_image": "ghcr.io/jtumidanski/<service>/<service>",
-  "docker_context": "."
-}
+Required structure:
 ```
-Both workflows (`main-publish.yml`, `pr-validation.yml`) dynamically read this file — no YAML changes needed.
+services/<service-name>/
+├── go.mod
+├── cmd/
+│   └── main.go
+├── internal/
+│   └── <domain>/
+│       ├── model.go
+│       ├── entity.go
+│       ├── builder.go
+│       ├── processor.go
+│       ├── provider.go
+│       ├── resource.go
+│       └── rest.go
+├── migrations/
+└── Dockerfile
+```
+
+Add the module to `go.work` at the repo root.
 
 ## 2. Kubernetes Manifest
-**File:** `services/<service>/<service>.yml`
+**File:** `deploy/k8s/<service-name>.yaml`
 
 Two resources: Deployment + Service. Pattern:
 ```yaml
@@ -27,31 +35,28 @@ Two resources: Deployment + Service. Pattern:
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: atlas-<service>
-  namespace: atlas
+  name: <service-name>
 spec:
   replicas: 1
   selector:
     matchLabels:
-      app: atlas-<service>
+      app: <service-name>
   template:
     metadata:
       labels:
-        app: atlas-<service>
+        app: <service-name>
     spec:
       containers:
-      - name: <service>
-        image: ghcr.io/jtumidanski/home-hub/atlas-<service>:latest
+      - name: <service-name>
+        image: ghcr.io/<owner>/home-hub-<service-name>:latest
         ports:
         - containerPort: 8080
-        envFrom:
-        - configMapRef:
-            name: atlas-env
         env:
-        - name: LOG_LEVEL
-          value: "debug"
-        - name: DB_NAME
-          value: "atlas-<service>"
+        - name: DB_HOST
+          valueFrom:
+            secretKeyRef:
+              name: db-credentials
+              key: DB_HOST
         - name: DB_USER
           valueFrom:
             secretKeyRef:
@@ -66,113 +71,67 @@ spec:
 apiVersion: v1
 kind: Service
 metadata:
-  name: atlas-<service>
-  namespace: atlas
+  name: <service-name>
 spec:
   selector:
-    app: atlas-<service>
+    app: <service-name>
   ports:
   - protocol: TCP
     port: 8080
 ```
 
 ## 3. Dockerfile
-**File:** `services/atlas-<service>/Dockerfile`
+**File:** `services/<service-name>/Dockerfile`
 
 Multi-stage Go build. Key points:
-- Builder: `golang:1.25.5-alpine3.21`
-- Runtime: `alpine:3.23`
-- Copy lib module defs first (dependency caching), then create `go.work`, then `go mod download`, then copy source, then build
-- Libs to include: `atlas-constants`, `atlas-kafka`, `atlas-model`, `atlas-rest`, `atlas-tenant`
+- Builder: `golang:1.24-alpine`
+- Runtime: `alpine`
+- Copy shared modules first (dependency caching), then service code
 - Output binary: `/server`, expose 8080
-- Copy `config.yaml` if present
-- Install `libc6-compat` in runtime image
 
-## 4. Bruno Collection (REST services only)
-**Directory:** `services/atlas-<service>/.bruno/`
+## 4. Docker Compose Entry
+**File:** `deploy/compose/docker-compose.yml`
+
+Add service entry with:
+- Build context pointing to service directory
+- Port mapping
+- Environment variables from `.env`
+- Depends on database
+
+## 5. Nginx Routing
+**File:** `deploy/compose/nginx.conf` (or equivalent)
+
+Add location block for the service's API path:
+```nginx
+location /api/v1/<resource-path> {
+  proxy_pass http://<service-name>:8080;
+}
+```
+
+## 6. Bruno Collection
+**Directory:** `bruno/<service-name>/`
 
 Minimum files:
 ```
-.bruno/
+bruno/<service-name>/
 ├── bruno.json
-├── collection.bru
 └── environments/
-    ├── Local.bru
-    ├── Local Debug.bru
-    └── Atlas - K3S.bru
+    └── Local.bru
 ```
 
-**bruno.json:**
-```json
-{
-  "version": "1",
-  "name": "atlas-<service>",
-  "type": "collection",
-  "ignore": ["node_modules", ".git"]
-}
-```
+## 7. CI Configuration
+Ensure the service is included in:
+- `.github/workflows/` build and test steps
+- `scripts/build-<service-name>.sh` script
 
-**collection.bru:**
-```
-headers {
-  TENANT_ID: 083839c6-c47c-42a6-9585-76492795d123
-  REGION: GMS
-  MAJOR_VERSION: 83
-  MINOR_VERSION: 1
-}
-```
-
-**environments/Local.bru:**
-```
-vars {
-  host: localhost
-  port: 8080
-  scheme: http
-}
-```
-
-**environments/Local Debug.bru:**
-```
-vars {
-  host: localhost
-  port: 8081
-  scheme: http
-}
-```
-
-**environments/Atlas - K3S.bru:**
-```
-vars {
-  host: atlas-nginx
-  port: 80
-  scheme: http
-}
-```
-
-Optionally add sample request `.bru` files for the service's endpoints.
-
-## 5. Ingress Route (REST services only)
-**File:** `atlas-ingress.yml`
-
-Add a location block **alphabetically** in the nginx config section:
-```nginx
-location ~ ^/api/<service-path>(/.*)?$ {
-  proxy_pass http://atlas-<service>.atlas.svc.cluster.local:8080;
-}
-```
-
-## 6. Post-Scaffold Verification
+## 8. Post-Scaffold Verification
 After scaffolding is complete, run these skills to verify the work:
 1. `/service-doc` — generates/verifies service documentation
-2. `/backend-audit` — audits against Atlas backend developer guidelines
+2. `/backend-audit` — audits against Home Hub backend developer guidelines
 
 ## Database & Tenant Filtering Notes
-- `database.Connect()` automatically registers GORM tenant-filtering callbacks — do NOT add `RegisterTenantCallbacks` to `main.go`
-- Providers do NOT take `tenantId` — tenant filtering is automatic via `db.WithContext(ctx)`
-- Only `create` functions need `tenantId` (to set the entity field)
-- Test files using SQLite directly must call `database.RegisterTenantCallbacks(l, db)` after `gorm.Open()`
-- Entity structs should use `TenantId` (not `TenantID`) for field naming consistency
-
-## Conditional Steps
-- Steps 4 and 5 only apply to services that expose REST endpoints
-- Kafka-only services (no REST API) skip Bruno and ingress
+- Each service owns its own database schema (e.g., `auth.*`, `account.*`, `productivity.*`)
+- All tables use UUID primary keys generated in the application
+- Migrations run on service startup
+- Tenant context derived from JWT claims
+- All tenant-scoped data must include `tenant_id` and `household_id` columns

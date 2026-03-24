@@ -7,13 +7,11 @@ components/
 ├── ui/          # shadcn/ui primitives (button, dialog, input, select, etc.)
 ├── common/      # Shared presentational (ErrorPage, etc.)
 ├── features/    # Feature-specific containers
-│   ├── bans/          # BanStatusBadge, BanTypeBadge, CreateBanDialog, etc.
-│   ├── characters/    # CharacterRenderer, InventoryCard, InventoryGrid
+│   ├── tasks/         # TaskCard, CreateTaskDialog, TaskStatusBadge
+│   ├── reminders/     # ReminderCard, CreateReminderDialog, SnoozeDialog
+│   ├── households/    # HouseholdSwitcher, CreateHouseholdDialog
 │   ├── navigation/    # BreadcrumbBar
-│   ├── npc/           # NpcCard, NpcImage, NpcGrid
-│   ├── quests/        # EntityName, StatusTabs
-│   ├── services/      # Service-specific components
-│   └── tenants/       # CreateTenantDialog, TenantSwitcher
+│   └── settings/      # ThemeToggle, PreferencesForm
 ├── providers/   # React context wrappers (QueryProvider)
 ├── data-table.tsx       # Generic data table wrapper
 ├── app-sidebar.tsx      # Navigation sidebar
@@ -96,8 +94,6 @@ export function CreateBanDialog({ open, onOpenChange, tenant, onSuccess, prefill
 ## Component Structure Convention
 
 ```tsx
-"use client";
-
 // 1. Imports (React, libraries, components, hooks, types)
 import { useState, useEffect, useMemo } from "react";
 import { cn } from "@/lib/utils";

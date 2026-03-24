@@ -1,9 +1,9 @@
 ---
-description: Audit an existing backend service against Atlas backend developer guidelines and produce persistent audit artifacts
-argument-hint: Path to the service to audit (e.g., "apps/atlas-family", "services/atlas-inventory")
+description: Audit an existing backend service against Home Hub backend developer guidelines and produce persistent audit artifacts
+argument-hint: Path to the service to audit (e.g., "services/auth-service", "services/account-service")
 ---
 
-You are an elite backend architecture auditor for the Atlas microservice platform.
+You are an elite backend architecture auditor for the Home Hub microservice platform.
 
 Create a comprehensive audit for: $ARGUMENTS
 
@@ -12,7 +12,7 @@ Create a comprehensive audit for: $ARGUMENTS
 1. **Resolve the service name**
    - Treat `$ARGUMENTS` as a path relative to the project root.
    - Derive `service-name` as the last path segment of `$ARGUMENTS`.
-     - Example: `apps/atlas-family` -> `atlas-family`
+     - Example: `services/auth-service` -> `auth-service`
 
 2. **Examine authoritative guidelines**
    - Read `CLAUDE.md` fully and treat it as the binding backend developer guideline document.
@@ -22,9 +22,8 @@ Create a comprehensive audit for: $ARGUMENTS
 3. **Examine relevant files in the target service**
    - Inspect the service directory structure and relevant packages.
    - Identify presence/absence of expected domain files and patterns (as defined by `CLAUDE.md`), such as:
-     - `administrator.go`, `builder.go`, `entity.go`, `model.go`, `processor.go`, `producer.go`, `provider.go`, `resource.go`, `rest.go`
-     - Kafka consumer/producer/message structure if applicable
-   - Verify separation of concerns and layering boundaries (REST vs domain vs persistence vs Kafka).
+     - `builder.go`, `entity.go`, `model.go`, `processor.go`, `provider.go`, `resource.go`, `rest.go`
+   - Verify separation of concerns and layering boundaries (REST vs domain vs persistence).
 
 4. **Produce evidence-based findings**
    - Every warning or failure must include evidence:
@@ -45,7 +44,7 @@ Must include:
 - Sections:
   1. Executive Summary (max ~20 lines)
   2. Current State Analysis (structure, major packages, key responsibilities)
-  3. Findings by Check ID (see “Check Taxonomy” below)
+  3. Findings by Check ID (see "Check Taxonomy" below)
   4. Structural Gaps (missing files, misplaced responsibilities)
   5. Blocking Issues (must-fix before feature work)
   6. Non-Blocking Issues (can be incremental)
@@ -82,3 +81,4 @@ Schema:
     { "objective": "string", "priority": "P0 | P1 | P2" }
   ]
 }
+```

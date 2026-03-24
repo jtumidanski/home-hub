@@ -36,7 +36,7 @@ func (p *ProcessorImpl) ByIdProvider(id uint32) model.Provider[Model] {
 
 ## Automatic Tenant Filtering
 
-The `libs/atlas-database` library registers GORM callbacks that inject `WHERE tenant_id = ?` automatically when `db.WithContext(ctx)` is used and the entity has a `tenant_id` column. See [patterns-multitenancy-context.md](patterns-multitenancy-context.md) for full details.
+The shared database library registers GORM callbacks that inject `WHERE tenant_id = ?` automatically when `db.WithContext(ctx)` is used and the entity has a `tenant_id` column. See [patterns-multitenancy-context.md](patterns-multitenancy-context.md) for full details.
 
 **Key rules:**
 - Providers do NOT receive `tenantId` — filtering is automatic

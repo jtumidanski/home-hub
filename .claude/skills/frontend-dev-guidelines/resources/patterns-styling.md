@@ -2,7 +2,7 @@
 
 ## Overview
 
-Home Hub UI uses **Tailwind CSS v4** with **shadcn/ui** components, **tailwind-nord** color palette, and CSS variable-based theming for light/dark mode support via `next-themes`.
+Home Hub UI uses **Tailwind CSS** with **shadcn/ui** components and CSS variable-based theming for light/dark mode support.
 
 ## cn() Utility
 
@@ -208,11 +208,11 @@ Standard sizes: `h-4 w-4` (default), `h-5 w-5` (medium), `h-6 w-6` (large).
 
 ## Dark Mode
 
-Managed by `next-themes` with `attribute="class"`:
+Managed by a theme provider with class-based toggling:
 
 ```tsx
 // components/theme-toggle.tsx
-import { useTheme } from "next-themes";
+import { useTheme } from "@/context/theme-context";
 
 export function ThemeToggle() {
   const { theme, setTheme } = useTheme();

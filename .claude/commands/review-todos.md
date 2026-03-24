@@ -40,8 +40,8 @@ After discovery completes:
    - Identify cross-cutting concerns that affect multiple services
 
 2. **Prioritize findings**
-   - **Critical**: Core gameplay functionality broken or missing
-   - **High Priority**: Features incomplete but not blocking basic gameplay
+   - **Critical**: Core service functionality broken or missing
+   - **High Priority**: Features incomplete but not blocking basic functionality
    - **Medium Priority**: Quality/polish issues, performance optimizations
    - **Low Priority**: Minor cosmetic issues, documentation
 
@@ -56,9 +56,9 @@ Read the existing `docs/TODO.md` file, then update it with the comprehensive fin
 **Structure for docs/TODO.md:**
 
 ```markdown
-# Atlas Project TODO
+# Home Hub Project TODO
 
-This document tracks planned features and improvements for the Atlas MapleStory server project.
+This document tracks planned features and improvements for the Home Hub project.
 
 ---
 

@@ -8,7 +8,7 @@ This command operates on exactly one service at a time.
 ## Inputs
 - `CLAUDE.md` (repo root)
 - `DOCS.md` (repo root)
-- `agents/documentation.md` (repo root)
+- `.claude/agents/documentation.md` (repo root)
 
 ## Instructions
 

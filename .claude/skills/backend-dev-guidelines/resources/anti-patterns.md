@@ -13,16 +13,12 @@ description: Common pitfalls to avoid when implementing Golang microservices.
 | **Handlers calling provider functions directly** | **Breaks layer separation - handlers must call processors, not providers** |
 | Mutable public fields | Violates immutability |
 | Database logic in processors | Violates functional purity |
-| **Cache in processor constructor** | **Cache is per-request instead of singleton; defeats caching purpose** |
-| **Cache as processor instance field** | **Each request gets fresh empty cache; see [patterns-cache.md](patterns-cache.md)** |
 
-| Hardcoded topics | Breaks environment portability |
 | Missing validation | Allows invalid domain states |
 | Passing TenantId to providers/update/delete | Automatic via GORM callbacks — only pass to create functions |
 | Manual `Where("tenant_id = ?", ...)` in queries | Use `db.WithContext(ctx)` — GORM callback injects tenant filter |
 | Adding `RegisterTenantCallbacks` to main.go | `database.Connect()` already registers them — only use in test files |
 | Using struct-based WHERE after removing TenantId | GORM skips zero-value fields — use string-based `.Where("col = ?", val)` |
-| Skipping header decorators | Breaks tracing and tenancy propagation |
 | Global context usage | Breaks request isolation |
 | Manual JSON:API envelope handling | Breaks JSON:API integration, adds boilerplate |
 | Nested Data/Type/Attributes in requests | Use flat structures, let api2go handle envelope |
@@ -80,7 +76,7 @@ func handleGetStorageRequest(db *gorm.DB) func(...) http.HandlerFunc {
 **Why this matters:**
 1. **Separation of concerns** - Handlers parse requests and marshal responses, processors contain business logic
 2. **Testability** - Business logic in processors can be tested without HTTP infrastructure
-3. **Reusability** - Processor methods can be called from handlers, Kafka consumers, or other processors
+3. **Reusability** - Processor methods can be called from handlers or other processors
 4. **Maintainability** - Changes to data access don't affect handlers
 5. **Single responsibility** - Each layer has a clear, focused purpose
 

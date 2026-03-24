@@ -45,7 +45,6 @@ Determine whether the changed code is backend (Go) or frontend (TypeScript) and 
 - Builder pattern for construction with invariant enforcement
 - Pure processor functions (no side effects)
 - Provider pattern for database access (functional composition)
-- Producer pattern for Kafka emission
 - REST resource/handler separation
 - Multi-tenancy context propagation
 - No anti-patterns from the guidelines (direct DB in handlers, mutable models, etc.)
@@ -113,7 +112,7 @@ The report must include:
 
 | Service | Build | Tests | Notes |
 |---------|-------|-------|-------|
-| atlas-foo | PASS/FAIL | PASS/FAIL | error details if any |
+| service-name | PASS/FAIL | PASS/FAIL | error details if any |
 
 ## Overall Assessment
 

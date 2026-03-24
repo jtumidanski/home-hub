@@ -81,15 +81,6 @@ describe('Query Client Configuration', () => {
 import { render, screen, fireEvent } from '@testing-library/react';
 import { ErrorPage } from '../ErrorPage';
 
-// Mock Next.js modules
-jest.mock('next/link', () => {
-  const MockLink = ({ children, href }: { children: React.ReactNode; href: string }) => (
-    <a href={href}>{children}</a>
-  );
-  MockLink.displayName = 'MockLink';
-  return MockLink;
-});
-
 describe('ErrorPage', () => {
   it('renders with correct status code', () => {
     render(<ErrorPage statusCode={404} />);
@@ -177,23 +168,13 @@ describe('CreateTenantDialog', () => {
 
 ## Common Mocks
 
-### Next.js Link
+### React Router
 ```typescript
-jest.mock('next/link', () => {
-  const MockLink = ({ children, href }: { children: React.ReactNode; href: string }) => (
-    <a href={href}>{children}</a>
-  );
-  MockLink.displayName = 'MockLink';
-  return MockLink;
-});
-```
-
-### Next.js Router
-```typescript
-jest.mock('next/navigation', () => ({
-  useRouter: () => ({ push: jest.fn(), back: jest.fn() }),
+jest.mock('react-router-dom', () => ({
+  ...jest.requireActual('react-router-dom'),
+  useNavigate: () => jest.fn(),
   useParams: () => ({ id: '123' }),
-  usePathname: () => '/test',
+  useLocation: () => ({ pathname: '/test' }),
 }));
 ```
 
@@ -232,7 +213,7 @@ render(<Component />, { wrapper: createWrapper() });
 
 ## Testing Rules
 
-1. **Always mock external dependencies** — services, toast, next/link, next/navigation
+1. **Always mock external dependencies** — services, toast, react-router-dom
 2. **Use `waitFor` for async operations** — service calls, state updates
 3. **Query by role/text, not implementation** — `getByRole('button', { name: /submit/i })`
 4. **Use `userEvent` for user interactions** — More realistic than `fireEvent`

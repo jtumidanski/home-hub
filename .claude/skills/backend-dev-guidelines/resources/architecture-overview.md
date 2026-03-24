@@ -1,7 +1,7 @@
 
 ---
 title: Architecture Overview
-description: Core architectural principles of Golang microservices.
+description: Core architectural principles of Home Hub Golang microservices.
 ---
 
 # Architecture Overview
@@ -10,16 +10,16 @@ Services follow a strict layered design with functional composition and immutabi
 
 ## Layers
 1. **Domain Layer** — Core logic, models, and validation.
-2. **Infrastructure Layer** — Database, Kafka, and external systems.
-3. **Transport Layer** — REST and Kafka message endpoints.
+2. **Infrastructure Layer** — Database and external systems.
+3. **Transport Layer** — REST endpoints.
 4. **Application Layer** — Orchestration and configuration.
 
 ## Core Technologies
 - Go 1.24+
-- GORM ORM (PostgreSQL / SQLite)
-
+- GORM ORM (PostgreSQL)
 - JSON:API standard
-- Kafka for messaging
+- Logrus structured logging
+- OpenTelemetry tracing
 - Functional programming with curried functions
 
 ## Principles
@@ -27,7 +27,7 @@ Services follow a strict layered design with functional composition and immutabi
 - **Immutability:** Domain models never mutate.
 - **Separation of Concerns:** Domain logic isolated from persistence and transport.
 - **Functional Composition:** Use `Provider`, `Map`, and `ParallelMap` for chaining.
-- **Event-Driven:** All inter-service communication via Kafka.
+- **Stateless Services:** All state in database, services are stateless.
 
 ## Startup Example
 

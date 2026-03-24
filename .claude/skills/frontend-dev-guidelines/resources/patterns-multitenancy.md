@@ -2,7 +2,7 @@
 
 ## Overview
 
-Home Hub UI is a multi-tenant admin application. Tenant context flows through a React context provider, localStorage persistence, and HTTP headers injected into every API request.
+Home Hub UI is a multi-tenant household productivity application. Tenant context flows through a React context provider, localStorage persistence, and HTTP headers injected into every API request.
 
 ## TenantProvider
 
@@ -64,17 +64,14 @@ Every tenant-scoped service method takes `tenant` as first parameter:
 
 ```typescript
 async getAllBans(tenant: Tenant, options?: QueryOptions): Promise<Ban[]> {
-  api.setTenant(tenant);    // ← Injects headers: TENANT_ID, REGION, MAJOR_VERSION, MINOR_VERSION
+  api.setTenant(tenant);    // ← Injects headers: X-Tenant-ID
   return api.getList<Ban>(this.basePath, options);
 }
 ```
 
 ### Headers Injected
 ```
-TENANT_ID: "uuid-string"
-REGION: "GMS"
-MAJOR_VERSION: "83"
-MINOR_VERSION: "1"
+X-Tenant-ID: "uuid-string"
 ```
 
 ### Hook Layer — Two Patterns
@@ -116,7 +113,7 @@ export function useTenants(options?: QueryOptions) {
 Pages get tenant from context and pass to services/hooks:
 
 ```tsx
-export default function BansPage() {
+export function BansPage() {
   const { activeTenant } = useTenant();
 
   const fetchBans = useCallback(async () => {

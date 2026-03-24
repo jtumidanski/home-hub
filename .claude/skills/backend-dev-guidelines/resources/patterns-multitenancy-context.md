@@ -16,7 +16,7 @@ t := tenant.MustFromContext(ctx)
 
 ## Automatic Database Tenant Filtering
 
-The shared `libs/atlas-database` library registers GORM callbacks that automatically inject `WHERE tenant_id = ?` from context on every Query, Update, and Delete operation. This eliminates the need for manual tenant filtering in providers and administrators.
+The shared `shared/go/database` library registers GORM callbacks that automatically inject `WHERE tenant_id = ?` from context on every Query, Update, and Delete operation. This eliminates the need for manual tenant filtering in providers and administrators.
 
 ### How It Works
 
@@ -68,7 +68,7 @@ func (p *ProcessorImpl) Create(name string) (Model, error) {
 
 For queries that must span all tenants (e.g., startup recovery, admin operations):
 ```go
-import database "github.com/Chronicle20/atlas-database"
+import database "shared/go/database"
 
 // Bypass automatic tenant filtering
 ctx := database.WithoutTenantFilter(ctx)
@@ -79,7 +79,7 @@ db.WithContext(ctx).Find(&allResults)
 
 Tests that create SQLite databases directly (not via `database.Connect()`) must register callbacks manually:
 ```go
-import database "github.com/Chronicle20/atlas-database"
+import database "shared/go/database"
 
 func setupTestDB(t *testing.T) *gorm.DB {
     db, _ := gorm.Open(sqlite.Open(":memory:"), &gorm.Config{})
@@ -98,13 +98,3 @@ func setupTestDB(t *testing.T) *gorm.DB {
 
 3. **Do NOT add `RegisterTenantCallbacks` to main.go**: `database.Connect()` already registers them. Only add to test files using SQLite directly.
 
-## Required Headers
-| Header | Example |
-|--------|---------|
-| TENANT_ID | 083839c6-c47c-42a6-9585-76492795d123 |
-
-## Decorators
-- `TenantHeaderDecorator(ctx)`
-- `SpanHeaderDecorator(ctx)`
-
-Always initialize producers using: `producer.ProviderImpl(log)(ctx)`.

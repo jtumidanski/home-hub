@@ -1,6 +1,6 @@
 ---
 name: frontend-dev-guidelines
-description: Skill for creating and modifying the Home Hub UI frontend using Next.js 16, TypeScript, React 19, shadcn/ui, TanStack React Query, react-hook-form with Zod validation, and Tailwind CSS with multi-tenant context.
+description: Skill for creating and modifying the Home Hub UI frontend using React, TypeScript, Vite, shadcn/ui, TanStack React Query, react-hook-form with Zod validation, and Tailwind CSS with multi-tenant context.
 ---
 
 
@@ -11,8 +11,8 @@ Provide a composable entry point that activates when working on the Home Hub UI 
 
 ## When to Use
 Activate when working on:
-- Any file inside `services/frontend/`
-- React components (`.tsx` files in `components/` or `app/`)
+- Any file inside `frontend/`
+- React components (`.tsx` files in `components/` or `pages/`)
 - Custom hooks (`lib/hooks/` or `lib/hooks/api/`)
 - API service layer (`services/api/`)
 - Zod validation schemas (`lib/schemas/`)
@@ -111,8 +111,8 @@ See [Testing Guide](resources/testing-guide.md) for comprehensive testing guidel
 
 | Location | Primary Responsibility |
 |----------|------------------------|
-| `app/*/page.tsx` | Route pages — data fetching, layout, and composition |
-| `app/layout.tsx` | Root layout — providers, sidebar, breadcrumbs |
+| `pages/*.tsx` | Route pages — data fetching, layout, and composition |
+| `App.tsx` / `main.tsx` | Root layout — providers, sidebar, breadcrumbs |
 | `components/ui/` | shadcn/ui base components — buttons, dialogs, inputs |
 | `components/common/` | Shared presentational components |
 | `components/features/` | Feature-specific container components |
