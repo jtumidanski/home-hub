@@ -15,10 +15,11 @@ export function CooklangPreview({ ingredients, steps, errors, isLoading }: Cookl
 
   return (
     <div className="space-y-4">
-      <div className="flex items-center justify-between">
-        <h3 className="text-sm font-semibold">Preview</h3>
-        {isLoading && <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />}
-      </div>
+      {isLoading && (
+        <div className="flex items-center gap-2 text-sm text-muted-foreground">
+          <Loader2 className="h-4 w-4 animate-spin" /> Parsing...
+        </div>
+      )}
 
       {isEmpty && !isLoading && (
         <p className="text-sm text-muted-foreground">
@@ -38,14 +39,14 @@ export function CooklangPreview({ ingredients, steps, errors, isLoading }: Cookl
 
       {ingredients.length > 0 && (
         <div>
-          <h4 className="text-xs font-semibold uppercase text-muted-foreground mb-2">Ingredients</h4>
+          <h3 className="text-base font-semibold mb-2">Ingredients</h3>
           <RecipeIngredients ingredients={ingredients} />
         </div>
       )}
 
       {steps.length > 0 && (
         <div>
-          <h4 className="text-xs font-semibold uppercase text-muted-foreground mb-2">Steps</h4>
+          <h3 className="text-base font-semibold mb-2">Steps</h3>
           <RecipeSteps steps={steps} />
         </div>
       )}

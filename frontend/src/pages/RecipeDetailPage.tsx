@@ -53,7 +53,7 @@ export function RecipeDetailPage() {
   const totalTime = (attrs.prepTimeMinutes ?? 0) + (attrs.cookTimeMinutes ?? 0);
 
   return (
-    <div className="p-4 md:p-6 space-y-6 max-w-3xl">
+    <div className="p-4 md:p-6 space-y-6 max-w-5xl">
       {/* Header */}
       <div className="space-y-3">
         <Button variant="ghost" size="sm" onClick={() => navigate("/app/recipes")}>
@@ -113,16 +113,17 @@ export function RecipeDetailPage() {
         )}
       </div>
 
-      {/* Ingredients */}
-      <div>
-        <h2 className="text-lg font-semibold mb-3">Ingredients</h2>
-        <RecipeIngredients ingredients={attrs.ingredients} />
-      </div>
+      {/* Ingredients and Instructions — side-by-side on desktop */}
+      <div className="grid grid-cols-1 md:grid-cols-[280px_1fr] gap-6 md:gap-8">
+        <div>
+          <h2 className="text-lg font-semibold mb-3">Ingredients</h2>
+          <RecipeIngredients ingredients={attrs.ingredients} />
+        </div>
 
-      {/* Steps */}
-      <div>
-        <h2 className="text-lg font-semibold mb-3">Instructions</h2>
-        <RecipeSteps steps={attrs.steps} />
+        <div>
+          <h2 className="text-lg font-semibold mb-3">Instructions</h2>
+          <RecipeSteps steps={attrs.steps} />
+        </div>
       </div>
     </div>
   );

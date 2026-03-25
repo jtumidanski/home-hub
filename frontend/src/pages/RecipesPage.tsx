@@ -96,14 +96,13 @@ export function RecipesPage() {
               </Badge>
             ))}
             {selectedTags.length > 0 && (
-              <Button
-                variant="ghost"
-                size="sm"
-                className="h-6 text-xs"
+              <button
+                type="button"
+                className="inline-flex items-center rounded-md px-2 py-0.5 text-xs text-muted-foreground hover:text-foreground transition-colors"
                 onClick={() => setSelectedTags([])}
               >
                 Clear
-              </Button>
+              </button>
             )}
           </div>
         )}

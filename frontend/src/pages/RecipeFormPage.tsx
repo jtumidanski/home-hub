@@ -141,48 +141,61 @@ export function RecipeFormPage() {
               <CooklangHelp />
             </div>
 
-            <div className="rounded-md border p-4 bg-muted/30 min-h-[400px] space-y-4">
-              {/* Show derived metadata from Cooklang source */}
-              {(derivedTags.length > 0 || derivedSource || derivedServings || derivedPrepTime || derivedCookTime) && (
-                <div className="space-y-2 border-b pb-3">
-                  <div className="flex flex-wrap items-center gap-3 text-xs text-muted-foreground">
-                    {derivedServings && (
-                      <span className="inline-flex items-center gap-1">
-                        <Users className="h-3 w-3" /> {derivedServings}
-                      </span>
-                    )}
-                    {derivedPrepTime && (
-                      <span className="inline-flex items-center gap-1">
-                        <Clock className="h-3 w-3" /> {derivedPrepTime} prep
-                      </span>
-                    )}
-                    {derivedCookTime && (
-                      <span className="inline-flex items-center gap-1">
-                        <Clock className="h-3 w-3" /> {derivedCookTime} cook
-                      </span>
-                    )}
-                    {derivedSource && (
-                      <a href={derivedSource} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1 text-primary hover:underline">
-                        <ExternalLink className="h-3 w-3" /> Source
-                      </a>
+            <div className="space-y-2">
+              <label className="text-sm font-medium leading-none">Preview</label>
+              <div className="rounded-md border p-4 bg-muted/30 min-h-[400px] space-y-4">
+                {/* Show derived metadata from Cooklang source */}
+                {(derivedTags.length > 0 || derivedSource || derivedServings || derivedPrepTime || derivedCookTime) && (
+                  <div className="space-y-2 border-b pb-3">
+                    <div className="space-y-1 text-xs text-muted-foreground">
+                      {derivedServings && (
+                        <div className="flex items-center gap-1.5">
+                          <Users className="h-3 w-3 shrink-0" />
+                          <span className="text-muted-foreground/70">Servings:</span>
+                          <span>{derivedServings}</span>
+                        </div>
+                      )}
+                      {derivedPrepTime && (
+                        <div className="flex items-center gap-1.5">
+                          <Clock className="h-3 w-3 shrink-0" />
+                          <span className="text-muted-foreground/70">Prep Time:</span>
+                          <span>{derivedPrepTime}</span>
+                        </div>
+                      )}
+                      {derivedCookTime && (
+                        <div className="flex items-center gap-1.5">
+                          <Clock className="h-3 w-3 shrink-0" />
+                          <span className="text-muted-foreground/70">Cook Time:</span>
+                          <span>{derivedCookTime}</span>
+                        </div>
+                      )}
+                      {derivedSource && (
+                        <div className="flex items-center gap-1.5">
+                          <ExternalLink className="h-3 w-3 shrink-0" />
+                          <span className="text-muted-foreground/70">Source:</span>
+                          <a href={derivedSource} target="_blank" rel="noopener noreferrer" className="text-primary hover:underline truncate">
+                            {derivedSource}
+                          </a>
+                        </div>
+                      )}
+                    </div>
+                    {derivedTags.length > 0 && (
+                      <div className="flex flex-wrap gap-1">
+                        {derivedTags.map((tag) => (
+                          <Badge key={tag} variant="secondary" className="text-xs">{tag}</Badge>
+                        ))}
+                      </div>
                     )}
                   </div>
-                  {derivedTags.length > 0 && (
-                    <div className="flex flex-wrap gap-1">
-                      {derivedTags.map((tag) => (
-                        <Badge key={tag} variant="secondary" className="text-xs">{tag}</Badge>
-                      ))}
-                    </div>
-                  )}
-                </div>
-              )}
+                )}
 
-              <CooklangPreview
-                ingredients={preview.ingredients}
-                steps={preview.steps}
-                errors={preview.errors}
-                isLoading={preview.isLoading}
-              />
+                <CooklangPreview
+                  ingredients={preview.ingredients}
+                  steps={preview.steps}
+                  errors={preview.errors}
+                  isLoading={preview.isLoading}
+                />
+              </div>
             </div>
           </div>
 

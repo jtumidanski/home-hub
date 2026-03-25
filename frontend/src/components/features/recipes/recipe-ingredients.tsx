@@ -10,13 +10,13 @@ export function RecipeIngredients({ ingredients }: RecipeIngredientsProps) {
   }
 
   return (
-    <ul className="space-y-1.5">
+    <ul className="space-y-1.5 list-disc list-inside">
       {ingredients.map((ing, i) => (
-        <li key={i} className="flex items-baseline gap-2 text-sm">
-          <span className="font-medium text-primary min-w-fit">
-            {ing.quantity && `${ing.quantity}`}
-            {ing.unit && ` ${ing.unit}`}
-          </span>
+        <li key={i} className="text-sm">
+          {ing.quantity && (
+            <span className="font-medium text-primary">{ing.quantity}{ing.unit ? ` ${ing.unit}` : ""}</span>
+          )}
+          {ing.quantity ? " " : ""}
           <span>{ing.name}</span>
         </li>
       ))}
