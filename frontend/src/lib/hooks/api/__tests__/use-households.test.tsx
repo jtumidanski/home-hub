@@ -3,13 +3,14 @@ import { renderHook, waitFor } from "@testing-library/react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import type { ReactNode } from "react";
 import { householdKeys } from "../use-households";
+import type { Tenant } from "@/types/models/tenant";
+
+const mockTenant: Tenant = { id: "tenant-1", type: "tenants", attributes: { name: "Test", createdAt: "", updatedAt: "" } };
 
 vi.mock("@/context/tenant-context", () => ({
   useTenant: () => ({
-    tenantId: "tenant-1",
-    householdId: "household-1",
-    tenant: null,
-    household: null,
+    tenant: mockTenant,
+    household: { id: "household-1", type: "households", attributes: { name: "Home", timezone: "UTC", units: "imperial", createdAt: "", updatedAt: "" } },
     setActiveHousehold: vi.fn(),
   }),
 }));
@@ -21,9 +22,11 @@ vi.mock("@/services/api/account", () => ({
   },
 }));
 
+const t = (id: string): Tenant => ({ id, type: "tenants", attributes: { name: "", createdAt: "", updatedAt: "" } });
+
 describe("householdKeys", () => {
   it("generates all key with tenant id", () => {
-    expect(householdKeys.all("t-1")).toEqual(["households", "t-1"]);
+    expect(householdKeys.all(t("t-1"))).toEqual(["households", "t-1"]);
   });
 
   it("generates all key with no-tenant fallback", () => {
@@ -31,15 +34,15 @@ describe("householdKeys", () => {
   });
 
   it("generates lists key", () => {
-    expect(householdKeys.lists("t-1")).toEqual(["households", "t-1", "list"]);
+    expect(householdKeys.lists(t("t-1"))).toEqual(["households", "t-1", "list"]);
   });
 
   it("generates details key", () => {
-    expect(householdKeys.details("t-1")).toEqual(["households", "t-1", "detail"]);
+    expect(householdKeys.details(t("t-1"))).toEqual(["households", "t-1", "detail"]);
   });
 
   it("generates detail key with id", () => {
-    expect(householdKeys.detail("t-1", "hh-42")).toEqual(["households", "t-1", "detail", "hh-42"]);
+    expect(householdKeys.detail(t("t-1"), "hh-42")).toEqual(["households", "t-1", "detail", "hh-42"]);
   });
 });
 
@@ -92,7 +95,12 @@ describe("useHouseholds hook", () => {
     const { result } = renderHook(() => useCreateHousehold(), { wrapper: createWrapper() });
 
     await result.current.mutateAsync({ name: "Beach House", timezone: "America/New_York", units: "metric" });
-    expect(accountService.createHousehold).toHaveBeenCalledWith("tenant-1", "Beach House", "America/New_York", "metric");
+    expect(accountService.createHousehold).toHaveBeenCalledWith(
+      expect.objectContaining({ id: "tenant-1" }),
+      "Beach House",
+      "America/New_York",
+      "metric",
+    );
   });
 
   it("reports error state when fetch fails", async () => {

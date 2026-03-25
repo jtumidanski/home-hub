@@ -132,7 +132,7 @@ describe("TenantProvider / useTenant", () => {
     );
   });
 
-  it("provides tenantId and householdId from appContext relationships", () => {
+  it("provides tenant and household objects from appContext relationships", () => {
     mockUseAuth.mockReturnValue(mockAuthValue(buildAppContext()));
     const queryClient = makeQueryClient();
 
@@ -140,11 +140,13 @@ describe("TenantProvider / useTenant", () => {
       wrapper: createWrapper(queryClient),
     });
 
-    expect(result.current.tenantId).toBe("tenant-1");
-    expect(result.current.householdId).toBe("household-1");
+    expect(result.current.tenant).not.toBeNull();
+    expect(result.current.tenant?.id).toBe("tenant-1");
+    expect(result.current.household).not.toBeNull();
+    expect(result.current.household?.id).toBe("household-1");
   });
 
-  it("returns null tenantId and householdId when appContext is null", () => {
+  it("returns null tenant and household when appContext is null", () => {
     mockUseAuth.mockReturnValue(mockAuthValue(null));
     const queryClient = makeQueryClient();
 
@@ -152,13 +154,11 @@ describe("TenantProvider / useTenant", () => {
       wrapper: createWrapper(queryClient),
     });
 
-    expect(result.current.tenantId).toBeNull();
-    expect(result.current.householdId).toBeNull();
     expect(result.current.tenant).toBeNull();
     expect(result.current.household).toBeNull();
   });
 
-  it("calls api.setTenant when tenantId is available", async () => {
+  it("calls api.setTenant with tenant object when tenant is available", async () => {
     mockUseAuth.mockReturnValue(mockAuthValue(buildAppContext()));
     const queryClient = makeQueryClient();
 
@@ -167,11 +167,13 @@ describe("TenantProvider / useTenant", () => {
     });
 
     await waitFor(() => {
-      expect(mockApi.setTenant).toHaveBeenCalledWith("tenant-1");
+      expect(mockApi.setTenant).toHaveBeenCalledWith(
+        expect.objectContaining({ id: "tenant-1" }),
+      );
     });
   });
 
-  it("calls api.clearTenant when tenantId is null", async () => {
+  it("calls api.clearTenant when tenant is null", async () => {
     mockUseAuth.mockReturnValue(mockAuthValue(null));
     const queryClient = makeQueryClient();
 
@@ -184,7 +186,7 @@ describe("TenantProvider / useTenant", () => {
     });
   });
 
-  it("setActiveHousehold calls accountService and invalidates context queries", async () => {
+  it("setActiveHousehold calls accountService with tenant object and invalidates context queries", async () => {
     mockUseAuth.mockReturnValue(mockAuthValue(buildAppContext({ preferenceId: "pref-42" })));
     const queryClient = makeQueryClient();
     const invalidateSpy = vi.spyOn(queryClient, "invalidateQueries");
@@ -198,7 +200,7 @@ describe("TenantProvider / useTenant", () => {
     });
 
     expect(mockAccountService.setActiveHousehold).toHaveBeenCalledWith(
-      "tenant-1",
+      expect.objectContaining({ id: "tenant-1" }),
       "pref-42",
       "household-99",
     );

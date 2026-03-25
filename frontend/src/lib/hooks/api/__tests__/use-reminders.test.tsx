@@ -3,13 +3,16 @@ import { renderHook, waitFor } from "@testing-library/react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import type { ReactNode } from "react";
 import { reminderKeys } from "../use-reminders";
+import type { Tenant } from "@/types/models/tenant";
+import type { Household } from "@/types/models/household";
+
+const mockTenant: Tenant = { id: "tenant-1", type: "tenants", attributes: { name: "Test", createdAt: "", updatedAt: "" } };
+const mockHousehold: Household = { id: "household-1", type: "households", attributes: { name: "Home", timezone: "UTC", units: "imperial", createdAt: "", updatedAt: "" } };
 
 vi.mock("@/context/tenant-context", () => ({
   useTenant: () => ({
-    tenantId: "tenant-1",
-    householdId: "household-1",
-    tenant: null,
-    household: null,
+    tenant: mockTenant,
+    household: mockHousehold,
     setActiveHousehold: vi.fn(),
   }),
 }));
@@ -26,9 +29,12 @@ vi.mock("@/services/api/productivity", () => ({
   },
 }));
 
+const t = (id: string): Tenant => ({ id, type: "tenants", attributes: { name: "", createdAt: "", updatedAt: "" } });
+const h = (id: string): Household => ({ id, type: "households", attributes: { name: "", timezone: "", units: "imperial", createdAt: "", updatedAt: "" } });
+
 describe("reminderKeys", () => {
   it("generates all key with tenant and household id", () => {
-    expect(reminderKeys.all("t-1", "hh-1")).toEqual(["reminders", "t-1", "hh-1"]);
+    expect(reminderKeys.all(t("t-1"), h("hh-1"))).toEqual(["reminders", "t-1", "hh-1"]);
   });
 
   it("generates all key with no-tenant and no-household fallbacks", () => {
@@ -36,19 +42,19 @@ describe("reminderKeys", () => {
   });
 
   it("generates lists key", () => {
-    expect(reminderKeys.lists("t-1", "hh-1")).toEqual(["reminders", "t-1", "hh-1", "list"]);
+    expect(reminderKeys.lists(t("t-1"), h("hh-1"))).toEqual(["reminders", "t-1", "hh-1", "list"]);
   });
 
   it("generates details key", () => {
-    expect(reminderKeys.details("t-1", "hh-1")).toEqual(["reminders", "t-1", "hh-1", "detail"]);
+    expect(reminderKeys.details(t("t-1"), h("hh-1"))).toEqual(["reminders", "t-1", "hh-1", "detail"]);
   });
 
   it("generates detail key with id", () => {
-    expect(reminderKeys.detail("t-1", "hh-1", "rem-42")).toEqual(["reminders", "t-1", "hh-1", "detail", "rem-42"]);
+    expect(reminderKeys.detail(t("t-1"), h("hh-1"), "rem-42")).toEqual(["reminders", "t-1", "hh-1", "detail", "rem-42"]);
   });
 
   it("generates summary key", () => {
-    expect(reminderKeys.summary("t-1", "hh-1")).toEqual(["reminders", "t-1", "hh-1", "summary"]);
+    expect(reminderKeys.summary(t("t-1"), h("hh-1"))).toEqual(["reminders", "t-1", "hh-1", "summary"]);
   });
 });
 
@@ -105,10 +111,10 @@ describe("useReminders hook", () => {
     const { result } = renderHook(() => useCreateReminder(), { wrapper: createWrapper() });
 
     await result.current.mutateAsync({ title: "New Reminder", scheduledFor: "2026-03-25T09:00:00Z" });
-    expect(productivityService.createReminder).toHaveBeenCalledWith("tenant-1", {
-      title: "New Reminder",
-      scheduledFor: "2026-03-25T09:00:00Z",
-    });
+    expect(productivityService.createReminder).toHaveBeenCalledWith(
+      expect.objectContaining({ id: "tenant-1" }),
+      { title: "New Reminder", scheduledFor: "2026-03-25T09:00:00Z" },
+    );
   });
 
   it("deletes a reminder", async () => {
@@ -119,7 +125,10 @@ describe("useReminders hook", () => {
     const { result } = renderHook(() => useDeleteReminder(), { wrapper: createWrapper() });
 
     await result.current.mutateAsync("rem-1");
-    expect(productivityService.deleteReminder).toHaveBeenCalledWith("tenant-1", "rem-1");
+    expect(productivityService.deleteReminder).toHaveBeenCalledWith(
+      expect.objectContaining({ id: "tenant-1" }),
+      "rem-1",
+    );
   });
 
   it("snoozes a reminder", async () => {
@@ -130,7 +139,11 @@ describe("useReminders hook", () => {
     const { result } = renderHook(() => useSnoozeReminder(), { wrapper: createWrapper() });
 
     await result.current.mutateAsync({ id: "rem-1", minutes: 10 });
-    expect(productivityService.snoozeReminder).toHaveBeenCalledWith("tenant-1", "rem-1", 10);
+    expect(productivityService.snoozeReminder).toHaveBeenCalledWith(
+      expect.objectContaining({ id: "tenant-1" }),
+      "rem-1",
+      10,
+    );
   });
 
   it("dismisses a reminder", async () => {
@@ -141,7 +154,10 @@ describe("useReminders hook", () => {
     const { result } = renderHook(() => useDismissReminder(), { wrapper: createWrapper() });
 
     await result.current.mutateAsync("rem-1");
-    expect(productivityService.dismissReminder).toHaveBeenCalledWith("tenant-1", "rem-1");
+    expect(productivityService.dismissReminder).toHaveBeenCalledWith(
+      expect.objectContaining({ id: "tenant-1" }),
+      "rem-1",
+    );
   });
 
   it("reports error state when fetch fails", async () => {

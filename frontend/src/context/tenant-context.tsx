@@ -8,8 +8,6 @@ import type { Tenant, TenantAttributes } from "@/types/models/tenant";
 import type { Household, HouseholdAttributes } from "@/types/models/household";
 
 interface TenantContextValue {
-  tenantId: string | null;
-  householdId: string | null;
   tenant: Tenant | null;
   household: Household | null;
   setActiveHousehold: (householdId: string) => Promise<void>;
@@ -82,25 +80,37 @@ export function TenantProvider({ children }: { children: ReactNode }) {
     return { id: householdId, type: "households" as const, attributes: { name: "", timezone: "", units: "imperial" as const, createdAt: "", updatedAt: "" } };
   }, [householdId, queryClient]);
 
+  useEffect(() => {
+    if (tenant) {
+      localStorage.setItem("activeTenantId", tenant.id);
+    }
+  }, [tenant]);
+
+  useEffect(() => {
+    if (household) {
+      localStorage.setItem("activeHouseholdId", household.id);
+    }
+  }, [household]);
+
   const setActiveHousehold = useCallback(
     async (newHouseholdId: string) => {
-      if (!tenantId || !preferenceId) return;
-      await accountService.setActiveHousehold(tenantId, preferenceId, newHouseholdId);
+      if (!tenant || !preferenceId) return;
+      await accountService.setActiveHousehold(tenant, preferenceId, newHouseholdId);
       await queryClient.invalidateQueries({ queryKey: contextKeys.current() });
     },
-    [tenantId, preferenceId, queryClient],
+    [tenant, preferenceId, queryClient],
   );
 
   useEffect(() => {
-    if (tenantId) {
-      api.setTenant(tenantId);
+    if (tenant) {
+      api.setTenant(tenant);
     } else {
       api.clearTenant();
     }
-  }, [tenantId]);
+  }, [tenant]);
 
   return (
-    <TenantContext.Provider value={{ tenantId, householdId, tenant, household, setActiveHousehold }}>
+    <TenantContext.Provider value={{ tenant, household, setActiveHousehold }}>
       {children}
     </TenantContext.Provider>
   );

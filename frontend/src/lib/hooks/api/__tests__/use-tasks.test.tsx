@@ -3,13 +3,16 @@ import { renderHook, waitFor } from "@testing-library/react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import type { ReactNode } from "react";
 import { taskKeys } from "../use-tasks";
+import type { Tenant } from "@/types/models/tenant";
+import type { Household } from "@/types/models/household";
+
+const mockTenant: Tenant = { id: "tenant-1", type: "tenants", attributes: { name: "Test", createdAt: "", updatedAt: "" } };
+const mockHousehold: Household = { id: "household-1", type: "households", attributes: { name: "Home", timezone: "UTC", units: "imperial", createdAt: "", updatedAt: "" } };
 
 vi.mock("@/context/tenant-context", () => ({
   useTenant: () => ({
-    tenantId: "tenant-1",
-    householdId: "household-1",
-    tenant: null,
-    household: null,
+    tenant: mockTenant,
+    household: mockHousehold,
     setActiveHousehold: vi.fn(),
   }),
 }));
@@ -25,9 +28,12 @@ vi.mock("@/services/api/productivity", () => ({
   },
 }));
 
+const t = (id: string): Tenant => ({ id, type: "tenants", attributes: { name: "", createdAt: "", updatedAt: "" } });
+const h = (id: string): Household => ({ id, type: "households", attributes: { name: "", timezone: "", units: "imperial", createdAt: "", updatedAt: "" } });
+
 describe("taskKeys", () => {
   it("generates all key with tenant and household id", () => {
-    expect(taskKeys.all("t-1", "hh-1")).toEqual(["tasks", "t-1", "hh-1"]);
+    expect(taskKeys.all(t("t-1"), h("hh-1"))).toEqual(["tasks", "t-1", "hh-1"]);
   });
 
   it("generates all key with no-tenant and no-household fallbacks", () => {
@@ -35,23 +41,23 @@ describe("taskKeys", () => {
   });
 
   it("generates lists key", () => {
-    expect(taskKeys.lists("t-1", "hh-1")).toEqual(["tasks", "t-1", "hh-1", "list"]);
+    expect(taskKeys.lists(t("t-1"), h("hh-1"))).toEqual(["tasks", "t-1", "hh-1", "list"]);
   });
 
   it("generates details key", () => {
-    expect(taskKeys.details("t-1", "hh-1")).toEqual(["tasks", "t-1", "hh-1", "detail"]);
+    expect(taskKeys.details(t("t-1"), h("hh-1"))).toEqual(["tasks", "t-1", "hh-1", "detail"]);
   });
 
   it("generates detail key with id", () => {
-    expect(taskKeys.detail("t-1", "hh-1", "task-42")).toEqual(["tasks", "t-1", "hh-1", "detail", "task-42"]);
+    expect(taskKeys.detail(t("t-1"), h("hh-1"), "task-42")).toEqual(["tasks", "t-1", "hh-1", "detail", "task-42"]);
   });
 
   it("generates summary key", () => {
-    expect(taskKeys.summary("t-1", "hh-1")).toEqual(["tasks", "t-1", "hh-1", "summary"]);
+    expect(taskKeys.summary(t("t-1"), h("hh-1"))).toEqual(["tasks", "t-1", "hh-1", "summary"]);
   });
 
   it("returns readonly tuple arrays", () => {
-    const key = taskKeys.all("t-1", "hh-1");
+    const key = taskKeys.all(t("t-1"), h("hh-1"));
     expect(Array.isArray(key)).toBe(true);
     expect(key).toHaveLength(3);
   });
@@ -88,11 +94,11 @@ describe("useTasks hook", () => {
   });
 
   it("includes tenant and household in query key for cache isolation", () => {
-    expect(taskKeys.lists("tenant-1", "household-1")).toEqual(
+    expect(taskKeys.lists(t("tenant-1"), h("household-1"))).toEqual(
       ["tasks", "tenant-1", "household-1", "list"]
     );
-    expect(taskKeys.lists("tenant-2", "household-1")).not.toEqual(
-      taskKeys.lists("tenant-1", "household-1")
+    expect(taskKeys.lists(t("tenant-2"), h("household-1"))).not.toEqual(
+      taskKeys.lists(t("tenant-1"), h("household-1"))
     );
   });
 
@@ -119,7 +125,10 @@ describe("useTasks hook", () => {
     const { result } = renderHook(() => useCreateTask(), { wrapper: createWrapper() });
 
     await result.current.mutateAsync({ title: "New Task" });
-    expect(productivityService.createTask).toHaveBeenCalledWith("tenant-1", { title: "New Task" });
+    expect(productivityService.createTask).toHaveBeenCalledWith(
+      expect.objectContaining({ id: "tenant-1" }),
+      { title: "New Task" },
+    );
   });
 
   it("deletes a task", async () => {
@@ -130,7 +139,10 @@ describe("useTasks hook", () => {
     const { result } = renderHook(() => useDeleteTask(), { wrapper: createWrapper() });
 
     await result.current.mutateAsync("task-1");
-    expect(productivityService.deleteTask).toHaveBeenCalledWith("tenant-1", "task-1");
+    expect(productivityService.deleteTask).toHaveBeenCalledWith(
+      expect.objectContaining({ id: "tenant-1" }),
+      "task-1",
+    );
   });
 
   it("updates a task", async () => {
@@ -143,7 +155,11 @@ describe("useTasks hook", () => {
     const { result } = renderHook(() => useUpdateTask(), { wrapper: createWrapper() });
 
     await result.current.mutateAsync({ id: "task-1", attrs: { status: "completed" } });
-    expect(productivityService.updateTask).toHaveBeenCalledWith("tenant-1", "task-1", { status: "completed" });
+    expect(productivityService.updateTask).toHaveBeenCalledWith(
+      expect.objectContaining({ id: "tenant-1" }),
+      "task-1",
+      { status: "completed" },
+    );
   });
 
   it("restores a task", async () => {
@@ -154,7 +170,10 @@ describe("useTasks hook", () => {
     const { result } = renderHook(() => useRestoreTask(), { wrapper: createWrapper() });
 
     await result.current.mutateAsync("task-1");
-    expect(productivityService.restoreTask).toHaveBeenCalledWith("tenant-1", "task-1");
+    expect(productivityService.restoreTask).toHaveBeenCalledWith(
+      expect.objectContaining({ id: "tenant-1" }),
+      "task-1",
+    );
   });
 
   it("reports error state when fetch fails", async () => {

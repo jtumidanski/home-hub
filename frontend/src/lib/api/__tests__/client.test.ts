@@ -37,7 +37,7 @@ describe("ApiClient", () => {
 
   it("sets tenant header on requests", async () => {
     const api = await getApi();
-    api.setTenant("tenant-123");
+    api.setTenant({ id: "tenant-123" });
 
     (globalThis.fetch as ReturnType<typeof vi.fn>).mockResolvedValue({
       ok: true,
@@ -52,7 +52,7 @@ describe("ApiClient", () => {
 
   it("clears tenant header after clearTenant", async () => {
     const api = await getApi();
-    api.setTenant("tenant-123");
+    api.setTenant({ id: "tenant-123" });
     api.clearTenant();
 
     (globalThis.fetch as ReturnType<typeof vi.fn>).mockResolvedValue({

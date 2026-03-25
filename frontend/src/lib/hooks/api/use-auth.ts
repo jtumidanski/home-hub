@@ -1,4 +1,4 @@
-import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { authService } from "@/services/api/auth";
 
 // --- Key factory ---
@@ -25,6 +25,17 @@ export function useProviders() {
     queryKey: authKeys.providers(),
     queryFn: () => authService.getProviders(),
     staleTime: 10 * 60 * 1000,
+  });
+}
+
+// --- Mutation hooks ---
+
+export function useLogout() {
+  return useMutation({
+    mutationFn: () => authService.logout(),
+    onSettled: () => {
+      window.location.href = "/login";
+    },
   });
 }
 

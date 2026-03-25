@@ -1,101 +1,108 @@
-import { api } from "@/lib/api/client";
-import type { JsonApiResponse, JsonApiListResponse } from "@/types/api/responses";
+import { BaseService } from "./base";
+
 import type { Task, TaskAttributes } from "@/types/models/task";
 import type { Reminder, ReminderAttributes } from "@/types/models/reminder";
 import type { TaskSummary, ReminderSummary, DashboardSummary } from "@/types/models/summary";
+import type { Tenant } from "@/types/models/tenant";
 
-export const productivityService = {
+class ProductivityService extends BaseService {
+  constructor() {
+    super("/tasks");
+  }
+
   // Tasks
-  listTasks: (tenantId: string) => {
-    api.setTenant(tenantId);
-    return api.get<JsonApiListResponse<Task>>("/tasks");
-  },
-  getTask: (tenantId: string, id: string) => {
-    api.setTenant(tenantId);
-    return api.get<JsonApiResponse<Task>>(`/tasks/${id}`);
-  },
-  createTask: (tenantId: string, attrs: { title: string; notes?: string; dueOn?: string; rolloverEnabled?: boolean }) => {
-    api.setTenant(tenantId);
-    return api.post<JsonApiResponse<Task>>("/tasks", {
+
+  listTasks(tenant: Tenant) {
+    return this.getList<Task>(tenant, "/tasks");
+  }
+
+  getTask(tenant: Tenant, id: string) {
+    return this.getOne<Task>(tenant, `/tasks/${id}`);
+  }
+
+  createTask(tenant: Tenant, attrs: { title: string; notes?: string; dueOn?: string; rolloverEnabled?: boolean }) {
+    return this.create<Task>(tenant, "/tasks", {
       data: { type: "tasks", attributes: { status: "pending", ...attrs } },
     });
-  },
-  updateTask: (tenantId: string, id: string, attrs: Partial<TaskAttributes>) => {
-    api.setTenant(tenantId);
-    return api.patch<JsonApiResponse<Task>>(`/tasks/${id}`, {
+  }
+
+  updateTask(tenant: Tenant, id: string, attrs: Partial<TaskAttributes>) {
+    return this.update<Task>(tenant, `/tasks/${id}`, {
       data: { type: "tasks", id, attributes: attrs },
     });
-  },
-  deleteTask: (tenantId: string, id: string) => {
-    api.setTenant(tenantId);
-    return api.delete(`/tasks/${id}`);
-  },
-  restoreTask: (tenantId: string, taskId: string) => {
-    api.setTenant(tenantId);
-    return api.post<JsonApiResponse<Task>>("/tasks/restorations", {
+  }
+
+  deleteTask(tenant: Tenant, id: string) {
+    return this.remove(tenant, `/tasks/${id}`);
+  }
+
+  restoreTask(tenant: Tenant, taskId: string) {
+    return this.create<Task>(tenant, "/tasks/restorations", {
       data: {
         type: "task-restorations",
         relationships: { task: { data: { type: "tasks", id: taskId } } },
       },
     });
-  },
+  }
 
   // Reminders
-  listReminders: (tenantId: string) => {
-    api.setTenant(tenantId);
-    return api.get<JsonApiListResponse<Reminder>>("/reminders");
-  },
-  getReminder: (tenantId: string, id: string) => {
-    api.setTenant(tenantId);
-    return api.get<JsonApiResponse<Reminder>>(`/reminders/${id}`);
-  },
-  createReminder: (tenantId: string, attrs: { title: string; notes?: string; scheduledFor: string }) => {
-    api.setTenant(tenantId);
-    return api.post<JsonApiResponse<Reminder>>("/reminders", {
+
+  listReminders(tenant: Tenant) {
+    return this.getList<Reminder>(tenant, "/reminders");
+  }
+
+  getReminder(tenant: Tenant, id: string) {
+    return this.getOne<Reminder>(tenant, `/reminders/${id}`);
+  }
+
+  createReminder(tenant: Tenant, attrs: { title: string; notes?: string; scheduledFor: string }) {
+    return this.create<Reminder>(tenant, "/reminders", {
       data: { type: "reminders", attributes: attrs },
     });
-  },
-  updateReminder: (tenantId: string, id: string, attrs: Partial<ReminderAttributes>) => {
-    api.setTenant(tenantId);
-    return api.patch<JsonApiResponse<Reminder>>(`/reminders/${id}`, {
+  }
+
+  updateReminder(tenant: Tenant, id: string, attrs: Partial<ReminderAttributes>) {
+    return this.update<Reminder>(tenant, `/reminders/${id}`, {
       data: { type: "reminders", id, attributes: attrs },
     });
-  },
-  deleteReminder: (tenantId: string, id: string) => {
-    api.setTenant(tenantId);
-    return api.delete(`/reminders/${id}`);
-  },
-  snoozeReminder: (tenantId: string, reminderId: string, durationMinutes: number) => {
-    api.setTenant(tenantId);
-    return api.post<JsonApiResponse<Reminder>>("/reminders/snoozes", {
+  }
+
+  deleteReminder(tenant: Tenant, id: string) {
+    return this.remove(tenant, `/reminders/${id}`);
+  }
+
+  snoozeReminder(tenant: Tenant, reminderId: string, durationMinutes: number) {
+    return this.create<Reminder>(tenant, "/reminders/snoozes", {
       data: {
         type: "reminder-snoozes",
         attributes: { durationMinutes },
         relationships: { reminder: { data: { type: "reminders", id: reminderId } } },
       },
     });
-  },
-  dismissReminder: (tenantId: string, reminderId: string) => {
-    api.setTenant(tenantId);
-    return api.post<JsonApiResponse<Reminder>>("/reminders/dismissals", {
+  }
+
+  dismissReminder(tenant: Tenant, reminderId: string) {
+    return this.create<Reminder>(tenant, "/reminders/dismissals", {
       data: {
         type: "reminder-dismissals",
         relationships: { reminder: { data: { type: "reminders", id: reminderId } } },
       },
     });
-  },
+  }
 
   // Summaries
-  getTaskSummary: (tenantId: string) => {
-    api.setTenant(tenantId);
-    return api.get<JsonApiResponse<TaskSummary>>("/summary/tasks");
-  },
-  getReminderSummary: (tenantId: string) => {
-    api.setTenant(tenantId);
-    return api.get<JsonApiResponse<ReminderSummary>>("/summary/reminders");
-  },
-  getDashboardSummary: (tenantId: string) => {
-    api.setTenant(tenantId);
-    return api.get<JsonApiResponse<DashboardSummary>>("/summary/dashboard");
-  },
-};
+
+  getTaskSummary(tenant: Tenant) {
+    return this.getOne<TaskSummary>(tenant, "/summary/tasks");
+  }
+
+  getReminderSummary(tenant: Tenant) {
+    return this.getOne<ReminderSummary>(tenant, "/summary/reminders");
+  }
+
+  getDashboardSummary(tenant: Tenant) {
+    return this.getOne<DashboardSummary>(tenant, "/summary/dashboard");
+  }
+}
+
+export const productivityService = new ProductivityService();

@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { useAuth } from "@/components/providers/auth-provider";
 import { useHouseholds } from "@/lib/hooks/api/use-households";
-import { CreateHouseholdDialog } from "@/components/features/create-household-dialog";
+import { CreateHouseholdDialog } from "@/components/features/households/create-household-dialog";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";

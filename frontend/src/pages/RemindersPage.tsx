@@ -2,7 +2,8 @@ import { useState } from "react";
 import { toast } from "sonner";
 import { useReminders, useSnoozeReminder, useDismissReminder, useDeleteReminder } from "@/lib/hooks/api/use-reminders";
 import { getErrorMessage } from "@/lib/api/errors";
-import { CreateReminderDialog } from "@/components/features/create-reminder-dialog";
+import { isReminderDismissed, isReminderSnoozed } from "@/types/models/reminder";
+import { CreateReminderDialog } from "@/components/features/reminders/create-reminder-dialog";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
@@ -111,7 +112,7 @@ export function RemindersPage() {
                 </div>
                 <div className="flex items-center gap-2">
                   <Badge variant={rem.attributes.active ? "default" : "secondary"}>
-                    {rem.attributes.active ? "active" : rem.attributes.lastDismissedAt ? "dismissed" : "snoozed"}
+                    {rem.attributes.active ? "active" : isReminderDismissed(rem) ? "dismissed" : isReminderSnoozed(rem) ? "snoozed" : "inactive"}
                   </Badge>
                   {rem.attributes.active && (
                     <>

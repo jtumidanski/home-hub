@@ -1,12 +1,10 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { useQueryClient } from "@tanstack/react-query";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { toast } from "sonner";
 import { useAuth } from "@/components/providers/auth-provider";
-import { accountService } from "@/services/api/account";
-import { contextKeys } from "@/lib/hooks/api/use-context";
+import { useCreateTenant, useOnboardingCreateHousehold } from "@/lib/hooks/api/use-context";
 import { createTenantSchema, type CreateTenantFormData } from "@/lib/schemas/tenant.schema";
 import { createHouseholdSchema, type CreateHouseholdFormData, createHouseholdDefaults } from "@/lib/schemas/household.schema";
 import { getErrorMessage } from "@/lib/api/errors";
@@ -14,14 +12,16 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Loader2 } from "lucide-react";
 
 export function OnboardingPage() {
   const { user } = useAuth();
   const navigate = useNavigate();
-  const queryClient = useQueryClient();
   const [step, setStep] = useState<"tenant" | "household">("tenant");
-  const [tenantId, setTenantId] = useState<string | null>(null);
+  const [createdTenant, setCreatedTenant] = useState<{ id: string; type: "tenants"; attributes: { name: string; createdAt: string; updatedAt: string } } | null>(null);
+  const createTenant = useCreateTenant();
+  const createHousehold = useOnboardingCreateHousehold();
 
   const tenantForm = useForm<CreateTenantFormData>({
     resolver: zodResolver(createTenantSchema),
@@ -38,8 +38,8 @@ export function OnboardingPage() {
 
   const onTenantSubmit = async (data: CreateTenantFormData) => {
     try {
-      const result = await accountService.createTenant(data.name);
-      setTenantId(result.data.id);
+      const result = await createTenant.mutateAsync(data.name);
+      setCreatedTenant(result.data);
       toast.success("Account created");
       setStep("household");
     } catch (error) {
@@ -48,10 +48,14 @@ export function OnboardingPage() {
   };
 
   const onHouseholdSubmit = async (data: CreateHouseholdFormData) => {
-    if (!tenantId) return;
+    if (!createdTenant) return;
     try {
-      await accountService.createHousehold(tenantId, data.name, data.timezone, data.units);
-      await queryClient.invalidateQueries({ queryKey: contextKeys.current() });
+      await createHousehold.mutateAsync({
+        tenant: createdTenant,
+        name: data.name,
+        timezone: data.timezone,
+        units: data.units,
+      });
       toast.success("Household created");
       navigate("/app");
     } catch (error) {
@@ -128,26 +132,12 @@ export function OnboardingPage() {
                   render={({ field }) => (
                     <FormItem>
                       <FormLabel>Units</FormLabel>
-                      <div className="flex gap-4">
-                        <label className="flex items-center gap-2">
-                          <input
-                            type="radio"
-                            value="imperial"
-                            checked={field.value === "imperial"}
-                            onChange={() => field.onChange("imperial")}
-                          />
-                          <span className="text-sm">Imperial</span>
-                        </label>
-                        <label className="flex items-center gap-2">
-                          <input
-                            type="radio"
-                            value="metric"
-                            checked={field.value === "metric"}
-                            onChange={() => field.onChange("metric")}
-                          />
-                          <span className="text-sm">Metric</span>
-                        </label>
-                      </div>
+                      <FormControl>
+                        <RadioGroup value={field.value} onValueChange={field.onChange}>
+                          <RadioGroupItem value="imperial">Imperial</RadioGroupItem>
+                          <RadioGroupItem value="metric">Metric</RadioGroupItem>
+                        </RadioGroup>
+                      </FormControl>
                       <FormMessage />
                     </FormItem>
                   )}

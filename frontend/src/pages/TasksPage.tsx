@@ -2,7 +2,7 @@ import { useState } from "react";
 import { toast } from "sonner";
 import { useTasks, useUpdateTask, useDeleteTask } from "@/lib/hooks/api/use-tasks";
 import { getErrorMessage } from "@/lib/api/errors";
-import { CreateTaskDialog } from "@/components/features/create-task-dialog";
+import { CreateTaskDialog } from "@/components/features/tasks/create-task-dialog";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";

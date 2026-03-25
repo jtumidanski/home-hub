@@ -2,28 +2,29 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { accountService } from "@/services/api/account";
 import { useTenant } from "@/context/tenant-context";
 import { contextKeys } from "@/lib/hooks/api/use-context";
+import type { Tenant } from "@/types/models/tenant";
 
 // --- Key factory ---
 
 export const householdKeys = {
-  all: (tenantId: string | null) =>
-    ["households", tenantId ?? "no-tenant"] as const,
-  lists: (tenantId: string | null) =>
-    [...householdKeys.all(tenantId), "list"] as const,
-  details: (tenantId: string | null) =>
-    [...householdKeys.all(tenantId), "detail"] as const,
-  detail: (tenantId: string | null, id: string) =>
-    [...householdKeys.details(tenantId), id] as const,
+  all: (tenant: Tenant | null) =>
+    ["households", tenant?.id ?? "no-tenant"] as const,
+  lists: (tenant: Tenant | null) =>
+    [...householdKeys.all(tenant), "list"] as const,
+  details: (tenant: Tenant | null) =>
+    [...householdKeys.all(tenant), "detail"] as const,
+  detail: (tenant: Tenant | null, id: string) =>
+    [...householdKeys.details(tenant), id] as const,
 };
 
 // --- Query hooks ---
 
 export function useHouseholds(enabled: boolean = true) {
-  const { tenantId } = useTenant();
+  const { tenant } = useTenant();
   return useQuery({
-    queryKey: householdKeys.lists(tenantId),
-    queryFn: () => accountService.listHouseholds(tenantId!),
-    enabled: enabled && !!tenantId,
+    queryKey: householdKeys.lists(tenant),
+    queryFn: () => accountService.listHouseholds(tenant!),
+    enabled: enabled && !!tenant?.id,
     staleTime: 5 * 60 * 1000,
   });
 }
@@ -32,12 +33,12 @@ export function useHouseholds(enabled: boolean = true) {
 
 export function useCreateHousehold() {
   const qc = useQueryClient();
-  const { tenantId } = useTenant();
+  const { tenant } = useTenant();
   return useMutation({
     mutationFn: (attrs: { name: string; timezone: string; units: string }) =>
-      accountService.createHousehold(tenantId!, attrs.name, attrs.timezone, attrs.units),
+      accountService.createHousehold(tenant!, attrs.name, attrs.timezone, attrs.units),
     onSettled: () => {
-      qc.invalidateQueries({ queryKey: householdKeys.lists(tenantId) });
+      qc.invalidateQueries({ queryKey: householdKeys.lists(tenant) });
       qc.invalidateQueries({ queryKey: contextKeys.current() });
     },
   });
@@ -47,15 +48,15 @@ export function useCreateHousehold() {
 
 export function useInvalidateHouseholds() {
   const qc = useQueryClient();
-  const { tenantId } = useTenant();
+  const { tenant } = useTenant();
 
   return {
     invalidateAll: () =>
-      qc.invalidateQueries({ queryKey: householdKeys.all(tenantId) }),
+      qc.invalidateQueries({ queryKey: householdKeys.all(tenant) }),
     invalidateLists: () =>
-      qc.invalidateQueries({ queryKey: householdKeys.lists(tenantId) }),
+      qc.invalidateQueries({ queryKey: householdKeys.lists(tenant) }),
     invalidateHousehold: (id: string) =>
-      qc.invalidateQueries({ queryKey: householdKeys.detail(tenantId, id) }),
+      qc.invalidateQueries({ queryKey: householdKeys.detail(tenant, id) }),
   };
 }
 
@@ -63,14 +64,14 @@ export function useInvalidateHouseholds() {
 
 export function usePrefetchHouseholds() {
   const qc = useQueryClient();
-  const { tenantId } = useTenant();
+  const { tenant } = useTenant();
 
   return {
     prefetch: () => {
-      if (!tenantId) return;
+      if (!tenant) return;
       qc.prefetchQuery({
-        queryKey: householdKeys.lists(tenantId),
-        queryFn: () => accountService.listHouseholds(tenantId),
+        queryKey: householdKeys.lists(tenant),
+        queryFn: () => accountService.listHouseholds(tenant),
         staleTime: 5 * 60 * 1000,
       });
     },

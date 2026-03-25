@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Loader2 } from "lucide-react";
 
 interface CreateHouseholdDialogProps {
@@ -80,26 +81,12 @@ export function CreateHouseholdDialog({ open, onOpenChange }: CreateHouseholdDia
               render={({ field }) => (
                 <FormItem>
                   <FormLabel>Units</FormLabel>
-                  <div className="flex gap-4">
-                    <label className="flex items-center gap-2">
-                      <input
-                        type="radio"
-                        value="imperial"
-                        checked={field.value === "imperial"}
-                        onChange={() => field.onChange("imperial")}
-                      />
-                      <span className="text-sm">Imperial</span>
-                    </label>
-                    <label className="flex items-center gap-2">
-                      <input
-                        type="radio"
-                        value="metric"
-                        checked={field.value === "metric"}
-                        onChange={() => field.onChange("metric")}
-                      />
-                      <span className="text-sm">Metric</span>
-                    </label>
-                  </div>
+                  <FormControl>
+                    <RadioGroup value={field.value} onValueChange={field.onChange}>
+                      <RadioGroupItem value="imperial">Imperial</RadioGroupItem>
+                      <RadioGroupItem value="metric">Metric</RadioGroupItem>
+                    </RadioGroup>
+                  </FormControl>
                   <FormMessage />
                 </FormItem>
               )}

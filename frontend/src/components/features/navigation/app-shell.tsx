@@ -1,15 +1,9 @@
 import { Outlet, NavLink } from "react-router-dom";
-import { useQueryClient } from "@tanstack/react-query";
-import { toast } from "sonner";
 import { Home, CheckSquare, Bell, Settings, LogOut, Moon, Sun } from "lucide-react";
 import { useAuth } from "@/components/providers/auth-provider";
-import { useTenant } from "@/context/tenant-context";
-import { useTheme } from "@/components/providers/theme-provider";
-import { authService } from "@/services/api/auth";
-import { accountService } from "@/services/api/account";
-import { contextKeys } from "@/lib/hooks/api/use-context";
-import { getErrorMessage } from "@/lib/api/errors";
-import { HouseholdSwitcher } from "@/components/features/household-switcher";
+import { useThemeToggle } from "@/lib/hooks/use-theme-toggle";
+import { useLogout } from "@/lib/hooks/api/use-auth";
+import { HouseholdSwitcher } from "@/components/features/households/household-switcher";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 
@@ -22,35 +16,9 @@ const navItems = [
 ];
 
 export function AppShell() {
-  const { user, appContext } = useAuth();
-  const { tenantId } = useTenant();
-  const { theme, setTheme } = useTheme();
-  const queryClient = useQueryClient();
-
-  const handleLogout = async () => {
-    try {
-      await authService.logout();
-    } finally {
-      window.location.href = "/login";
-    }
-  };
-
-  const handleThemeToggle = async () => {
-    const newTheme = theme === "light" ? "dark" : "light";
-    setTheme(newTheme);
-    if (tenantId && appContext?.relationships?.preference?.data?.id) {
-      try {
-        await accountService.updatePreferenceTheme(
-          tenantId,
-          appContext.relationships.preference.data.id,
-          newTheme
-        );
-        await queryClient.invalidateQueries({ queryKey: contextKeys.current() });
-      } catch (error) {
-        toast.error(getErrorMessage(error, "Failed to save theme preference"));
-      }
-    }
-  };
+  const { user } = useAuth();
+  const { theme, toggleTheme } = useThemeToggle();
+  const logout = useLogout();
 
   return (
     <div className="flex min-h-screen">
@@ -89,7 +57,7 @@ export function AppShell() {
             variant="ghost"
             size="sm"
             className="w-full justify-start gap-3"
-            onClick={handleThemeToggle}
+            onClick={toggleTheme}
           >
             {theme === "light" ? <Moon className="h-4 w-4" /> : <Sun className="h-4 w-4" />}
             {theme === "light" ? "Dark Mode" : "Light Mode"}
@@ -98,7 +66,7 @@ export function AppShell() {
             variant="ghost"
             size="sm"
             className="w-full justify-start gap-3 text-destructive"
-            onClick={handleLogout}
+            onClick={() => logout.mutate()}
           >
             <LogOut className="h-4 w-4" />
             Sign Out

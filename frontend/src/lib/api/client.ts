@@ -24,8 +24,8 @@ class ApiClient {
     this.baseUrl = baseUrl;
   }
 
-  setTenant(tenantId: string) {
-    this.tenantId = tenantId;
+  setTenant(tenant: { id: string }) {
+    this.tenantId = tenant.id;
   }
 
   clearTenant() {

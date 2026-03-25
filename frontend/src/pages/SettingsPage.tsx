@@ -1,37 +1,41 @@
-import { useQueryClient } from "@tanstack/react-query";
-import { toast } from "sonner";
 import { useAuth } from "@/components/providers/auth-provider";
-import { useTenant } from "@/context/tenant-context";
-import { useTheme } from "@/components/providers/theme-provider";
-import { accountService } from "@/services/api/account";
-import { contextKeys } from "@/lib/hooks/api/use-context";
-import { getErrorMessage } from "@/lib/api/errors";
+import { useThemeToggle } from "@/lib/hooks/use-theme-toggle";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Skeleton } from "@/components/ui/skeleton";
 import { Moon, Sun } from "lucide-react";
 
-export function SettingsPage() {
-  const { user, appContext } = useAuth();
-  const { tenantId } = useTenant();
-  const { theme, setTheme } = useTheme();
-  const queryClient = useQueryClient();
+function SettingsPageSkeleton() {
+  return (
+    <div className="p-6 space-y-6">
+      <Skeleton className="h-8 w-32" />
+      <Skeleton className="h-40 w-full" />
+      <Skeleton className="h-24 w-full" />
+    </div>
+  );
+}
 
-  const handleThemeToggle = async () => {
-    const newTheme = theme === "light" ? "dark" : "light";
-    setTheme(newTheme);
-    if (tenantId && appContext?.relationships?.preference?.data?.id) {
-      try {
-        await accountService.updatePreferenceTheme(
-          tenantId,
-          appContext.relationships.preference.data.id,
-          newTheme
-        );
-        await queryClient.invalidateQueries({ queryKey: contextKeys.current() });
-      } catch (error) {
-        toast.error(getErrorMessage(error, "Failed to save theme preference"));
-      }
-    }
-  };
+export function SettingsPage() {
+  const { user, appContext, isLoading } = useAuth();
+  const { theme, toggleTheme } = useThemeToggle();
+
+  if (isLoading) {
+    return <SettingsPageSkeleton />;
+  }
+
+  if (!user || !appContext) {
+    return (
+      <div className="p-6">
+        <Card className="border-destructive">
+          <CardContent className="py-3">
+            <p className="text-sm text-destructive">
+              Failed to load settings. Try refreshing the page.
+            </p>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
 
   return (
     <div className="p-6 space-y-6">
@@ -43,9 +47,9 @@ export function SettingsPage() {
           <CardDescription>Your account information</CardDescription>
         </CardHeader>
         <CardContent className="space-y-2">
-          <div><span className="text-sm font-medium">Name:</span> <span className="text-sm">{user?.attributes.displayName}</span></div>
-          <div><span className="text-sm font-medium">Email:</span> <span className="text-sm">{user?.attributes.email}</span></div>
-          <div><span className="text-sm font-medium">Role:</span> <span className="text-sm">{appContext?.attributes.resolvedRole}</span></div>
+          <div><span className="text-sm font-medium">Name:</span> <span className="text-sm">{user.attributes.displayName}</span></div>
+          <div><span className="text-sm font-medium">Email:</span> <span className="text-sm">{user.attributes.email}</span></div>
+          <div><span className="text-sm font-medium">Role:</span> <span className="text-sm">{appContext.attributes.resolvedRole}</span></div>
         </CardContent>
       </Card>
 
@@ -55,7 +59,7 @@ export function SettingsPage() {
           <CardDescription>Customize how Home Hub looks</CardDescription>
         </CardHeader>
         <CardContent>
-          <Button variant="outline" onClick={handleThemeToggle}>
+          <Button variant="outline" onClick={toggleTheme}>
             {theme === "light" ? <Moon className="mr-2 h-4 w-4" /> : <Sun className="mr-2 h-4 w-4" />}
             {theme === "light" ? "Switch to Dark Mode" : "Switch to Light Mode"}
           </Button>
