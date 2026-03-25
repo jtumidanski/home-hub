@@ -14,6 +14,7 @@ vi.mock("@/components/providers/auth-provider", () => ({
 vi.mock("@/lib/api/client", () => ({
   api: {
     setTenant: vi.fn(),
+    setHousehold: vi.fn(),
     clearTenant: vi.fn(),
   },
 }));

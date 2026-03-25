@@ -1,5 +1,6 @@
 services:
   nginx:
+    container_name: hh-nginx
     image: nginx:alpine
     ports:
       - "8080:80"
@@ -14,6 +15,7 @@ services:
       - recipe-service
 
   frontend:
+    container_name: hh-frontend
     build:
       context: ../../frontend
       dockerfile: Dockerfile
@@ -21,6 +23,7 @@ services:
       - "80"
 
   auth-service:
+    container_name: hh-auth
     build:
       context: ../..
       dockerfile: services/auth-service/Dockerfile
@@ -41,6 +44,7 @@ services:
       - OIDC_REDIRECT_URI=${OIDC_REDIRECT_URI:-http://localhost:8080/api/v1/auth/callback/google}
 
   account-service:
+    container_name: hh-account
     build:
       context: ../..
       dockerfile: services/account-service/Dockerfile
@@ -56,6 +60,7 @@ services:
       - JWKS_URL=http://auth-service:8080/api/v1/auth/.well-known/jwks.json
 
   productivity-service:
+    container_name: hh-productivity
     build:
       context: ../..
       dockerfile: services/productivity-service/Dockerfile
@@ -71,6 +76,7 @@ services:
       - JWKS_URL=http://auth-service:8080/api/v1/auth/.well-known/jwks.json
 
   weather-service:
+    container_name: hh-weather
     build:
       context: ../..
       dockerfile: services/weather-service/Dockerfile
@@ -88,6 +94,7 @@ services:
       - CACHE_TTL_MINUTES=${CACHE_TTL_MINUTES:-30}
 
   recipe-service:
+    container_name: hh-recipe
     build:
       context: ../..
       dockerfile: services/recipe-service/Dockerfile

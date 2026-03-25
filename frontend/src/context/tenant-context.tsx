@@ -109,6 +109,12 @@ export function TenantProvider({ children }: { children: ReactNode }) {
     }
   }, [tenant]);
 
+  useEffect(() => {
+    if (household) {
+      api.setHousehold(household);
+    }
+  }, [household]);
+
   return (
     <TenantContext.Provider value={{ tenant, household, setActiveHousehold }}>
       {children}

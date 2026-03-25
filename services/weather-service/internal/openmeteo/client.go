@@ -56,6 +56,7 @@ func (c *Client) FetchForecast(lat, lon float64, units, timezone string) (*Forec
 	params.Set("longitude", fmt.Sprintf("%f", lon))
 	params.Set("current", "temperature_2m,weather_code")
 	params.Set("daily", "temperature_2m_max,temperature_2m_min,weather_code")
+	params.Set("hourly", "temperature_2m,weather_code,precipitation_probability")
 	params.Set("temperature_unit", temperatureUnit(units))
 	params.Set("timezone", timezone)
 	params.Set("forecast_days", "7")
