@@ -6,5 +6,5 @@ ROOT_DIR="$(cd "$SCRIPT_DIR/.." && pwd)"
 
 echo "Stopping local environment..."
 cd "$ROOT_DIR/deploy/compose"
-docker compose down
+docker compose --env-file "$ROOT_DIR/.env" down
 echo "Local environment stopped."

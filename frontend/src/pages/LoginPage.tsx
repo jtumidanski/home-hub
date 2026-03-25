@@ -26,7 +26,7 @@ export function LoginPage() {
             providers.map((provider) => (
               <a
                 key={provider.id}
-                href={authService.getLoginUrl(provider.id)}
+                href={authService.getLoginUrl(provider.attributes.slug)}
                 className="block"
               >
                 <Button variant="outline" className="w-full">

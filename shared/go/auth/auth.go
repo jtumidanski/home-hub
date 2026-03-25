@@ -123,11 +123,30 @@ func Middleware(l *logrus.Logger, v *Validator) func(http.Handler) http.Handler 
 				return
 			}
 
+			tenantID := claims.TenantID
+			householdID := claims.HouseholdID
+
+			// Allow header overrides when JWT claims have nil UUIDs (e.g., during onboarding).
+			if tenantID == uuid.Nil {
+				if h := r.Header.Get("X-Tenant-ID"); h != "" {
+					if parsed, err := uuid.Parse(h); err == nil {
+						tenantID = parsed
+					}
+				}
+			}
+			if householdID == uuid.Nil {
+				if h := r.Header.Get("X-Household-ID"); h != "" {
+					if parsed, err := uuid.Parse(h); err == nil {
+						householdID = parsed
+					}
+				}
+			}
+
 			ctx := r.Context()
-			ctx = tenant.WithContext(ctx, tenant.New(claims.TenantID, claims.HouseholdID, claims.UserID))
+			ctx = tenant.WithContext(ctx, tenant.New(tenantID, householdID, claims.UserID))
 			ctx = logging.WithField(ctx, "user_id", claims.UserID.String())
-			ctx = logging.WithField(ctx, "tenant_id", claims.TenantID.String())
-			ctx = logging.WithField(ctx, "household_id", claims.HouseholdID.String())
+			ctx = logging.WithField(ctx, "tenant_id", tenantID.String())
+			ctx = logging.WithField(ctx, "household_id", householdID.String())
 			ctx = context.WithValue(ctx, claimsKey, claims)
 
 			next.ServeHTTP(w, r.WithContext(ctx))

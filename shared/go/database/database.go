@@ -54,6 +54,13 @@ func Connect(l *logrus.Logger, cfg Config, opts ...Option) *gorm.DB {
 
 	l.WithField("schema", cfg.Schema).Info("database connected")
 
+	if cfg.Schema != "" && cfg.Schema != "public" {
+		createSchema := fmt.Sprintf("CREATE SCHEMA IF NOT EXISTS %q", cfg.Schema)
+		if err := db.Exec(createSchema).Error; err != nil {
+			l.WithError(err).Fatal("failed to create schema")
+		}
+	}
+
 	RegisterTenantCallbacks(l, db)
 
 	for _, migrate := range o.migrations {

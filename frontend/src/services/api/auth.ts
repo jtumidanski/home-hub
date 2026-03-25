@@ -5,7 +5,7 @@ import type { User } from "@/types/models/user";
 export interface AuthProvider {
   type: "auth-providers";
   id: string;
-  attributes: { displayName: string };
+  attributes: { slug: string; displayName: string };
 }
 
 class AuthService {

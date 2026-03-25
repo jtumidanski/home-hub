@@ -45,6 +45,9 @@ type CreateRequest struct {
 func (r CreateRequest) GetName() string { return "tenants" }
 func (r CreateRequest) GetID() string   { return r.Id.String() }
 func (r *CreateRequest) SetID(id string) error {
+	if id == "" {
+		return nil
+	}
 	var err error
 	r.Id, err = uuid.Parse(id)
 	return err
