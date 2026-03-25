@@ -19,8 +19,8 @@ Provides current weather conditions, 7-day forecasts, and geocoding search for H
 | DB_NAME                   | home_hub                                                        | PostgreSQL database name     |
 | PORT                      | 8080                                                            | HTTP listen port             |
 | JWKS_URL                  | http://auth-service:8080/api/v1/auth/.well-known/jwks.json      | JWKS endpoint for JWT auth   |
-| REFRESH_INTERVAL_MINUTES  | 30                                                              | Background refresh interval  |
-| CACHE_TTL_MINUTES         | 30                                                              | Cache TTL                    |
+| REFRESH_INTERVAL_MINUTES  | 15                                                              | Background refresh interval  |
+| CACHE_TTL_MINUTES         | 15                                                              | Cache TTL                    |
 
 ## Documentation
 
