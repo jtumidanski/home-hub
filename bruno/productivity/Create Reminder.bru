@@ -1,0 +1,27 @@
+meta {
+  name: Create Reminder
+  type: http
+  seq: 4
+}
+
+post {
+  url: {{baseUrl}}/api/v1/reminders
+  body: json
+}
+
+headers {
+  Content-Type: application/vnd.api+json
+}
+
+body:json {
+  {
+    "data": {
+      "type": "reminders",
+      "attributes": {
+        "title": "Leave for appointment",
+        "notes": "Bring insurance card",
+        "scheduledFor": "2026-03-24T14:30:00Z"
+      }
+    }
+  }
+}

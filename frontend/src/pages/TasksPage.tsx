@@ -1,0 +1,145 @@
+import { useState } from "react";
+import { type ColumnDef } from "@tanstack/react-table";
+import { toast } from "sonner";
+import { useTasks, useUpdateTask, useDeleteTask } from "@/lib/hooks/api/use-tasks";
+import { createErrorFromUnknown } from "@/lib/api/errors";
+import { type Task } from "@/types/models/task";
+import { CreateTaskDialog } from "@/components/features/tasks/create-task-dialog";
+import { DataTable } from "@/components/common/data-table";
+import { ErrorCard } from "@/components/common/error-card";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { Plus, Check, Trash2 } from "lucide-react";
+import { cn } from "@/lib/utils";
+
+export function TasksPage() {
+  const { data, isLoading, isError } = useTasks();
+  const updateTask = useUpdateTask();
+  const deleteTask = useDeleteTask();
+  const [open, setOpen] = useState(false);
+
+  const tasks = (data?.data ?? []) as Task[];
+
+  const toggleComplete = async (id: string, currentStatus: string) => {
+    try {
+      await updateTask.mutateAsync({
+        id,
+        attrs: { status: currentStatus === "completed" ? "pending" : "completed" },
+      });
+      toast.success(currentStatus === "completed" ? "Task reopened" : "Task completed");
+    } catch (error) {
+      toast.error(createErrorFromUnknown(error, "Failed to update task").message);
+    }
+  };
+
+  const handleDelete = async (id: string) => {
+    try {
+      await deleteTask.mutateAsync(id);
+      toast.success("Task deleted");
+    } catch (error) {
+      toast.error(createErrorFromUnknown(error, "Failed to delete task").message);
+    }
+  };
+
+  const columns: ColumnDef<Task, unknown>[] = [
+    {
+      id: "complete",
+      header: "",
+      size: 40,
+      cell: ({ row }) => (
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={(e) => {
+            e.stopPropagation();
+            toggleComplete(row.original.id, row.original.attributes.status);
+          }}
+        >
+          <Check className={cn("h-4 w-4", row.original.attributes.status === "completed" ? "text-primary" : "text-muted-foreground")} />
+        </Button>
+      ),
+    },
+    {
+      accessorKey: "attributes.title",
+      header: "Title",
+      cell: ({ row }) => (
+        <div>
+          <p className={cn("font-medium", row.original.attributes.status === "completed" && "line-through text-muted-foreground")}>
+            {row.original.attributes.title}
+          </p>
+          {row.original.attributes.dueOn && (
+            <p className="text-xs text-muted-foreground">Due: {row.original.attributes.dueOn}</p>
+          )}
+        </div>
+      ),
+    },
+    {
+      id: "status",
+      header: "Status",
+      cell: ({ row }) => (
+        <Badge variant={row.original.attributes.status === "completed" ? "secondary" : "default"}>
+          {row.original.attributes.status}
+        </Badge>
+      ),
+    },
+    {
+      id: "actions",
+      header: "",
+      cell: ({ row }) => (
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={(e) => {
+            e.stopPropagation();
+            handleDelete(row.original.id);
+          }}
+        >
+          <Trash2 className="h-4 w-4 text-destructive" />
+        </Button>
+      ),
+    },
+  ];
+
+  if (isLoading) {
+    return (
+      <div className="p-6 space-y-4" role="status" aria-label="Loading">
+        <DataTable columns={columns} data={[]} isLoading />
+      </div>
+    );
+  }
+
+  if (isError) {
+    return (
+      <div className="p-6">
+        <ErrorCard message="Failed to load tasks. Try refreshing the page." />
+      </div>
+    );
+  }
+
+  return (
+    <div className="p-6 space-y-4">
+      <div className="flex items-center justify-between">
+        <h1 className="text-2xl font-semibold">Tasks</h1>
+        <Button size="sm" onClick={() => setOpen(true)}>
+          <Plus className="mr-2 h-4 w-4" />New Task
+        </Button>
+      </div>
+
+      <CreateTaskDialog open={open} onOpenChange={setOpen} />
+
+      <DataTable
+        columns={columns}
+        data={tasks}
+        emptyMessage="No tasks yet. Create your first task to get started."
+      />
+      {tasks.length === 0 && (
+        <div className="flex justify-center">
+          <Button variant="outline" onClick={() => setOpen(true)}>
+            <Plus className="mr-2 h-4 w-4" />
+            Create First Task
+          </Button>
+        </div>
+      )}
+    </div>
+  );
+}

@@ -1,0 +1,37 @@
+package tenant
+
+import (
+	"time"
+
+	"github.com/google/uuid"
+	"gorm.io/gorm"
+)
+
+type Entity struct {
+	Id        uuid.UUID `gorm:"type:uuid;primaryKey"`
+	Name      string    `gorm:"type:text;not null"`
+	CreatedAt time.Time `gorm:"not null"`
+	UpdatedAt time.Time `gorm:"not null"`
+}
+
+func (Entity) TableName() string { return "tenants" }
+
+func Migration(db *gorm.DB) error { return db.AutoMigrate(&Entity{}) }
+
+func (m Model) ToEntity() Entity {
+	return Entity{
+		Id:        m.id,
+		Name:      m.name,
+		CreatedAt: m.createdAt,
+		UpdatedAt: m.updatedAt,
+	}
+}
+
+func Make(e Entity) (Model, error) {
+	return NewBuilder().
+		SetId(e.Id).
+		SetName(e.Name).
+		SetCreatedAt(e.CreatedAt).
+		SetUpdatedAt(e.UpdatedAt).
+		Build()
+}

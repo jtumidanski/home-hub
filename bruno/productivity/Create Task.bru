@@ -1,0 +1,29 @@
+meta {
+  name: Create Task
+  type: http
+  seq: 2
+}
+
+post {
+  url: {{baseUrl}}/api/v1/tasks
+  body: json
+}
+
+headers {
+  Content-Type: application/vnd.api+json
+}
+
+body:json {
+  {
+    "data": {
+      "type": "tasks",
+      "attributes": {
+        "title": "Take out trash",
+        "notes": "Bins go out tonight",
+        "status": "pending",
+        "dueOn": "2026-03-24",
+        "rolloverEnabled": true
+      }
+    }
+  }
+}

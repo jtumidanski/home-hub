@@ -1,0 +1,49 @@
+# Go binaries
+*.exe
+*.exe~
+*.dll
+*.so
+*.dylib
+/cmd
+
+# Go test/build artifacts
+*.test
+*.out
+*.prof
+
+# Environment
+.env
+.env.local
+.env.*.local
+
+# IDE
+.idea/
+.vscode/*
+!.vscode/extensions.json
+*.sw?
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+.DS_Store
+
+# Node
+node_modules/
+
+# Frontend build output
+frontend/dist/
+frontend/dist-ssr/
+
+# Logs
+*.log
+npm-debug.log*
+
+# Docker
+.docker/
+
+# Dev artifacts
+dev/
+
+# Temporary
+*.tmp
+*.bak
