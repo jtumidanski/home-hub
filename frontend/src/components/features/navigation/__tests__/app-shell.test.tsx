@@ -83,17 +83,23 @@ describe("AppShell", () => {
     expect(screen.getByTestId("outlet")).toBeInTheDocument();
   });
 
-  it("calls toggleTheme when theme button is clicked", async () => {
+  it("calls toggleTheme when theme button is clicked in user menu", async () => {
     const user = userEvent.setup();
     renderWithRouter();
-    await user.click(screen.getByRole("button", { name: /dark mode/i }));
+    // Open user menu popover
+    await user.click(screen.getByRole("button", { name: /test user/i }));
+    const darkModeItem = await screen.findByRole("menuitem", { name: /dark mode/i });
+    await user.click(darkModeItem);
     expect(mockToggleTheme).toHaveBeenCalledTimes(1);
   });
 
-  it("calls logout when sign out button is clicked", async () => {
+  it("calls logout when sign out is clicked in user menu", async () => {
     const user = userEvent.setup();
     renderWithRouter();
-    await user.click(screen.getByRole("button", { name: /sign out/i }));
+    // Open user menu popover
+    await user.click(screen.getByRole("button", { name: /test user/i }));
+    const signOutItem = await screen.findByRole("menuitem", { name: /sign out/i });
+    await user.click(signOutItem);
     expect(mockLogoutMutate).toHaveBeenCalledTimes(1);
   });
 
