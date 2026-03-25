@@ -42,7 +42,7 @@ function HourlyBreakdown({ entries, isToday }: { entries: HourlyForecastEntry[];
   if (filtered.length === 0) return null;
 
   return (
-    <div className="border-t mt-2 pt-2 max-h-64 overflow-y-auto">
+    <div className="border-t mt-2 pt-2 max-h-64 overflow-y-auto md:max-h-none md:overflow-visible">
       {filtered.map((entry) => (
         <div key={entry.time} className="flex items-center gap-3 py-1.5 px-1 text-sm">
           <span className="w-16 shrink-0 text-muted-foreground text-xs">
@@ -50,10 +50,10 @@ function HourlyBreakdown({ entries, isToday }: { entries: HourlyForecastEntry[];
           </span>
           <WeatherIcon icon={entry.icon} className="h-4 w-4 shrink-0 text-muted-foreground" />
           <span className="w-10 shrink-0 font-medium">{Math.round(entry.temperature)}°</span>
-          <span className="text-xs text-muted-foreground flex-1 min-w-0 truncate">
+          <span className="w-24 shrink-0 text-xs text-muted-foreground truncate">
             {entry.summary}
           </span>
-          <span className="text-xs text-muted-foreground shrink-0">
+          <span className="w-8 shrink-0 text-xs text-muted-foreground">
             {entry.precipitationProbability}%
           </span>
         </div>
