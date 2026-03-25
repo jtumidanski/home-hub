@@ -1,58 +1,29 @@
 import { useState } from "react";
-import { type ColumnDef } from "@tanstack/react-table";
 import { useAuth } from "@/components/providers/auth-provider";
 import { useHouseholds } from "@/lib/hooks/api/use-households";
 import { type Household } from "@/types/models/household";
-import { useMobile } from "@/lib/hooks/use-mobile";
 import { HouseholdCard } from "@/components/features/households/household-card";
 import { CreateHouseholdDialog } from "@/components/features/households/create-household-dialog";
-import { DataTable } from "@/components/common/data-table";
 import { ErrorCard } from "@/components/common/error-card";
+import { Skeleton } from "@/components/ui/skeleton";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
-import { Plus, Home } from "lucide-react";
+import { Plus } from "lucide-react";
 
 export function HouseholdsPage() {
   const { appContext } = useAuth();
   const { data, isLoading, isError } = useHouseholds();
   const [open, setOpen] = useState(false);
-  const isMobile = useMobile();
 
   const households = (data?.data ?? []) as Household[];
   const activeId = appContext?.relationships?.activeHousehold?.data?.id;
   const canCreate = appContext?.attributes.canCreateHousehold;
 
-  const columns: ColumnDef<Household, unknown>[] = [
-    {
-      id: "icon",
-      header: "",
-      size: 40,
-      cell: () => <Home className="h-5 w-5 text-muted-foreground" />,
-    },
-    {
-      accessorKey: "attributes.name",
-      header: "Name",
-      cell: ({ row }) => (
-        <div>
-          <p className="font-medium">{row.original.attributes.name}</p>
-          <p className="text-xs text-muted-foreground">
-            {row.original.attributes.timezone} &middot; {row.original.attributes.units}
-          </p>
-        </div>
-      ),
-    },
-    {
-      id: "status",
-      header: "",
-      cell: ({ row }) =>
-        row.original.id === activeId ? <Badge>Active</Badge> : null,
-    },
-  ];
-
   if (isLoading) {
     return (
       <div className="p-4 md:p-6 space-y-4" role="status" aria-label="Loading">
-        <DataTable columns={columns} data={[]} isLoading skeletonRows={3} />
+        {Array.from({ length: 3 }).map((_, i) => (
+          <Skeleton key={i} className="h-28" />
+        ))}
       </div>
     );
   }
@@ -87,7 +58,7 @@ export function HouseholdsPage() {
             </Button>
           )}
         </div>
-      ) : isMobile ? (
+      ) : (
         <div className="space-y-3">
           {households.map((household) => (
             <HouseholdCard
@@ -97,12 +68,6 @@ export function HouseholdsPage() {
             />
           ))}
         </div>
-      ) : (
-        <DataTable
-          columns={columns}
-          data={households}
-          emptyMessage="No households yet."
-        />
       )}
     </div>
   );

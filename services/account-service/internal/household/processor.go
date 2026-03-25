@@ -52,8 +52,8 @@ func (p *Processor) CreateWithOwner(tenantID, userID uuid.UUID, name, timezone, 
 	return m, nil
 }
 
-func (p *Processor) Update(id uuid.UUID, name, timezone, units string) (Model, error) {
-	e, err := update(p.db.WithContext(p.ctx), id, name, timezone, units)
+func (p *Processor) Update(id uuid.UUID, name, timezone, units string, latitude, longitude *float64, locationName *string) (Model, error) {
+	e, err := update(p.db.WithContext(p.ctx), id, name, timezone, units, latitude, longitude, locationName)
 	if err != nil {
 		return Model{}, err
 	}

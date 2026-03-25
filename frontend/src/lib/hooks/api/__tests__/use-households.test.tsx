@@ -10,7 +10,7 @@ const mockTenant: Tenant = { id: "tenant-1", type: "tenants", attributes: { name
 vi.mock("@/context/tenant-context", () => ({
   useTenant: () => ({
     tenant: mockTenant,
-    household: { id: "household-1", type: "households", attributes: { name: "Home", timezone: "UTC", units: "imperial", createdAt: "", updatedAt: "" } },
+    household: { id: "household-1", type: "households", attributes: { name: "Home", timezone: "UTC", units: "imperial", latitude: null, longitude: null, locationName: null, createdAt: "", updatedAt: "" } },
     setActiveHousehold: vi.fn(),
   }),
 }));

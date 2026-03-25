@@ -7,12 +7,15 @@ import (
 )
 
 type RestModel struct {
-	Id        uuid.UUID `json:"-"`
-	Name      string    `json:"name"`
-	Timezone  string    `json:"timezone"`
-	Units     string    `json:"units"`
-	CreatedAt time.Time `json:"createdAt"`
-	UpdatedAt time.Time `json:"updatedAt"`
+	Id           uuid.UUID `json:"-"`
+	Name         string    `json:"name"`
+	Timezone     string    `json:"timezone"`
+	Units        string    `json:"units"`
+	Latitude     *float64  `json:"latitude"`
+	Longitude    *float64  `json:"longitude"`
+	LocationName *string   `json:"locationName"`
+	CreatedAt    time.Time `json:"createdAt"`
+	UpdatedAt    time.Time `json:"updatedAt"`
 }
 
 func (r RestModel) GetName() string { return "households" }
@@ -26,7 +29,8 @@ func (r *RestModel) SetID(id string) error {
 func Transform(m Model) (RestModel, error) {
 	return RestModel{
 		Id: m.Id(), Name: m.Name(), Timezone: m.Timezone(),
-		Units: m.Units(), CreatedAt: m.CreatedAt(), UpdatedAt: m.UpdatedAt(),
+		Units: m.Units(), Latitude: m.Latitude(), Longitude: m.Longitude(),
+		LocationName: m.LocationName(), CreatedAt: m.CreatedAt(), UpdatedAt: m.UpdatedAt(),
 	}, nil
 }
 
@@ -61,10 +65,13 @@ func (r *CreateRequest) SetID(id string) error {
 }
 
 type UpdateRequest struct {
-	Id       uuid.UUID `json:"-"`
-	Name     string    `json:"name"`
-	Timezone string    `json:"timezone"`
-	Units    string    `json:"units"`
+	Id           uuid.UUID `json:"-"`
+	Name         string    `json:"name"`
+	Timezone     string    `json:"timezone"`
+	Units        string    `json:"units"`
+	Latitude     *float64  `json:"latitude"`
+	Longitude    *float64  `json:"longitude"`
+	LocationName *string   `json:"locationName"`
 }
 
 func (r UpdateRequest) GetName() string { return "households" }

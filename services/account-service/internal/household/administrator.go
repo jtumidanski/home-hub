@@ -24,7 +24,7 @@ func create(db *gorm.DB, tenantID uuid.UUID, name, timezone, units string) (Enti
 	return e, nil
 }
 
-func update(db *gorm.DB, id uuid.UUID, name, timezone, units string) (Entity, error) {
+func update(db *gorm.DB, id uuid.UUID, name, timezone, units string, latitude, longitude *float64, locationName *string) (Entity, error) {
 	var e Entity
 	if err := db.Where("id = ?", id).First(&e).Error; err != nil {
 		return Entity{}, err
@@ -32,6 +32,9 @@ func update(db *gorm.DB, id uuid.UUID, name, timezone, units string) (Entity, er
 	e.Name = name
 	e.Timezone = timezone
 	e.Units = units
+	e.Latitude = latitude
+	e.Longitude = longitude
+	e.LocationName = locationName
 	e.UpdatedAt = time.Now().UTC()
 	if err := db.Save(&e).Error; err != nil {
 		return Entity{}, err

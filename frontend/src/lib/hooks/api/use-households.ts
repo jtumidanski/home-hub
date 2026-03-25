@@ -5,6 +5,8 @@ import { useTenant } from "@/context/tenant-context";
 import { contextKeys } from "@/lib/hooks/api/use-context";
 import { getErrorMessage } from "@/lib/api/errors";
 import type { Tenant } from "@/types/models/tenant";
+import type { HouseholdUpdateAttributes } from "@/types/models/household";
+import { weatherKeys } from "@/lib/hooks/api/use-weather";
 
 // --- Key factory ---
 
@@ -46,6 +48,23 @@ export function useCreateHousehold() {
     },
     onError: (error) => {
       toast.error(getErrorMessage(error, "Failed to create household"));
+    },
+  });
+}
+
+export function useUpdateHousehold() {
+  const qc = useQueryClient();
+  const { tenant } = useTenant();
+  return useMutation({
+    mutationFn: (args: { householdId: string; attrs: HouseholdUpdateAttributes }) =>
+      accountService.updateHousehold(tenant!, args.householdId, args.attrs),
+    onSettled: () => {
+      qc.invalidateQueries({ queryKey: householdKeys.lists(tenant) });
+      qc.invalidateQueries({ queryKey: contextKeys.current() });
+      qc.invalidateQueries({ queryKey: weatherKeys.all });
+    },
+    onError: (error) => {
+      toast.error(getErrorMessage(error, "Failed to update household"));
     },
   });
 }

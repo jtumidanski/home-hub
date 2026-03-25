@@ -2,6 +2,9 @@ export interface HouseholdAttributes {
   name: string;
   timezone: string;
   units: "imperial" | "metric";
+  latitude: number | null;
+  longitude: number | null;
+  locationName: string | null;
   createdAt: string;
   updatedAt: string;
 }
@@ -23,8 +26,12 @@ export interface HouseholdCreateAttributes {
 // --- Update attributes (F14) ---
 
 export type HouseholdUpdateAttributes = Partial<
-  Pick<HouseholdAttributes, "name" | "timezone" | "units">
+  Pick<HouseholdAttributes, "name" | "timezone" | "units" | "latitude" | "longitude" | "locationName">
 >;
+
+export function hasLocation(household: Household): boolean {
+  return household.attributes.latitude != null && household.attributes.longitude != null;
+}
 
 // --- Label map (F15) ---
 

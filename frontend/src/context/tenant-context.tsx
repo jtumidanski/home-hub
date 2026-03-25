@@ -77,7 +77,7 @@ export function TenantProvider({ children }: { children: ReactNode }) {
     if (householdResource && isHousehold(householdResource)) {
       return { id: householdResource.id, type: householdResource.type, attributes: householdResource.attributes as HouseholdAttributes };
     }
-    return { id: householdId, type: "households" as const, attributes: { name: "", timezone: "", units: "imperial" as const, createdAt: "", updatedAt: "" } };
+    return { id: householdId, type: "households" as const, attributes: { name: "", timezone: "", units: "imperial" as const, latitude: null, longitude: null, locationName: null, createdAt: "", updatedAt: "" } };
   }, [householdId, queryClient]);
 
   useEffect(() => {

@@ -13,6 +13,7 @@ import { TasksPage } from "@/pages/TasksPage";
 import { RemindersPage } from "@/pages/RemindersPage";
 import { SettingsPage } from "@/pages/SettingsPage";
 import { HouseholdsPage } from "@/pages/HouseholdsPage";
+import { WeatherPage } from "@/pages/WeatherPage";
 import { Error404Page } from "@/components/common/error-page";
 
 export function App() {
@@ -39,6 +40,7 @@ export function App() {
                   <Route path="tasks" element={<TasksPage />} />
                   <Route path="reminders" element={<RemindersPage />} />
                   <Route path="settings" element={<SettingsPage />} />
+                  <Route path="weather" element={<WeatherPage />} />
                   <Route path="households" element={<HouseholdsPage />} />
                 </Route>
                 <Route path="*" element={<Error404Page />} />

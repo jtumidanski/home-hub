@@ -57,6 +57,94 @@ func TestBuilder(t *testing.T) {
 			},
 			wantErr: ErrUnitsRequired,
 		},
+		{
+			name: "valid with location",
+			build: func() (Model, error) {
+				lat := 40.7128
+				lon := -74.006
+				locName := "New York"
+				return NewBuilder().
+					SetId(uuid.New()).
+					SetTenantID(uuid.New()).
+					SetName("My Home").
+					SetTimezone("America/New_York").
+					SetUnits("imperial").
+					SetLatitude(&lat).
+					SetLongitude(&lon).
+					SetLocationName(&locName).
+					SetCreatedAt(time.Now()).
+					SetUpdatedAt(time.Now()).
+					Build()
+			},
+		},
+		{
+			name: "valid without location",
+			build: func() (Model, error) {
+				return NewBuilder().
+					SetName("My Home").
+					SetTimezone("UTC").
+					SetUnits("metric").
+					SetLatitude(nil).
+					SetLongitude(nil).
+					Build()
+			},
+		},
+		{
+			name: "partial coordinates - latitude only",
+			build: func() (Model, error) {
+				lat := 40.7128
+				return NewBuilder().
+					SetName("Home").
+					SetTimezone("UTC").
+					SetUnits("metric").
+					SetLatitude(&lat).
+					Build()
+			},
+			wantErr: ErrPartialCoordinates,
+		},
+		{
+			name: "partial coordinates - longitude only",
+			build: func() (Model, error) {
+				lon := -74.006
+				return NewBuilder().
+					SetName("Home").
+					SetTimezone("UTC").
+					SetUnits("metric").
+					SetLongitude(&lon).
+					Build()
+			},
+			wantErr: ErrPartialCoordinates,
+		},
+		{
+			name: "latitude out of range",
+			build: func() (Model, error) {
+				lat := 91.0
+				lon := 0.0
+				return NewBuilder().
+					SetName("Home").
+					SetTimezone("UTC").
+					SetUnits("metric").
+					SetLatitude(&lat).
+					SetLongitude(&lon).
+					Build()
+			},
+			wantErr: ErrLatitudeOutOfRange,
+		},
+		{
+			name: "longitude out of range",
+			build: func() (Model, error) {
+				lat := 0.0
+				lon := 181.0
+				return NewBuilder().
+					SetName("Home").
+					SetTimezone("UTC").
+					SetUnits("metric").
+					SetLatitude(&lat).
+					SetLongitude(&lon).
+					Build()
+			},
+			wantErr: ErrLongitudeOutOfRange,
+		},
 	}
 
 	for _, tt := range tests {
