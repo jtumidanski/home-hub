@@ -18,7 +18,7 @@ export const contextKeys = {
 export function useAppContext(enabled: boolean = true) {
   return useQuery({
     queryKey: contextKeys.current(),
-    queryFn: () => accountService.getContext(),
+    queryFn: () => accountService.getContext({ maxRetries: 1, retryDelay: 500 }),
     enabled,
     retry: false,
     staleTime: 5 * 60 * 1000,

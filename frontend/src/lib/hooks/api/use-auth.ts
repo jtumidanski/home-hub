@@ -16,7 +16,7 @@ export const authKeys = {
 export function useMe() {
   return useQuery({
     queryKey: authKeys.me(),
-    queryFn: () => authService.getMe(),
+    queryFn: () => authService.getMe({ maxRetries: 1, retryDelay: 500 }),
     retry: false,
     staleTime: 5 * 60 * 1000,
     gcTime: 5 * 60 * 1000,

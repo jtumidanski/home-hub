@@ -58,9 +58,59 @@ class ApiClient {
   private tenantId: string | null = null;
   private pendingRequests = new Map<string, Promise<unknown>>();
   private cache = new Map<string, CacheEntry>();
+  private refreshPromise: Promise<boolean> | null = null;
+  private isRedirecting = false;
+
+  onAuthFailure: (() => void) | null = null;
 
   constructor(baseUrl: string = BASE_URL) {
     this.baseUrl = baseUrl;
+  }
+
+  resetAuthState() {
+    this.refreshPromise = null;
+    this.isRedirecting = false;
+  }
+
+  private isRefreshPath(path: string): boolean {
+    return path === "/auth/token/refresh";
+  }
+
+  private async attemptRefresh(): Promise<boolean> {
+    try {
+      const response = await fetch(`${this.baseUrl}/auth/token/refresh`, {
+        method: "POST",
+        credentials: "include",
+        headers: { Accept: "application/vnd.api+json" },
+      });
+      return response.ok;
+    } catch {
+      console.warn("Token refresh failed due to network error");
+      return false;
+    }
+  }
+
+  private async handleUnauthorized<T>(retryFn: () => Promise<T>): Promise<T> {
+    if (this.isRedirecting) {
+      throw transformError(new ApiRequestError("Session expired", 401));
+    }
+
+    if (!this.refreshPromise) {
+      this.refreshPromise = this.attemptRefresh().finally(() => {
+        this.refreshPromise = null;
+      });
+    }
+
+    const refreshed = await this.refreshPromise;
+
+    if (refreshed) {
+      return retryFn();
+    }
+
+    this.isRedirecting = true;
+    this.onAuthFailure?.();
+    window.location.href = "/login";
+    throw transformError(new ApiRequestError("Session expired", 401));
   }
 
   setTenant(tenant: { id: string }) {
@@ -183,12 +233,15 @@ class ApiClient {
       }
     }
 
-    const fetcher = async () => {
+    const fetcher = async (): Promise<T> => {
       const response = await this.fetchWithRetry(
         url,
         { credentials: "include", headers: this.buildHeaders(undefined, options) },
         options,
       );
+      if (response.status === 401 && !this.isRefreshPath(path)) {
+        return this.handleUnauthorized<T>(() => fetcher());
+      }
       if (!response.ok) throw await this.handleError(response);
       const result = await response.json() as T;
       this.setCache(dedupeKey, result, options);
@@ -211,7 +264,7 @@ class ApiClient {
     const url = `${this.baseUrl}${path}`;
     const dedupeKey = `POST:${url}:${this.tenantId ?? ""}:${JSON.stringify(body ?? null)}`;
 
-    const fetcher = async () => {
+    const fetcher = async (): Promise<T> => {
       const hasBody = body !== undefined && body !== null;
       const response = await this.fetchWithRetry(
         url,
@@ -226,6 +279,9 @@ class ApiClient {
         },
         { ...options, maxRetries: options?.maxRetries ?? 0 },
       );
+      if (response.status === 401 && !this.isRefreshPath(path)) {
+        return this.handleUnauthorized<T>(() => fetcher());
+      }
       if (!response.ok) throw await this.handleError(response);
 
       const contentLength = response.headers?.get?.("content-length");
@@ -243,46 +299,64 @@ class ApiClient {
   }
 
   async put<T>(path: string, body: unknown, options?: RequestOptions): Promise<T> {
-    const response = await this.fetchWithRetry(
-      `${this.baseUrl}${path}`,
-      {
-        method: "PUT",
-        credentials: "include",
-        headers: this.buildHeaders("application/vnd.api+json", options),
-        body: JSON.stringify(body),
-      },
-      { ...options, maxRetries: options?.maxRetries ?? 0 },
-    );
-    if (!response.ok) throw await this.handleError(response);
-    return response.json() as Promise<T>;
+    const doRequest = async (): Promise<T> => {
+      const response = await this.fetchWithRetry(
+        `${this.baseUrl}${path}`,
+        {
+          method: "PUT",
+          credentials: "include",
+          headers: this.buildHeaders("application/vnd.api+json", options),
+          body: JSON.stringify(body),
+        },
+        { ...options, maxRetries: options?.maxRetries ?? 0 },
+      );
+      if (response.status === 401) {
+        return this.handleUnauthorized<T>(() => doRequest());
+      }
+      if (!response.ok) throw await this.handleError(response);
+      return response.json() as Promise<T>;
+    };
+    return doRequest();
   }
 
   async patch<T>(path: string, body: unknown, options?: RequestOptions): Promise<T> {
-    const response = await this.fetchWithRetry(
-      `${this.baseUrl}${path}`,
-      {
-        method: "PATCH",
-        credentials: "include",
-        headers: this.buildHeaders("application/vnd.api+json", options),
-        body: JSON.stringify(body),
-      },
-      { ...options, maxRetries: options?.maxRetries ?? 0 },
-    );
-    if (!response.ok) throw await this.handleError(response);
-    return response.json() as Promise<T>;
+    const doRequest = async (): Promise<T> => {
+      const response = await this.fetchWithRetry(
+        `${this.baseUrl}${path}`,
+        {
+          method: "PATCH",
+          credentials: "include",
+          headers: this.buildHeaders("application/vnd.api+json", options),
+          body: JSON.stringify(body),
+        },
+        { ...options, maxRetries: options?.maxRetries ?? 0 },
+      );
+      if (response.status === 401) {
+        return this.handleUnauthorized<T>(() => doRequest());
+      }
+      if (!response.ok) throw await this.handleError(response);
+      return response.json() as Promise<T>;
+    };
+    return doRequest();
   }
 
   async delete(path: string, options?: RequestOptions): Promise<void> {
-    const response = await this.fetchWithRetry(
-      `${this.baseUrl}${path}`,
-      {
-        method: "DELETE",
-        credentials: "include",
-        headers: this.buildHeaders(undefined, options),
-      },
-      { ...options, maxRetries: options?.maxRetries ?? 0 },
-    );
-    if (!response.ok) throw await this.handleError(response);
+    const doRequest = async (): Promise<void> => {
+      const response = await this.fetchWithRetry(
+        `${this.baseUrl}${path}`,
+        {
+          method: "DELETE",
+          credentials: "include",
+          headers: this.buildHeaders(undefined, options),
+        },
+        { ...options, maxRetries: options?.maxRetries ?? 0 },
+      );
+      if (response.status === 401) {
+        return this.handleUnauthorized<void>(() => doRequest());
+      }
+      if (!response.ok) throw await this.handleError(response);
+    };
+    return doRequest();
   }
 
   async upload<T>(
@@ -293,40 +367,52 @@ class ApiClient {
     const url = `${this.baseUrl}${path}`;
 
     if (options?.onProgress) {
-      return this.uploadWithProgress<T>(url, formData, options);
+      return this.uploadWithProgress<T>(path, url, formData, options);
     }
 
-    const headers = this.buildHeaders(undefined, options);
-    // Do not set Content-Type for FormData; the browser sets it with the boundary
-    const response = await this.fetchWithRetry(
-      url,
-      {
-        method: "POST",
-        credentials: "include",
-        headers,
-        body: formData,
-      },
-      { ...options, maxRetries: options?.maxRetries ?? 0 },
-    );
-    if (!response.ok) throw await this.handleError(response);
-    return response.json() as Promise<T>;
+    const doRequest = async (): Promise<T> => {
+      const headers = this.buildHeaders(undefined, options);
+      // Do not set Content-Type for FormData; the browser sets it with the boundary
+      const response = await this.fetchWithRetry(
+        url,
+        {
+          method: "POST",
+          credentials: "include",
+          headers,
+          body: formData,
+        },
+        { ...options, maxRetries: options?.maxRetries ?? 0 },
+      );
+      if (response.status === 401) {
+        return this.handleUnauthorized<T>(() => doRequest());
+      }
+      if (!response.ok) throw await this.handleError(response);
+      return response.json() as Promise<T>;
+    };
+    return doRequest();
   }
 
   async download(path: string, options?: RequestOptions): Promise<Blob> {
     const url = `${this.baseUrl}${path}`;
-    const response = await this.fetchWithRetry(
-      url,
-      {
-        credentials: "include",
-        headers: {
-          ...this.buildHeaders(undefined, options),
-          Accept: "*/*",
+    const doRequest = async (): Promise<Blob> => {
+      const response = await this.fetchWithRetry(
+        url,
+        {
+          credentials: "include",
+          headers: {
+            ...this.buildHeaders(undefined, options),
+            Accept: "*/*",
+          },
         },
-      },
-      options,
-    );
-    if (!response.ok) throw await this.handleError(response);
-    return response.blob();
+        options,
+      );
+      if (response.status === 401) {
+        return this.handleUnauthorized<Blob>(() => doRequest());
+      }
+      if (!response.ok) throw await this.handleError(response);
+      return response.blob();
+    };
+    return doRequest();
   }
 
   clearPendingRequests() {
@@ -354,6 +440,7 @@ class ApiClient {
   }
 
   private uploadWithProgress<T>(
+    path: string,
     url: string,
     formData: FormData,
     options: RequestOptions,
@@ -382,6 +469,17 @@ class ApiClient {
       }
 
       xhr.addEventListener("load", async () => {
+        if (xhr.status === 401) {
+          try {
+            const result = await this.handleUnauthorized<T>(() =>
+              this.upload<T>(path, formData, options),
+            );
+            resolve(result);
+          } catch (e) {
+            reject(e);
+          }
+          return;
+        }
         if (xhr.status >= 200 && xhr.status < 300) {
           try {
             resolve(JSON.parse(xhr.responseText) as T);

@@ -1,4 +1,4 @@
-import { api } from "@/lib/api/client";
+import { api, type RequestOptions } from "@/lib/api/client";
 import type { ApiResponse, ApiListResponse } from "@/types/api/responses";
 import type { AppContext } from "@/types/models/context";
 import type { Tenant } from "@/types/models/tenant";
@@ -8,9 +8,10 @@ import type { HouseholdCreateAttributes } from "@/types/models/household";
 import type { Preference } from "@/types/models/preference";
 
 class AccountService {
-  getContext() {
+  getContext(options?: RequestOptions) {
     return api.get<ApiResponse<AppContext>>(
       "/contexts/current?include=tenant,activeHousehold,preference,memberships",
+      options,
     );
   }
 
