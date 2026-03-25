@@ -20,6 +20,17 @@ func (Entity) TableName() string { return "task_restorations" }
 
 func Migration(db *gorm.DB) error { return db.AutoMigrate(&Entity{}) }
 
+func (m Model) ToEntity() Entity {
+	return Entity{
+		Id:              m.id,
+		TenantId:        m.tenantID,
+		HouseholdId:     m.householdID,
+		TaskId:          m.taskID,
+		CreatedByUserId: m.createdByUserID,
+		CreatedAt:       m.createdAt,
+	}
+}
+
 func Make(e Entity) (Model, error) {
 	return NewBuilder().
 		SetId(e.Id).

@@ -39,7 +39,7 @@ func createHandler(db *gorm.DB) server.InputHandler[CreateRequest] {
 					return
 				}
 				d.Logger().WithError(err).Error("Failed to snooze reminder")
-				server.WriteError(w, http.StatusBadRequest, "Snooze Failed", "Invalid snooze duration")
+				server.WriteError(w, http.StatusInternalServerError, "Snooze Failed", "")
 				return
 			}
 

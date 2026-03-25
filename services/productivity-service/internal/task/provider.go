@@ -2,42 +2,29 @@ package task
 
 import (
 	"github.com/google/uuid"
-	"github.com/jtumidanski/home-hub/shared/go/model"
+	database "github.com/jtumidanski/home-hub/shared/go/database"
 	"gorm.io/gorm"
 )
 
-func getByID(id uuid.UUID) func(db *gorm.DB) model.Provider[Entity] {
-	return func(db *gorm.DB) model.Provider[Entity] {
-		return func() (Entity, error) {
-			var result Entity
-			err := db.Where("id = ?", id).First(&result).Error
-			return result, err
-		}
-	}
+func getByID(id uuid.UUID) database.EntityProvider[Entity] {
+	return database.Query[Entity](func(db *gorm.DB) *gorm.DB {
+		return db.Where("id = ?", id)
+	})
 }
 
-func getAll(includeDeleted bool) func(db *gorm.DB) model.Provider[[]Entity] {
-	return func(db *gorm.DB) model.Provider[[]Entity] {
-		return func() ([]Entity, error) {
-			var results []Entity
-			q := db
-			if !includeDeleted {
-				q = q.Where("deleted_at IS NULL")
-			}
-			err := q.Find(&results).Error
-			return results, err
+func getAll(includeDeleted bool) database.EntityProvider[[]Entity] {
+	return database.SliceQuery[Entity](func(db *gorm.DB) *gorm.DB {
+		if !includeDeleted {
+			db = db.Where("deleted_at IS NULL")
 		}
-	}
+		return db
+	})
 }
 
-func getByStatus(status string) func(db *gorm.DB) model.Provider[[]Entity] {
-	return func(db *gorm.DB) model.Provider[[]Entity] {
-		return func() ([]Entity, error) {
-			var results []Entity
-			err := db.Where("status = ? AND deleted_at IS NULL", status).Find(&results).Error
-			return results, err
-		}
-	}
+func getByStatus(status string) database.EntityProvider[[]Entity] {
+	return database.SliceQuery[Entity](func(db *gorm.DB) *gorm.DB {
+		return db.Where("status = ? AND deleted_at IS NULL", status)
+	})
 }
 
 func countByStatus(db *gorm.DB, status string) (int64, error) {

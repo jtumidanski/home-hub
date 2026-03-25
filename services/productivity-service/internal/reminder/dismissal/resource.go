@@ -1,6 +1,7 @@
 package dismissal
 
 import (
+	"errors"
 	"net/http"
 
 	"github.com/google/uuid"
@@ -33,6 +34,16 @@ func createHandler(db *gorm.DB) server.InputHandler[CreateRequest] {
 			proc := NewProcessor(d.Logger(), r.Context(), db)
 			m, err := proc.Create(t.Id(), t.HouseholdId(), reminderID, t.UserId())
 			if err != nil {
+				if errors.Is(err, ErrReminderIDRequired) || errors.Is(err, ErrCreatedByRequired) {
+					d.Logger().WithError(err).Error("Validation failed")
+					server.WriteError(w, http.StatusBadRequest, "Invalid Request", "Invalid dismissal parameters")
+					return
+				}
+				if errors.Is(err, gorm.ErrRecordNotFound) {
+					d.Logger().WithError(err).Error("Reminder not found")
+					server.WriteError(w, http.StatusNotFound, "Not Found", "Reminder not found")
+					return
+				}
 				d.Logger().WithError(err).Error("Failed to dismiss reminder")
 				server.WriteError(w, http.StatusInternalServerError, "Dismiss Failed", "")
 				return

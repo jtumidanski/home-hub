@@ -115,6 +115,11 @@ func updateHandler(db *gorm.DB) server.InputHandler[UpdateRequest] {
 				proc := NewProcessor(d.Logger(), r.Context(), db)
 				m, err := proc.Update(id, input.Title, input.Notes, scheduledFor)
 				if err != nil {
+					if errors.Is(err, gorm.ErrRecordNotFound) {
+						d.Logger().WithError(err).Error("Reminder not found")
+						server.WriteError(w, http.StatusNotFound, "Not Found", "")
+						return
+					}
 					d.Logger().WithError(err).Error("Failed to update reminder")
 					server.WriteError(w, http.StatusInternalServerError, "Update Failed", "")
 					return
@@ -137,6 +142,11 @@ func deleteHandler(db *gorm.DB) server.GetHandler {
 			return func(w http.ResponseWriter, r *http.Request) {
 				proc := NewProcessor(d.Logger(), r.Context(), db)
 				if err := proc.Delete(id); err != nil {
+					if errors.Is(err, gorm.ErrRecordNotFound) {
+						d.Logger().WithError(err).Error("Reminder not found")
+						server.WriteError(w, http.StatusNotFound, "Not Found", "")
+						return
+					}
 					d.Logger().WithError(err).Error("Failed to delete reminder")
 					server.WriteError(w, http.StatusInternalServerError, "Delete Failed", "")
 					return

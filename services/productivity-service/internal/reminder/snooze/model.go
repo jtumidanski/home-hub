@@ -25,16 +25,3 @@ func (m Model) DurationMinutes() int     { return m.durationMinutes }
 func (m Model) SnoozedUntil() time.Time  { return m.snoozedUntil }
 func (m Model) CreatedByUserID() uuid.UUID { return m.createdByUserID }
 func (m Model) CreatedAt() time.Time     { return m.createdAt }
-
-func (m Model) ToEntity() Entity {
-	return Entity{
-		Id:              m.id,
-		TenantId:        m.tenantID,
-		HouseholdId:     m.householdID,
-		ReminderId:      m.reminderID,
-		DurationMinutes: m.durationMinutes,
-		SnoozedUntil:    m.snoozedUntil,
-		CreatedByUserId: m.createdByUserID,
-		CreatedAt:       m.createdAt,
-	}
-}

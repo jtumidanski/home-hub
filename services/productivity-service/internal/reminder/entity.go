@@ -24,6 +24,15 @@ func (Entity) TableName() string { return "reminders" }
 
 func Migration(db *gorm.DB) error { return db.AutoMigrate(&Entity{}) }
 
+func (m Model) ToEntity() Entity {
+	return Entity{
+		Id: m.id, TenantId: m.tenantID, HouseholdId: m.householdID,
+		Title: m.title, Notes: m.notes, ScheduledFor: m.scheduledFor,
+		LastDismissedAt: m.lastDismissedAt, LastSnoozedUntil: m.lastSnoozedUntil,
+		CreatedAt: m.createdAt, UpdatedAt: m.updatedAt,
+	}
+}
+
 func Make(e Entity) (Model, error) {
 	return NewBuilder().
 		SetId(e.Id).
