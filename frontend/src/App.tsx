@@ -1,4 +1,4 @@
-import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { Toaster } from "sonner";
 import { QueryProvider } from "@/components/providers/query-provider";
 import { ThemeProvider } from "@/components/providers/theme-provider";
@@ -24,6 +24,7 @@ export function App() {
             <TenantProvider>
               <Toaster richColors closeButton />
               <Routes>
+                <Route path="/" element={<Navigate to="/app" replace />} />
                 <Route path="/login" element={<LoginPage />} />
                 <Route path="/onboarding" element={<OnboardingPage />} />
                 <Route

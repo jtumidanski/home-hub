@@ -2,6 +2,7 @@ package config
 
 import (
 	"os"
+	"strings"
 
 	"github.com/jtumidanski/home-hub/shared/go/database"
 )
@@ -35,7 +36,7 @@ func Load() Config {
 			Schema:   "auth",
 		},
 		Port:          envOrDefault("PORT", "8080"),
-		JWTPrivateKey: os.Getenv("JWT_PRIVATE_KEY"),
+		JWTPrivateKey: strings.ReplaceAll(os.Getenv("JWT_PRIVATE_KEY"), `\n`, "\n"),
 		JWTKeyID:      envOrDefault("JWT_KEY_ID", "home-hub-1"),
 		OIDC: OIDCConfig{
 			IssuerURL:    envOrDefault("OIDC_ISSUER_URL", "https://accounts.google.com"),

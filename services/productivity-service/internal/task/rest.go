@@ -59,7 +59,14 @@ type CreateRequest struct {
 
 func (r CreateRequest) GetName() string       { return "tasks" }
 func (r CreateRequest) GetID() string          { return r.Id.String() }
-func (r *CreateRequest) SetID(id string) error { var err error; r.Id, err = uuid.Parse(id); return err }
+func (r *CreateRequest) SetID(id string) error {
+	if id == "" {
+		return nil
+	}
+	var err error
+	r.Id, err = uuid.Parse(id)
+	return err
+}
 
 type UpdateRequest struct {
 	Id              uuid.UUID `json:"-"`

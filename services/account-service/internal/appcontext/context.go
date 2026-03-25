@@ -1,14 +1,17 @@
 package appcontext
 
 import (
+	"context"
+	"fmt"
+
 	"github.com/google/uuid"
 	"github.com/jtumidanski/home-hub/services/account-service/internal/household"
 	"github.com/jtumidanski/home-hub/services/account-service/internal/membership"
 	"github.com/jtumidanski/home-hub/services/account-service/internal/preference"
 	"github.com/jtumidanski/home-hub/services/account-service/internal/tenant"
+	"github.com/jtumidanski/home-hub/shared/go/database"
 	"github.com/sirupsen/logrus"
 	"gorm.io/gorm"
-	"context"
 )
 
 // Resolved holds the fully resolved application context for a user.
@@ -22,7 +25,25 @@ type Resolved struct {
 }
 
 // Resolve builds the current application context for the given user and tenant.
+// If tenantID is nil, the tenant is resolved from the user's first membership.
+// Context resolution bypasses tenant filtering since it is the bootstrapping query.
 func Resolve(l logrus.FieldLogger, ctx context.Context, db *gorm.DB, tenantID, userID uuid.UUID) (*Resolved, error) {
+	// Bypass tenant filtering — this is the bootstrapping query that establishes
+	// which tenant the user belongs to.
+	ctx = database.WithoutTenantFilter(ctx)
+
+	if tenantID == uuid.Nil {
+		memProc := membership.NewProcessor(l, ctx, db)
+		memberships, err := memProc.ByUserProvider(userID)()
+		if err != nil {
+			return nil, err
+		}
+		if len(memberships) == 0 {
+			return nil, fmt.Errorf("no memberships found for user %s", userID)
+		}
+		tenantID = memberships[0].TenantID()
+	}
+
 	// Get tenant
 	tenantProc := tenant.NewProcessor(l, ctx, db)
 	t, err := tenantProc.ByIDProvider(tenantID)()

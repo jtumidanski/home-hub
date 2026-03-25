@@ -6,5 +6,5 @@ ROOT_DIR="$(cd "$SCRIPT_DIR/.." && pwd)"
 
 echo "Starting local environment..."
 cd "$ROOT_DIR/deploy/compose"
-docker compose up -d
+docker compose --env-file "$ROOT_DIR/.env" up -d
 echo "Local environment started."

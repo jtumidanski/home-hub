@@ -1,10 +1,15 @@
 package oidcprovider
 
-import "github.com/google/uuid"
+import (
+	"strings"
+
+	"github.com/google/uuid"
+)
 
 // RestModel is the JSON:API representation of an OIDC provider.
 type RestModel struct {
 	Id          uuid.UUID `json:"-"`
+	Slug        string    `json:"slug"`
 	DisplayName string    `json:"displayName"`
 }
 
@@ -23,6 +28,7 @@ func (r *RestModel) SetID(id string) error {
 func Transform(m Model) (RestModel, error) {
 	return RestModel{
 		Id:          m.Id(),
+		Slug:        strings.ToLower(m.Name()),
 		DisplayName: m.Name(),
 	}, nil
 }
