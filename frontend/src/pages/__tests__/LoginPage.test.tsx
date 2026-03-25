@@ -38,8 +38,8 @@ describe("LoginPage", () => {
     mockUseProviders.mockReturnValue({
       data: {
         data: [
-          { id: "google", type: "auth-providers", attributes: { displayName: "Google" } },
-          { id: "github", type: "auth-providers", attributes: { displayName: "GitHub" } },
+          { id: "google", type: "auth-providers", attributes: { slug: "google", displayName: "Google" } },
+          { id: "github", type: "auth-providers", attributes: { slug: "github", displayName: "GitHub" } },
         ],
       },
       isLoading: false,
@@ -60,7 +60,7 @@ describe("LoginPage", () => {
     mockUseProviders.mockReturnValue({
       data: {
         data: [
-          { id: "google", type: "auth-providers", attributes: { displayName: "Google" } },
+          { id: "google", type: "auth-providers", attributes: { slug: "google", displayName: "Google" } },
         ],
       },
       isLoading: false,

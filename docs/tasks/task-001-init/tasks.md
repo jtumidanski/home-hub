@@ -122,8 +122,8 @@ Last Updated: 2026-03-24
 - [x] 9.1 Create docker-compose.yml
 - [x] 9.2 Create nginx.conf with path-prefix routing
 - [x] 9.3 Create .env.example
-- [ ] 9.4 Verify end-to-end login flow locally
-- [ ] 9.5 Verify all API endpoints work through proxy
+- [x] 9.4 Verify end-to-end login flow locally
+- [x] 9.5 Verify all API endpoints work through proxy
 
 ## Phase 10 — k3s Deployment
 
@@ -144,5 +144,5 @@ Last Updated: 2026-03-24
 ## Phase 12 — Renovate + Maturity
 
 - [x] 12.1 Create renovate.json
-- [ ] 12.2 Verify all docs are accurate against implementation
-- [ ] 12.3 Verify CI is strict (branch protection)
+- [x] 12.2 Verify all docs are accurate against implementation
+- [x] 12.3 Verify CI is strict (branch protection)
