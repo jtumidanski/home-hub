@@ -11,6 +11,7 @@ jobs:
       auth: ${{ steps.changes.outputs.auth }}
       account: ${{ steps.changes.outputs.account }}
       productivity: ${{ steps.changes.outputs.productivity }}
+      weather: ${{ steps.changes.outputs.weather }}
       frontend: ${{ steps.changes.outputs.frontend }}
       shared: ${{ steps.changes.outputs.shared }}
     steps:
@@ -27,6 +28,9 @@ jobs:
               - 'shared/go/**'
             productivity:
               - 'services/productivity-service/**'
+              - 'shared/go/**'
+            weather:
+              - 'services/weather-service/**'
               - 'shared/go/**'
             frontend:
               - 'frontend/**'
@@ -79,6 +83,22 @@ jobs:
       - name: Test
         run: |
           cd services/productivity-service
+          go test ./... -count=1
+
+  build-weather:
+    needs: detect-changes
+    if: needs.detect-changes.outputs.weather == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version: '1.26'
+      - name: Build
+        run: go build ./services/weather-service/...
+      - name: Test
+        run: |
+          cd services/weather-service
           go test ./... -count=1
 
   build-shared:
@@ -141,6 +161,10 @@ jobs:
             context: .
             dockerfile: services/productivity-service/Dockerfile
             changed: productivity
+          - service: weather-service
+            context: .
+            dockerfile: services/weather-service/Dockerfile
+            changed: weather
           - service: frontend
             context: frontend
             dockerfile: frontend/Dockerfile

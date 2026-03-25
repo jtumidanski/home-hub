@@ -3,8 +3,7 @@ import type { ApiResponse, ApiListResponse } from "@/types/api/responses";
 import type { AppContext } from "@/types/models/context";
 import type { Tenant } from "@/types/models/tenant";
 import type { TenantCreateAttributes } from "@/types/models/tenant";
-import type { Household } from "@/types/models/household";
-import type { HouseholdCreateAttributes } from "@/types/models/household";
+import type { Household, HouseholdUpdateAttributes, HouseholdCreateAttributes } from "@/types/models/household";
 import type { Preference } from "@/types/models/preference";
 
 class AccountService {
@@ -39,6 +38,13 @@ class AccountService {
     api.setTenant(tenant);
     return api.patch<ApiResponse<Preference>>(`/preferences/${preferenceId}`, {
       data: { type: "preferences", id: preferenceId, attributes: { theme } },
+    });
+  }
+
+  updateHousehold(tenant: Tenant, householdId: string, attrs: HouseholdUpdateAttributes) {
+    api.setTenant(tenant);
+    return api.patch<ApiResponse<Household>>(`/households/${householdId}`, {
+      data: { type: "households", id: householdId, attributes: attrs },
     });
   }
 

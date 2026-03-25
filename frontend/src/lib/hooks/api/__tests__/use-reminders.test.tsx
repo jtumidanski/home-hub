@@ -7,7 +7,7 @@ import type { Tenant } from "@/types/models/tenant";
 import type { Household } from "@/types/models/household";
 
 const mockTenant: Tenant = { id: "tenant-1", type: "tenants", attributes: { name: "Test", createdAt: "", updatedAt: "" } };
-const mockHousehold: Household = { id: "household-1", type: "households", attributes: { name: "Home", timezone: "UTC", units: "imperial", createdAt: "", updatedAt: "" } };
+const mockHousehold: Household = { id: "household-1", type: "households", attributes: { name: "Home", timezone: "UTC", units: "imperial", latitude: null, longitude: null, locationName: null, createdAt: "", updatedAt: "" } };
 
 vi.mock("@/context/tenant-context", () => ({
   useTenant: () => ({
@@ -30,7 +30,7 @@ vi.mock("@/services/api/productivity", () => ({
 }));
 
 const t = (id: string): Tenant => ({ id, type: "tenants", attributes: { name: "", createdAt: "", updatedAt: "" } });
-const h = (id: string): Household => ({ id, type: "households", attributes: { name: "", timezone: "", units: "imperial", createdAt: "", updatedAt: "" } });
+const h = (id: string): Household => ({ id, type: "households", attributes: { name: "", timezone: "", units: "imperial", latitude: null, longitude: null, locationName: null, createdAt: "", updatedAt: "" } });
 
 describe("reminderKeys", () => {
   it("generates all key with tenant and household id", () => {

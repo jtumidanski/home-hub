@@ -6,6 +6,7 @@ export type { ValidationError } from "./base";
 export { authService } from "./auth";
 export { accountService } from "./account";
 export { productivityService } from "./productivity";
+export { weatherService } from "./weather";
 
 // Types re-exported per service
 export type { AuthProvider } from "./auth";

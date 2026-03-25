@@ -81,34 +81,67 @@ func TestProcessor(t *testing.T) {
 	})
 
 	t.Run("Update", func(t *testing.T) {
-		tests := []struct {
-			name         string
-			newName      string
-			newTimezone  string
-			newUnits     string
-			wantName     string
-			wantTimezone string
-		}{
-			{"update all fields", "New Name", "America/Chicago", "imperial", "New Name", "America/Chicago"},
-		}
-		for _, tt := range tests {
-			t.Run(tt.name, func(t *testing.T) {
-				db := setupTestDB(t)
-				l, _ := test.NewNullLogger()
-				p := NewProcessor(l, context.Background(), db)
+		db := setupTestDB(t)
+		l, _ := test.NewNullLogger()
+		p := NewProcessor(l, context.Background(), db)
 
-				m, _ := p.Create(uuid.New(), "Old Name", "UTC", "metric")
-				updated, err := p.Update(m.Id(), tt.newName, tt.newTimezone, tt.newUnits)
-				if err != nil {
-					t.Fatalf("unexpected error: %v", err)
-				}
-				if updated.Name() != tt.wantName {
-					t.Errorf("expected name %s, got %s", tt.wantName, updated.Name())
-				}
-				if updated.Timezone() != tt.wantTimezone {
-					t.Errorf("expected timezone %s, got %s", tt.wantTimezone, updated.Timezone())
-				}
-			})
+		m, _ := p.Create(uuid.New(), "Old Name", "UTC", "metric")
+		updated, err := p.Update(m.Id(), "New Name", "America/Chicago", "imperial", nil, nil, nil)
+		if err != nil {
+			t.Fatalf("unexpected error: %v", err)
+		}
+		if updated.Name() != "New Name" {
+			t.Errorf("expected name New Name, got %s", updated.Name())
+		}
+		if updated.Timezone() != "America/Chicago" {
+			t.Errorf("expected timezone America/Chicago, got %s", updated.Timezone())
+		}
+	})
+
+	t.Run("Update with location", func(t *testing.T) {
+		db := setupTestDB(t)
+		l, _ := test.NewNullLogger()
+		p := NewProcessor(l, context.Background(), db)
+
+		m, _ := p.Create(uuid.New(), "Home", "UTC", "metric")
+		lat := 40.7128
+		lon := -74.006
+		locName := "New York, NY, United States"
+		updated, err := p.Update(m.Id(), "Home", "UTC", "metric", &lat, &lon, &locName)
+		if err != nil {
+			t.Fatalf("unexpected error: %v", err)
+		}
+		if !updated.HasLocation() {
+			t.Error("expected household to have location")
+		}
+		if *updated.Latitude() != lat {
+			t.Errorf("expected latitude %f, got %f", lat, *updated.Latitude())
+		}
+		if *updated.Longitude() != lon {
+			t.Errorf("expected longitude %f, got %f", lon, *updated.Longitude())
+		}
+		if *updated.LocationName() != locName {
+			t.Errorf("expected location name %s, got %s", locName, *updated.LocationName())
+		}
+	})
+
+	t.Run("Update clear location", func(t *testing.T) {
+		db := setupTestDB(t)
+		l, _ := test.NewNullLogger()
+		p := NewProcessor(l, context.Background(), db)
+
+		m, _ := p.Create(uuid.New(), "Home", "UTC", "metric")
+		lat := 40.7128
+		lon := -74.006
+		locName := "New York"
+		m, _ = p.Update(m.Id(), "Home", "UTC", "metric", &lat, &lon, &locName)
+
+		updated, err := p.Update(m.Id(), "Home", "UTC", "metric", nil, nil, nil)
+		if err != nil {
+			t.Fatalf("unexpected error: %v", err)
+		}
+		if updated.HasLocation() {
+			t.Error("expected household to not have location after clearing")
 		}
 	})
 

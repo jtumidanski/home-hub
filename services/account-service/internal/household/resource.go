@@ -97,19 +97,24 @@ func getHandler(db *gorm.DB) server.GetHandler {
 	}
 }
 
+func isValidationError(err error) bool {
+	return errors.Is(err, ErrNameRequired) || errors.Is(err, ErrTimezoneRequired) || errors.Is(err, ErrUnitsRequired) ||
+		errors.Is(err, ErrPartialCoordinates) || errors.Is(err, ErrLatitudeOutOfRange) || errors.Is(err, ErrLongitudeOutOfRange)
+}
+
 func updateHandler(db *gorm.DB) server.InputHandler[UpdateRequest] {
 	return func(d *server.HandlerDependency, c *server.HandlerContext, input UpdateRequest) http.HandlerFunc {
 		return server.ParseID("id", func(id uuid.UUID) http.HandlerFunc {
 			return func(w http.ResponseWriter, r *http.Request) {
 				proc := NewProcessor(d.Logger(), r.Context(), db)
-				m, err := proc.Update(id, input.Name, input.Timezone, input.Units)
+				m, err := proc.Update(id, input.Name, input.Timezone, input.Units, input.Latitude, input.Longitude, input.LocationName)
 				if err != nil {
 					if errors.Is(err, gorm.ErrRecordNotFound) {
 						d.Logger().WithError(err).Error("Household not found")
 						server.WriteError(w, http.StatusNotFound, "Not Found", "")
 						return
 					}
-					if errors.Is(err, ErrNameRequired) || errors.Is(err, ErrTimezoneRequired) || errors.Is(err, ErrUnitsRequired) {
+					if isValidationError(err) {
 						d.Logger().WithError(err).Error("Validation failed")
 						server.WriteError(w, http.StatusBadRequest, "Validation Failed", err.Error())
 						return

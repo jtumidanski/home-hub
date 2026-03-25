@@ -163,4 +163,41 @@ func TestHandlers(t *testing.T) {
 			t.Errorf("expected status 200, got %d: %s", w.Code, w.Body.String())
 		}
 	})
+
+	t.Run("PATCH /households/{id} with location", func(t *testing.T) {
+		router, db, tenantID, userID := setupHandlerTest(t)
+
+		l, _ := test.NewNullLogger()
+		ctx := tenantctx.WithContext(
+			httptest.NewRequest(http.MethodGet, "/", nil).Context(),
+			tenantctx.New(tenantID, uuid.Nil, userID),
+		)
+		p := NewProcessor(l, ctx, db)
+		m, _ := p.Create(tenantID, "My Home", "UTC", "metric")
+
+		body := `{"data":{"type":"households","id":"` + m.Id().String() + `","attributes":{"name":"My Home","timezone":"UTC","units":"metric","latitude":40.7128,"longitude":-74.006,"locationName":"New York, NY"}}}`
+		req := httptest.NewRequest(http.MethodPatch, "/households/"+m.Id().String(), bytes.NewBufferString(body))
+		req.Header.Set("Content-Type", "application/vnd.api+json")
+		req = withTenant(req, tenantID, userID)
+		w := httptest.NewRecorder()
+
+		router.ServeHTTP(w, req)
+
+		if w.Code != http.StatusOK {
+			t.Errorf("expected status 200, got %d: %s", w.Code, w.Body.String())
+		}
+
+		var resp map[string]interface{}
+		if err := json.Unmarshal(w.Body.Bytes(), &resp); err != nil {
+			t.Fatalf("failed to parse response: %v", err)
+		}
+		data := resp["data"].(map[string]interface{})
+		attrs := data["attributes"].(map[string]interface{})
+		if attrs["latitude"] != 40.7128 {
+			t.Errorf("expected latitude 40.7128, got %v", attrs["latitude"])
+		}
+		if attrs["locationName"] != "New York, NY" {
+			t.Errorf("expected locationName 'New York, NY', got %v", attrs["locationName"])
+		}
+	})
 }

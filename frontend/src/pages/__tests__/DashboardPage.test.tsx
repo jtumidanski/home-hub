@@ -17,6 +17,10 @@ vi.mock("@/components/providers/auth-provider", () => ({
   useAuth: () => mockUseAuth(),
 }));
 
+vi.mock("@/components/features/weather/weather-widget", () => ({
+  WeatherWidget: () => <div data-testid="weather-widget">Weather Widget</div>,
+}));
+
 import { DashboardPage } from "../DashboardPage";
 
 describe("DashboardPage", () => {

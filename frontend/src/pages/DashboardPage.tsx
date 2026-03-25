@@ -7,6 +7,7 @@ import { ErrorCard } from "@/components/common/error-card";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { CheckSquare, Bell, AlertTriangle } from "lucide-react";
+import { WeatherWidget } from "@/components/features/weather/weather-widget";
 
 function DashboardSkeleton() {
   return (
@@ -54,6 +55,8 @@ export function DashboardPage() {
         {(taskError || reminderError) && (
           <ErrorCard message="Failed to load some dashboard data. Try refreshing the page." />
         )}
+
+        <WeatherWidget />
 
         <div className="grid gap-4 md:grid-cols-3">
           <Card>

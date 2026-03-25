@@ -25,6 +25,7 @@ Core services:
 - auth-service
 - account-service
 - productivity-service
+- weather-service
 
 Shared modules provide common functionality but do not contain business logic.
 
@@ -50,6 +51,7 @@ Routing:
 /api/v1/tasks -> productivity-service
 /api/v1/reminders -> productivity-service
 /api/v1/summary -> productivity-service
+/api/v1/weather -> weather-service
 ```
 
 All services are stateless except for database persistence. Authentication is handled by auth-service. Authorization is enforced by each service using JWT claims.
@@ -134,6 +136,26 @@ Rules:
 - household scoped
 
 Summary endpoints return single resources.
+
+### 3.5 weather-service
+
+Responsibilities:
+
+- current weather conditions
+- 7-day forecast
+- geocoding place search
+- weather data caching
+- background cache refresh
+
+Schema: `weather.weather_caches`
+
+Rules:
+
+- fetches from Open-Meteo public API (no API key)
+- caches weather data per household in PostgreSQL (JSONB)
+- background ticker refreshes cache at configurable interval
+- cache self-heals on coordinate/unit mismatch
+- tenant scoped, household scoped
 
 ## 4. API Design
 
@@ -257,6 +279,7 @@ Images:
 ghcr.io/<owner>/home-hub-auth
 ghcr.io/<owner>/home-hub-account
 ghcr.io/<owner>/home-hub-productivity
+ghcr.io/<owner>/home-hub-weather
 ghcr.io/<owner>/home-hub-frontend
 ```
 

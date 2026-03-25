@@ -9,8 +9,21 @@ vi.mock("@/components/providers/auth-provider", () => ({
   useAuth: () => mockUseAuth(),
 }));
 
+vi.mock("@/context/tenant-context", () => ({
+  useTenant: () => ({
+    tenant: { id: "t-1", type: "tenants", attributes: { name: "Test", createdAt: "", updatedAt: "" } },
+    household: { id: "hh-1", type: "households", attributes: { name: "Main House", timezone: "UTC", units: "imperial", latitude: null, longitude: null, locationName: null, createdAt: "", updatedAt: "" } },
+    setActiveHousehold: vi.fn(),
+  }),
+}));
+
 vi.mock("@/lib/hooks/api/use-households", () => ({
   useHouseholds: () => mockUseHouseholds(),
+  useUpdateHousehold: () => ({ mutate: vi.fn() }),
+}));
+
+vi.mock("@/components/features/weather/location-search", () => ({
+  LocationSearch: () => <div data-testid="location-search">Location Search</div>,
 }));
 
 vi.mock("@/components/features/households/create-household-dialog", () => ({
