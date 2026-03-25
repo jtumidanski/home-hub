@@ -16,10 +16,19 @@ export interface Task {
   attributes: TaskAttributes;
 }
 
+// --- Create attributes (F14) ---
+
+export interface TaskCreateAttributes {
+  title: string;
+  notes?: string;
+  dueOn?: string;
+  rolloverEnabled?: boolean;
+}
+
 // --- Update attributes (F14) ---
 
 export type TaskUpdateAttributes = Partial<
-  Pick<TaskAttributes, "title" | "notes" | "dueOn" | "rolloverEnabled">
+  Pick<TaskAttributes, "title" | "notes" | "status" | "dueOn" | "rolloverEnabled">
 >;
 
 // --- Label map (F15) ---

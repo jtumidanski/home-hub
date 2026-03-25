@@ -13,7 +13,7 @@ vi.mock("@/lib/hooks/api/use-tasks", () => ({
 }));
 
 vi.mock("@/lib/api/errors", () => ({
-  getErrorMessage: (_err: unknown, fallback: string) => fallback,
+  createErrorFromUnknown: (_err: unknown, fallback: string) => ({ message: fallback, type: "unknown" }),
 }));
 
 vi.mock("sonner", () => ({
@@ -22,7 +22,7 @@ vi.mock("sonner", () => ({
 
 vi.mock("@/components/features/tasks/create-task-dialog", () => ({
   CreateTaskDialog: ({ open }: { open: boolean }) =>
-    open ? <div data-testid="create-task-dialog">CreateTaskDialog</div> : null,
+    open ? <div role="dialog">CreateTaskDialog</div> : null,
 }));
 
 import { TasksPage } from "../TasksPage";
@@ -35,10 +35,10 @@ describe("TasksPage", () => {
 
   it("renders loading skeleton when isLoading is true", () => {
     mockUseTasks.mockReturnValue({ data: null, isLoading: true, isError: false });
-    const { container } = render(<TasksPage />);
+    render(<TasksPage />);
     // Skeleton renders multiple placeholder elements but no heading
     expect(screen.queryByText("Tasks")).not.toBeInTheDocument();
-    expect(container.querySelector(".animate-pulse")).toBeTruthy();
+    expect(screen.getByRole("status", { name: "Loading" })).toBeInTheDocument();
   });
 
   it("renders error state when isError is true", () => {
@@ -77,8 +77,8 @@ describe("TasksPage", () => {
     mockUseTasks.mockReturnValue({ data: { data: [] }, isLoading: false, isError: false });
     render(<TasksPage />);
 
-    expect(screen.queryByTestId("create-task-dialog")).not.toBeInTheDocument();
+    expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
     await user.click(screen.getByRole("button", { name: /new task/i }));
-    expect(screen.getByTestId("create-task-dialog")).toBeInTheDocument();
+    expect(screen.getByRole("dialog")).toBeInTheDocument();
   });
 });

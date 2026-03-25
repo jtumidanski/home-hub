@@ -117,3 +117,77 @@ describe("useProviders hook", () => {
     expect(result.current.isLoading).toBe(true);
   });
 });
+
+describe("useInvalidateAuth", () => {
+  let queryClient: QueryClient;
+
+  function createWrapper() {
+    return ({ children }: { children: ReactNode }) => (
+      <QueryClientProvider client={queryClient}>{children}</QueryClientProvider>
+    );
+  }
+
+  beforeEach(() => {
+    vi.clearAllMocks();
+    queryClient = new QueryClient({
+      defaultOptions: { queries: { retry: false } },
+    });
+  });
+
+  it("invalidateAll calls invalidateQueries with auth key prefix", async () => {
+    const spy = vi.spyOn(queryClient, "invalidateQueries");
+    const { useInvalidateAuth } = await import("../use-auth");
+    const { result } = renderHook(() => useInvalidateAuth(), { wrapper: createWrapper() });
+
+    await result.current.invalidateAll();
+    expect(spy).toHaveBeenCalledWith({ queryKey: ["auth"] });
+  });
+
+  it("invalidateMe calls invalidateQueries with me key", async () => {
+    const spy = vi.spyOn(queryClient, "invalidateQueries");
+    const { useInvalidateAuth } = await import("../use-auth");
+    const { result } = renderHook(() => useInvalidateAuth(), { wrapper: createWrapper() });
+
+    await result.current.invalidateMe();
+    expect(spy).toHaveBeenCalledWith({ queryKey: ["auth", "me"] });
+  });
+});
+
+describe("usePrefetchAuth", () => {
+  let queryClient: QueryClient;
+
+  function createWrapper() {
+    return ({ children }: { children: ReactNode }) => (
+      <QueryClientProvider client={queryClient}>{children}</QueryClientProvider>
+    );
+  }
+
+  beforeEach(() => {
+    vi.clearAllMocks();
+    queryClient = new QueryClient({
+      defaultOptions: { queries: { retry: false } },
+    });
+  });
+
+  it("prefetchMe calls prefetchQuery", async () => {
+    const spy = vi.spyOn(queryClient, "prefetchQuery").mockResolvedValue(undefined);
+    const { usePrefetchAuth } = await import("../use-auth");
+    const { result } = renderHook(() => usePrefetchAuth(), { wrapper: createWrapper() });
+
+    result.current.prefetchMe();
+    expect(spy).toHaveBeenCalledWith(
+      expect.objectContaining({ queryKey: ["auth", "me"] }),
+    );
+  });
+
+  it("prefetchProviders calls prefetchQuery", async () => {
+    const spy = vi.spyOn(queryClient, "prefetchQuery").mockResolvedValue(undefined);
+    const { usePrefetchAuth } = await import("../use-auth");
+    const { result } = renderHook(() => usePrefetchAuth(), { wrapper: createWrapper() });
+
+    result.current.prefetchProviders();
+    expect(spy).toHaveBeenCalledWith(
+      expect.objectContaining({ queryKey: ["auth", "providers"] }),
+    );
+  });
+});

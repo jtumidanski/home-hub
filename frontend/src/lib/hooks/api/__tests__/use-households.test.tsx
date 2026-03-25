@@ -97,9 +97,7 @@ describe("useHouseholds hook", () => {
     await result.current.mutateAsync({ name: "Beach House", timezone: "America/New_York", units: "metric" });
     expect(accountService.createHousehold).toHaveBeenCalledWith(
       expect.objectContaining({ id: "tenant-1" }),
-      "Beach House",
-      "America/New_York",
-      "metric",
+      { name: "Beach House", timezone: "America/New_York", units: "metric" },
     );
   });
 
@@ -134,5 +132,68 @@ describe("useHouseholds hook", () => {
     await expect(
       result.current.mutateAsync({ name: "Fail", timezone: "UTC", units: "metric" })
     ).rejects.toThrow("create failed");
+  });
+});
+
+describe("useInvalidateHouseholds", () => {
+  let queryClient: QueryClient;
+
+  function createWrapper() {
+    return ({ children }: { children: ReactNode }) => (
+      <QueryClientProvider client={queryClient}>{children}</QueryClientProvider>
+    );
+  }
+
+  beforeEach(() => {
+    vi.clearAllMocks();
+    queryClient = new QueryClient({
+      defaultOptions: { queries: { retry: false } },
+    });
+  });
+
+  it("invalidateAll calls invalidateQueries with households key prefix", async () => {
+    const spy = vi.spyOn(queryClient, "invalidateQueries");
+    const { useInvalidateHouseholds } = await import("../use-households");
+    const { result } = renderHook(() => useInvalidateHouseholds(), { wrapper: createWrapper() });
+
+    await result.current.invalidateAll();
+    expect(spy).toHaveBeenCalledWith({ queryKey: ["households", "tenant-1"] });
+  });
+
+  it("invalidateLists calls invalidateQueries with lists key", async () => {
+    const spy = vi.spyOn(queryClient, "invalidateQueries");
+    const { useInvalidateHouseholds } = await import("../use-households");
+    const { result } = renderHook(() => useInvalidateHouseholds(), { wrapper: createWrapper() });
+
+    await result.current.invalidateLists();
+    expect(spy).toHaveBeenCalledWith({ queryKey: ["households", "tenant-1", "list"] });
+  });
+});
+
+describe("usePrefetchHouseholds", () => {
+  let queryClient: QueryClient;
+
+  function createWrapper() {
+    return ({ children }: { children: ReactNode }) => (
+      <QueryClientProvider client={queryClient}>{children}</QueryClientProvider>
+    );
+  }
+
+  beforeEach(() => {
+    vi.clearAllMocks();
+    queryClient = new QueryClient({
+      defaultOptions: { queries: { retry: false } },
+    });
+  });
+
+  it("prefetch calls prefetchQuery with households lists key", async () => {
+    const spy = vi.spyOn(queryClient, "prefetchQuery").mockResolvedValue(undefined);
+    const { usePrefetchHouseholds } = await import("../use-households");
+    const { result } = renderHook(() => usePrefetchHouseholds(), { wrapper: createWrapper() });
+
+    result.current.prefetch();
+    expect(spy).toHaveBeenCalledWith(
+      expect.objectContaining({ queryKey: ["households", "tenant-1", "list"] }),
+    );
   });
 });

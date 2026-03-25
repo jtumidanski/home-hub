@@ -3,7 +3,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { toast } from "sonner";
 import { useCreateReminder } from "@/lib/hooks/api/use-reminders";
 import { createReminderSchema, type CreateReminderFormData, createReminderDefaults } from "@/lib/schemas/reminder.schema";
-import { getErrorMessage } from "@/lib/api/errors";
+import { createErrorFromUnknown } from "@/lib/api/errors";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
@@ -40,7 +40,7 @@ export function CreateReminderDialog({ open, onOpenChange }: CreateReminderDialo
       form.reset(createReminderDefaults);
       onOpenChange(false);
     } catch (error) {
-      toast.error(getErrorMessage(error, "Failed to create reminder"));
+      toast.error(createErrorFromUnknown(error, "Failed to create reminder").message);
     }
   };
 

@@ -15,7 +15,7 @@ vi.mock("@/lib/hooks/api/use-households", () => ({
 
 vi.mock("@/components/features/households/create-household-dialog", () => ({
   CreateHouseholdDialog: ({ open }: { open: boolean }) =>
-    open ? <div data-testid="create-household-dialog">CreateHouseholdDialog</div> : null,
+    open ? <div role="dialog">CreateHouseholdDialog</div> : null,
 }));
 
 import { HouseholdsPage } from "../HouseholdsPage";
@@ -34,9 +34,9 @@ describe("HouseholdsPage", () => {
 
   it("renders loading skeleton when isLoading is true", () => {
     mockUseHouseholds.mockReturnValue({ data: null, isLoading: true, isError: false });
-    const { container } = render(<HouseholdsPage />);
+    render(<HouseholdsPage />);
     expect(screen.queryByText("Households")).not.toBeInTheDocument();
-    expect(container.querySelector(".animate-pulse")).toBeTruthy();
+    expect(screen.getByRole("status", { name: "Loading" })).toBeInTheDocument();
   });
 
   it("renders error state when isError is true", () => {
@@ -74,8 +74,8 @@ describe("HouseholdsPage", () => {
     mockUseHouseholds.mockReturnValue({ data: { data: [] }, isLoading: false, isError: false });
     render(<HouseholdsPage />);
 
-    expect(screen.queryByTestId("create-household-dialog")).not.toBeInTheDocument();
+    expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
     await user.click(screen.getByRole("button", { name: /new household/i }));
-    expect(screen.getByTestId("create-household-dialog")).toBeInTheDocument();
+    expect(screen.getByRole("dialog")).toBeInTheDocument();
   });
 });

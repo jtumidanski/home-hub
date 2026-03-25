@@ -1,7 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { productivityService } from "@/services/api/productivity";
 import { useTenant } from "@/context/tenant-context";
-import type { TaskAttributes } from "@/types/models/task";
+import type { TaskUpdateAttributes } from "@/types/models/task";
 import type { Tenant } from "@/types/models/tenant";
 import type { Household } from "@/types/models/household";
 
@@ -61,7 +61,7 @@ export function useUpdateTask() {
   const qc = useQueryClient();
   const { tenant, household } = useTenant();
   return useMutation({
-    mutationFn: ({ id, attrs }: { id: string; attrs: Partial<TaskAttributes> }) =>
+    mutationFn: ({ id, attrs }: { id: string; attrs: TaskUpdateAttributes }) =>
       productivityService.updateTask(tenant!, id, attrs),
     onSettled: () => {
       qc.invalidateQueries({ queryKey: taskKeys.lists(tenant, household) });

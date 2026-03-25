@@ -237,3 +237,86 @@ describe("useTasks hook", () => {
     await expect(result.current.mutateAsync("task-1")).rejects.toThrow("restore failed");
   });
 });
+
+describe("useInvalidateTasks", () => {
+  let queryClient: QueryClient;
+
+  function createWrapper() {
+    return ({ children }: { children: ReactNode }) => (
+      <QueryClientProvider client={queryClient}>{children}</QueryClientProvider>
+    );
+  }
+
+  beforeEach(() => {
+    vi.clearAllMocks();
+    queryClient = new QueryClient({
+      defaultOptions: { queries: { retry: false } },
+    });
+  });
+
+  it("invalidateAll calls invalidateQueries with tasks key prefix", async () => {
+    const spy = vi.spyOn(queryClient, "invalidateQueries");
+    const { useInvalidateTasks } = await import("../use-tasks");
+    const { result } = renderHook(() => useInvalidateTasks(), { wrapper: createWrapper() });
+
+    await result.current.invalidateAll();
+    expect(spy).toHaveBeenCalledWith({ queryKey: ["tasks", "tenant-1", "household-1"] });
+  });
+
+  it("invalidateLists calls invalidateQueries with lists key", async () => {
+    const spy = vi.spyOn(queryClient, "invalidateQueries");
+    const { useInvalidateTasks } = await import("../use-tasks");
+    const { result } = renderHook(() => useInvalidateTasks(), { wrapper: createWrapper() });
+
+    await result.current.invalidateLists();
+    expect(spy).toHaveBeenCalledWith({ queryKey: ["tasks", "tenant-1", "household-1", "list"] });
+  });
+
+  it("invalidateSummary calls invalidateQueries with summary key", async () => {
+    const spy = vi.spyOn(queryClient, "invalidateQueries");
+    const { useInvalidateTasks } = await import("../use-tasks");
+    const { result } = renderHook(() => useInvalidateTasks(), { wrapper: createWrapper() });
+
+    await result.current.invalidateSummary();
+    expect(spy).toHaveBeenCalledWith({ queryKey: ["tasks", "tenant-1", "household-1", "summary"] });
+  });
+});
+
+describe("usePrefetchTasks", () => {
+  let queryClient: QueryClient;
+
+  function createWrapper() {
+    return ({ children }: { children: ReactNode }) => (
+      <QueryClientProvider client={queryClient}>{children}</QueryClientProvider>
+    );
+  }
+
+  beforeEach(() => {
+    vi.clearAllMocks();
+    queryClient = new QueryClient({
+      defaultOptions: { queries: { retry: false } },
+    });
+  });
+
+  it("prefetch calls prefetchQuery with tasks lists key", async () => {
+    const spy = vi.spyOn(queryClient, "prefetchQuery").mockResolvedValue(undefined);
+    const { usePrefetchTasks } = await import("../use-tasks");
+    const { result } = renderHook(() => usePrefetchTasks(), { wrapper: createWrapper() });
+
+    result.current.prefetch();
+    expect(spy).toHaveBeenCalledWith(
+      expect.objectContaining({ queryKey: ["tasks", "tenant-1", "household-1", "list"] }),
+    );
+  });
+
+  it("prefetchSummary calls prefetchQuery with summary key", async () => {
+    const spy = vi.spyOn(queryClient, "prefetchQuery").mockResolvedValue(undefined);
+    const { usePrefetchTasks } = await import("../use-tasks");
+    const { result } = renderHook(() => usePrefetchTasks(), { wrapper: createWrapper() });
+
+    result.current.prefetchSummary();
+    expect(spy).toHaveBeenCalledWith(
+      expect.objectContaining({ queryKey: ["tasks", "tenant-1", "household-1", "summary"] }),
+    );
+  });
+});

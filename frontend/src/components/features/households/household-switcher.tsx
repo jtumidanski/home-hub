@@ -4,7 +4,7 @@ import { useTenant } from "@/context/tenant-context";
 import { useHouseholds } from "@/lib/hooks/api/use-households";
 import { useInvalidateTasks } from "@/lib/hooks/api/use-tasks";
 import { useInvalidateReminders } from "@/lib/hooks/api/use-reminders";
-import { getErrorMessage } from "@/lib/api/errors";
+import { createErrorFromUnknown } from "@/lib/api/errors";
 import {
   Select,
   SelectContent,
@@ -33,7 +33,7 @@ export function HouseholdSwitcher() {
       invalidateReminders.invalidateAll();
       toast.success("Household switched");
     } catch (error) {
-      toast.error(getErrorMessage(error, "Failed to switch household"));
+      toast.error(createErrorFromUnknown(error, "Failed to switch household").message);
     }
   };
 

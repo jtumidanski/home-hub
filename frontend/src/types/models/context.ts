@@ -1,6 +1,6 @@
 export interface ContextAttributes {
   resolvedTheme: "light" | "dark";
-  resolvedRole: string;
+  resolvedRole: "admin" | "member" | "owner";
   canCreateHousehold: boolean;
 }
 
@@ -15,6 +15,19 @@ export interface AppContext {
     memberships: { data: Array<{ type: "memberships"; id: string }> };
   };
 }
+
+// --- Label maps (F15) ---
+
+export const resolvedRoleLabelMap: Record<ContextAttributes["resolvedRole"], string> = {
+  admin: "Admin",
+  member: "Member",
+  owner: "Owner",
+};
+
+export const resolvedThemeLabelMap: Record<ContextAttributes["resolvedTheme"], string> = {
+  light: "Light",
+  dark: "Dark",
+};
 
 // --- Helpers (F16) ---
 

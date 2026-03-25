@@ -3,7 +3,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { toast } from "sonner";
 import { useCreateHousehold } from "@/lib/hooks/api/use-households";
 import { createHouseholdSchema, type CreateHouseholdFormData, createHouseholdDefaults } from "@/lib/schemas/household.schema";
-import { getErrorMessage } from "@/lib/api/errors";
+import { createErrorFromUnknown } from "@/lib/api/errors";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
@@ -37,7 +37,7 @@ export function CreateHouseholdDialog({ open, onOpenChange }: CreateHouseholdDia
       form.reset(createHouseholdDefaults);
       onOpenChange(false);
     } catch (error) {
-      toast.error(getErrorMessage(error, "Failed to create household"));
+      toast.error(createErrorFromUnknown(error, "Failed to create household").message);
     }
   };
 

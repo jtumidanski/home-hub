@@ -12,6 +12,14 @@ export interface Household {
   attributes: HouseholdAttributes;
 }
 
+// --- Create attributes (F14) ---
+
+export interface HouseholdCreateAttributes {
+  name: string;
+  timezone: string;
+  units: "imperial" | "metric";
+}
+
 // --- Update attributes (F14) ---
 
 export type HouseholdUpdateAttributes = Partial<

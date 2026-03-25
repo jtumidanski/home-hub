@@ -1,7 +1,7 @@
 import { BaseService } from "./base";
 
-import type { Task, TaskAttributes } from "@/types/models/task";
-import type { Reminder, ReminderAttributes } from "@/types/models/reminder";
+import type { Task, TaskCreateAttributes, TaskUpdateAttributes } from "@/types/models/task";
+import type { Reminder, ReminderCreateAttributes, ReminderUpdateAttributes } from "@/types/models/reminder";
 import type { TaskSummary, ReminderSummary, DashboardSummary } from "@/types/models/summary";
 import type { Tenant } from "@/types/models/tenant";
 
@@ -20,15 +20,16 @@ class ProductivityService extends BaseService {
     return this.getOne<Task>(tenant, `/tasks/${id}`);
   }
 
-  createTask(tenant: Tenant, attrs: { title: string; notes?: string; dueOn?: string; rolloverEnabled?: boolean }) {
+  createTask(tenant: Tenant, attrs: TaskCreateAttributes) {
     return this.create<Task>(tenant, "/tasks", {
       data: { type: "tasks", attributes: { status: "pending", ...attrs } },
     });
   }
 
-  updateTask(tenant: Tenant, id: string, attrs: Partial<TaskAttributes>) {
+  async updateTask(tenant: Tenant, id: string, attrs: TaskUpdateAttributes) {
+    const existing = await this.getOne<Task>(tenant, `/tasks/${id}`);
     return this.update<Task>(tenant, `/tasks/${id}`, {
-      data: { type: "tasks", id, attributes: attrs },
+      data: { type: "tasks", id, attributes: { ...existing.data.attributes, ...attrs } },
     });
   }
 
@@ -55,15 +56,16 @@ class ProductivityService extends BaseService {
     return this.getOne<Reminder>(tenant, `/reminders/${id}`);
   }
 
-  createReminder(tenant: Tenant, attrs: { title: string; notes?: string; scheduledFor: string }) {
+  createReminder(tenant: Tenant, attrs: ReminderCreateAttributes) {
     return this.create<Reminder>(tenant, "/reminders", {
       data: { type: "reminders", attributes: attrs },
     });
   }
 
-  updateReminder(tenant: Tenant, id: string, attrs: Partial<ReminderAttributes>) {
+  async updateReminder(tenant: Tenant, id: string, attrs: ReminderUpdateAttributes) {
+    const existing = await this.getOne<Reminder>(tenant, `/reminders/${id}`);
     return this.update<Reminder>(tenant, `/reminders/${id}`, {
-      data: { type: "reminders", id, attributes: attrs },
+      data: { type: "reminders", id, attributes: { ...existing.data.attributes, ...attrs } },
     });
   }
 

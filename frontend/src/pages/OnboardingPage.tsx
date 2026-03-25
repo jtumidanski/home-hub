@@ -7,7 +7,8 @@ import { useAuth } from "@/components/providers/auth-provider";
 import { useCreateTenant, useOnboardingCreateHousehold } from "@/lib/hooks/api/use-context";
 import { createTenantSchema, type CreateTenantFormData } from "@/lib/schemas/tenant.schema";
 import { createHouseholdSchema, type CreateHouseholdFormData, createHouseholdDefaults } from "@/lib/schemas/household.schema";
-import { getErrorMessage } from "@/lib/api/errors";
+import { createErrorFromUnknown } from "@/lib/api/errors";
+import type { Tenant } from "@/types/models/tenant";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -19,7 +20,7 @@ export function OnboardingPage() {
   const { user } = useAuth();
   const navigate = useNavigate();
   const [step, setStep] = useState<"tenant" | "household">("tenant");
-  const [createdTenant, setCreatedTenant] = useState<{ id: string; type: "tenants"; attributes: { name: string; createdAt: string; updatedAt: string } } | null>(null);
+  const [createdTenant, setCreatedTenant] = useState<Tenant | null>(null);
   const createTenant = useCreateTenant();
   const createHousehold = useOnboardingCreateHousehold();
 
@@ -43,7 +44,7 @@ export function OnboardingPage() {
       toast.success("Account created");
       setStep("household");
     } catch (error) {
-      toast.error(getErrorMessage(error, "Failed to create account"));
+      toast.error(createErrorFromUnknown(error, "Failed to create account").message);
     }
   };
 
@@ -59,7 +60,7 @@ export function OnboardingPage() {
       toast.success("Household created");
       navigate("/app");
     } catch (error) {
-      toast.error(getErrorMessage(error, "Failed to create household"));
+      toast.error(createErrorFromUnknown(error, "Failed to create household").message);
     }
   };
 

@@ -35,8 +35,8 @@ export function useCreateHousehold() {
   const qc = useQueryClient();
   const { tenant } = useTenant();
   return useMutation({
-    mutationFn: (attrs: { name: string; timezone: string; units: string }) =>
-      accountService.createHousehold(tenant!, attrs.name, attrs.timezone, attrs.units),
+    mutationFn: (attrs: { name: string; timezone: string; units: "imperial" | "metric" }) =>
+      accountService.createHousehold(tenant!, attrs),
     onSettled: () => {
       qc.invalidateQueries({ queryKey: householdKeys.lists(tenant) });
       qc.invalidateQueries({ queryKey: contextKeys.current() });

@@ -89,7 +89,11 @@ describe("ApiClient", () => {
       json: () => Promise.resolve({ errors: [{ detail: "Resource not found" }] }),
     });
 
-    await expect(api.get("/missing")).rejects.toThrow(ApiRequestError);
+    await expect(api.get("/missing")).rejects.toMatchObject({
+      message: "Resource not found",
+      status: 404,
+      type: "not-found",
+    });
     await expect(api.get("/missing", { skipDeduplication: true })).rejects.toMatchObject({
       message: "Resource not found",
       status: 404,
@@ -116,7 +120,9 @@ describe("ApiClient", () => {
 
     (globalThis.fetch as ReturnType<typeof vi.fn>).mockResolvedValue({
       ok: true,
-      json: () => Promise.resolve({ data: { id: "1" } }),
+      status: 200,
+      headers: new Headers({ "content-length": "42" }),
+      text: () => Promise.resolve(JSON.stringify({ data: { id: "1" } })),
     });
 
     await api.post("/tasks", { data: { type: "tasks", attributes: { title: "Test" } } });

@@ -1,30 +1,15 @@
 import { useState } from "react";
+import { type ColumnDef } from "@tanstack/react-table";
 import { toast } from "sonner";
 import { useReminders, useSnoozeReminder, useDismissReminder, useDeleteReminder } from "@/lib/hooks/api/use-reminders";
-import { getErrorMessage } from "@/lib/api/errors";
-import { isReminderDismissed, isReminderSnoozed } from "@/types/models/reminder";
+import { createErrorFromUnknown } from "@/lib/api/errors";
+import { type Reminder, isReminderDismissed, isReminderSnoozed } from "@/types/models/reminder";
 import { CreateReminderDialog } from "@/components/features/reminders/create-reminder-dialog";
+import { DataTable } from "@/components/common/data-table";
+import { ErrorCard } from "@/components/common/error-card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Card, CardContent } from "@/components/ui/card";
-import { Skeleton } from "@/components/ui/skeleton";
 import { Plus, Clock, BellOff, Trash2 } from "lucide-react";
-
-function RemindersPageSkeleton() {
-  return (
-    <div className="p-6 space-y-4">
-      <div className="flex items-center justify-between">
-        <Skeleton className="h-8 w-40" />
-        <Skeleton className="h-9 w-36" />
-      </div>
-      <div className="space-y-2">
-        {Array.from({ length: 4 }).map((_, i) => (
-          <Skeleton key={i} className="h-16 w-full" />
-        ))}
-      </div>
-    </div>
-  );
-}
 
 export function RemindersPage() {
   const { data, isLoading, isError } = useReminders();
@@ -33,14 +18,14 @@ export function RemindersPage() {
   const deleteReminder = useDeleteReminder();
   const [open, setOpen] = useState(false);
 
-  const reminders = data?.data ?? [];
+  const reminders = (data?.data ?? []) as Reminder[];
 
   const handleSnooze = async (id: string) => {
     try {
       await snoozeReminder.mutateAsync({ id, minutes: 10 });
       toast.success("Reminder snoozed for 10 minutes");
     } catch (error) {
-      toast.error(getErrorMessage(error, "Failed to snooze reminder"));
+      toast.error(createErrorFromUnknown(error, "Failed to snooze reminder").message);
     }
   };
 
@@ -49,7 +34,7 @@ export function RemindersPage() {
       await dismissReminder.mutateAsync(id);
       toast.success("Reminder dismissed");
     } catch (error) {
-      toast.error(getErrorMessage(error, "Failed to dismiss reminder"));
+      toast.error(createErrorFromUnknown(error, "Failed to dismiss reminder").message);
     }
   };
 
@@ -58,24 +43,73 @@ export function RemindersPage() {
       await deleteReminder.mutateAsync(id);
       toast.success("Reminder deleted");
     } catch (error) {
-      toast.error(getErrorMessage(error, "Failed to delete reminder"));
+      toast.error(createErrorFromUnknown(error, "Failed to delete reminder").message);
     }
   };
 
+  const columns: ColumnDef<Reminder, unknown>[] = [
+    {
+      accessorKey: "attributes.title",
+      header: "Title",
+      cell: ({ row }) => (
+        <div>
+          <p className="font-medium">{row.original.attributes.title}</p>
+          <p className="text-xs text-muted-foreground">
+            {new Date(row.original.attributes.scheduledFor).toLocaleString()}
+          </p>
+        </div>
+      ),
+    },
+    {
+      id: "status",
+      header: "Status",
+      cell: ({ row }) => {
+        const rem = row.original;
+        return (
+          <Badge variant={rem.attributes.active ? "default" : "secondary"}>
+            {rem.attributes.active ? "active" : isReminderDismissed(rem) ? "dismissed" : isReminderSnoozed(rem) ? "snoozed" : "inactive"}
+          </Badge>
+        );
+      },
+    },
+    {
+      id: "actions",
+      header: "",
+      cell: ({ row }) => {
+        const rem = row.original;
+        return (
+          <div className="flex items-center gap-1">
+            {rem.attributes.active && (
+              <>
+                <Button variant="ghost" size="sm" onClick={(e) => { e.stopPropagation(); handleSnooze(rem.id); }}>
+                  <Clock className="h-4 w-4" />
+                </Button>
+                <Button variant="ghost" size="sm" onClick={(e) => { e.stopPropagation(); handleDismiss(rem.id); }}>
+                  <BellOff className="h-4 w-4" />
+                </Button>
+              </>
+            )}
+            <Button variant="ghost" size="sm" onClick={(e) => { e.stopPropagation(); handleDelete(rem.id); }}>
+              <Trash2 className="h-4 w-4 text-destructive" />
+            </Button>
+          </div>
+        );
+      },
+    },
+  ];
+
   if (isLoading) {
-    return <RemindersPageSkeleton />;
+    return (
+      <div className="p-6 space-y-4" role="status" aria-label="Loading">
+        <DataTable columns={columns} data={[]} isLoading />
+      </div>
+    );
   }
 
   if (isError) {
     return (
       <div className="p-6">
-        <Card className="border-destructive">
-          <CardContent className="py-3">
-            <p className="text-sm text-destructive">
-              Failed to load reminders. Try refreshing the page.
-            </p>
-          </CardContent>
-        </Card>
+        <ErrorCard message="Failed to load reminders. Try refreshing the page." />
       </div>
     );
   }
@@ -91,46 +125,17 @@ export function RemindersPage() {
 
       <CreateReminderDialog open={open} onOpenChange={setOpen} />
 
-      {reminders.length === 0 ? (
-        <div className="flex flex-col items-center justify-center py-12 text-center">
-          <p className="text-muted-foreground">No reminders yet. Create your first reminder to get started.</p>
-          <Button variant="outline" className="mt-4" onClick={() => setOpen(true)}>
+      <DataTable
+        columns={columns}
+        data={reminders}
+        emptyMessage="No reminders yet. Create your first reminder to get started."
+      />
+      {reminders.length === 0 && (
+        <div className="flex justify-center">
+          <Button variant="outline" onClick={() => setOpen(true)}>
             <Plus className="mr-2 h-4 w-4" />
             Create First Reminder
           </Button>
-        </div>
-      ) : (
-        <div className="space-y-2">
-          {reminders.map((rem) => (
-            <Card key={rem.id}>
-              <CardContent className="flex items-center justify-between py-3">
-                <div>
-                  <p className="font-medium">{rem.attributes.title}</p>
-                  <p className="text-xs text-muted-foreground">
-                    {new Date(rem.attributes.scheduledFor).toLocaleString()}
-                  </p>
-                </div>
-                <div className="flex items-center gap-2">
-                  <Badge variant={rem.attributes.active ? "default" : "secondary"}>
-                    {rem.attributes.active ? "active" : isReminderDismissed(rem) ? "dismissed" : isReminderSnoozed(rem) ? "snoozed" : "inactive"}
-                  </Badge>
-                  {rem.attributes.active && (
-                    <>
-                      <Button variant="ghost" size="sm" onClick={() => handleSnooze(rem.id)}>
-                        <Clock className="h-4 w-4" />
-                      </Button>
-                      <Button variant="ghost" size="sm" onClick={() => handleDismiss(rem.id)}>
-                        <BellOff className="h-4 w-4" />
-                      </Button>
-                    </>
-                  )}
-                  <Button variant="ghost" size="sm" onClick={() => handleDelete(rem.id)}>
-                    <Trash2 className="h-4 w-4 text-destructive" />
-                  </Button>
-                </div>
-              </CardContent>
-            </Card>
-          ))}
         </div>
       )}
     </div>

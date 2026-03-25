@@ -1,5 +1,5 @@
 import { api } from "@/lib/api/client";
-import type { JsonApiResponse, JsonApiListResponse } from "@/types/api/responses";
+import type { ApiResponse, ApiListResponse } from "@/types/api/responses";
 
 export interface ValidationError {
   field: string;
@@ -25,24 +25,24 @@ export class BaseService {
     return data;
   }
 
-  protected getList<T>(tenant: { id: string }, path?: string): Promise<JsonApiListResponse<T>> {
+  protected getList<T>(tenant: { id: string }, path?: string): Promise<ApiListResponse<T>> {
     this.setTenant(tenant);
-    return api.get<JsonApiListResponse<T>>(path ?? this.basePath);
+    return api.get<ApiListResponse<T>>(path ?? this.basePath);
   }
 
-  protected getOne<T>(tenant: { id: string }, path: string): Promise<JsonApiResponse<T>> {
+  protected getOne<T>(tenant: { id: string }, path: string): Promise<ApiResponse<T>> {
     this.setTenant(tenant);
-    return api.get<JsonApiResponse<T>>(path);
+    return api.get<ApiResponse<T>>(path);
   }
 
-  protected create<T>(tenant: { id: string }, path: string, body: unknown): Promise<JsonApiResponse<T>> {
+  protected create<T>(tenant: { id: string }, path: string, body: unknown): Promise<ApiResponse<T>> {
     this.setTenant(tenant);
-    return api.post<JsonApiResponse<T>>(path, body);
+    return api.post<ApiResponse<T>>(path, body);
   }
 
-  protected update<T>(tenant: { id: string }, path: string, body: unknown): Promise<JsonApiResponse<T>> {
+  protected update<T>(tenant: { id: string }, path: string, body: unknown): Promise<ApiResponse<T>> {
     this.setTenant(tenant);
-    return api.patch<JsonApiResponse<T>>(path, body);
+    return api.patch<ApiResponse<T>>(path, body);
   }
 
   protected remove(tenant: { id: string }, path: string): Promise<void> {

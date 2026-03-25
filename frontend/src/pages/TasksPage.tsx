@@ -1,30 +1,16 @@
 import { useState } from "react";
+import { type ColumnDef } from "@tanstack/react-table";
 import { toast } from "sonner";
 import { useTasks, useUpdateTask, useDeleteTask } from "@/lib/hooks/api/use-tasks";
-import { getErrorMessage } from "@/lib/api/errors";
+import { createErrorFromUnknown } from "@/lib/api/errors";
+import { type Task } from "@/types/models/task";
 import { CreateTaskDialog } from "@/components/features/tasks/create-task-dialog";
+import { DataTable } from "@/components/common/data-table";
+import { ErrorCard } from "@/components/common/error-card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Card, CardContent } from "@/components/ui/card";
-import { Skeleton } from "@/components/ui/skeleton";
 import { Plus, Check, Trash2 } from "lucide-react";
 import { cn } from "@/lib/utils";
-
-function TasksPageSkeleton() {
-  return (
-    <div className="p-6 space-y-4">
-      <div className="flex items-center justify-between">
-        <Skeleton className="h-8 w-32" />
-        <Skeleton className="h-9 w-28" />
-      </div>
-      <div className="space-y-2">
-        {Array.from({ length: 4 }).map((_, i) => (
-          <Skeleton key={i} className="h-16 w-full" />
-        ))}
-      </div>
-    </div>
-  );
-}
 
 export function TasksPage() {
   const { data, isLoading, isError } = useTasks();
@@ -32,7 +18,7 @@ export function TasksPage() {
   const deleteTask = useDeleteTask();
   const [open, setOpen] = useState(false);
 
-  const tasks = data?.data ?? [];
+  const tasks = (data?.data ?? []) as Task[];
 
   const toggleComplete = async (id: string, currentStatus: string) => {
     try {
@@ -42,7 +28,7 @@ export function TasksPage() {
       });
       toast.success(currentStatus === "completed" ? "Task reopened" : "Task completed");
     } catch (error) {
-      toast.error(getErrorMessage(error, "Failed to update task"));
+      toast.error(createErrorFromUnknown(error, "Failed to update task").message);
     }
   };
 
@@ -51,24 +37,81 @@ export function TasksPage() {
       await deleteTask.mutateAsync(id);
       toast.success("Task deleted");
     } catch (error) {
-      toast.error(getErrorMessage(error, "Failed to delete task"));
+      toast.error(createErrorFromUnknown(error, "Failed to delete task").message);
     }
   };
 
+  const columns: ColumnDef<Task, unknown>[] = [
+    {
+      id: "complete",
+      header: "",
+      size: 40,
+      cell: ({ row }) => (
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={(e) => {
+            e.stopPropagation();
+            toggleComplete(row.original.id, row.original.attributes.status);
+          }}
+        >
+          <Check className={cn("h-4 w-4", row.original.attributes.status === "completed" ? "text-primary" : "text-muted-foreground")} />
+        </Button>
+      ),
+    },
+    {
+      accessorKey: "attributes.title",
+      header: "Title",
+      cell: ({ row }) => (
+        <div>
+          <p className={cn("font-medium", row.original.attributes.status === "completed" && "line-through text-muted-foreground")}>
+            {row.original.attributes.title}
+          </p>
+          {row.original.attributes.dueOn && (
+            <p className="text-xs text-muted-foreground">Due: {row.original.attributes.dueOn}</p>
+          )}
+        </div>
+      ),
+    },
+    {
+      id: "status",
+      header: "Status",
+      cell: ({ row }) => (
+        <Badge variant={row.original.attributes.status === "completed" ? "secondary" : "default"}>
+          {row.original.attributes.status}
+        </Badge>
+      ),
+    },
+    {
+      id: "actions",
+      header: "",
+      cell: ({ row }) => (
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={(e) => {
+            e.stopPropagation();
+            handleDelete(row.original.id);
+          }}
+        >
+          <Trash2 className="h-4 w-4 text-destructive" />
+        </Button>
+      ),
+    },
+  ];
+
   if (isLoading) {
-    return <TasksPageSkeleton />;
+    return (
+      <div className="p-6 space-y-4" role="status" aria-label="Loading">
+        <DataTable columns={columns} data={[]} isLoading />
+      </div>
+    );
   }
 
   if (isError) {
     return (
       <div className="p-6">
-        <Card className="border-destructive">
-          <CardContent className="py-3">
-            <p className="text-sm text-destructive">
-              Failed to load tasks. Try refreshing the page.
-            </p>
-          </CardContent>
-        </Card>
+        <ErrorCard message="Failed to load tasks. Try refreshing the page." />
       </div>
     );
   }
@@ -84,47 +127,17 @@ export function TasksPage() {
 
       <CreateTaskDialog open={open} onOpenChange={setOpen} />
 
-      {tasks.length === 0 ? (
-        <div className="flex flex-col items-center justify-center py-12 text-center">
-          <p className="text-muted-foreground">No tasks yet. Create your first task to get started.</p>
-          <Button variant="outline" className="mt-4" onClick={() => setOpen(true)}>
+      <DataTable
+        columns={columns}
+        data={tasks}
+        emptyMessage="No tasks yet. Create your first task to get started."
+      />
+      {tasks.length === 0 && (
+        <div className="flex justify-center">
+          <Button variant="outline" onClick={() => setOpen(true)}>
             <Plus className="mr-2 h-4 w-4" />
             Create First Task
           </Button>
-        </div>
-      ) : (
-        <div className="space-y-2">
-          {tasks.map((task) => (
-            <Card key={task.id}>
-              <CardContent className="flex items-center justify-between py-3">
-                <div className="flex items-center gap-3">
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => toggleComplete(task.id, task.attributes.status)}
-                  >
-                    <Check className={cn("h-4 w-4", task.attributes.status === "completed" ? "text-primary" : "text-muted-foreground")} />
-                  </Button>
-                  <div>
-                    <p className={cn("font-medium", task.attributes.status === "completed" && "line-through text-muted-foreground")}>
-                      {task.attributes.title}
-                    </p>
-                    {task.attributes.dueOn && (
-                      <p className="text-xs text-muted-foreground">Due: {task.attributes.dueOn}</p>
-                    )}
-                  </div>
-                </div>
-                <div className="flex items-center gap-2">
-                  <Badge variant={task.attributes.status === "completed" ? "secondary" : "default"}>
-                    {task.attributes.status}
-                  </Badge>
-                  <Button variant="ghost" size="sm" onClick={() => handleDelete(task.id)}>
-                    <Trash2 className="h-4 w-4 text-destructive" />
-                  </Button>
-                </div>
-              </CardContent>
-            </Card>
-          ))}
         </div>
       )}
     </div>

@@ -1,5 +1,5 @@
 import { api } from "@/lib/api/client";
-import type { JsonApiListResponse, JsonApiResponse } from "@/types/api/responses";
+import type { ApiListResponse, ApiResponse } from "@/types/api/responses";
 import type { User } from "@/types/models/user";
 
 export interface AuthProvider {
@@ -10,19 +10,19 @@ export interface AuthProvider {
 
 class AuthService {
   getProviders() {
-    return api.get<JsonApiListResponse<AuthProvider>>("/auth/providers");
+    return api.get<ApiListResponse<AuthProvider>>("/auth/providers");
   }
 
   getMe() {
-    return api.get<JsonApiResponse<User>>("/users/me");
+    return api.get<ApiResponse<User>>("/users/me");
   }
 
   refreshToken() {
-    return api.postNoContent("/auth/token/refresh");
+    return api.post("/auth/token/refresh");
   }
 
   logout() {
-    return api.postNoContent("/auth/logout");
+    return api.post("/auth/logout");
   }
 
   getLoginUrl(provider: string, redirect: string = "/app") {

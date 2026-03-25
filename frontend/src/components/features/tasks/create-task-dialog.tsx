@@ -3,7 +3,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { toast } from "sonner";
 import { useCreateTask } from "@/lib/hooks/api/use-tasks";
 import { createTaskSchema, type CreateTaskFormData, createTaskDefaults } from "@/lib/schemas/task.schema";
-import { getErrorMessage } from "@/lib/api/errors";
+import { createErrorFromUnknown } from "@/lib/api/errors";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
@@ -40,7 +40,7 @@ export function CreateTaskDialog({ open, onOpenChange }: CreateTaskDialogProps) 
       form.reset(createTaskDefaults);
       onOpenChange(false);
     } catch (error) {
-      toast.error(getErrorMessage(error, "Failed to create task"));
+      toast.error(createErrorFromUnknown(error, "Failed to create task").message);
     }
   };
 

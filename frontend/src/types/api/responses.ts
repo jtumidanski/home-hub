@@ -1,9 +1,9 @@
-export interface JsonApiResponse<T> {
+export interface ApiResponse<T> {
   data: T;
   included?: Array<Record<string, unknown>>;
 }
 
-export interface JsonApiListResponse<T> {
+export interface ApiListResponse<T> {
   data: T[];
   included?: Array<Record<string, unknown>>;
 }
@@ -21,9 +21,9 @@ export interface JsonApiErrorResponse {
 
 // --- Type guards (F11) ---
 
-export function isJsonApiResponse<T>(
+export function isApiResponse<T>(
   value: unknown,
-): value is JsonApiResponse<T> {
+): value is ApiResponse<T> {
   return (
     typeof value === "object" &&
     value !== null &&
@@ -32,7 +32,7 @@ export function isJsonApiResponse<T>(
   );
 }
 
-export function isJsonApiErrorResponse(
+export function isApiErrorResponse(
   value: unknown,
 ): value is JsonApiErrorResponse {
   return (

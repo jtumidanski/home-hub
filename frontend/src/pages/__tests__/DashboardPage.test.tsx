@@ -32,9 +32,9 @@ describe("DashboardPage", () => {
   it("renders loading skeleton when either summary is loading", () => {
     mockUseTaskSummary.mockReturnValue({ data: null, isLoading: true, isError: false });
     mockUseReminderSummary.mockReturnValue({ data: null, isLoading: false, isError: false });
-    const { container } = render(<DashboardPage />);
+    render(<DashboardPage />);
     expect(screen.queryByText("Dashboard")).not.toBeInTheDocument();
-    expect(container.querySelector(".animate-pulse")).toBeTruthy();
+    expect(screen.getByRole("status", { name: "Loading" })).toBeInTheDocument();
   });
 
   it("renders error card when task summary fails", () => {

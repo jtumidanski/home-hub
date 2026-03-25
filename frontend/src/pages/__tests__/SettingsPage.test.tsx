@@ -36,9 +36,9 @@ describe("SettingsPage", () => {
 
   it("renders loading skeleton when isLoading is true", () => {
     mockUseAuth.mockReturnValue({ user: null, appContext: null, isLoading: true });
-    const { container } = render(<SettingsPage />);
+    render(<SettingsPage />);
     expect(screen.queryByText("Settings")).not.toBeInTheDocument();
-    expect(container.querySelector(".animate-pulse")).toBeTruthy();
+    expect(screen.getByRole("status", { name: "Loading" })).toBeInTheDocument();
   });
 
   it("renders error state when user or appContext is missing", () => {

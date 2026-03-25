@@ -2,6 +2,8 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { authService } from "@/services/api/auth";
 
 // --- Key factory ---
+// Pattern C (tenant-agnostic): auth endpoints are not tenant-scoped.
+// They return the same user/providers regardless of tenant context.
 
 export const authKeys = {
   all: ["auth"] as const,

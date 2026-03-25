@@ -15,6 +15,14 @@ export interface Reminder {
   attributes: ReminderAttributes;
 }
 
+// --- Create attributes (F14) ---
+
+export interface ReminderCreateAttributes {
+  title: string;
+  notes?: string;
+  scheduledFor: string;
+}
+
 // --- Update attributes (F14) ---
 
 export type ReminderUpdateAttributes = Partial<

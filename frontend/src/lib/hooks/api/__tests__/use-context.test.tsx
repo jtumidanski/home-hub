@@ -99,3 +99,66 @@ describe("useAppContext hook", () => {
     expect((result.current.error as Error).message).toBe("server error");
   });
 });
+
+describe("useInvalidateContext", () => {
+  let queryClient: QueryClient;
+
+  function createWrapper() {
+    return ({ children }: { children: ReactNode }) => (
+      <QueryClientProvider client={queryClient}>{children}</QueryClientProvider>
+    );
+  }
+
+  beforeEach(() => {
+    vi.clearAllMocks();
+    queryClient = new QueryClient({
+      defaultOptions: { queries: { retry: false } },
+    });
+  });
+
+  it("invalidateAll calls invalidateQueries with context key prefix", async () => {
+    const spy = vi.spyOn(queryClient, "invalidateQueries");
+    const { useInvalidateContext } = await import("../use-context");
+    const { result } = renderHook(() => useInvalidateContext(), { wrapper: createWrapper() });
+
+    await result.current.invalidateAll();
+    expect(spy).toHaveBeenCalledWith({ queryKey: ["context"] });
+  });
+
+  it("invalidateCurrent calls invalidateQueries with current key", async () => {
+    const spy = vi.spyOn(queryClient, "invalidateQueries");
+    const { useInvalidateContext } = await import("../use-context");
+    const { result } = renderHook(() => useInvalidateContext(), { wrapper: createWrapper() });
+
+    await result.current.invalidateCurrent();
+    expect(spy).toHaveBeenCalledWith({ queryKey: ["context", "current"] });
+  });
+});
+
+describe("usePrefetchContext", () => {
+  let queryClient: QueryClient;
+
+  function createWrapper() {
+    return ({ children }: { children: ReactNode }) => (
+      <QueryClientProvider client={queryClient}>{children}</QueryClientProvider>
+    );
+  }
+
+  beforeEach(() => {
+    vi.clearAllMocks();
+    queryClient = new QueryClient({
+      defaultOptions: { queries: { retry: false } },
+    });
+  });
+
+  it("prefetch calls prefetchQuery with context current key", async () => {
+    const spy = vi.spyOn(queryClient, "prefetchQuery").mockResolvedValue(undefined);
+    const { usePrefetchContext } = await import("../use-context");
+    const { result } = renderHook(() => usePrefetchContext(), { wrapper: createWrapper() });
+
+    result.current.prefetch();
+    expect(spy).toHaveBeenCalledWith(
+      expect.objectContaining({ queryKey: ["context", "current"] }),
+    );
+  });
+});

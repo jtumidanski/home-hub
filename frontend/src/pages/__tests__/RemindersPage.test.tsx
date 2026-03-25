@@ -15,7 +15,7 @@ vi.mock("@/lib/hooks/api/use-reminders", () => ({
 }));
 
 vi.mock("@/lib/api/errors", () => ({
-  getErrorMessage: (_err: unknown, fallback: string) => fallback,
+  createErrorFromUnknown: (_err: unknown, fallback: string) => ({ message: fallback, type: "unknown" }),
 }));
 
 vi.mock("@/types/models/reminder", () => ({
@@ -29,7 +29,7 @@ vi.mock("sonner", () => ({
 
 vi.mock("@/components/features/reminders/create-reminder-dialog", () => ({
   CreateReminderDialog: ({ open }: { open: boolean }) =>
-    open ? <div data-testid="create-reminder-dialog">CreateReminderDialog</div> : null,
+    open ? <div role="dialog">CreateReminderDialog</div> : null,
 }));
 
 import { RemindersPage } from "../RemindersPage";
@@ -42,9 +42,9 @@ describe("RemindersPage", () => {
 
   it("renders loading skeleton when isLoading is true", () => {
     mockUseReminders.mockReturnValue({ data: null, isLoading: true, isError: false });
-    const { container } = render(<RemindersPage />);
+    render(<RemindersPage />);
     expect(screen.queryByText("Reminders")).not.toBeInTheDocument();
-    expect(container.querySelector(".animate-pulse")).toBeTruthy();
+    expect(screen.getByRole("status", { name: "Loading" })).toBeInTheDocument();
   });
 
   it("renders error state when isError is true", () => {
@@ -85,8 +85,8 @@ describe("RemindersPage", () => {
     mockUseReminders.mockReturnValue({ data: { data: [] }, isLoading: false, isError: false });
     render(<RemindersPage />);
 
-    expect(screen.queryByTestId("create-reminder-dialog")).not.toBeInTheDocument();
+    expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
     await user.click(screen.getByRole("button", { name: /new reminder/i }));
-    expect(screen.getByTestId("create-reminder-dialog")).toBeInTheDocument();
+    expect(screen.getByRole("dialog")).toBeInTheDocument();
   });
 });

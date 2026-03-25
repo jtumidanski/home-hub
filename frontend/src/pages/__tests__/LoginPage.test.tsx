@@ -23,9 +23,9 @@ describe("LoginPage", () => {
 
   it("renders loading skeleton when isLoading is true", () => {
     mockUseProviders.mockReturnValue({ data: null, isLoading: true, isError: false });
-    const { container } = render(<LoginPage />);
+    render(<LoginPage />);
     expect(screen.getByText("Home Hub")).toBeInTheDocument();
-    expect(container.querySelector(".animate-pulse")).toBeTruthy();
+    expect(screen.getByRole("status", { name: "Loading" })).toBeInTheDocument();
   });
 
   it("renders error state when isError is true", () => {

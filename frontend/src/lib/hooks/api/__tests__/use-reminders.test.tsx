@@ -221,3 +221,86 @@ describe("useReminders hook", () => {
     await expect(result.current.mutateAsync("rem-1")).rejects.toThrow("dismiss failed");
   });
 });
+
+describe("useInvalidateReminders", () => {
+  let queryClient: QueryClient;
+
+  function createWrapper() {
+    return ({ children }: { children: ReactNode }) => (
+      <QueryClientProvider client={queryClient}>{children}</QueryClientProvider>
+    );
+  }
+
+  beforeEach(() => {
+    vi.clearAllMocks();
+    queryClient = new QueryClient({
+      defaultOptions: { queries: { retry: false } },
+    });
+  });
+
+  it("invalidateAll calls invalidateQueries with reminders key prefix", async () => {
+    const spy = vi.spyOn(queryClient, "invalidateQueries");
+    const { useInvalidateReminders } = await import("../use-reminders");
+    const { result } = renderHook(() => useInvalidateReminders(), { wrapper: createWrapper() });
+
+    await result.current.invalidateAll();
+    expect(spy).toHaveBeenCalledWith({ queryKey: ["reminders", "tenant-1", "household-1"] });
+  });
+
+  it("invalidateLists calls invalidateQueries with lists key", async () => {
+    const spy = vi.spyOn(queryClient, "invalidateQueries");
+    const { useInvalidateReminders } = await import("../use-reminders");
+    const { result } = renderHook(() => useInvalidateReminders(), { wrapper: createWrapper() });
+
+    await result.current.invalidateLists();
+    expect(spy).toHaveBeenCalledWith({ queryKey: ["reminders", "tenant-1", "household-1", "list"] });
+  });
+
+  it("invalidateSummary calls invalidateQueries with summary key", async () => {
+    const spy = vi.spyOn(queryClient, "invalidateQueries");
+    const { useInvalidateReminders } = await import("../use-reminders");
+    const { result } = renderHook(() => useInvalidateReminders(), { wrapper: createWrapper() });
+
+    await result.current.invalidateSummary();
+    expect(spy).toHaveBeenCalledWith({ queryKey: ["reminders", "tenant-1", "household-1", "summary"] });
+  });
+});
+
+describe("usePrefetchReminders", () => {
+  let queryClient: QueryClient;
+
+  function createWrapper() {
+    return ({ children }: { children: ReactNode }) => (
+      <QueryClientProvider client={queryClient}>{children}</QueryClientProvider>
+    );
+  }
+
+  beforeEach(() => {
+    vi.clearAllMocks();
+    queryClient = new QueryClient({
+      defaultOptions: { queries: { retry: false } },
+    });
+  });
+
+  it("prefetch calls prefetchQuery with reminders lists key", async () => {
+    const spy = vi.spyOn(queryClient, "prefetchQuery").mockResolvedValue(undefined);
+    const { usePrefetchReminders } = await import("../use-reminders");
+    const { result } = renderHook(() => usePrefetchReminders(), { wrapper: createWrapper() });
+
+    result.current.prefetch();
+    expect(spy).toHaveBeenCalledWith(
+      expect.objectContaining({ queryKey: ["reminders", "tenant-1", "household-1", "list"] }),
+    );
+  });
+
+  it("prefetchSummary calls prefetchQuery with summary key", async () => {
+    const spy = vi.spyOn(queryClient, "prefetchQuery").mockResolvedValue(undefined);
+    const { usePrefetchReminders } = await import("../use-reminders");
+    const { result } = renderHook(() => usePrefetchReminders(), { wrapper: createWrapper() });
+
+    result.current.prefetchSummary();
+    expect(spy).toHaveBeenCalledWith(
+      expect.objectContaining({ queryKey: ["reminders", "tenant-1", "household-1", "summary"] }),
+    );
+  });
+});

@@ -1,13 +1,14 @@
 import { useAuth } from "@/components/providers/auth-provider";
 import { useThemeToggle } from "@/lib/hooks/use-theme-toggle";
 import { Button } from "@/components/ui/button";
+import { ErrorCard } from "@/components/common/error-card";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Moon, Sun } from "lucide-react";
 
 function SettingsPageSkeleton() {
   return (
-    <div className="p-6 space-y-6">
+    <div className="p-6 space-y-6" role="status" aria-label="Loading">
       <Skeleton className="h-8 w-32" />
       <Skeleton className="h-40 w-full" />
       <Skeleton className="h-24 w-full" />
@@ -26,13 +27,7 @@ export function SettingsPage() {
   if (!user || !appContext) {
     return (
       <div className="p-6">
-        <Card className="border-destructive">
-          <CardContent className="py-3">
-            <p className="text-sm text-destructive">
-              Failed to load settings. Try refreshing the page.
-            </p>
-          </CardContent>
-        </Card>
+        <ErrorCard message="Failed to load settings. Try refreshing the page." />
       </div>
     );
   }

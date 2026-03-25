@@ -17,7 +17,7 @@ export function LoginPage() {
         </CardHeader>
         <CardContent className="space-y-4">
           {isLoading ? (
-            <Skeleton className="h-10 w-full" />
+            <Skeleton className="h-10 w-full" role="status" aria-label="Loading" />
           ) : isError ? (
             <p className="text-center text-sm text-destructive">
               Failed to load login providers. Try refreshing the page.

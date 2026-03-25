@@ -49,7 +49,7 @@ function buildAppContext(overrides?: {
     type: "contexts" as const,
     attributes: {
       resolvedTheme: "light" as const,
-      resolvedRole: "member",
+      resolvedRole: "member" as const,
       canCreateHousehold: true,
     },
     relationships: {

@@ -9,3 +9,9 @@ export interface Tenant {
   type: "tenants";
   attributes: TenantAttributes;
 }
+
+// --- Create attributes (F14) ---
+
+export interface TenantCreateAttributes {
+  name: string;
+}

@@ -1,13 +1,14 @@
 import { useTaskSummary } from "@/lib/hooks/api/use-tasks";
 import { useReminderSummary } from "@/lib/hooks/api/use-reminders";
 import { useAuth } from "@/components/providers/auth-provider";
+import { ErrorCard } from "@/components/common/error-card";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { CheckSquare, Bell, AlertTriangle } from "lucide-react";
 
 function DashboardSkeleton() {
   return (
-    <div className="p-6 space-y-6">
+    <div className="p-6 space-y-6" role="status" aria-label="Loading">
       <div>
         <Skeleton className="h-8 w-40" />
         <Skeleton className="mt-1 h-4 w-32" />
@@ -44,13 +45,7 @@ export function DashboardPage() {
       </div>
 
       {(taskError || reminderError) && (
-        <Card className="border-destructive">
-          <CardContent className="py-3">
-            <p className="text-sm text-destructive">
-              Failed to load some dashboard data. Try refreshing the page.
-            </p>
-          </CardContent>
-        </Card>
+        <ErrorCard message="Failed to load some dashboard data. Try refreshing the page." />
       )}
 
       <div className="grid gap-4 md:grid-cols-3">

@@ -1,7 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { productivityService } from "@/services/api/productivity";
 import { useTenant } from "@/context/tenant-context";
-import type { ReminderAttributes } from "@/types/models/reminder";
+import type { ReminderUpdateAttributes } from "@/types/models/reminder";
 import type { Tenant } from "@/types/models/tenant";
 import type { Household } from "@/types/models/household";
 
@@ -61,7 +61,7 @@ export function useUpdateReminder() {
   const qc = useQueryClient();
   const { tenant, household } = useTenant();
   return useMutation({
-    mutationFn: ({ id, attrs }: { id: string; attrs: Partial<ReminderAttributes> }) =>
+    mutationFn: ({ id, attrs }: { id: string; attrs: ReminderUpdateAttributes }) =>
       productivityService.updateReminder(tenant!, id, attrs),
     onSettled: () => {
       qc.invalidateQueries({ queryKey: reminderKeys.lists(tenant, household) });
