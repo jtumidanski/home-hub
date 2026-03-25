@@ -3,6 +3,7 @@ package forecast
 import (
 	"fmt"
 	"net/http"
+	"time"
 
 	"github.com/gorilla/mux"
 	"github.com/jtumidanski/api2go/jsonapi"
@@ -13,16 +14,16 @@ import (
 	"gorm.io/gorm"
 )
 
-func InitializeRoutes(db *gorm.DB, client *openmeteo.Client) func(l logrus.FieldLogger, si jsonapi.ServerInformation, api *mux.Router) {
+func InitializeRoutes(db *gorm.DB, client *openmeteo.Client, cacheTTL time.Duration) func(l logrus.FieldLogger, si jsonapi.ServerInformation, api *mux.Router) {
 	return func(l logrus.FieldLogger, si jsonapi.ServerInformation, api *mux.Router) {
 		rh := server.RegisterHandler(l)(si)
 
-		api.HandleFunc("/weather/current", rh("GetCurrentWeather", currentHandler(db, client))).Methods(http.MethodGet)
-		api.HandleFunc("/weather/forecast", rh("GetWeatherForecast", forecastHandler(db, client))).Methods(http.MethodGet)
+		api.HandleFunc("/weather/current", rh("GetCurrentWeather", currentHandler(db, client, cacheTTL))).Methods(http.MethodGet)
+		api.HandleFunc("/weather/forecast", rh("GetWeatherForecast", forecastHandler(db, client, cacheTTL))).Methods(http.MethodGet)
 	}
 }
 
-func currentHandler(db *gorm.DB, client *openmeteo.Client) server.GetHandler {
+func currentHandler(db *gorm.DB, client *openmeteo.Client, cacheTTL time.Duration) server.GetHandler {
 	return func(d *server.HandlerDependency, c *server.HandlerContext) http.HandlerFunc {
 		return func(w http.ResponseWriter, r *http.Request) {
 			t := tenantctx.MustFromContext(r.Context())
@@ -50,7 +51,7 @@ func currentHandler(db *gorm.DB, client *openmeteo.Client) server.GetHandler {
 				timezone = "UTC"
 			}
 
-			proc := NewProcessor(d.Logger(), r.Context(), db, client)
+			proc := NewProcessor(d.Logger(), r.Context(), db, client, cacheTTL)
 			m, err := proc.GetCurrent(t.Id(), t.HouseholdId(), latF, lonF, units, timezone)
 			if err != nil {
 				d.Logger().WithError(err).Error("Failed to get current weather")
@@ -64,7 +65,7 @@ func currentHandler(db *gorm.DB, client *openmeteo.Client) server.GetHandler {
 	}
 }
 
-func forecastHandler(db *gorm.DB, client *openmeteo.Client) server.GetHandler {
+func forecastHandler(db *gorm.DB, client *openmeteo.Client, cacheTTL time.Duration) server.GetHandler {
 	return func(d *server.HandlerDependency, c *server.HandlerContext) http.HandlerFunc {
 		return func(w http.ResponseWriter, r *http.Request) {
 			t := tenantctx.MustFromContext(r.Context())
@@ -92,7 +93,7 @@ func forecastHandler(db *gorm.DB, client *openmeteo.Client) server.GetHandler {
 				timezone = "UTC"
 			}
 
-			proc := NewProcessor(d.Logger(), r.Context(), db, client)
+			proc := NewProcessor(d.Logger(), r.Context(), db, client, cacheTTL)
 			m, err := proc.GetForecast(t.Id(), t.HouseholdId(), latF, lonF, units, timezone)
 			if err != nil {
 				d.Logger().WithError(err).Error("Failed to get weather forecast")

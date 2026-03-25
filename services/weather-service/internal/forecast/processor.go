@@ -3,6 +3,7 @@ package forecast
 import (
 	"context"
 	"errors"
+	"time"
 
 	"github.com/google/uuid"
 	"github.com/jtumidanski/home-hub/services/weather-service/internal/openmeteo"
@@ -15,14 +16,15 @@ import (
 var ErrNoLocation = errors.New("household has no location configured")
 
 type Processor struct {
-	l      logrus.FieldLogger
-	ctx    context.Context
-	db     *gorm.DB
-	client *openmeteo.Client
+	l        logrus.FieldLogger
+	ctx      context.Context
+	db       *gorm.DB
+	client   *openmeteo.Client
+	cacheTTL time.Duration
 }
 
-func NewProcessor(l logrus.FieldLogger, ctx context.Context, db *gorm.DB, client *openmeteo.Client) *Processor {
-	return &Processor{l: l, ctx: ctx, db: db, client: client}
+func NewProcessor(l logrus.FieldLogger, ctx context.Context, db *gorm.DB, client *openmeteo.Client, cacheTTL time.Duration) *Processor {
+	return &Processor{l: l, ctx: ctx, db: db, client: client, cacheTTL: cacheTTL}
 }
 
 func (p *Processor) ByHouseholdIDProvider(householdID uuid.UUID) model.Provider[Model] {
@@ -48,10 +50,12 @@ func (p *Processor) getOrFetch(tenantID, householdID uuid.UUID, lat, lon float64
 		if m.Latitude() == lat && m.Longitude() == lon && m.Units() == units {
 			// Treat entries without hourly data as stale
 			if len(m.ForecastData()) > 0 && len(m.ForecastData()[0].HourlyForecast) > 0 {
-				return m, nil
+				if p.cacheTTL <= 0 || time.Since(m.FetchedAt()) < p.cacheTTL {
+					return m, nil
+				}
 			}
 		}
-		// Stale cache — coordinates, units changed, or missing hourly data, re-fetch
+		// Stale cache — coordinates, units changed, missing hourly data, or TTL expired, re-fetch
 	}
 
 	return p.fetchAndCache(tenantID, householdID, lat, lon, units, timezone)

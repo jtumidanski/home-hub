@@ -43,7 +43,7 @@ func main() {
 			api := router.PathPrefix("/api/v1").Subrouter()
 			api.Use(sharedauth.Middleware(l, authValidator))
 
-			forecast.InitializeRoutes(db, client)(l, si, api)
+			forecast.InitializeRoutes(db, client, cfg.CacheTTL)(l, si, api)
 			geocoding.InitializeRoutes(client)(l, si, api)
 		}).
 		Run()

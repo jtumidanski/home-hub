@@ -101,19 +101,17 @@ export function TenantProvider({ children }: { children: ReactNode }) {
     [tenant, preferenceId, queryClient],
   );
 
-  useEffect(() => {
-    if (tenant) {
-      api.setTenant(tenant);
-    } else {
-      api.clearTenant();
-    }
-  }, [tenant]);
-
-  useEffect(() => {
-    if (household) {
-      api.setHousehold(household);
-    }
-  }, [household]);
+  // Synchronize API client headers before children render so that queries
+  // triggered by the new context value already carry the correct headers.
+  // These are simple property setters (no DOM side-effects), safe during render.
+  if (tenant) {
+    api.setTenant(tenant);
+  } else {
+    api.clearTenant();
+  }
+  if (household) {
+    api.setHousehold(household);
+  }
 
   return (
     <TenantContext.Provider value={{ tenant, household, setActiveHousehold }}>

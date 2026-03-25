@@ -28,7 +28,7 @@ func StartRefreshLoop(ctx context.Context, db *gorm.DB, client *openmeteo.Client
 }
 
 func refreshAll(ctx context.Context, db *gorm.DB, client *openmeteo.Client, l logrus.FieldLogger) {
-	proc := forecast.NewProcessor(l, ctx, db, client)
+	proc := forecast.NewProcessor(l, ctx, db, client, 0)
 	entries, err := proc.AllProvider()()
 	if err != nil {
 		l.WithError(err).Error("failed to list weather cache entries for refresh")
