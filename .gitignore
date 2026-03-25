@@ -38,6 +38,10 @@ frontend/dist-ssr/
 *.log
 npm-debug.log*
 
+# Kubernetes secrets and TLS keys
+deploy/k8s/secrets.yaml
+deploy/k8s/tls/
+
 # Docker
 .docker/
 
