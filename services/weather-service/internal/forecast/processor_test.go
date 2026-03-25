@@ -18,6 +18,12 @@ func TestTransformResponse(t *testing.T) {
 			TemperatureMin: []float64{55.0, 48.0, 52.0},
 			WeatherCode:    []int{2, 61, 0},
 		},
+		Hourly: openmeteo.HourlyData{
+			Time:                     []string{"2026-03-25T00:00", "2026-03-25T01:00", "2026-03-26T00:00", "2026-03-27T12:00"},
+			Temperature:              []float64{58.0, 57.5, 50.0, 65.0},
+			WeatherCode:              []int{1, 2, 61, 0},
+			PrecipitationProbability: []int{0, 5, 70, 10},
+		},
 	}
 
 	current, daily := transformResponse(resp)
@@ -52,12 +58,35 @@ func TestTransformResponse(t *testing.T) {
 		t.Errorf("expected Partly Cloudy, got %s", daily[0].Summary)
 	}
 
-	// Second day: rain
+	// Hourly data grouped by day
+	if len(daily[0].HourlyForecast) != 2 {
+		t.Fatalf("expected 2 hourly entries for day 0, got %d", len(daily[0].HourlyForecast))
+	}
+	if daily[0].HourlyForecast[0].Time != "2026-03-25T00:00" {
+		t.Errorf("expected time 2026-03-25T00:00, got %s", daily[0].HourlyForecast[0].Time)
+	}
+	if daily[0].HourlyForecast[0].Temperature != 58.0 {
+		t.Errorf("expected hourly temp 58.0, got %f", daily[0].HourlyForecast[0].Temperature)
+	}
+	if daily[0].HourlyForecast[0].Summary != "Mostly Clear" {
+		t.Errorf("expected Mostly Clear, got %s", daily[0].HourlyForecast[0].Summary)
+	}
+	if daily[0].HourlyForecast[1].PrecipitationProbability != 5 {
+		t.Errorf("expected precip 5, got %d", daily[0].HourlyForecast[1].PrecipitationProbability)
+	}
+
+	// Second day: rain with hourly
 	if daily[1].Summary != "Rain" {
 		t.Errorf("expected Rain, got %s", daily[1].Summary)
 	}
 	if daily[1].Icon != "cloud-rain" {
 		t.Errorf("expected cloud-rain, got %s", daily[1].Icon)
+	}
+	if len(daily[1].HourlyForecast) != 1 {
+		t.Fatalf("expected 1 hourly entry for day 1, got %d", len(daily[1].HourlyForecast))
+	}
+	if daily[1].HourlyForecast[0].PrecipitationProbability != 70 {
+		t.Errorf("expected precip 70, got %d", daily[1].HourlyForecast[0].PrecipitationProbability)
 	}
 
 	// Third day: clear
@@ -66,6 +95,9 @@ func TestTransformResponse(t *testing.T) {
 	}
 	if daily[2].Icon != "sun" {
 		t.Errorf("expected sun, got %s", daily[2].Icon)
+	}
+	if len(daily[2].HourlyForecast) != 1 {
+		t.Fatalf("expected 1 hourly entry for day 2, got %d", len(daily[2].HourlyForecast))
 	}
 }
 

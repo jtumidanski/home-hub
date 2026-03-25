@@ -27,7 +27,13 @@ func TestMake(t *testing.T) {
 			Icon:        "cloud-sun",
 		},
 		ForecastData: JSONForecastData{
-			{Date: "2026-03-25", HighTemperature: 78.0, LowTemperature: 55.0, WeatherCode: 2, Summary: "Partly Cloudy", Icon: "cloud-sun"},
+			{
+				Date: "2026-03-25", HighTemperature: 78.0, LowTemperature: 55.0, WeatherCode: 2, Summary: "Partly Cloudy", Icon: "cloud-sun",
+				HourlyForecast: []HourlyForecast{
+					{Time: "2026-03-25T00:00", Temperature: 58.0, WeatherCode: 1, Summary: "Mostly Clear", Icon: "sun", PrecipitationProbability: 0},
+					{Time: "2026-03-25T01:00", Temperature: 57.5, WeatherCode: 1, Summary: "Mostly Clear", Icon: "sun", PrecipitationProbability: 5},
+				},
+			},
 		},
 		FetchedAt: now,
 		CreatedAt: now,
@@ -61,6 +67,12 @@ func TestMake(t *testing.T) {
 	}
 	if m.TemperatureUnit() != "°F" {
 		t.Errorf("expected °F, got %s", m.TemperatureUnit())
+	}
+	if len(m.ForecastData()[0].HourlyForecast) != 2 {
+		t.Errorf("expected 2 hourly entries, got %d", len(m.ForecastData()[0].HourlyForecast))
+	}
+	if m.ForecastData()[0].HourlyForecast[0].Temperature != 58.0 {
+		t.Errorf("expected hourly temp 58.0, got %f", m.ForecastData()[0].HourlyForecast[0].Temperature)
 	}
 }
 
@@ -129,7 +141,12 @@ func TestMakeAndToEntityRoundTrip(t *testing.T) {
 		Units:       "metric",
 		CurrentData: JSONCurrentData{Temperature: 15.0, WeatherCode: 3, Summary: "Overcast", Icon: "cloud"},
 		ForecastData: JSONForecastData{
-			{Date: "2026-03-25", HighTemperature: 18.0, LowTemperature: 8.0, WeatherCode: 3, Summary: "Overcast", Icon: "cloud"},
+			{
+				Date: "2026-03-25", HighTemperature: 18.0, LowTemperature: 8.0, WeatherCode: 3, Summary: "Overcast", Icon: "cloud",
+				HourlyForecast: []HourlyForecast{
+					{Time: "2026-03-25T12:00", Temperature: 16.0, WeatherCode: 3, Summary: "Overcast", Icon: "cloud", PrecipitationProbability: 20},
+				},
+			},
 		},
 		FetchedAt: now,
 		CreatedAt: now,
@@ -160,5 +177,11 @@ func TestMakeAndToEntityRoundTrip(t *testing.T) {
 	}
 	if roundTripped.Units != original.Units {
 		t.Errorf("roundtrip units mismatch")
+	}
+	if len(roundTripped.ForecastData[0].HourlyForecast) != 1 {
+		t.Errorf("roundtrip hourly data mismatch: expected 1, got %d", len(roundTripped.ForecastData[0].HourlyForecast))
+	}
+	if roundTripped.ForecastData[0].HourlyForecast[0].Temperature != 16.0 {
+		t.Errorf("roundtrip hourly temp mismatch: expected 16.0, got %f", roundTripped.ForecastData[0].HourlyForecast[0].Temperature)
 	}
 }

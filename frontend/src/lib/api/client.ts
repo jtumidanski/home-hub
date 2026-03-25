@@ -56,6 +56,7 @@ export function withPrefix(prefix: string) {
 class ApiClient {
   private baseUrl: string;
   private tenantId: string | null = null;
+  private householdId: string | null = null;
   private pendingRequests = new Map<string, Promise<unknown>>();
   private cache = new Map<string, CacheEntry>();
   private refreshPromise: Promise<boolean> | null = null;
@@ -109,7 +110,9 @@ class ApiClient {
 
     this.isRedirecting = true;
     this.onAuthFailure?.();
-    window.location.href = "/login";
+    if (window.location.pathname !== "/login") {
+      window.location.href = "/login";
+    }
     throw transformError(new ApiRequestError("Session expired", 401));
   }
 
@@ -117,8 +120,13 @@ class ApiClient {
     this.tenantId = tenant.id;
   }
 
+  setHousehold(household: { id: string }) {
+    this.householdId = household.id;
+  }
+
   clearTenant() {
     this.tenantId = null;
+    this.householdId = null;
   }
 
   private buildHeaders(contentType?: string, options?: RequestOptions): Record<string, string> {
@@ -126,6 +134,9 @@ class ApiClient {
     if (contentType) headers["Content-Type"] = contentType;
     if (this.tenantId && !options?.skipTenantHeaders) {
       headers["X-Tenant-ID"] = this.tenantId;
+    }
+    if (this.householdId && !options?.skipTenantHeaders) {
+      headers["X-Household-ID"] = this.householdId;
     }
     if (options?.headers) {
       Object.assign(headers, options.headers);

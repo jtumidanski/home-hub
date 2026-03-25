@@ -15,6 +15,15 @@ export interface WeatherCurrent {
   attributes: WeatherCurrentAttributes;
 }
 
+export interface HourlyForecastEntry {
+  time: string;
+  temperature: number;
+  weatherCode: number;
+  summary: string;
+  icon: string;
+  precipitationProbability: number;
+}
+
 export interface WeatherDailyAttributes {
   date: string;
   highTemperature: number;
@@ -23,6 +32,7 @@ export interface WeatherDailyAttributes {
   summary: string;
   icon: string;
   weatherCode: number;
+  hourlyForecast: HourlyForecastEntry[];
 }
 
 export interface WeatherDaily {

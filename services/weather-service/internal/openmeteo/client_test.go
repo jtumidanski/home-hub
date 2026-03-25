@@ -19,6 +19,12 @@ func TestFetchForecast(t *testing.T) {
 			TemperatureMin: []float64{55.0, 48.0},
 			WeatherCode:    []int{2, 61},
 		},
+		Hourly: HourlyData{
+			Time:                     []string{"2026-03-25T00:00", "2026-03-25T01:00", "2026-03-26T00:00"},
+			Temperature:              []float64{58.0, 57.5, 50.0},
+			WeatherCode:              []int{1, 1, 61},
+			PrecipitationProbability: []int{0, 5, 70},
+		},
 	}
 
 	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -36,6 +42,9 @@ func TestFetchForecast(t *testing.T) {
 		}
 		if r.URL.Query().Get("forecast_days") != "7" {
 			t.Errorf("expected forecast_days=7, got %s", r.URL.Query().Get("forecast_days"))
+		}
+		if r.URL.Query().Get("hourly") != "temperature_2m,weather_code,precipitation_probability" {
+			t.Errorf("expected hourly params, got %s", r.URL.Query().Get("hourly"))
 		}
 		w.Header().Set("Content-Type", "application/json")
 		json.NewEncoder(w).Encode(expected)
@@ -57,6 +66,15 @@ func TestFetchForecast(t *testing.T) {
 	}
 	if len(resp.Daily.Time) != 2 {
 		t.Errorf("expected 2 days, got %d", len(resp.Daily.Time))
+	}
+	if len(resp.Hourly.Time) != 3 {
+		t.Errorf("expected 3 hourly entries, got %d", len(resp.Hourly.Time))
+	}
+	if resp.Hourly.Temperature[0] != 58.0 {
+		t.Errorf("expected hourly temp 58.0, got %f", resp.Hourly.Temperature[0])
+	}
+	if resp.Hourly.PrecipitationProbability[2] != 70 {
+		t.Errorf("expected precip 70, got %d", resp.Hourly.PrecipitationProbability[2])
 	}
 }
 

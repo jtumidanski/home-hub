@@ -46,9 +46,12 @@ func (p *Processor) getOrFetch(tenantID, householdID uuid.UUID, lat, lon float64
 	if err == nil {
 		// Check if cached coordinates/units still match
 		if m.Latitude() == lat && m.Longitude() == lon && m.Units() == units {
-			return m, nil
+			// Treat entries without hourly data as stale
+			if len(m.ForecastData()) > 0 && len(m.ForecastData()[0].HourlyForecast) > 0 {
+				return m, nil
+			}
 		}
-		// Stale cache — coordinates or units changed, re-fetch
+		// Stale cache — coordinates, units changed, or missing hourly data, re-fetch
 	}
 
 	return p.fetchAndCache(tenantID, householdID, lat, lon, units, timezone)
@@ -98,6 +101,22 @@ func transformResponse(resp *openmeteo.ForecastResponse) (CurrentData, []DailyFo
 		Icon:        currentIcon,
 	}
 
+	// Group hourly data by date prefix
+	hourlyByDate := make(map[string][]HourlyForecast)
+	for i := range resp.Hourly.Time {
+		t := resp.Hourly.Time[i]
+		date := t[:10] // "2026-03-25T00:00" → "2026-03-25"
+		summary, icon := weathercode.Lookup(resp.Hourly.WeatherCode[i])
+		hourlyByDate[date] = append(hourlyByDate[date], HourlyForecast{
+			Time:                     t,
+			Temperature:              resp.Hourly.Temperature[i],
+			WeatherCode:              resp.Hourly.WeatherCode[i],
+			Summary:                  summary,
+			Icon:                     icon,
+			PrecipitationProbability: resp.Hourly.PrecipitationProbability[i],
+		})
+	}
+
 	daily := make([]DailyForecast, len(resp.Daily.Time))
 	for i := range resp.Daily.Time {
 		summary, icon := weathercode.Lookup(resp.Daily.WeatherCode[i])
@@ -108,6 +127,7 @@ func transformResponse(resp *openmeteo.ForecastResponse) (CurrentData, []DailyFo
 			WeatherCode:     resp.Daily.WeatherCode[i],
 			Summary:         summary,
 			Icon:            icon,
+			HourlyForecast:  hourlyByDate[resp.Daily.Time[i]],
 		}
 	}
 

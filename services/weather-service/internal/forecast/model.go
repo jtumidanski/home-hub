@@ -13,13 +13,23 @@ type CurrentData struct {
 	Icon        string  `json:"icon"`
 }
 
+type HourlyForecast struct {
+	Time                     string  `json:"time"`
+	Temperature              float64 `json:"temperature"`
+	WeatherCode              int     `json:"weatherCode"`
+	Summary                  string  `json:"summary"`
+	Icon                     string  `json:"icon"`
+	PrecipitationProbability int     `json:"precipitationProbability"`
+}
+
 type DailyForecast struct {
-	Date            string  `json:"date"`
-	HighTemperature float64 `json:"highTemperature"`
-	LowTemperature  float64 `json:"lowTemperature"`
-	WeatherCode     int     `json:"weatherCode"`
-	Summary         string  `json:"summary"`
-	Icon            string  `json:"icon"`
+	Date            string           `json:"date"`
+	HighTemperature float64          `json:"highTemperature"`
+	LowTemperature  float64          `json:"lowTemperature"`
+	WeatherCode     int              `json:"weatherCode"`
+	Summary         string           `json:"summary"`
+	Icon            string           `json:"icon"`
+	HourlyForecast  []HourlyForecast `json:"hourlyForecast,omitempty"`
 }
 
 type Model struct {

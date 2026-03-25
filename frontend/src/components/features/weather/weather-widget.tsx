@@ -1,5 +1,5 @@
 import { useNavigate } from "react-router-dom";
-import { useCurrentWeather } from "@/lib/hooks/api/use-weather";
+import { useCurrentWeather, useWeatherForecast } from "@/lib/hooks/api/use-weather";
 import { useTenant } from "@/context/tenant-context";
 import { hasLocation } from "@/types/models/household";
 import { WeatherIcon } from "@/components/common/weather-icon";
@@ -7,10 +7,37 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { AlertTriangle, MapPin } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import type { WeatherDaily } from "@/types/models/weather";
 
 function formatTime(isoString: string): string {
   const date = new Date(isoString);
   return date.toLocaleTimeString([], { hour: "numeric", minute: "2-digit" });
+}
+
+function formatDayName(dateStr: string, index: number): string {
+  if (index === 0) return "Today";
+  const date = new Date(dateStr + "T12:00:00");
+  return date.toLocaleDateString([], { weekday: "short" });
+}
+
+function ForecastPreview({ days }: { days: WeatherDaily[] }) {
+  const preview = days.slice(0, 4);
+  return (
+    <div className="grid grid-cols-4 gap-1 mt-3 pt-3 border-t">
+      {preview.map((day, i) => (
+        <div key={day.id} className="flex flex-col items-center text-center gap-0.5">
+          <span className="text-xs text-muted-foreground">
+            {formatDayName(day.attributes.date, i)}
+          </span>
+          <WeatherIcon icon={day.attributes.icon} className="h-4 w-4 text-muted-foreground" />
+          <div className="text-xs">
+            <span className="font-medium">{Math.round(day.attributes.highTemperature)}°</span>
+            <span className="text-muted-foreground ml-0.5">{Math.round(day.attributes.lowTemperature)}°</span>
+          </div>
+        </div>
+      ))}
+    </div>
+  );
 }
 
 export function WeatherWidget() {
@@ -18,6 +45,7 @@ export function WeatherWidget() {
   const { household } = useTenant();
   const locationSet = household && hasLocation(household);
   const { data, isLoading, isError } = useCurrentWeather();
+  const { data: forecastData } = useWeatherForecast();
 
   if (!locationSet) {
     return (
@@ -92,6 +120,9 @@ export function WeatherWidget() {
             Updated {formatTime(weather.fetchedAt)}
           </span>
         </div>
+        {forecastData?.data && forecastData.data.length >= 4 && (
+          <ForecastPreview days={forecastData.data} />
+        )}
       </CardContent>
     </Card>
   );

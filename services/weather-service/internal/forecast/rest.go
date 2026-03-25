@@ -50,15 +50,25 @@ func TransformCurrent(m Model) CurrentRestModel {
 	}
 }
 
+type HourlyRestModel struct {
+	Time                     string  `json:"time"`
+	Temperature              float64 `json:"temperature"`
+	WeatherCode              int     `json:"weatherCode"`
+	Summary                  string  `json:"summary"`
+	Icon                     string  `json:"icon"`
+	PrecipitationProbability int     `json:"precipitationProbability"`
+}
+
 type DailyRestModel struct {
-	Id              string  `json:"-"`
-	Date            string  `json:"date"`
-	HighTemperature float64 `json:"highTemperature"`
-	LowTemperature  float64 `json:"lowTemperature"`
-	TemperatureUnit string  `json:"temperatureUnit"`
-	Summary         string  `json:"summary"`
-	Icon            string  `json:"icon"`
-	WeatherCode     int     `json:"weatherCode"`
+	Id              string            `json:"-"`
+	Date            string            `json:"date"`
+	HighTemperature float64           `json:"highTemperature"`
+	LowTemperature  float64           `json:"lowTemperature"`
+	TemperatureUnit string            `json:"temperatureUnit"`
+	Summary         string            `json:"summary"`
+	Icon            string            `json:"icon"`
+	WeatherCode     int               `json:"weatherCode"`
+	HourlyForecast  []HourlyRestModel `json:"hourlyForecast"`
 }
 
 func (r DailyRestModel) GetName() string { return "weather-daily" }
@@ -72,6 +82,17 @@ func TransformForecast(m Model) []DailyRestModel {
 	tempUnit := m.TemperatureUnit()
 	result := make([]DailyRestModel, len(m.ForecastData()))
 	for i, d := range m.ForecastData() {
+		hourly := make([]HourlyRestModel, len(d.HourlyForecast))
+		for j, h := range d.HourlyForecast {
+			hourly[j] = HourlyRestModel{
+				Time:                     h.Time,
+				Temperature:              h.Temperature,
+				WeatherCode:              h.WeatherCode,
+				Summary:                  h.Summary,
+				Icon:                     h.Icon,
+				PrecipitationProbability: h.PrecipitationProbability,
+			}
+		}
 		result[i] = DailyRestModel{
 			Id:              d.Date,
 			Date:            d.Date,
@@ -81,6 +102,7 @@ func TransformForecast(m Model) []DailyRestModel {
 			Summary:         d.Summary,
 			Icon:            d.Icon,
 			WeatherCode:     d.WeatherCode,
+			HourlyForecast:  hourly,
 		}
 	}
 	return result
