@@ -1,0 +1,26 @@
+meta {
+  name: Update Recipe
+  type: http
+  seq: 4
+}
+
+patch {
+  url: {{baseUrl}}/api/v1/recipes/:id
+  body: json
+}
+
+headers {
+  Content-Type: application/vnd.api+json
+}
+
+body:json {
+  {
+    "data": {
+      "type": "recipes",
+      "attributes": {
+        "title": "Pasta Carbonara (Updated)",
+        "tags": ["italian", "pasta", "classic"]
+      }
+    }
+  }
+}

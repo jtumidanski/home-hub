@@ -29,6 +29,9 @@ jobs:
           - service: weather-service
             context: .
             dockerfile: services/weather-service/Dockerfile
+          - service: recipe-service
+            context: .
+            dockerfile: services/recipe-service/Dockerfile
           - service: frontend
             context: frontend
             dockerfile: frontend/Dockerfile

@@ -1,0 +1,31 @@
+meta {
+  name: Create Recipe
+  type: http
+  seq: 1
+}
+
+post {
+  url: {{baseUrl}}/api/v1/recipes
+  body: json
+}
+
+headers {
+  Content-Type: application/vnd.api+json
+}
+
+body:json {
+  {
+    "data": {
+      "type": "recipes",
+      "attributes": {
+        "title": "Pasta Carbonara",
+        "description": "Classic Roman pasta dish",
+        "servings": 4,
+        "prepTimeMinutes": 10,
+        "cookTimeMinutes": 20,
+        "tags": ["italian", "pasta"],
+        "source": "Bring @water{2%l} to a boil in a #large pot{}.\n\nCook @spaghetti{400%g} until al dente, about ~{8%minutes}.\n\nMeanwhile, dice @guanciale{200%g} and fry in a #skillet{} until crispy.\n\nWhisk @eggs{3} with @pecorino romano{100%g} and @black pepper{1%tsp}.\n\nDrain pasta, toss with guanciale, then mix in egg mixture off heat."
+      }
+    }
+  }
+}

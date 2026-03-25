@@ -6,7 +6,7 @@ ROOT_DIR="$(cd "$SCRIPT_DIR/.." && pwd)"
 
 echo "Running all tests..."
 
-for service in auth-service account-service productivity-service weather-service; do
+for service in auth-service account-service productivity-service weather-service recipe-service; do
   echo "Testing $service..."
   cd "$ROOT_DIR/services/$service"
   go test ./... -count=1

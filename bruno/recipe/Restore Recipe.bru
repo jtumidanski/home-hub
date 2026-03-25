@@ -1,0 +1,25 @@
+meta {
+  name: Restore Recipe
+  type: http
+  seq: 8
+}
+
+post {
+  url: {{baseUrl}}/api/v1/recipes/restorations
+  body: json
+}
+
+headers {
+  Content-Type: application/vnd.api+json
+}
+
+body:json {
+  {
+    "data": {
+      "type": "recipe-restorations",
+      "attributes": {
+        "recipeId": "RECIPE_UUID_HERE"
+      }
+    }
+  }
+}

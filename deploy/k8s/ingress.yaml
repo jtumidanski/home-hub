@@ -79,6 +79,13 @@ spec:
             name: productivity-service
             port:
               number: 8080
+      - path: /api/v1/recipes
+        pathType: Prefix
+        backend:
+          service:
+            name: recipe-service
+            port:
+              number: 8080
       - path: /api/v1/weather
         pathType: Prefix
         backend:
