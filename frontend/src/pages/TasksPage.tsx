@@ -1,9 +1,12 @@
-import { useState } from "react";
+import { useState, useCallback } from "react";
 import { type ColumnDef } from "@tanstack/react-table";
 import { toast } from "sonner";
 import { useTasks, useUpdateTask, useDeleteTask } from "@/lib/hooks/api/use-tasks";
 import { createErrorFromUnknown } from "@/lib/api/errors";
 import { type Task } from "@/types/models/task";
+import { useMobile } from "@/lib/hooks/use-mobile";
+import { PullToRefresh } from "@/components/common/pull-to-refresh";
+import { TaskCard } from "@/components/features/tasks/task-card";
 import { CreateTaskDialog } from "@/components/features/tasks/create-task-dialog";
 import { DataTable } from "@/components/common/data-table";
 import { ErrorCard } from "@/components/common/error-card";
@@ -13,14 +16,15 @@ import { Plus, Check, Trash2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 export function TasksPage() {
-  const { data, isLoading, isError } = useTasks();
+  const { data, isLoading, isError, refetch } = useTasks();
   const updateTask = useUpdateTask();
   const deleteTask = useDeleteTask();
   const [open, setOpen] = useState(false);
+  const isMobile = useMobile();
 
   const tasks = (data?.data ?? []) as Task[];
 
-  const toggleComplete = async (id: string, currentStatus: string) => {
+  const toggleComplete = useCallback(async (id: string, currentStatus: string) => {
     try {
       await updateTask.mutateAsync({
         id,
@@ -30,16 +34,20 @@ export function TasksPage() {
     } catch (error) {
       toast.error(createErrorFromUnknown(error, "Failed to update task").message);
     }
-  };
+  }, [updateTask]);
 
-  const handleDelete = async (id: string) => {
+  const handleDelete = useCallback(async (id: string) => {
     try {
       await deleteTask.mutateAsync(id);
       toast.success("Task deleted");
     } catch (error) {
       toast.error(createErrorFromUnknown(error, "Failed to delete task").message);
     }
-  };
+  }, [deleteTask]);
+
+  const handleRefresh = useCallback(async () => {
+    await refetch();
+  }, [refetch]);
 
   const columns: ColumnDef<Task, unknown>[] = [
     {
@@ -102,7 +110,7 @@ export function TasksPage() {
 
   if (isLoading) {
     return (
-      <div className="p-6 space-y-4" role="status" aria-label="Loading">
+      <div className="p-4 md:p-6 space-y-4" role="status" aria-label="Loading">
         <DataTable columns={columns} data={[]} isLoading />
       </div>
     );
@@ -110,36 +118,57 @@ export function TasksPage() {
 
   if (isError) {
     return (
-      <div className="p-6">
+      <div className="p-4 md:p-6">
         <ErrorCard message="Failed to load tasks. Try refreshing the page." />
       </div>
     );
   }
 
   return (
-    <div className="p-6 space-y-4">
-      <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-semibold">Tasks</h1>
-        <Button size="sm" onClick={() => setOpen(true)}>
-          <Plus className="mr-2 h-4 w-4" />New Task
-        </Button>
-      </div>
-
-      <CreateTaskDialog open={open} onOpenChange={setOpen} />
-
-      <DataTable
-        columns={columns}
-        data={tasks}
-        emptyMessage="No tasks yet. Create your first task to get started."
-      />
-      {tasks.length === 0 && (
-        <div className="flex justify-center">
-          <Button variant="outline" onClick={() => setOpen(true)}>
-            <Plus className="mr-2 h-4 w-4" />
-            Create First Task
+    <PullToRefresh onRefresh={handleRefresh}>
+      <div className="p-4 md:p-6 space-y-4">
+        <div className="flex items-center justify-between">
+          <h1 className="text-xl md:text-2xl font-semibold">Tasks</h1>
+          <Button size="sm" onClick={() => setOpen(true)}>
+            <Plus className="mr-2 h-4 w-4" />New Task
           </Button>
         </div>
-      )}
-    </div>
+
+        <CreateTaskDialog open={open} onOpenChange={setOpen} />
+
+        {isMobile ? (
+          tasks.length === 0 ? (
+            <div className="flex flex-col items-center justify-center py-12 text-center">
+              <p className="text-muted-foreground">No tasks yet. Create your first task to get started.</p>
+            </div>
+          ) : (
+            <div className="space-y-3">
+              {tasks.map((task) => (
+                <TaskCard
+                  key={task.id}
+                  task={task}
+                  onToggleComplete={toggleComplete}
+                  onDelete={handleDelete}
+                />
+              ))}
+            </div>
+          )
+        ) : (
+          <DataTable
+            columns={columns}
+            data={tasks}
+            emptyMessage="No tasks yet. Create your first task to get started."
+          />
+        )}
+        {tasks.length === 0 && (
+          <div className="flex justify-center">
+            <Button variant="outline" onClick={() => setOpen(true)}>
+              <Plus className="mr-2 h-4 w-4" />
+              Create First Task
+            </Button>
+          </div>
+        )}
+      </div>
+    </PullToRefresh>
   );
 }

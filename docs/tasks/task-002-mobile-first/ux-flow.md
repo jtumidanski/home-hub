@@ -1,0 +1,178 @@
+# Mobile-First UX Flow
+
+## Navigation State Machine
+
+```
+Desktop (≥768px)                    Mobile (<768px)
+┌─────────────────────┐             ┌─────────────────────┐
+│ Fixed Sidebar + Main│             │ Top Bar + Main      │
+│                     │             │ [☰] Home Hub   [👤] │
+│ ┌───────┬──────────┐│             │                     │
+│ │Sidebar│  Content  ││             │     Content         │
+│ │ 256px │  flex-1   ││             │     full-width      │
+│ │       │           ││             │                     │
+│ └───────┴──────────┘│             └─────────────────────┘
+└─────────────────────┘                      │
+                                        Tap hamburger
+                                             │
+                                             ▼
+                                   ┌─────────────────────┐
+                                   │ Drawer + Overlay     │
+                                   │ ┌────────┐          │
+                                   │ │Household│ ░░░░░░░ │
+                                   │ │Switcher │ ░░░░░░░ │
+                                   │ │─────────│ ░░░░░░░ │
+                                   │ │Dashboard│ ░░░░░░░ │
+                                   │ │Tasks    │ ░░░░░░░ │
+                                   │ │Reminders│ ░overlay │
+                                   │ │Househlds│ ░░░░░░░ │
+                                   │ │Settings │ ░░░░░░░ │
+                                   │ │─────────│ ░░░░░░░ │
+                                   │ │Theme 🌙 │ ░░░░░░░ │
+                                   │ │Logout   │ ░░░░░░░ │
+                                   │ │User info│ ░░░░░░░ │
+                                   │ └────────┘          │
+                                   └─────────────────────┘
+                                             │
+                                   Tap nav item / tap overlay
+                                             │
+                                             ▼
+                                   Drawer closes, page navigates
+```
+
+## Page Layout Patterns
+
+### Dashboard (Mobile)
+
+```
+┌─────────────────────┐
+│ [☰] Home Hub        │  ← Top bar
+├─────────────────────┤
+│ ↓ Pull to refresh   │
+├─────────────────────┤
+│ ┌─────────────────┐ │
+│ │ Tasks Summary   │ │  ← Full-width card
+│ │ 5 pending       │ │
+│ └─────────────────┘ │
+│ ┌─────────────────┐ │
+│ │ Reminders       │ │  ← Full-width card
+│ │ 3 upcoming      │ │
+│ └─────────────────┘ │
+│ ┌─────────────────┐ │
+│ │ Activity        │ │  ← Full-width card
+│ │ ...             │ │
+│ └─────────────────┘ │
+└─────────────────────┘
+```
+
+### Tasks List (Mobile)
+
+```
+┌─────────────────────┐
+│ [☰] Tasks      [+]  │  ← Top bar with add button
+├─────────────────────┤
+│ ↓ Pull to refresh   │
+├─────────────────────┤
+│ ┌─────────────────┐ │
+│ │ Buy groceries   │ │
+│ │ 🟡 Pending      │ │
+│ │ Due: Mar 26     │ │
+│ │            [⋮]  │ │  ← Three-dot action menu
+│ └─────────────────┘ │
+│ ┌─────────────────┐ │
+│ │ Fix leaky faucet│ │
+│ │ 🔵 In Progress  │ │
+│ │ Due: Mar 28     │ │
+│ │            [⋮]  │ │
+│ └─────────────────┘ │
+│ ┌─────────────────┐ │
+│ │ ...             │ │
+│ └─────────────────┘ │
+└─────────────────────┘
+```
+
+### Task Card Action Menu
+
+```
+Tap [⋮] opens dropdown:
+┌──────────────┐
+│ ✏️ Edit       │
+│ ✅ Complete   │
+│ 🗑️ Delete     │
+└──────────────┘
+```
+
+### Reminders List (Mobile)
+
+```
+┌─────────────────────┐
+│ [☰] Reminders  [+]  │
+├─────────────────────┤
+│ ↓ Pull to refresh   │
+├─────────────────────┤
+│ ┌─────────────────┐ │
+│ │ Take medication │ │
+│ │ 🔔 Active       │ │
+│ │ Next: 8:00 AM   │ │
+│ │            [⋮]  │ │
+│ └─────────────────┘ │
+│ ...                  │
+└─────────────────────┘
+```
+
+### Mobile Household Switcher
+
+```
+Tap household area in drawer:
+
+┌─────────────────────┐
+│  ← Select Household │  ← Header with back/close
+├─────────────────────┤
+│                     │
+│ ┌─────────────────┐ │
+│ │ Smith Family  ✓  │ │  ← Active household
+│ └─────────────────┘ │
+│ ┌─────────────────┐ │
+│ │ Vacation Home    │ │
+│ └─────────────────┘ │
+│ ┌─────────────────┐ │
+│ │ Rental Property  │ │
+│ └─────────────────┘ │
+│                     │
+│                     │
+│                     │
+└─────────────────────┘
+```
+
+- Full-screen overlay replaces the compact Select dropdown on mobile
+- Large tap targets for each household row
+- Checkmark indicates currently active household
+- Tapping a household selects it, closes the overlay, and returns to the drawer (which then closes)
+- Back arrow or close button dismisses without changing selection
+
+## Breakpoint Behavior Summary
+
+| Viewport | Navigation | Data Views | Layout |
+|----------|-----------|------------|--------|
+| <768px (mobile) | Hamburger + drawer | Card list | Single column, full-width |
+| ≥768px (tablet+) | Fixed sidebar 256px | DataTable | Sidebar + content, multi-column grids |
+
+## Interaction Details
+
+### Hamburger Drawer
+- Opens: slide from left, 250ms ease transition
+- Closes: tap overlay, tap nav item, tap X (if included), swipe left (optional future)
+- Focus: trapped inside drawer when open
+- Scroll: drawer content scrolls independently if it overflows
+
+### Pull-to-Refresh
+- Trigger: pull down ≥60px from top of scrollable content
+- Indicator: spinner appears at top of content area
+- Release: triggers query refetch, spinner remains until data loads
+- Cancel: release before threshold, content snaps back
+
+### Card Action Menus
+- Trigger: tap three-dot icon on card
+- Content: same actions as DataTable row actions
+- Dismiss: tap outside menu, tap action item
+- Position: anchored to the three-dot icon, opens upward if near bottom of viewport
