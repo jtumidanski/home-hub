@@ -1,4 +1,4 @@
-import { api } from "@/lib/api/client";
+import { api, type RequestOptions } from "@/lib/api/client";
 import type { ApiListResponse, ApiResponse } from "@/types/api/responses";
 import type { User } from "@/types/models/user";
 
@@ -13,8 +13,8 @@ class AuthService {
     return api.get<ApiListResponse<AuthProvider>>("/auth/providers");
   }
 
-  getMe() {
-    return api.get<ApiResponse<User>>("/users/me");
+  getMe(options?: RequestOptions) {
+    return api.get<ApiResponse<User>>("/users/me", options);
   }
 
   refreshToken() {
