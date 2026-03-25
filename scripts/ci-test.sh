@@ -14,7 +14,7 @@ for pkg in model tenant logging database server auth http testing; do
 done
 
 echo "Testing all services..."
-for service in auth-service account-service productivity-service; do
+for service in auth-service account-service productivity-service recipe-service; do
   echo "Testing $service..."
   cd "$ROOT_DIR/services/$service"
   go test ./... -count=1

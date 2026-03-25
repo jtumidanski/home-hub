@@ -25,6 +25,7 @@ Core services:
 - auth-service
 - account-service
 - productivity-service
+- recipe-service
 - weather-service
 
 Shared modules provide common functionality but do not contain business logic.
@@ -51,6 +52,7 @@ Routing:
 /api/v1/tasks -> productivity-service
 /api/v1/reminders -> productivity-service
 /api/v1/summary -> productivity-service
+/api/v1/recipes -> recipe-service
 /api/v1/weather -> weather-service
 ```
 
@@ -137,7 +139,26 @@ Rules:
 
 Summary endpoints return single resources.
 
-### 3.5 weather-service
+### 3.5 recipe-service
+
+Responsibilities:
+
+- recipe CRUD
+- Cooklang source parsing
+- tag management
+- soft delete with restore window
+
+Schema: `recipe.recipes`, `recipe.recipe_tags`, `recipe.recipe_restorations`
+
+Rules:
+
+- recipes stored as Cooklang plain-text, parsed server-side
+- Cooklang syntax validated on create and update
+- tags normalized to lowercase, deduplicated
+- soft delete with 3-day restore window
+- tenant scoped, household scoped
+
+### 3.6 weather-service
 
 Responsibilities:
 
@@ -238,7 +259,7 @@ Secrets provided externally. No config files required.
 
 ## 8. Persistence
 
-Each service owns its schema: `auth.*`, `account.*`, `productivity.*`. No cross-service tables.
+Each service owns its schema: `auth.*`, `account.*`, `productivity.*`, `recipe.*`, `weather.*`. No cross-service tables.
 
 Migrations:
 
@@ -279,6 +300,7 @@ Images:
 ghcr.io/<owner>/home-hub-auth
 ghcr.io/<owner>/home-hub-account
 ghcr.io/<owner>/home-hub-productivity
+ghcr.io/<owner>/home-hub-recipe
 ghcr.io/<owner>/home-hub-weather
 ghcr.io/<owner>/home-hub-frontend
 ```
@@ -301,7 +323,7 @@ Renovate enabled. Supports: Go modules, npm, GitHub Actions, Docker. Automerge d
 
 ## 15. API Testing
 
-Bruno collections under `bruno/` (`auth/`, `account/`, `productivity/`, `environments/`). Used for manual endpoint testing.
+Bruno collections under `bruno/` (`auth/`, `account/`, `productivity/`, `recipe/`, `environments/`). Used for manual endpoint testing.
 
 ## 16. Shared Modules
 

@@ -1,0 +1,25 @@
+meta {
+  name: Parse Recipe
+  type: http
+  seq: 7
+}
+
+post {
+  url: {{baseUrl}}/api/v1/recipes/parse
+  body: json
+}
+
+headers {
+  Content-Type: application/vnd.api+json
+}
+
+body:json {
+  {
+    "data": {
+      "type": "recipe-parse",
+      "attributes": {
+        "source": "Add @salt{1%tsp} to the #pot{} and stir for ~{5%minutes}."
+      }
+    }
+  }
+}

@@ -1,6 +1,6 @@
 import { useEffect, useRef } from "react";
 import { NavLink } from "react-router-dom";
-import { Home, CheckSquare, Bell, Settings, LogOut, Moon, Sun, X } from "lucide-react";
+import { Home, CheckSquare, Bell, UtensilsCrossed, Settings, LogOut, Moon, Sun, X } from "lucide-react";
 import { createPortal } from "react-dom";
 import { useAuth } from "@/components/providers/auth-provider";
 import { useThemeToggle } from "@/lib/hooks/use-theme-toggle";
@@ -13,6 +13,7 @@ const navItems = [
   { to: "/app", icon: Home, label: "Dashboard", end: true },
   { to: "/app/tasks", icon: CheckSquare, label: "Tasks", end: false },
   { to: "/app/reminders", icon: Bell, label: "Reminders", end: false },
+  { to: "/app/recipes", icon: UtensilsCrossed, label: "Recipes", end: false },
   { to: "/app/households", icon: Home, label: "Households", end: false },
   { to: "/app/settings", icon: Settings, label: "Settings", end: false },
 ];

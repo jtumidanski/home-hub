@@ -14,6 +14,9 @@ import { RemindersPage } from "@/pages/RemindersPage";
 import { SettingsPage } from "@/pages/SettingsPage";
 import { HouseholdsPage } from "@/pages/HouseholdsPage";
 import { WeatherPage } from "@/pages/WeatherPage";
+import { RecipesPage } from "@/pages/RecipesPage";
+import { RecipeDetailPage } from "@/pages/RecipeDetailPage";
+import { RecipeFormPage } from "@/pages/RecipeFormPage";
 import { Error404Page } from "@/components/common/error-page";
 
 export function App() {
@@ -41,6 +44,10 @@ export function App() {
                   <Route path="reminders" element={<RemindersPage />} />
                   <Route path="settings" element={<SettingsPage />} />
                   <Route path="weather" element={<WeatherPage />} />
+                  <Route path="recipes" element={<RecipesPage />} />
+                  <Route path="recipes/new" element={<RecipeFormPage />} />
+                  <Route path="recipes/:id" element={<RecipeDetailPage />} />
+                  <Route path="recipes/:id/edit" element={<RecipeFormPage />} />
                   <Route path="households" element={<HouseholdsPage />} />
                 </Route>
                 <Route path="*" element={<Error404Page />} />

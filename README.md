@@ -12,6 +12,8 @@ Home Hub runs behind a reverse proxy with path-prefix routing. All services are 
 | **auth-service** | OIDC login, JWT issuance, refresh tokens, JWKS endpoint |
 | **account-service** | Tenants, households, memberships, preferences, active context |
 | **productivity-service** | Tasks, reminders, summary projections |
+| **recipe-service** | Recipe storage and retrieval using Cooklang format |
+| **weather-service** | Weather forecasts, current conditions, and geocoding via Open-Meteo |
 
 Shared Go libraries under `shared/go/` provide auth, database, HTTP, logging, server lifecycle, tenant context, and test utilities. No business logic lives in shared code.
 
@@ -42,6 +44,8 @@ services/
   auth-service/             Authentication and identity
   account-service/          Households, tenants, memberships
   productivity-service/     Tasks and reminders
+  recipe-service/           Recipe management with Cooklang parsing
+  weather-service/          Weather forecasts and geocoding
 shared/go/                  Shared Go libraries
 deploy/
   compose/                  Docker Compose setup

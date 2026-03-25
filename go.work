@@ -4,6 +4,7 @@ use (
 	./services/account-service
 	./services/auth-service
 	./services/productivity-service
+	./services/recipe-service
 	./services/weather-service
 	./shared/go/auth
 	./shared/go/database
