@@ -57,16 +57,25 @@ go work sync         # sync modules
 
 ## 4. Environment Variables
 
-All services use environment variables:
+All services use environment variables. See `.env.example` for the full list with defaults.
 
-```
-DB_HOST
-DB_USER
-DB_PASSWORD
-OIDC_CLIENT_ID
-OIDC_SECRET
-JWT_PRIVATE_KEY
-```
+| Variable | Used by | Required |
+|---|---|---|
+| `DB_HOST` | all services | yes |
+| `DB_PORT` | all services | no (default: `5432`) |
+| `DB_USER` | all services | yes |
+| `DB_PASSWORD` | all services | yes |
+| `DB_NAME` | all services | yes |
+| `PORT` | all services | no (default: `8080`) |
+| `JWKS_URL` | all except auth-service | no (default: internal cluster URL) |
+| `JWT_PRIVATE_KEY` | auth-service | yes |
+| `JWT_KEY_ID` | auth-service | no (default: `home-hub-1`) |
+| `OIDC_CLIENT_ID` | auth-service | yes |
+| `OIDC_CLIENT_SECRET` | auth-service | yes |
+| `OIDC_ISSUER_URL` | auth-service | no (default: `https://accounts.google.com`) |
+| `OIDC_REDIRECT_URI` | auth-service | yes |
+| `REFRESH_INTERVAL_MINUTES` | weather-service | no (default: `15`) |
+| `CACHE_TTL_MINUTES` | weather-service | no (default: `15`) |
 
 Local development uses `.env`. Do not commit real secrets.
 
@@ -194,7 +203,47 @@ Tags: `main`, `sha`. Images built in CI.
 
 ## 17. Kubernetes Deployment
 
-Manifests live in `deploy/k8s/`. Plain YAML only. Ingress uses path prefixes. Secrets external.
+Manifests live in `deploy/k8s/`. Plain YAML only. All resources use the `home-hub` namespace. Ingress uses path prefixes with TLS termination.
+
+### Applying manifests
+
+```sh
+kubectl apply -f deploy/k8s/namespace.yaml
+kubectl apply -f deploy/k8s/secrets.yaml
+kubectl apply -f deploy/k8s/
+```
+
+### Secrets
+
+Copy `deploy/k8s/secrets.example.yaml` to `deploy/k8s/secrets.yaml` and fill in real values. The example uses `stringData` so values are plain text (K8s base64-encodes them internally). Do not commit `secrets.yaml`.
+
+Two Secret objects are required:
+- `db-credentials` — database connection details
+- `auth-secrets` — JWT key, OIDC client credentials, redirect URI
+
+### TLS setup (self-signed for development)
+
+The ingress expects a TLS secret named `home-hub-tls`. For local/dev testing with a self-signed certificate:
+
+```sh
+# 1. Generate a self-signed cert into deploy/k8s/tls/
+mkdir -p deploy/k8s/tls
+openssl req -x509 -nodes -days 365 -newkey rsa:2048 \
+  -keyout deploy/k8s/tls/tls.key -out deploy/k8s/tls/tls.crt \
+  -subj "/CN=homehub.tumidanski.me"
+
+# 2. Create the K8s TLS secret
+kubectl -n home-hub create secret tls home-hub-tls \
+  --cert=deploy/k8s/tls/tls.crt --key=deploy/k8s/tls/tls.key
+```
+
+The `deploy/k8s/tls/` directory is gitignored. Keep the files around to recreate the secret if needed.
+
+Your browser will show a certificate warning — accept it to proceed.
+
+Ensure `OIDC_REDIRECT_URI` in `secrets.yaml` and the Google Cloud Console both use the `https://` scheme to match.
+
+For production, replace the self-signed cert with cert-manager + Let's Encrypt.
 
 ## 18. Renovate
 
