@@ -73,7 +73,6 @@ All services use environment variables. See `.env.example` for the full list wit
 | `OIDC_CLIENT_ID` | auth-service | yes |
 | `OIDC_CLIENT_SECRET` | auth-service | yes |
 | `OIDC_ISSUER_URL` | auth-service | no (default: `https://accounts.google.com`) |
-| `OIDC_REDIRECT_URI` | auth-service | yes |
 | `REFRESH_INTERVAL_MINUTES` | weather-service | no (default: `15`) |
 | `CACHE_TTL_MINUTES` | weather-service | no (default: `15`) |
 

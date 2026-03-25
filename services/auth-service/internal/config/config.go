@@ -21,8 +21,10 @@ type OIDCConfig struct {
 	IssuerURL    string
 	ClientID     string
 	ClientSecret string
-	RedirectURI  string
 }
+
+// CallbackPath is the fixed OAuth callback path registered in the router.
+const CallbackPath = "/api/v1/auth/callback/google"
 
 // Load reads configuration from environment variables.
 func Load() Config {
@@ -42,7 +44,6 @@ func Load() Config {
 			IssuerURL:    envOrDefault("OIDC_ISSUER_URL", "https://accounts.google.com"),
 			ClientID:     os.Getenv("OIDC_CLIENT_ID"),
 			ClientSecret: os.Getenv("OIDC_CLIENT_SECRET"),
-			RedirectURI:  os.Getenv("OIDC_REDIRECT_URI"),
 		},
 	}
 }

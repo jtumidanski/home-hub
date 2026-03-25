@@ -5,6 +5,7 @@ import (
 	"encoding/hex"
 	"encoding/json"
 	"net/http"
+	"strings"
 
 	"github.com/gorilla/mux"
 	"github.com/jtumidanski/api2go/jsonapi"
@@ -49,20 +50,22 @@ func handleLogin(oidcCfg config.OIDCConfig) server.GetHandler {
 				return
 			}
 
+			redirectURI := redirectURIFromRequest(r)
+
 			state := generateState()
 			http.SetCookie(w, &http.Cookie{
 				Name:     "oauth_state",
 				Value:    state,
 				Path:     "/",
 				HttpOnly: true,
-				Secure:   true,
+				Secure:   strings.HasPrefix(redirectURI, "https"),
 				SameSite: http.SameSiteLaxMode,
 				MaxAge:   300,
 			})
 
 			cfg := oidc.ProviderConfig{
 				ClientID:    oidcCfg.ClientID,
-				RedirectURL: oidcCfg.RedirectURI,
+				RedirectURL: redirectURI,
 			}
 
 			authURL := oidc.AuthURL(disc, cfg, state)
@@ -91,7 +94,7 @@ func handleCallback(db *gorm.DB, issuer *authjwt.Issuer, oidcCfg config.OIDCConf
 				IssuerURL:    oidcCfg.IssuerURL,
 				ClientID:     oidcCfg.ClientID,
 				ClientSecret: oidcCfg.ClientSecret,
-				RedirectURL:  oidcCfg.RedirectURI,
+				RedirectURL:  redirectURIFromRequest(r),
 			}
 
 			proc := authflow.NewProcessor(d.Logger(), r.Context(), db, issuer)
@@ -227,4 +230,13 @@ func generateState() string {
 	b := make([]byte, 16)
 	rand.Read(b)
 	return hex.EncodeToString(b)
+}
+
+// redirectURIFromRequest builds the OAuth callback URI from the incoming request's Host header.
+func redirectURIFromRequest(r *http.Request) string {
+	scheme := "https"
+	if r.TLS == nil && !strings.EqualFold(r.Header.Get("X-Forwarded-Proto"), "https") {
+		scheme = "http"
+	}
+	return scheme + "://" + r.Host + config.CallbackPath
 }
