@@ -1,4 +1,4 @@
-import { Outlet, NavLink } from "react-router-dom";
+import { Outlet, NavLink, Link } from "react-router-dom";
 import { Home, CheckSquare, Bell, Settings, LogOut, Moon, Sun } from "lucide-react";
 import { useAuth } from "@/components/providers/auth-provider";
 import { useThemeToggle } from "@/lib/hooks/use-theme-toggle";
@@ -24,7 +24,7 @@ export function AppShell() {
     <div className="flex min-h-screen">
       <aside className="flex w-64 flex-col border-r bg-sidebar text-sidebar-foreground">
         <div className="flex h-14 items-center border-b px-4">
-          <h1 className="text-lg font-semibold">Home Hub</h1>
+          <Link to="/app" className="text-lg font-semibold hover:opacity-80 transition-opacity">Home Hub</Link>
         </div>
 
         <div className="border-b p-2">
