@@ -30,33 +30,29 @@ Shared modules provide common functionality but do not contain business logic.
 
 Each service maintains its own documentation under `docs/` per the DOCS.md contract.
 
----
-
 ## 2. High Level Architecture
 
+```
 Browser → Ingress / Reverse Proxy → Services
+```
 
 Routing:
 
-    / -> frontend
-    /api/v1/auth -> auth-service
-    /api/v1/users -> auth-service
-    /api/v1/tenants -> account-service
-    /api/v1/households -> account-service
-    /api/v1/memberships -> account-service
-    /api/v1/preferences -> account-service
-    /api/v1/contexts -> account-service
-    /api/v1/tasks -> productivity-service
-    /api/v1/reminders -> productivity-service
-    /api/v1/summary -> productivity-service
+```
+/ -> frontend
+/api/v1/auth -> auth-service
+/api/v1/users -> auth-service
+/api/v1/tenants -> account-service
+/api/v1/households -> account-service
+/api/v1/memberships -> account-service
+/api/v1/preferences -> account-service
+/api/v1/contexts -> account-service
+/api/v1/tasks -> productivity-service
+/api/v1/reminders -> productivity-service
+/api/v1/summary -> productivity-service
+```
 
-All services are stateless except for database persistence.
-
-Authentication is handled by auth-service.
-
-Authorization is enforced by each service using JWT claims.
-
----
+All services are stateless except for database persistence. Authentication is handled by auth-service. Authorization is enforced by each service using JWT claims.
 
 ## 3. Service Responsibilities
 
@@ -71,17 +67,7 @@ Responsibilities:
 - household switching
 - JSON:API client
 
-Technology:
-
-- React
-- Vite
-- ShadCN
-- static build
-- nginx container
-
-No server-side rendering.
-
----
+Technology: React, Vite, ShadCN, static build, nginx container. No server-side rendering.
 
 ### 3.2 auth-service
 
@@ -94,12 +80,7 @@ Responsibilities:
 - user identity
 - external identity mapping
 
-Schema:
-
-    auth.users
-    auth.external_identities
-    auth.oidc_providers
-    auth.refresh_tokens
+Schema: `auth.users`, `auth.external_identities`, `auth.oidc_providers`, `auth.refresh_tokens`
 
 Auth model:
 
@@ -107,13 +88,9 @@ Auth model:
 - short-lived access token
 - refresh token stored server-side
 
-JWKS endpoint:
-
-    /api/v1/auth/.well-known/jwks.json
+JWKS endpoint: `/api/v1/auth/.well-known/jwks.json`
 
 Downstream services validate JWT using JWKS.
-
----
 
 ### 3.3 account-service
 
@@ -125,12 +102,7 @@ Responsibilities:
 - user preferences
 - active context
 
-Schema:
-
-    account.tenants
-    account.households
-    account.memberships
-    account.preferences
+Schema: `account.tenants`, `account.households`, `account.memberships`, `account.preferences`
 
 Rules:
 
@@ -140,11 +112,7 @@ Rules:
 - preference per tenant per user
 - context persisted
 
-Endpoint:
-
-    /api/v1/contexts/current
-
----
+Endpoint: `/api/v1/contexts/current`
 
 ### 3.4 productivity-service
 
@@ -154,13 +122,7 @@ Responsibilities:
 - reminders
 - summary projections
 
-Schema:
-
-    productivity.tasks
-    productivity.task_restorations
-    productivity.reminders
-    productivity.reminder_snoozes
-    productivity.reminder_dismissals
+Schema: `productivity.tasks`, `productivity.task_restorations`, `productivity.reminders`, `productivity.reminder_snoozes`, `productivity.reminder_dismissals`
 
 Rules:
 
@@ -173,54 +135,42 @@ Rules:
 
 Summary endpoints return single resources.
 
----
-
 ## 4. API Design
 
 ### 4.1 Versioning
 
-All endpoints are versioned.
-
-    /api/v1/...
-
-Versioning is required from the start.
-
----
+All endpoints are versioned under `/api/v1/...`. Versioning is required from the start.
 
 ### 4.2 Resource Style
 
-JSON:API-style resources.
+JSON:API-style resources:
 
-Examples:
-
-    /tasks
-    /tasks/{id}
-    /tasks/restorations
-    /reminders
-    /reminders/snoozes
-    /reminders/dismissals
+```
+/tasks
+/tasks/{id}
+/tasks/restorations
+/reminders
+/reminders/snoozes
+/reminders/dismissals
+```
 
 Summary:
 
-    /summary/tasks
-    /summary/reminders
-    /summary/dashboard
+```
+/summary/tasks
+/summary/reminders
+/summary/dashboard
+```
 
-Context:
-
-    /contexts/current
-
----
+Context: `/contexts/current`
 
 ### 4.3 Includes
 
-Supported for summary endpoints.
+Supported for summary endpoints. Example:
 
-Example:
-
-    /summary/dashboard?include=tasks,reminders
-
----
+```
+/summary/dashboard?include=tasks,reminders
+```
 
 ## 5. Authentication Model
 
@@ -239,102 +189,53 @@ Tokens:
 
 JWKS used for validation.
 
----
-
 ## 6. Multi-Tenancy Model
 
 Hierarchy:
 
-    User
-      -> Tenant
-           -> Household
-                -> Membership
+```
+User → Tenant → Household → Membership
+```
 
-All data must include:
-
-    tenant_id
-    household_id
-
-No global data.
-
----
+All data must include `tenant_id` and `household_id`. No global data.
 
 ## 7. Configuration Model
 
-All services configured via environment variables.
+All services configured via environment variables:
 
-Examples:
+```
+DB_HOST
+DB_USER
+DB_PASSWORD
+OIDC_CLIENT_ID
+OIDC_SECRET
+JWT_PRIVATE_KEY
+```
 
-    DB_HOST
-    DB_USER
-    DB_PASSWORD
-    OIDC_CLIENT_ID
-    OIDC_SECRET
-    JWT_PRIVATE_KEY
-
-Secrets provided externally.
-
-No config files required.
-
----
+Secrets provided externally. No config files required.
 
 ## 8. Persistence
 
-Each service owns its schema.
-
-    auth.*
-    account.*
-    productivity.*
-
-No cross-service tables.
+Each service owns its schema: `auth.*`, `account.*`, `productivity.*`. No cross-service tables.
 
 Migrations:
 
 - per service
-- run on startup via GORM AutoMigrate in each domain's entity.go
+- run on startup via GORM AutoMigrate in each domain's `entity.go`
 - forward-only acceptable
 - no separate SQL migration files
 
-ORM:
-
-- GORM
-
-IDs:
-
-- UUID
-- generated in application
-
----
+ORM: GORM. IDs: UUID, generated in application.
 
 ## 9. Logging
 
-Standard:
+Standard: Logrus, structured JSON.
 
-- Logrus
-- structured JSON
-
-Every request should include:
-
-    request_id
-    user_id
-    tenant_id
-    household_id
-
----
+Every request should include: `request_id`, `user_id`, `tenant_id`, `household_id`.
 
 ## 10. Tracing
 
-OpenTelemetry used.
-
-Required:
-
-- trace id
-- span id
-- request id correlation
-
-Metrics optional.
-
----
+OpenTelemetry used. Required: trace id, span id, request id correlation. Metrics optional.
 
 ## 11. Local Runtime
 
@@ -344,133 +245,85 @@ Local environment uses:
 - nginx reverse proxy
 - path prefix routing
 
-Infra external:
-
-- postgres
-- redis (future)
-
-Config via `.env`.
-
----
+External infrastructure: postgres, redis (future). Config via `.env`.
 
 ## 12. Kubernetes Runtime
 
-Deployment:
-
-- plain YAML
-- no helm required
+Deployment: plain YAML, no helm required.
 
 Images:
 
-    ghcr.io/<owner>/home-hub-auth
-    ghcr.io/<owner>/home-hub-account
-    ghcr.io/<owner>/home-hub-productivity
-    ghcr.io/<owner>/home-hub-frontend
+```
+ghcr.io/<owner>/home-hub-auth
+ghcr.io/<owner>/home-hub-account
+ghcr.io/<owner>/home-hub-productivity
+ghcr.io/<owner>/home-hub-frontend
+```
 
-Tags:
-
-    main
-    sha
-
-Ingress uses path prefixes.
-
----
+Tags: `main`, `sha`. Ingress uses path prefixes.
 
 ## 13. CI/CD
 
 GitHub Actions.
 
-PR:
+PR: build impacted, test impacted, lint impacted.
 
-- build impacted
-- test impacted
-- lint impacted
-
-Main:
-
-- publish snapshot images
+Main: publish snapshot images.
 
 Scripts used for builds.
 
----
-
 ## 14. Dependency Management
 
-Renovate enabled.
-
-Supports:
-
-- Go modules
-- npm
-- GitHub Actions
-- Docker
-
-Automerge disabled.
-
----
+Renovate enabled. Supports: Go modules, npm, GitHub Actions, Docker. Automerge disabled.
 
 ## 15. API Testing
 
-Bruno collections.
-
-    bruno/
-      auth/
-      account/
-      productivity/
-      environments/
-
-Used for manual endpoint testing.
-
----
+Bruno collections under `bruno/` (`auth/`, `account/`, `productivity/`, `environments/`). Used for manual endpoint testing.
 
 ## 16. Shared Modules
 
-Shared Go modules live under:
+Shared Go modules live under `shared/go/`:
 
-    shared/go/
-
-Modules:
-
-- auth — JWT validation and auth middleware
-- database — GORM connection, migration orchestration, tenant callbacks
-- http — HTTP utilities
-- logging — Logrus structured logging
-- model — shared domain model types
-- server — HTTP server lifecycle, handler registration, JSON:API response helpers, health checks, middleware, tracing
-- tenant — tenant context extraction and validation
-- testing — test helpers and fixtures
+| Module   | Purpose                                                                              |
+| -------- | ------------------------------------------------------------------------------------ |
+| auth     | JWT validation and auth middleware                                                   |
+| database | GORM connection, migration orchestration, tenant callbacks                           |
+| http     | HTTP utilities                                                                       |
+| logging  | Logrus structured logging                                                            |
+| model    | shared domain model types                                                            |
+| server   | HTTP server lifecycle, handler registration, JSON:API response helpers, health checks, middleware, tracing |
+| tenant   | tenant context extraction and validation                                             |
+| testing  | test helpers and fixtures                                                            |
 
 No business logic in shared modules.
-
----
 
 ## 17. Service Code Pattern
 
 Each service domain follows a consistent file structure:
 
-    model.go       — immutable domain model with accessors
-    entity.go      — GORM entity with Migration() function
-    builder.go     — fluent builder enforcing invariants
-    processor.go   — pure business logic
-    provider.go    — lazy database access
-    resource.go    — route registration and HTTP handlers
-    rest.go        — JSON:API resource mappings
+| File           | Purpose                            |
+| -------------- | ---------------------------------- |
+| `model.go`     | immutable domain model with accessors |
+| `entity.go`    | GORM entity with `Migration()` function |
+| `builder.go`   | fluent builder enforcing invariants |
+| `processor.go` | pure business logic                |
+| `provider.go`  | lazy database access               |
+| `resource.go`  | route registration and HTTP handlers |
+| `rest.go`      | JSON:API resource mappings         |
 
 Details in DOCS.md contract and per-service documentation.
-
----
 
 ## 18. Service Documentation
 
 Each service maintains its own documentation per the DOCS.md contract:
 
-    services/<service>/docs/domain.md
-    services/<service>/docs/rest.md
-    services/<service>/docs/storage.md
+```
+services/<service>/docs/domain.md
+services/<service>/docs/rest.md
+services/<service>/docs/storage.md
+```
 
 These are the authoritative source for domain logic, REST endpoints, and database schema per service.
-
----
 
 ## 19. Design Principles
 
