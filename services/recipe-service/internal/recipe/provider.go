@@ -14,6 +14,12 @@ func getByID(id uuid.UUID) database.EntityProvider[Entity] {
 	})
 }
 
+func getDeletedByID(id uuid.UUID) database.EntityProvider[Entity] {
+	return database.Query[Entity](func(db *gorm.DB) *gorm.DB {
+		return db.Preload("Tags").Where("id = ? AND deleted_at IS NOT NULL", id)
+	})
+}
+
 func getAll(search string, tags []string, page, pageSize int) func(db *gorm.DB) ([]Entity, int64, error) {
 	return func(db *gorm.DB) ([]Entity, int64, error) {
 		query := db.Model(&Entity{}).Where("deleted_at IS NULL")
@@ -60,43 +66,4 @@ func getAllTags(db *gorm.DB) ([]TagCount, error) {
 		Order("count DESC").
 		Find(&results).Error
 	return results, err
-}
-
-func create(db *gorm.DB, e *Entity) error {
-	return db.Create(e).Error
-}
-
-func save(db *gorm.DB, e *Entity) error {
-	return db.Save(e).Error
-}
-
-func softDelete(db *gorm.DB, id uuid.UUID) error {
-	return db.Exec("UPDATE recipes SET deleted_at = NOW(), updated_at = NOW() WHERE id = ? AND deleted_at IS NULL", id).Error
-}
-
-func restoreByID(db *gorm.DB, id uuid.UUID) error {
-	return db.Exec("UPDATE recipes SET deleted_at = NULL, updated_at = NOW() WHERE id = ?", id).Error
-}
-
-func getDeletedByID(id uuid.UUID) database.EntityProvider[Entity] {
-	return database.Query[Entity](func(db *gorm.DB) *gorm.DB {
-		return db.Preload("Tags").Where("id = ? AND deleted_at IS NOT NULL", id)
-	})
-}
-
-func replaceTags(db *gorm.DB, recipeID uuid.UUID, tags []string) error {
-	if err := db.Where("recipe_id = ?", recipeID).Delete(&TagEntity{}).Error; err != nil {
-		return err
-	}
-	for _, tag := range tags {
-		normalized := strings.ToLower(strings.TrimSpace(tag))
-		if normalized == "" {
-			continue
-		}
-		te := TagEntity{Id: uuid.New(), RecipeId: recipeID, Tag: normalized}
-		if err := db.Create(&te).Error; err != nil {
-			return err
-		}
-	}
-	return nil
 }

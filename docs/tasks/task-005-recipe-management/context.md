@@ -120,10 +120,9 @@ pages/RecipeFormPage.tsx
 components/features/recipes/recipe-card.tsx
 components/features/recipes/recipe-ingredients.tsx
 components/features/recipes/recipe-steps.tsx
-components/features/recipes/cooklang-editor.tsx
 components/features/recipes/cooklang-preview.tsx
 components/features/recipes/cooklang-help.tsx
-components/features/recipes/tag-input.tsx
+components/ui/textarea.tsx
 ```
 
 ### Infrastructure

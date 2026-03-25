@@ -94,14 +94,6 @@ func (p *Processor) Create(tenantID, householdID uuid.UUID, attrs CreateAttrs) (
 		title = parsed.Metadata.Title
 	}
 
-	now := time.Now().UTC()
-	id := uuid.New()
-
-	tagEntities := make([]TagEntity, len(tags))
-	for i, t := range tags {
-		tagEntities[i] = TagEntity{Id: uuid.New(), RecipeId: id, Tag: t}
-	}
-
 	var desc *string
 	if attrs.Description != "" {
 		desc = &attrs.Description
@@ -111,19 +103,12 @@ func (p *Processor) Create(tenantID, householdID uuid.UUID, attrs CreateAttrs) (
 		srcURL = &sourceURL
 	}
 
-	e := &Entity{
-		Id: id, TenantId: tenantID, HouseholdId: householdID,
-		Title: title, Description: desc, Source: attrs.Source,
-		Servings: servings, PrepTimeMinutes: prepTime, CookTimeMinutes: cookTime,
-		SourceURL: srcURL, Tags: tagEntities,
-		CreatedAt: now, UpdatedAt: now,
-	}
-
-	if err := create(p.db.WithContext(p.ctx), e); err != nil {
+	e, err := create(p.db.WithContext(p.ctx), tenantID, householdID, title, attrs.Source, desc, srcURL, servings, prepTime, cookTime, tags)
+	if err != nil {
 		return Model{}, cooklang.ParseResult{}, err
 	}
 
-	m, err := Make(*e)
+	m, err := Make(e)
 	if err != nil {
 		return Model{}, cooklang.ParseResult{}, err
 	}
@@ -205,15 +190,12 @@ func (p *Processor) Update(id uuid.UUID, attrs UpdateAttrs) (Model, cooklang.Par
 	if attrs.SourceURL != nil {
 		e.SourceURL = attrs.SourceURL
 	}
-	e.UpdatedAt = time.Now().UTC()
 
-	if err := save(p.db.WithContext(p.ctx), &e); err != nil {
+	if _, err := update(p.db.WithContext(p.ctx), &e); err != nil {
 		return Model{}, cooklang.ParseResult{}, err
 	}
 
 	if attrs.Tags != nil && attrs.Source == nil {
-		// Only replace tags from explicit attrs if source wasn't changed
-		// (source changes derive tags from metadata above)
 		if err := replaceTags(p.db.WithContext(p.ctx), id, *attrs.Tags); err != nil {
 			return Model{}, cooklang.ParseResult{}, err
 		}
@@ -243,12 +225,13 @@ func (p *Processor) Restore(id uuid.UUID) (Model, cooklang.ParseResult, error) {
 		return Model{}, cooklang.ParseResult{}, ErrRestoreWindow
 	}
 
-	if err := restoreByID(p.db.WithContext(p.ctx), id); err != nil {
+	if err := restore(p.db.WithContext(p.ctx), id); err != nil {
 		return Model{}, cooklang.ParseResult{}, err
 	}
 
-	re := RestorationEntity{Id: uuid.New(), RecipeId: id, RestoredAt: time.Now().UTC()}
-	p.db.WithContext(p.ctx).Create(&re)
+	if err := createRestoration(p.db.WithContext(p.ctx), id); err != nil {
+		p.l.WithError(err).Warn("Failed to record restoration")
+	}
 
 	restored, err := p.ByIDProvider(id)()
 	if err != nil {
