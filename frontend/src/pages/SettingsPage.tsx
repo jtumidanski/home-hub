@@ -8,7 +8,7 @@ import { Moon, Sun } from "lucide-react";
 
 function SettingsPageSkeleton() {
   return (
-    <div className="p-6 space-y-6" role="status" aria-label="Loading">
+    <div className="p-4 md:p-6 space-y-6" role="status" aria-label="Loading">
       <Skeleton className="h-8 w-32" />
       <Skeleton className="h-40 w-full" />
       <Skeleton className="h-24 w-full" />
@@ -26,15 +26,15 @@ export function SettingsPage() {
 
   if (!user || !appContext) {
     return (
-      <div className="p-6">
+      <div className="p-4 md:p-6">
         <ErrorCard message="Failed to load settings. Try refreshing the page." />
       </div>
     );
   }
 
   return (
-    <div className="p-6 space-y-6">
-      <h1 className="text-2xl font-semibold">Settings</h1>
+    <div className="p-4 md:p-6 space-y-6">
+      <h1 className="text-xl md:text-2xl font-semibold">Settings</h1>
 
       <Card>
         <CardHeader>

@@ -3,6 +3,8 @@ import { type ColumnDef } from "@tanstack/react-table";
 import { useAuth } from "@/components/providers/auth-provider";
 import { useHouseholds } from "@/lib/hooks/api/use-households";
 import { type Household } from "@/types/models/household";
+import { useMobile } from "@/lib/hooks/use-mobile";
+import { HouseholdCard } from "@/components/features/households/household-card";
 import { CreateHouseholdDialog } from "@/components/features/households/create-household-dialog";
 import { DataTable } from "@/components/common/data-table";
 import { ErrorCard } from "@/components/common/error-card";
@@ -14,6 +16,7 @@ export function HouseholdsPage() {
   const { appContext } = useAuth();
   const { data, isLoading, isError } = useHouseholds();
   const [open, setOpen] = useState(false);
+  const isMobile = useMobile();
 
   const households = (data?.data ?? []) as Household[];
   const activeId = appContext?.relationships?.activeHousehold?.data?.id;
@@ -48,7 +51,7 @@ export function HouseholdsPage() {
 
   if (isLoading) {
     return (
-      <div className="p-6 space-y-4" role="status" aria-label="Loading">
+      <div className="p-4 md:p-6 space-y-4" role="status" aria-label="Loading">
         <DataTable columns={columns} data={[]} isLoading skeletonRows={3} />
       </div>
     );
@@ -56,16 +59,16 @@ export function HouseholdsPage() {
 
   if (isError) {
     return (
-      <div className="p-6">
+      <div className="p-4 md:p-6">
         <ErrorCard message="Failed to load households. Try refreshing the page." />
       </div>
     );
   }
 
   return (
-    <div className="p-6 space-y-4">
+    <div className="p-4 md:p-6 space-y-4">
       <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-semibold">Households</h1>
+        <h1 className="text-xl md:text-2xl font-semibold">Households</h1>
         {canCreate && (
           <Button size="sm" onClick={() => setOpen(true)}>
             <Plus className="mr-2 h-4 w-4" />New Household
@@ -83,6 +86,16 @@ export function HouseholdsPage() {
               <Plus className="mr-2 h-4 w-4" />Create First Household
             </Button>
           )}
+        </div>
+      ) : isMobile ? (
+        <div className="space-y-3">
+          {households.map((household) => (
+            <HouseholdCard
+              key={household.id}
+              household={household}
+              isActive={household.id === activeId}
+            />
+          ))}
         </div>
       ) : (
         <DataTable

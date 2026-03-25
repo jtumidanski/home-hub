@@ -23,6 +23,17 @@ vi.mock("@/components/features/households/household-switcher", () => ({
   HouseholdSwitcher: () => <div data-testid="household-switcher">Switcher</div>,
 }));
 
+vi.mock("@/components/features/navigation/mobile-header", () => ({
+  MobileHeader: ({ onMenuOpen }: { onMenuOpen: () => void }) => (
+    <button data-testid="mobile-header" onClick={onMenuOpen}>Menu</button>
+  ),
+}));
+
+vi.mock("@/components/features/navigation/mobile-drawer", () => ({
+  MobileDrawer: ({ open }: { open: boolean }) =>
+    open ? <div data-testid="mobile-drawer">Drawer</div> : null,
+}));
+
 vi.mock("react-router-dom", async () => {
   const actual = await vi.importActual("react-router-dom");
   return { ...actual, Outlet: () => <div data-testid="outlet">Page Content</div> };

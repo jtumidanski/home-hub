@@ -1,9 +1,12 @@
+import { useState } from "react";
 import { Outlet, NavLink, Link } from "react-router-dom";
 import { Home, CheckSquare, Bell, Settings, LogOut, Moon, Sun } from "lucide-react";
 import { useAuth } from "@/components/providers/auth-provider";
 import { useThemeToggle } from "@/lib/hooks/use-theme-toggle";
 import { useLogout } from "@/lib/hooks/api/use-auth";
 import { HouseholdSwitcher } from "@/components/features/households/household-switcher";
+import { MobileHeader } from "@/components/features/navigation/mobile-header";
+import { MobileDrawer } from "@/components/features/navigation/mobile-drawer";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 
@@ -19,10 +22,12 @@ export function AppShell() {
   const { user } = useAuth();
   const { theme, toggleTheme } = useThemeToggle();
   const logout = useLogout();
+  const [drawerOpen, setDrawerOpen] = useState(false);
 
   return (
-    <div className="flex min-h-screen">
-      <aside className="flex w-64 flex-col border-r bg-sidebar text-sidebar-foreground">
+    <div className="flex min-h-screen flex-col md:flex-row">
+      {/* Desktop sidebar */}
+      <aside className="hidden md:flex w-64 flex-col border-r bg-sidebar text-sidebar-foreground">
         <div className="flex h-14 items-center border-b px-4">
           <Link to="/app" className="text-lg font-semibold hover:opacity-80 transition-opacity">Home Hub</Link>
         </div>
@@ -80,6 +85,10 @@ export function AppShell() {
           </div>
         )}
       </aside>
+
+      {/* Mobile header */}
+      <MobileHeader onMenuOpen={() => setDrawerOpen(true)} />
+      <MobileDrawer open={drawerOpen} onClose={() => setDrawerOpen(false)} />
 
       <main className="flex-1 overflow-auto">
         <Outlet />
