@@ -62,7 +62,8 @@ All fields on Model are immutable after construction. Access is through getter m
 | `GetForecast(tenantID, householdID, lat, lon, units, tz)` | Returns forecast from cache or fetches          |
 | `RefreshCache(entity)`                                  | Re-fetches weather for an existing cache entry   |
 | `InvalidateCache(householdID)`                          | Deletes the cache entry for a household          |
-| `AllCacheEntries()`                                     | Returns all cache entities (for background refresh) |
+| `ByHouseholdIDProvider(householdID)`                    | Returns a provider for a single household's cache entry |
+| `AllProvider()`                                         | Returns a provider for all cache entries (for background refresh) |
 
 ---
 
