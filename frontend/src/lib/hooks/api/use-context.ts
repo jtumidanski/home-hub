@@ -22,6 +22,7 @@ export function useAppContext(enabled: boolean = true) {
     enabled,
     retry: false,
     staleTime: 5 * 60 * 1000,
+    gcTime: 5 * 60 * 1000,
   });
 }
 

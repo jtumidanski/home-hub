@@ -75,11 +75,22 @@ export function HouseholdsPage() {
 
       <CreateHouseholdDialog open={open} onOpenChange={setOpen} />
 
-      <DataTable
-        columns={columns}
-        data={households}
-        emptyMessage="No households yet."
-      />
+      {households.length === 0 && !isLoading ? (
+        <div className="flex flex-col items-center justify-center py-12 text-center space-y-4">
+          <p className="text-muted-foreground">No households yet.</p>
+          {canCreate && (
+            <Button variant="outline" onClick={() => setOpen(true)}>
+              <Plus className="mr-2 h-4 w-4" />Create First Household
+            </Button>
+          )}
+        </div>
+      ) : (
+        <DataTable
+          columns={columns}
+          data={households}
+          emptyMessage="No households yet."
+        />
+      )}
     </div>
   );
 }

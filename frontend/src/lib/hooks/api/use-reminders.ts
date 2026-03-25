@@ -1,6 +1,8 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { toast } from "sonner";
 import { productivityService } from "@/services/api/productivity";
 import { useTenant } from "@/context/tenant-context";
+import { getErrorMessage } from "@/lib/api/errors";
 import type { ReminderUpdateAttributes } from "@/types/models/reminder";
 import type { Tenant } from "@/types/models/tenant";
 import type { Household } from "@/types/models/household";
@@ -29,6 +31,7 @@ export function useReminders() {
     queryFn: () => productivityService.listReminders(tenant!),
     enabled: !!tenant?.id && !!household?.id,
     staleTime: 5 * 60 * 1000,
+    gcTime: 5 * 60 * 1000,
   });
 }
 
@@ -39,6 +42,7 @@ export function useReminderSummary() {
     queryFn: () => productivityService.getReminderSummary(tenant!),
     enabled: !!tenant?.id && !!household?.id,
     staleTime: 60 * 1000,
+    gcTime: 5 * 60 * 1000,
   });
 }
 
@@ -54,6 +58,9 @@ export function useCreateReminder() {
       qc.invalidateQueries({ queryKey: reminderKeys.lists(tenant, household) });
       qc.invalidateQueries({ queryKey: reminderKeys.summary(tenant, household) });
     },
+    onError: (error) => {
+      toast.error(getErrorMessage(error, "Failed to create reminder"));
+    },
   });
 }
 
@@ -67,6 +74,9 @@ export function useUpdateReminder() {
       qc.invalidateQueries({ queryKey: reminderKeys.lists(tenant, household) });
       qc.invalidateQueries({ queryKey: reminderKeys.summary(tenant, household) });
     },
+    onError: (error) => {
+      toast.error(getErrorMessage(error, "Failed to update reminder"));
+    },
   });
 }
 
@@ -75,6 +85,25 @@ export function useDeleteReminder() {
   const { tenant, household } = useTenant();
   return useMutation({
     mutationFn: (id: string) => productivityService.deleteReminder(tenant!, id),
+    onMutate: async (id) => {
+      await qc.cancelQueries({ queryKey: reminderKeys.lists(tenant, household) });
+      const previous = qc.getQueryData(reminderKeys.lists(tenant, household));
+      if (previous) {
+        qc.setQueryData(reminderKeys.lists(tenant, household), {
+          ...(previous as Record<string, unknown>),
+          data: ((previous as { data: Array<{ id: string }> }).data ?? []).filter(
+            (item) => item.id !== id,
+          ),
+        });
+      }
+      return { previous };
+    },
+    onError: (error, _id, context) => {
+      if (context?.previous) {
+        qc.setQueryData(reminderKeys.lists(tenant, household), context.previous);
+      }
+      toast.error(getErrorMessage(error, "Failed to delete reminder"));
+    },
     onSettled: () => {
       qc.invalidateQueries({ queryKey: reminderKeys.lists(tenant, household) });
       qc.invalidateQueries({ queryKey: reminderKeys.summary(tenant, household) });
@@ -92,6 +121,9 @@ export function useSnoozeReminder() {
       qc.invalidateQueries({ queryKey: reminderKeys.lists(tenant, household) });
       qc.invalidateQueries({ queryKey: reminderKeys.summary(tenant, household) });
     },
+    onError: (error) => {
+      toast.error(getErrorMessage(error, "Failed to snooze reminder"));
+    },
   });
 }
 
@@ -103,6 +135,9 @@ export function useDismissReminder() {
     onSettled: () => {
       qc.invalidateQueries({ queryKey: reminderKeys.lists(tenant, household) });
       qc.invalidateQueries({ queryKey: reminderKeys.summary(tenant, household) });
+    },
+    onError: (error) => {
+      toast.error(getErrorMessage(error, "Failed to dismiss reminder"));
     },
   });
 }

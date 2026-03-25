@@ -1,7 +1,9 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { toast } from "sonner";
 import { accountService } from "@/services/api/account";
 import { useTenant } from "@/context/tenant-context";
 import { contextKeys } from "@/lib/hooks/api/use-context";
+import { getErrorMessage } from "@/lib/api/errors";
 import type { Tenant } from "@/types/models/tenant";
 
 // --- Key factory ---
@@ -26,6 +28,7 @@ export function useHouseholds(enabled: boolean = true) {
     queryFn: () => accountService.listHouseholds(tenant!),
     enabled: enabled && !!tenant?.id,
     staleTime: 5 * 60 * 1000,
+    gcTime: 5 * 60 * 1000,
   });
 }
 
@@ -40,6 +43,9 @@ export function useCreateHousehold() {
     onSettled: () => {
       qc.invalidateQueries({ queryKey: householdKeys.lists(tenant) });
       qc.invalidateQueries({ queryKey: contextKeys.current() });
+    },
+    onError: (error) => {
+      toast.error(getErrorMessage(error, "Failed to create household"));
     },
   });
 }

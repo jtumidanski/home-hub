@@ -1,6 +1,8 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { toast } from "sonner";
 import { productivityService } from "@/services/api/productivity";
 import { useTenant } from "@/context/tenant-context";
+import { getErrorMessage } from "@/lib/api/errors";
 import type { TaskUpdateAttributes } from "@/types/models/task";
 import type { Tenant } from "@/types/models/tenant";
 import type { Household } from "@/types/models/household";
@@ -29,6 +31,7 @@ export function useTasks() {
     queryFn: () => productivityService.listTasks(tenant!),
     enabled: !!tenant?.id && !!household?.id,
     staleTime: 5 * 60 * 1000,
+    gcTime: 5 * 60 * 1000,
   });
 }
 
@@ -39,6 +42,7 @@ export function useTaskSummary() {
     queryFn: () => productivityService.getTaskSummary(tenant!),
     enabled: !!tenant?.id && !!household?.id,
     staleTime: 60 * 1000,
+    gcTime: 5 * 60 * 1000,
   });
 }
 
@@ -54,6 +58,9 @@ export function useCreateTask() {
       qc.invalidateQueries({ queryKey: taskKeys.lists(tenant, household) });
       qc.invalidateQueries({ queryKey: taskKeys.summary(tenant, household) });
     },
+    onError: (error) => {
+      toast.error(getErrorMessage(error, "Failed to create task"));
+    },
   });
 }
 
@@ -67,6 +74,9 @@ export function useUpdateTask() {
       qc.invalidateQueries({ queryKey: taskKeys.lists(tenant, household) });
       qc.invalidateQueries({ queryKey: taskKeys.summary(tenant, household) });
     },
+    onError: (error) => {
+      toast.error(getErrorMessage(error, "Failed to update task"));
+    },
   });
 }
 
@@ -75,6 +85,25 @@ export function useDeleteTask() {
   const { tenant, household } = useTenant();
   return useMutation({
     mutationFn: (id: string) => productivityService.deleteTask(tenant!, id),
+    onMutate: async (id) => {
+      await qc.cancelQueries({ queryKey: taskKeys.lists(tenant, household) });
+      const previous = qc.getQueryData(taskKeys.lists(tenant, household));
+      if (previous) {
+        qc.setQueryData(taskKeys.lists(tenant, household), {
+          ...(previous as Record<string, unknown>),
+          data: ((previous as { data: Array<{ id: string }> }).data ?? []).filter(
+            (item) => item.id !== id,
+          ),
+        });
+      }
+      return { previous };
+    },
+    onError: (error, _id, context) => {
+      if (context?.previous) {
+        qc.setQueryData(taskKeys.lists(tenant, household), context.previous);
+      }
+      toast.error(getErrorMessage(error, "Failed to delete task"));
+    },
     onSettled: () => {
       qc.invalidateQueries({ queryKey: taskKeys.lists(tenant, household) });
       qc.invalidateQueries({ queryKey: taskKeys.summary(tenant, household) });
@@ -90,6 +119,9 @@ export function useRestoreTask() {
     onSettled: () => {
       qc.invalidateQueries({ queryKey: taskKeys.lists(tenant, household) });
       qc.invalidateQueries({ queryKey: taskKeys.summary(tenant, household) });
+    },
+    onError: (error) => {
+      toast.error(getErrorMessage(error, "Failed to restore task"));
     },
   });
 }

@@ -19,6 +19,7 @@ export function useMe() {
     queryFn: () => authService.getMe(),
     retry: false,
     staleTime: 5 * 60 * 1000,
+    gcTime: 5 * 60 * 1000,
   });
 }
 
@@ -27,6 +28,7 @@ export function useProviders() {
     queryKey: authKeys.providers(),
     queryFn: () => authService.getProviders(),
     staleTime: 10 * 60 * 1000,
+    gcTime: 10 * 60 * 1000,
   });
 }
 

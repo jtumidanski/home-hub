@@ -1,8 +1,8 @@
 import { z } from "zod";
 
 export const createHouseholdSchema = z.object({
-  name: z.string().min(1, "Name is required"),
-  timezone: z.string().min(1, "Timezone is required"),
+  name: z.string().min(1, "Name is required").max(100, "Name must be 100 characters or fewer"),
+  timezone: z.string().min(1, "Timezone is required").max(100, "Timezone must be 100 characters or fewer"),
   units: z.enum(["imperial", "metric"]),
 });
 
