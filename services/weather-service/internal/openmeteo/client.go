@@ -16,14 +16,18 @@ const (
 )
 
 type Client struct {
-	httpClient *http.Client
-	mu         sync.Mutex
-	lastCall   time.Time
+	httpClient   *http.Client
+	forecastURL  string
+	geocodingURL string
+	mu           sync.Mutex
+	lastCall     time.Time
 }
 
 func NewClient() *Client {
 	return &Client{
-		httpClient: &http.Client{Timeout: 10 * time.Second},
+		httpClient:   &http.Client{Timeout: 10 * time.Second},
+		forecastURL:  forecastBaseURL,
+		geocodingURL: geocodingBaseURL,
 	}
 }
 
@@ -56,7 +60,7 @@ func (c *Client) FetchForecast(lat, lon float64, units, timezone string) (*Forec
 	params.Set("timezone", timezone)
 	params.Set("forecast_days", "7")
 
-	resp, err := c.httpClient.Get(forecastBaseURL + "?" + params.Encode())
+	resp, err := c.httpClient.Get(c.forecastURL + "?" + params.Encode())
 	if err != nil {
 		return nil, fmt.Errorf("open-meteo forecast request failed: %w", err)
 	}
@@ -82,7 +86,7 @@ func (c *Client) SearchPlaces(query string) ([]GeocodingResult, error) {
 	params.Set("count", "10")
 	params.Set("language", "en")
 
-	resp, err := c.httpClient.Get(geocodingBaseURL + "?" + params.Encode())
+	resp, err := c.httpClient.Get(c.geocodingURL + "?" + params.Encode())
 	if err != nil {
 		return nil, fmt.Errorf("open-meteo geocoding request failed: %w", err)
 	}

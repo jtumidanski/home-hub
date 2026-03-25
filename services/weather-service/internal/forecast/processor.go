@@ -7,6 +7,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/jtumidanski/home-hub/services/weather-service/internal/openmeteo"
 	"github.com/jtumidanski/home-hub/services/weather-service/internal/weathercode"
+	"github.com/jtumidanski/home-hub/shared/go/model"
 	"github.com/sirupsen/logrus"
 	"gorm.io/gorm"
 )
@@ -24,12 +25,16 @@ func NewProcessor(l logrus.FieldLogger, ctx context.Context, db *gorm.DB, client
 	return &Processor{l: l, ctx: ctx, db: db, client: client}
 }
 
+func (p *Processor) ByHouseholdIDProvider(householdID uuid.UUID) model.Provider[Model] {
+	return model.Map(Make)(getByHouseholdID(householdID)(p.db.WithContext(p.ctx)))
+}
+
+func (p *Processor) AllProvider() model.Provider[[]Model] {
+	return model.SliceMap(Make)(getAll()(p.db.WithContext(p.ctx)))
+}
+
 func (p *Processor) GetCurrent(tenantID, householdID uuid.UUID, lat, lon float64, units, timezone string) (Model, error) {
-	cache, err := p.getOrFetch(tenantID, householdID, lat, lon, units, timezone)
-	if err != nil {
-		return Model{}, err
-	}
-	return cache, nil
+	return p.getOrFetch(tenantID, householdID, lat, lon, units, timezone)
 }
 
 func (p *Processor) GetForecast(tenantID, householdID uuid.UUID, lat, lon float64, units, timezone string) (Model, error) {
@@ -37,14 +42,11 @@ func (p *Processor) GetForecast(tenantID, householdID uuid.UUID, lat, lon float6
 }
 
 func (p *Processor) getOrFetch(tenantID, householdID uuid.UUID, lat, lon float64, units, timezone string) (Model, error) {
-	e, err := getByHouseholdID(householdID)(p.db.WithContext(p.ctx))()
+	m, err := p.ByHouseholdIDProvider(householdID)()
 	if err == nil {
 		// Check if cached coordinates/units still match
-		if e.Latitude == lat && e.Longitude == lon && e.Units == units {
-			m, err := Make(e)
-			if err == nil {
-				return m, nil
-			}
+		if m.Latitude() == lat && m.Longitude() == lon && m.Units() == units {
+			return m, nil
 		}
 		// Stale cache — coordinates or units changed, re-fetch
 	}
@@ -58,28 +60,9 @@ func (p *Processor) fetchAndCache(tenantID, householdID uuid.UUID, lat, lon floa
 		return Model{}, err
 	}
 
-	currentSummary, currentIcon := weathercode.Lookup(resp.Current.WeatherCode)
-	current := CurrentData{
-		Temperature: resp.Current.Temperature,
-		WeatherCode: resp.Current.WeatherCode,
-		Summary:     currentSummary,
-		Icon:        currentIcon,
-	}
+	current, daily := transformResponse(resp)
 
-	daily := make([]DailyForecast, len(resp.Daily.Time))
-	for i := range resp.Daily.Time {
-		summary, icon := weathercode.Lookup(resp.Daily.WeatherCode[i])
-		daily[i] = DailyForecast{
-			Date:            resp.Daily.Time[i],
-			HighTemperature: resp.Daily.TemperatureMax[i],
-			LowTemperature:  resp.Daily.TemperatureMin[i],
-			WeatherCode:     resp.Daily.WeatherCode[i],
-			Summary:         summary,
-			Icon:            icon,
-		}
-	}
-
-	e, err := upsert(p.db.WithContext(p.ctx), tenantID, householdID, lat, lon, units, current, daily)
+	e, err := create(p.db.WithContext(p.ctx), tenantID, householdID, lat, lon, units, current, daily)
 	if err != nil {
 		return Model{}, err
 	}
@@ -87,15 +70,26 @@ func (p *Processor) fetchAndCache(tenantID, householdID uuid.UUID, lat, lon floa
 	return Make(e)
 }
 
-func (p *Processor) RefreshCache(e Entity) error {
+func (p *Processor) RefreshCache(m Model) error {
 	// Use stored timezone or default to UTC
 	timezone := "UTC"
 
-	resp, err := p.client.FetchForecast(e.Latitude, e.Longitude, e.Units, timezone)
+	resp, err := p.client.FetchForecast(m.Latitude(), m.Longitude(), m.Units(), timezone)
 	if err != nil {
 		return err
 	}
 
+	current, daily := transformResponse(resp)
+
+	_, err = create(p.db.WithContext(p.ctx), m.TenantID(), m.HouseholdID(), m.Latitude(), m.Longitude(), m.Units(), current, daily)
+	return err
+}
+
+func (p *Processor) InvalidateCache(householdID uuid.UUID) error {
+	return deleteByHouseholdID(p.db.WithContext(p.ctx), householdID)
+}
+
+func transformResponse(resp *openmeteo.ForecastResponse) (CurrentData, []DailyForecast) {
 	currentSummary, currentIcon := weathercode.Lookup(resp.Current.WeatherCode)
 	current := CurrentData{
 		Temperature: resp.Current.Temperature,
@@ -117,14 +111,5 @@ func (p *Processor) RefreshCache(e Entity) error {
 		}
 	}
 
-	_, err = upsert(p.db.WithContext(p.ctx), e.TenantId, e.HouseholdId, e.Latitude, e.Longitude, e.Units, current, daily)
-	return err
-}
-
-func (p *Processor) InvalidateCache(householdID uuid.UUID) error {
-	return deleteByHouseholdID(p.db.WithContext(p.ctx), householdID)
-}
-
-func (p *Processor) AllCacheEntries() ([]Entity, error) {
-	return getAll()(p.db.WithContext(p.ctx))()
+	return current, daily
 }

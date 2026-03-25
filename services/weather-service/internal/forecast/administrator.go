@@ -8,7 +8,7 @@ import (
 	"gorm.io/gorm/clause"
 )
 
-func upsert(db *gorm.DB, tenantID, householdID uuid.UUID, lat, lon float64, units string, current CurrentData, daily []DailyForecast) (Entity, error) {
+func create(db *gorm.DB, tenantID, householdID uuid.UUID, lat, lon float64, units string, current CurrentData, daily []DailyForecast) (Entity, error) {
 	now := time.Now().UTC()
 	e := Entity{
 		Id:           uuid.New(),

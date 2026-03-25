@@ -50,18 +50,34 @@ func (Entity) TableName() string { return "weather_caches" }
 
 func Migration(db *gorm.DB) error { return db.AutoMigrate(&Entity{}) }
 
+func (m Model) ToEntity() Entity {
+	return Entity{
+		Id:           m.id,
+		TenantId:     m.tenantID,
+		HouseholdId:  m.householdID,
+		Latitude:     m.latitude,
+		Longitude:    m.longitude,
+		Units:        m.units,
+		CurrentData:  JSONCurrentData(m.currentData),
+		ForecastData: JSONForecastData(m.forecastData),
+		FetchedAt:    m.fetchedAt,
+		CreatedAt:    m.createdAt,
+		UpdatedAt:    m.updatedAt,
+	}
+}
+
 func Make(e Entity) (Model, error) {
-	return Model{
-		id:           e.Id,
-		tenantID:     e.TenantId,
-		householdID:  e.HouseholdId,
-		latitude:     e.Latitude,
-		longitude:    e.Longitude,
-		units:        e.Units,
-		currentData:  CurrentData(e.CurrentData),
-		forecastData: []DailyForecast(e.ForecastData),
-		fetchedAt:    e.FetchedAt,
-		createdAt:    e.CreatedAt,
-		updatedAt:    e.UpdatedAt,
-	}, nil
+	return NewBuilder().
+		SetId(e.Id).
+		SetTenantID(e.TenantId).
+		SetHouseholdID(e.HouseholdId).
+		SetLatitude(e.Latitude).
+		SetLongitude(e.Longitude).
+		SetUnits(e.Units).
+		SetCurrentData(CurrentData(e.CurrentData)).
+		SetForecastData([]DailyForecast(e.ForecastData)).
+		SetFetchedAt(e.FetchedAt).
+		SetCreatedAt(e.CreatedAt).
+		SetUpdatedAt(e.UpdatedAt).
+		Build()
 }
