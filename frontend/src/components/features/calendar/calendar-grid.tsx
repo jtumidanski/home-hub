@@ -19,13 +19,14 @@ import {
 interface CalendarGridProps {
   weekStart: Date;
   events: CalendarEvent[];
+  dayCount?: number;
 }
 
-export function CalendarGrid({ weekStart, events }: CalendarGridProps) {
+export function CalendarGrid({ weekStart, events, dayCount = 7 }: CalendarGridProps) {
   const { household } = useTenant();
   const timezone = household?.attributes.timezone;
   const scrollRef = useRef<HTMLDivElement>(null);
-  const days = getWeekDays(weekStart);
+  const days = getWeekDays(weekStart).slice(0, dayCount);
   const hours = Array.from({ length: END_HOUR - START_HOUR + 1 }, (_, i) => START_HOUR + i);
 
   useEffect(() => {
@@ -44,7 +45,7 @@ export function CalendarGrid({ weekStart, events }: CalendarGridProps) {
     <div className="border rounded-lg overflow-hidden bg-background flex flex-col h-full">
       {/* Header row: day names + dates */}
       <div className="flex border-b flex-shrink-0">
-        <div className="w-16 flex-shrink-0 border-r" />
+        <div className="w-12 md:w-16 flex-shrink-0 border-r" />
         {days.map((day, i) => (
           <div
             key={i}
@@ -65,7 +66,7 @@ export function CalendarGrid({ weekStart, events }: CalendarGridProps) {
       {/* All-day events section */}
       {hasAllDay && (
         <div className="flex border-b flex-shrink-0">
-          <div className="w-16 flex-shrink-0 border-r flex items-center justify-center">
+          <div className="w-12 md:w-16 flex-shrink-0 border-r flex items-center justify-center">
             <span className="text-xs text-muted-foreground">All day</span>
           </div>
           {days.map((_day, i) => (
@@ -80,7 +81,7 @@ export function CalendarGrid({ weekStart, events }: CalendarGridProps) {
       <div ref={scrollRef} className="flex-1 overflow-y-auto">
         <div className="flex pt-2" style={{ height: `${hours.length * HOUR_HEIGHT + 8}px` }}>
           {/* Hour labels */}
-          <div className="w-16 flex-shrink-0 border-r relative">
+          <div className="w-12 md:w-16 flex-shrink-0 border-r relative">
             {hours.map((hour) => (
               <div
                 key={hour}

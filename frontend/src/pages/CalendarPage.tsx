@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo, useSyncExternalStore } from "react";
 import { useSearchParams } from "react-router-dom";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { toast } from "sonner";
@@ -13,10 +13,34 @@ import { useCalendarConnections, useCalendarEvents, useCalendarSources } from "@
 import { getStartOfWeek, formatDateRange } from "@/components/features/calendar/calendar-utils";
 import type { CalendarConnection, CalendarEvent } from "@/types/models/calendar";
 
+const MD_BREAKPOINT = 768;
+const mql = typeof window !== "undefined" ? window.matchMedia(`(min-width: ${MD_BREAKPOINT}px)`) : null;
+function subscribeMedia(cb: () => void) {
+  mql?.addEventListener("change", cb);
+  return () => mql?.removeEventListener("change", cb);
+}
+function getIsDesktop() { return mql?.matches ?? true; }
+
 export function CalendarPage() {
+  const isDesktop = useSyncExternalStore(subscribeMedia, getIsDesktop, () => true);
+  const dayCount = isDesktop ? 7 : 3;
+
   const [searchParams, setSearchParams] = useSearchParams();
   const [weekStart, setWeekStart] = useState(() => getStartOfWeek(new Date()));
   const [showSources, setShowSources] = useState(false);
+
+  // Reset to a sensible start when switching between mobile and desktop
+  useEffect(() => {
+    if (isDesktop) {
+      setWeekStart(getStartOfWeek(new Date()));
+    } else {
+      const today = new Date();
+      const start = new Date(today);
+      start.setDate(start.getDate() - 1);
+      start.setHours(0, 0, 0, 0);
+      setWeekStart(start);
+    }
+  }, [isDesktop]);
 
   useEffect(() => {
     if (searchParams.get("connected") === "true") {
@@ -39,9 +63,9 @@ export function CalendarPage() {
 
   const weekEnd = useMemo(() => {
     const end = new Date(weekStart);
-    end.setDate(end.getDate() + 7);
+    end.setDate(end.getDate() + dayCount);
     return end;
-  }, [weekStart]);
+  }, [weekStart, dayCount]);
 
   const startISO = weekStart.toISOString();
   const endISO = weekEnd.toISOString();
@@ -70,15 +94,26 @@ export function CalendarPage() {
   const sourcesQuery = useCalendarSources(activeConnection?.id ?? null);
   const sources = sourcesQuery.data?.data ?? [];
 
-  const goToday = () => setWeekStart(getStartOfWeek(new Date()));
+  const goToday = () => {
+    const today = new Date();
+    if (isDesktop) {
+      setWeekStart(getStartOfWeek(today));
+    } else {
+      // On mobile, center today: show yesterday, today, tomorrow
+      const start = new Date(today);
+      start.setDate(start.getDate() - 1);
+      start.setHours(0, 0, 0, 0);
+      setWeekStart(start);
+    }
+  };
   const goPrev = () => {
     const prev = new Date(weekStart);
-    prev.setDate(prev.getDate() - 7);
+    prev.setDate(prev.getDate() - dayCount);
     setWeekStart(prev);
   };
   const goNext = () => {
     const next = new Date(weekStart);
-    next.setDate(next.getDate() + 7);
+    next.setDate(next.getDate() + dayCount);
     setWeekStart(next);
   };
 
@@ -168,7 +203,7 @@ export function CalendarPage() {
           {eventsQuery.isLoading ? (
             <Skeleton className="h-full w-full" />
           ) : (
-            <CalendarGrid weekStart={weekStart} events={events} />
+            <CalendarGrid weekStart={weekStart} events={events} dayCount={dayCount} />
           )}
         </div>
       ) : (
