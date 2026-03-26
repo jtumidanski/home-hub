@@ -4,6 +4,7 @@ import (
 	"time"
 
 	"github.com/google/uuid"
+	"github.com/jtumidanski/home-hub/services/package-service/internal/trackingevent"
 )
 
 // RestModel is the JSON:API representation for a package in list responses.
@@ -36,9 +37,9 @@ type RestSummaryModel struct {
 	ExceptionCount     int64 `json:"exceptionCount"`
 }
 
-func (r RestSummaryModel) GetName() string       { return "packageSummaries" }
-func (r RestSummaryModel) GetID() string          { return "summary" }
-func (r *RestSummaryModel) SetID(_ string) error  { return nil }
+func (r RestSummaryModel) GetName() string      { return "packageSummaries" }
+func (r RestSummaryModel) GetID() string         { return "summary" }
+func (r *RestSummaryModel) SetID(_ string) error { return nil }
 
 // RestTrackingEventModel is the JSON:API representation for a tracking event.
 type RestTrackingEventModel struct {
@@ -56,30 +57,33 @@ func (r *RestTrackingEventModel) SetID(id string) error { var err error; r.Id, e
 
 // RestDetailModel is the JSON:API representation for a single package with tracking events.
 type RestDetailModel struct {
-	Id                uuid.UUID                `json:"-"`
-	TrackingNumber    *string                  `json:"trackingNumber"`
-	Carrier           string                   `json:"carrier"`
-	Label             *string                  `json:"label"`
-	Notes             *string                  `json:"notes"`
-	Status            *string                  `json:"status"`
-	Private           bool                     `json:"private"`
-	EstimatedDelivery *string                  `json:"estimatedDelivery"`
-	ActualDelivery    *time.Time               `json:"actualDelivery"`
-	LastPolledAt      *time.Time               `json:"lastPolledAt"`
-	ArchivedAt        *time.Time               `json:"archivedAt"`
-	IsOwner           bool                     `json:"isOwner"`
-	UserID            uuid.UUID                `json:"userId"`
-	TrackingEvents    []RestTrackingEventModel  `json:"trackingEvents"`
-	CreatedAt         time.Time                `json:"createdAt"`
-	UpdatedAt         time.Time                `json:"updatedAt"`
+	Id                uuid.UUID               `json:"-"`
+	TrackingNumber    *string                 `json:"trackingNumber"`
+	Carrier           string                  `json:"carrier"`
+	Label             *string                 `json:"label"`
+	Notes             *string                 `json:"notes"`
+	Status            *string                 `json:"status"`
+	Private           bool                    `json:"private"`
+	EstimatedDelivery *string                 `json:"estimatedDelivery"`
+	ActualDelivery    *time.Time              `json:"actualDelivery"`
+	LastPolledAt      *time.Time              `json:"lastPolledAt"`
+	ArchivedAt        *time.Time              `json:"archivedAt"`
+	IsOwner           bool                    `json:"isOwner"`
+	UserID            uuid.UUID               `json:"userId"`
+	TrackingEvents    []RestTrackingEventModel `json:"trackingEvents"`
+	CreatedAt         time.Time               `json:"createdAt"`
+	UpdatedAt         time.Time               `json:"updatedAt"`
 }
 
 func (r RestDetailModel) GetName() string       { return "packages" }
 func (r RestDetailModel) GetID() string          { return r.Id.String() }
 func (r *RestDetailModel) SetID(id string) error { var err error; r.Id, err = uuid.Parse(id); return err }
 
-func TransformDetail(m Model, events []RestTrackingEventModel, requesterUserID uuid.UUID) RestDetailModel {
-	rm := TransformWithPrivacy(m, requesterUserID)
+func TransformDetail(m Model, events []RestTrackingEventModel, requesterUserID uuid.UUID) (RestDetailModel, error) {
+	rm, err := TransformWithPrivacy(m, requesterUserID)
+	if err != nil {
+		return RestDetailModel{}, err
+	}
 	evts := events
 	if evts == nil {
 		evts = []RestTrackingEventModel{}
@@ -101,7 +105,26 @@ func TransformDetail(m Model, events []RestTrackingEventModel, requesterUserID u
 		TrackingEvents:    evts,
 		CreatedAt:         rm.CreatedAt,
 		UpdatedAt:         rm.UpdatedAt,
+	}, nil
+}
+
+func TransformTrackingEvent(m trackingevent.Model) RestTrackingEventModel {
+	return RestTrackingEventModel{
+		Id:          m.Id(),
+		Timestamp:   m.Timestamp(),
+		Status:      m.Status(),
+		Description: m.Description(),
+		Location:    m.Location(),
+		RawStatus:   m.RawStatus(),
 	}
+}
+
+func TransformTrackingEventSlice(models []trackingevent.Model) []RestTrackingEventModel {
+	result := make([]RestTrackingEventModel, len(models))
+	for i, m := range models {
+		result[i] = TransformTrackingEvent(m)
+	}
+	return result
 }
 
 // CreateRequest is the JSON:API request body for creating a package.
@@ -138,7 +161,7 @@ func (r UpdateRequest) GetName() string       { return "packages" }
 func (r UpdateRequest) GetID() string          { return r.Id.String() }
 func (r *UpdateRequest) SetID(id string) error { var err error; r.Id, err = uuid.Parse(id); return err }
 
-func TransformWithPrivacy(m Model, requesterUserID uuid.UUID) RestModel {
+func TransformWithPrivacy(m Model, requesterUserID uuid.UUID) (RestModel, error) {
 	isOwner := m.UserID() == requesterUserID
 
 	rm := RestModel{
@@ -175,13 +198,17 @@ func TransformWithPrivacy(m Model, requesterUserID uuid.UUID) RestModel {
 		rm.LastPolledAt = m.LastPolledAt()
 	}
 
-	return rm
+	return rm, nil
 }
 
-func TransformSliceWithPrivacy(models []Model, requesterUserID uuid.UUID) []RestModel {
+func TransformSliceWithPrivacy(models []Model, requesterUserID uuid.UUID) ([]RestModel, error) {
 	result := make([]RestModel, len(models))
 	for i, m := range models {
-		result[i] = TransformWithPrivacy(m, requesterUserID)
+		rm, err := TransformWithPrivacy(m, requesterUserID)
+		if err != nil {
+			return nil, err
+		}
+		result[i] = rm
 	}
-	return result
+	return result, nil
 }

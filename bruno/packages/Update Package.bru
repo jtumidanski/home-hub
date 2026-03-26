@@ -1,0 +1,27 @@
+meta {
+  name: Update Package
+  type: http
+  seq: 4
+}
+
+patch {
+  url: {{baseUrl}}/api/v1/packages/:id
+  body: json
+}
+
+headers {
+  Content-Type: application/vnd.api+json
+}
+
+body:json {
+  {
+    "data": {
+      "type": "packages",
+      "id": "{{packageId}}",
+      "attributes": {
+        "label": "Updated label",
+        "notes": "Updated notes"
+      }
+    }
+  }
+}

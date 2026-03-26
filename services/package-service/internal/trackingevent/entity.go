@@ -10,12 +10,12 @@ import (
 type Entity struct {
 	Id          uuid.UUID `gorm:"type:uuid;primaryKey"`
 	PackageId   uuid.UUID `gorm:"type:uuid;not null;index:idx_te_package_time"`
-	Timestamp   time.Time `gorm:"type:timestamptz;not null;index:idx_te_package_time,sort:desc"`
+	Timestamp   time.Time `gorm:"not null;index:idx_te_package_time,sort:desc"`
 	Status      string    `gorm:"type:varchar(24);not null"`
 	Description string    `gorm:"type:varchar(512);not null"`
 	Location    *string   `gorm:"type:varchar(255)"`
 	RawStatus   *string   `gorm:"type:varchar(128)"`
-	CreatedAt   time.Time `gorm:"type:timestamptz;not null"`
+	CreatedAt   time.Time `gorm:"not null"`
 }
 
 func (Entity) TableName() string { return "tracking_events" }

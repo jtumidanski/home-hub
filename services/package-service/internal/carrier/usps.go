@@ -21,14 +21,16 @@ type USPSClient struct {
 	tokenMgr *OAuthTokenManager
 	budget   *RateBudget
 	oauth    OAuthConfig
+	client   *http.Client
 	l        logrus.FieldLogger
 }
 
 // NewUSPSClient creates a new USPS carrier client.
-func NewUSPSClient(clientID, clientSecret string, tokenMgr *OAuthTokenManager, budget *RateBudget, l logrus.FieldLogger) *USPSClient {
+func NewUSPSClient(clientID, clientSecret string, tokenMgr *OAuthTokenManager, budget *RateBudget, client *http.Client, l logrus.FieldLogger) *USPSClient {
 	return &USPSClient{
 		tokenMgr: tokenMgr,
 		budget:   budget,
+		client:   client,
 		oauth: OAuthConfig{
 			TokenURL:     uspsTokenURL,
 			ClientID:     clientID,
@@ -58,7 +60,7 @@ func (c *USPSClient) Track(ctx context.Context, trackingNumber string) (Tracking
 	req.Header.Set("Authorization", "Bearer "+token)
 	req.Header.Set("Accept", "application/json")
 
-	resp, err := http.DefaultClient.Do(req)
+	resp, err := c.client.Do(req)
 	if err != nil {
 		return TrackingResult{}, fmt.Errorf("USPS tracking request failed: %w", err)
 	}
@@ -137,11 +139,11 @@ type uspsTrackingResponse struct {
 }
 
 type uspsTrackingEvent struct {
-	EventTimestamp  string `json:"eventTimestamp"`
-	EventType       string `json:"eventType"`
+	EventTimestamp   string `json:"eventTimestamp"`
+	EventType        string `json:"eventType"`
 	EventDescription string `json:"eventDescription"`
-	EventCity       string `json:"eventCity"`
-	EventState      string `json:"eventState"`
+	EventCity        string `json:"eventCity"`
+	EventState       string `json:"eventState"`
 }
 
 func normalizeUSPSStatus(status string) string {

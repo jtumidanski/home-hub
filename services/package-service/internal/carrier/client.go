@@ -2,6 +2,7 @@ package carrier
 
 import (
 	"context"
+	"net/http"
 	"time"
 )
 
@@ -51,4 +52,11 @@ func (r *Registry) Register(client CarrierClient) {
 func (r *Registry) Get(name string) (CarrierClient, bool) {
 	c, ok := r.clients[name]
 	return c, ok
+}
+
+// NewHTTPClient creates a shared HTTP client with a sensible timeout for carrier API calls.
+func NewHTTPClient() *http.Client {
+	return &http.Client{
+		Timeout: 15 * time.Second,
+	}
 }

@@ -36,13 +36,15 @@ func (t *OAuthToken) IsExpired() bool {
 type OAuthTokenManager struct {
 	mu     sync.RWMutex
 	tokens map[string]*OAuthToken
+	client *http.Client
 	l      logrus.FieldLogger
 }
 
 // NewOAuthTokenManager creates a new token manager.
-func NewOAuthTokenManager(l logrus.FieldLogger) *OAuthTokenManager {
+func NewOAuthTokenManager(client *http.Client, l logrus.FieldLogger) *OAuthTokenManager {
 	return &OAuthTokenManager{
 		tokens: make(map[string]*OAuthToken),
+		client: client,
 		l:      l,
 	}
 }
@@ -83,7 +85,7 @@ func (m *OAuthTokenManager) refreshToken(ctx context.Context, carrierName string
 	}
 	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
 
-	resp, err := http.DefaultClient.Do(req)
+	resp, err := m.client.Do(req)
 	if err != nil {
 		return "", fmt.Errorf("token request failed for %s: %w", carrierName, err)
 	}

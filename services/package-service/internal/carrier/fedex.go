@@ -23,12 +23,13 @@ type FedExClient struct {
 	budget      *RateBudget
 	oauth       OAuthConfig
 	trackingURL string
+	client      *http.Client
 	l           logrus.FieldLogger
 }
 
 // NewFedExClient creates a new FedEx carrier client.
 // If sandbox is true, uses the FedEx sandbox environment.
-func NewFedExClient(apiKey, secretKey string, sandbox bool, tokenMgr *OAuthTokenManager, budget *RateBudget, l logrus.FieldLogger) *FedExClient {
+func NewFedExClient(apiKey, secretKey string, sandbox bool, tokenMgr *OAuthTokenManager, budget *RateBudget, client *http.Client, l logrus.FieldLogger) *FedExClient {
 	baseURL := fedexProdBaseURL
 	if sandbox {
 		baseURL = fedexSandboxBaseURL
@@ -37,6 +38,7 @@ func NewFedExClient(apiKey, secretKey string, sandbox bool, tokenMgr *OAuthToken
 		tokenMgr:    tokenMgr,
 		budget:      budget,
 		trackingURL: baseURL + "/track/v1/trackingnumbers",
+		client:      client,
 		oauth: OAuthConfig{
 			TokenURL:     baseURL + "/oauth/token",
 			ClientID:     apiKey,
@@ -78,7 +80,7 @@ func (c *FedExClient) Track(ctx context.Context, trackingNumber string) (Trackin
 	req.Header.Set("Content-Type", "application/json")
 	req.Header.Set("X-locale", "en_US")
 
-	resp, err := http.DefaultClient.Do(req)
+	resp, err := c.client.Do(req)
 	if err != nil {
 		return TrackingResult{}, fmt.Errorf("FedEx tracking request failed: %w", err)
 	}

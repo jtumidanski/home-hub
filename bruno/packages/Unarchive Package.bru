@@ -1,0 +1,14 @@
+meta {
+  name: Unarchive Package
+  type: http
+  seq: 7
+}
+
+post {
+  url: {{baseUrl}}/api/v1/packages/:id/unarchive
+  body: none
+}
+
+headers {
+  Accept: application/vnd.api+json
+}

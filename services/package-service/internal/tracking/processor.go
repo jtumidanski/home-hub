@@ -116,23 +116,20 @@ func (p *Processor) Get(id uuid.UUID) (Model, error) {
 	return m, nil
 }
 
-func (p *Processor) GetTrackingEvents(packageID uuid.UUID) ([]RestTrackingEventModel, error) {
+func (p *Processor) GetTrackingEvents(packageID uuid.UUID) ([]trackingevent.Model, error) {
 	entities, err := trackingevent.GetByPackageID(packageID)(p.db.WithContext(p.ctx))()
 	if err != nil {
 		return nil, err
 	}
-	result := make([]RestTrackingEventModel, len(entities))
-	for i, e := range entities {
-		result[i] = RestTrackingEventModel{
-			Id:          e.Id,
-			Timestamp:   e.Timestamp,
-			Status:      e.Status,
-			Description: e.Description,
-			Location:    e.Location,
-			RawStatus:   e.RawStatus,
+	models := make([]trackingevent.Model, 0, len(entities))
+	for _, e := range entities {
+		m, merr := trackingevent.Make(e)
+		if merr != nil {
+			return nil, merr
 		}
+		models = append(models, m)
 	}
-	return result, nil
+	return models, nil
 }
 
 func (p *Processor) List(householdID uuid.UUID, includeArchived bool, filterStatuses []string, hasETA bool, sortField string) ([]Model, error) {
@@ -272,23 +269,19 @@ func (p *Processor) Summary(householdID uuid.UUID) (SummaryResult, error) {
 
 	db := p.db.WithContext(p.ctx)
 
-	if err := db.Model(&Entity{}).
-		Where("household_id = ? AND estimated_delivery >= ? AND estimated_delivery < ? AND status IN ?",
-			householdID, today, tomorrow, []string{StatusPreTransit, StatusInTransit, StatusOutForDelivery}).
-		Count(&result.ArrivingTodayCount).Error; err != nil {
+	var err error
+	result.ArrivingTodayCount, err = countArrivingToday(db, householdID, today, tomorrow)
+	if err != nil {
 		return result, err
 	}
 
-	if err := db.Model(&Entity{}).
-		Where("household_id = ? AND status IN ?", householdID,
-			[]string{StatusPreTransit, StatusInTransit, StatusOutForDelivery}).
-		Count(&result.InTransitCount).Error; err != nil {
+	result.InTransitCount, err = countInTransit(db, householdID)
+	if err != nil {
 		return result, err
 	}
 
-	if err := db.Model(&Entity{}).
-		Where("household_id = ? AND status = ?", householdID, StatusException).
-		Count(&result.ExceptionCount).Error; err != nil {
+	result.ExceptionCount, err = countExceptions(db, householdID)
+	if err != nil {
 		return result, err
 	}
 

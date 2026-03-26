@@ -1,0 +1,10 @@
+meta {
+  name: Delete Package
+  type: http
+  seq: 5
+}
+
+delete {
+  url: {{baseUrl}}/api/v1/packages/:id
+  body: none
+}

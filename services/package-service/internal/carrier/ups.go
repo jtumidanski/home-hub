@@ -21,14 +21,16 @@ type UPSClient struct {
 	tokenMgr *OAuthTokenManager
 	budget   *RateBudget
 	oauth    OAuthConfig
+	client   *http.Client
 	l        logrus.FieldLogger
 }
 
 // NewUPSClient creates a new UPS carrier client.
-func NewUPSClient(clientID, clientSecret string, tokenMgr *OAuthTokenManager, budget *RateBudget, l logrus.FieldLogger) *UPSClient {
+func NewUPSClient(clientID, clientSecret string, tokenMgr *OAuthTokenManager, budget *RateBudget, client *http.Client, l logrus.FieldLogger) *UPSClient {
 	return &UPSClient{
 		tokenMgr: tokenMgr,
 		budget:   budget,
+		client:   client,
 		oauth: OAuthConfig{
 			TokenURL:     upsTokenURL,
 			ClientID:     clientID,
@@ -60,7 +62,7 @@ func (c *UPSClient) Track(ctx context.Context, trackingNumber string) (TrackingR
 	req.Header.Set("transId", fmt.Sprintf("home-hub-%d", time.Now().UnixNano()))
 	req.Header.Set("transactionSrc", "home-hub")
 
-	resp, err := http.DefaultClient.Do(req)
+	resp, err := c.client.Do(req)
 	if err != nil {
 		return TrackingResult{}, fmt.Errorf("UPS tracking request failed: %w", err)
 	}

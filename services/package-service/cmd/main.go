@@ -30,7 +30,8 @@ func main() {
 	)
 
 	// Set up carrier API clients
-	tokenMgr := carrier.NewOAuthTokenManager(l)
+	httpClient := carrier.NewHTTPClient()
+	tokenMgr := carrier.NewOAuthTokenManager(httpClient, l)
 	budget := carrier.NewRateBudget(map[string]int{
 		"usps":  1000,
 		"ups":   250,
@@ -39,13 +40,13 @@ func main() {
 
 	carriers := carrier.NewRegistry()
 	if cfg.USPSClientID != "" {
-		carriers.Register(carrier.NewUSPSClient(cfg.USPSClientID, cfg.USPSClientSecret, tokenMgr, budget, l))
+		carriers.Register(carrier.NewUSPSClient(cfg.USPSClientID, cfg.USPSClientSecret, tokenMgr, budget, httpClient, l))
 	}
 	if cfg.UPSClientID != "" {
-		carriers.Register(carrier.NewUPSClient(cfg.UPSClientID, cfg.UPSClientSecret, tokenMgr, budget, l))
+		carriers.Register(carrier.NewUPSClient(cfg.UPSClientID, cfg.UPSClientSecret, tokenMgr, budget, httpClient, l))
 	}
 	if cfg.FedExAPIKey != "" {
-		carriers.Register(carrier.NewFedExClient(cfg.FedExAPIKey, cfg.FedExSecretKey, cfg.FedExSandbox, tokenMgr, budget, l))
+		carriers.Register(carrier.NewFedExClient(cfg.FedExAPIKey, cfg.FedExSecretKey, cfg.FedExSandbox, tokenMgr, budget, httpClient, l))
 	}
 
 	authValidator := sharedauth.NewValidator(l, cfg.JWKSURL)

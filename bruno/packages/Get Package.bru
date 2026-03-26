@@ -1,0 +1,14 @@
+meta {
+  name: Get Package
+  type: http
+  seq: 3
+}
+
+get {
+  url: {{baseUrl}}/api/v1/packages/:id
+  body: none
+}
+
+headers {
+  Accept: application/vnd.api+json
+}

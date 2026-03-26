@@ -1,6 +1,8 @@
 package tracking
 
 import (
+	"time"
+
 	"github.com/google/uuid"
 	database "github.com/jtumidanski/home-hub/shared/go/database"
 	"gorm.io/gorm"
@@ -49,16 +51,30 @@ func existsByHouseholdAndTrackingNumber(db *gorm.DB, householdID uuid.UUID, trac
 	return count > 0, err
 }
 
-func create(db *gorm.DB, e *Entity) error {
-	return db.Create(e).Error
+func countArrivingToday(db *gorm.DB, householdID uuid.UUID, today, tomorrow time.Time) (int64, error) {
+	var count int64
+	err := db.Model(&Entity{}).
+		Where("household_id = ? AND estimated_delivery >= ? AND estimated_delivery < ? AND status IN ?",
+			householdID, today, tomorrow, []string{StatusPreTransit, StatusInTransit, StatusOutForDelivery}).
+		Count(&count).Error
+	return count, err
 }
 
-func update(db *gorm.DB, e *Entity) error {
-	return db.Save(e).Error
+func countInTransit(db *gorm.DB, householdID uuid.UUID) (int64, error) {
+	var count int64
+	err := db.Model(&Entity{}).
+		Where("household_id = ? AND status IN ?", householdID,
+			[]string{StatusPreTransit, StatusInTransit, StatusOutForDelivery}).
+		Count(&count).Error
+	return count, err
 }
 
-func deleteByID(db *gorm.DB, id uuid.UUID) error {
-	return db.Where("id = ?", id).Delete(&Entity{}).Error
+func countExceptions(db *gorm.DB, householdID uuid.UUID) (int64, error) {
+	var count int64
+	err := db.Model(&Entity{}).
+		Where("household_id = ? AND status = ?", householdID, StatusException).
+		Count(&count).Error
+	return count, err
 }
 
 type SummaryResult struct {

@@ -19,12 +19,12 @@ type Entity struct {
 	Status             string     `gorm:"type:varchar(24);not null;default:'pre_transit';index:idx_pkg_household_status"`
 	Private            bool       `gorm:"not null;default:false"`
 	EstimatedDelivery  *time.Time `gorm:"type:date"`
-	ActualDelivery     *time.Time `gorm:"type:timestamptz"`
-	LastPolledAt       *time.Time `gorm:"type:timestamptz"`
-	LastStatusChangeAt *time.Time `gorm:"type:timestamptz"`
-	ArchivedAt         *time.Time `gorm:"type:timestamptz"`
-	CreatedAt          time.Time  `gorm:"type:timestamptz;not null"`
-	UpdatedAt          time.Time  `gorm:"type:timestamptz;not null"`
+	ActualDelivery     *time.Time
+	LastPolledAt       *time.Time
+	LastStatusChangeAt *time.Time
+	ArchivedAt         *time.Time
+	CreatedAt          time.Time  `gorm:"not null"`
+	UpdatedAt          time.Time  `gorm:"not null"`
 }
 
 func (Entity) TableName() string { return "packages" }

@@ -71,7 +71,12 @@ func createHandler(db *gorm.DB, maxActive int, carriers *carrier.Registry) serve
 				return
 			}
 
-			rest := TransformWithPrivacy(m, t.UserId())
+			rest, err := TransformWithPrivacy(m, t.UserId())
+			if err != nil {
+				d.Logger().WithError(err).Error("transforming package")
+				server.WriteError(w, http.StatusInternalServerError, "Internal Error", "")
+				return
+			}
 			server.MarshalCreatedResponse[RestModel](d.Logger())(w)(c.ServerInformation())(rest)
 		}
 	}
@@ -99,7 +104,12 @@ func listHandler(db *gorm.DB, maxActive int, carriers *carrier.Registry) server.
 				return
 			}
 
-			rest := TransformSliceWithPrivacy(models, t.UserId())
+			rest, err := TransformSliceWithPrivacy(models, t.UserId())
+			if err != nil {
+				d.Logger().WithError(err).Error("transforming packages")
+				server.WriteError(w, http.StatusInternalServerError, "Internal Error", "")
+				return
+			}
 			server.MarshalSliceResponse[RestModel](d.Logger())(w)(c.ServerInformation())(rest)
 		}
 	}
@@ -123,13 +133,20 @@ func getHandler(db *gorm.DB, maxActive int, carriers *carrier.Registry) server.G
 					return
 				}
 
-				events, err := proc.GetTrackingEvents(id)
+				eventModels, err := proc.GetTrackingEvents(id)
 				if err != nil {
 					d.Logger().WithError(err).Error("failed to get tracking events")
-					events = []RestTrackingEventModel{}
+					eventModels = nil
 				}
 
-				rest := TransformDetail(m, events, t.UserId())
+				events := TransformTrackingEventSlice(eventModels)
+
+				rest, err := TransformDetail(m, events, t.UserId())
+				if err != nil {
+					d.Logger().WithError(err).Error("transforming package detail")
+					server.WriteError(w, http.StatusInternalServerError, "Internal Error", "")
+					return
+				}
 				server.MarshalResponse[RestDetailModel](d.Logger())(w)(c.ServerInformation())(map[string][]string{})(rest)
 			}
 		})
@@ -167,7 +184,12 @@ func updateHandler(db *gorm.DB, maxActive int, carriers *carrier.Registry) serve
 					return
 				}
 
-				rest := TransformWithPrivacy(m, t.UserId())
+				rest, err := TransformWithPrivacy(m, t.UserId())
+				if err != nil {
+					d.Logger().WithError(err).Error("transforming package")
+					server.WriteError(w, http.StatusInternalServerError, "Internal Error", "")
+					return
+				}
 				server.MarshalResponse[RestModel](d.Logger())(w)(c.ServerInformation())(map[string][]string{})(rest)
 			}
 		})
@@ -218,7 +240,12 @@ func archiveHandler(db *gorm.DB, maxActive int, carriers *carrier.Registry) serv
 					return
 				}
 
-				rest := TransformWithPrivacy(m, t.UserId())
+				rest, err := TransformWithPrivacy(m, t.UserId())
+				if err != nil {
+					d.Logger().WithError(err).Error("transforming package")
+					server.WriteError(w, http.StatusInternalServerError, "Internal Error", "")
+					return
+				}
 				server.MarshalResponse[RestModel](d.Logger())(w)(c.ServerInformation())(map[string][]string{})(rest)
 			}
 		})
@@ -247,7 +274,12 @@ func unarchiveHandler(db *gorm.DB, maxActive int, carriers *carrier.Registry) se
 					return
 				}
 
-				rest := TransformWithPrivacy(m, t.UserId())
+				rest, err := TransformWithPrivacy(m, t.UserId())
+				if err != nil {
+					d.Logger().WithError(err).Error("transforming package")
+					server.WriteError(w, http.StatusInternalServerError, "Internal Error", "")
+					return
+				}
 				server.MarshalResponse[RestModel](d.Logger())(w)(c.ServerInformation())(map[string][]string{})(rest)
 			}
 		})
@@ -332,7 +364,12 @@ func refreshHandler(db *gorm.DB, maxActive int, carriers *carrier.Registry) serv
 					return
 				}
 
-				rest := TransformWithPrivacy(m, t.UserId())
+				rest, err := TransformWithPrivacy(m, t.UserId())
+				if err != nil {
+					d.Logger().WithError(err).Error("transforming package")
+					server.WriteError(w, http.StatusInternalServerError, "Internal Error", "")
+					return
+				}
 				server.MarshalResponse[RestModel](d.Logger())(w)(c.ServerInformation())(map[string][]string{})(rest)
 			}
 		})
