@@ -27,6 +27,7 @@ Core services:
 - productivity-service
 - recipe-service
 - weather-service
+- calendar-service
 
 Shared modules provide common functionality but do not contain business logic.
 
@@ -54,6 +55,7 @@ Routing:
 /api/v1/summary -> productivity-service
 /api/v1/recipes -> recipe-service
 /api/v1/weather -> weather-service
+/api/v1/calendar -> calendar-service
 ```
 
 All services are stateless except for database persistence. Authentication is handled by auth-service. Authorization is enforced by each service using JWT claims.
@@ -158,7 +160,31 @@ Rules:
 - soft delete with 3-day restore window
 - tenant scoped, household scoped
 
-### 3.6 weather-service
+### 3.6 calendar-service
+
+Responsibilities:
+
+- Google Calendar OAuth connection management
+- background event synchronization via polling
+- encrypted OAuth token storage (AES-256-GCM)
+- household calendar event aggregation
+- privacy masking for private/confidential events
+- user color assignment per household
+
+Schema: `calendar.calendar_connections`, `calendar.calendar_sources`, `calendar.calendar_events`, `calendar.calendar_oauth_states`
+
+Rules:
+
+- separate OAuth flow from auth-service (calendar.readonly scope)
+- incremental sync via Google sync tokens per source calendar
+- background sync at configurable interval (default 15 minutes)
+- sync staggered with random jitter to avoid burst traffic
+- exponential backoff on Google API 429/5xx
+- manual sync rate-limited to once per 5 minutes
+- private/confidential events masked as "Busy" for non-owners
+- tenant scoped, household scoped
+
+### 3.7 weather-service
 
 Responsibilities:
 
@@ -259,7 +285,7 @@ Secrets provided externally. No config files required.
 
 ## 8. Persistence
 
-Each service owns its schema: `auth.*`, `account.*`, `productivity.*`, `recipe.*`, `weather.*`. No cross-service tables.
+Each service owns its schema: `auth.*`, `account.*`, `productivity.*`, `recipe.*`, `weather.*`, `calendar.*`. No cross-service tables.
 
 Migrations:
 
@@ -302,6 +328,7 @@ ghcr.io/<owner>/home-hub-account
 ghcr.io/<owner>/home-hub-productivity
 ghcr.io/<owner>/home-hub-recipe
 ghcr.io/<owner>/home-hub-weather
+ghcr.io/<owner>/home-hub-calendar
 ghcr.io/<owner>/home-hub-frontend
 ```
 

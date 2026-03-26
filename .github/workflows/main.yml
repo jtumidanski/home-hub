@@ -23,6 +23,9 @@ jobs:
           - service: account-service
             context: .
             dockerfile: services/account-service/Dockerfile
+          - service: calendar-service
+            context: .
+            dockerfile: services/calendar-service/Dockerfile
           - service: productivity-service
             context: .
             dockerfile: services/productivity-service/Dockerfile

@@ -13,6 +13,7 @@ services:
       - productivity-service
       - weather-service
       - recipe-service
+      - calendar-service
 
   frontend:
     container_name: hh-frontend
@@ -92,6 +93,26 @@ services:
       - JWKS_URL=http://auth-service:8080/api/v1/auth/.well-known/jwks.json
       - REFRESH_INTERVAL_MINUTES=${REFRESH_INTERVAL_MINUTES:-30}
       - CACHE_TTL_MINUTES=${CACHE_TTL_MINUTES:-30}
+
+  calendar-service:
+    container_name: hh-calendar
+    build:
+      context: ../..
+      dockerfile: services/calendar-service/Dockerfile
+    expose:
+      - "8080"
+    environment:
+      - DB_HOST=${DB_HOST:-postgres.home}
+      - DB_PORT=${DB_PORT:-5432}
+      - DB_USER=${DB_USER:-home_hub}
+      - DB_PASSWORD=${DB_PASSWORD}
+      - DB_NAME=${DB_NAME:-home_hub}
+      - PORT=8080
+      - JWKS_URL=http://auth-service:8080/api/v1/auth/.well-known/jwks.json
+      - GOOGLE_CALENDAR_CLIENT_ID=${GOOGLE_CALENDAR_CLIENT_ID}
+      - GOOGLE_CALENDAR_CLIENT_SECRET=${GOOGLE_CALENDAR_CLIENT_SECRET}
+      - CALENDAR_TOKEN_ENCRYPTION_KEY=${CALENDAR_TOKEN_ENCRYPTION_KEY}
+      - SYNC_INTERVAL_MINUTES=${SYNC_INTERVAL_MINUTES:-15}
 
   recipe-service:
     container_name: hh-recipe

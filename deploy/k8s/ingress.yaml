@@ -85,6 +85,13 @@ spec:
                             name: productivity-service
                             port:
                                 number: 8080
+                  - path: /api/v1/calendar
+                    pathType: Prefix
+                    backend:
+                        service:
+                            name: calendar-service
+                            port:
+                                number: 8080
                   - path: /api/v1/recipes
                     pathType: Prefix
                     backend:
