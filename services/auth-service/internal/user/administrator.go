@@ -24,3 +24,11 @@ func create(db *gorm.DB, email, displayName, givenName, familyName, avatarURL st
 	}
 	return e, nil
 }
+
+func updateAvatarURL(db *gorm.DB, id uuid.UUID, url string) error {
+	return db.Model(&Entity{}).Where("id = ?", id).Update("avatar_url", url).Error
+}
+
+func updateProviderAvatarURL(db *gorm.DB, id uuid.UUID, url string) error {
+	return db.Model(&Entity{}).Where("id = ?", id).Update("provider_avatar_url", url).Error
+}

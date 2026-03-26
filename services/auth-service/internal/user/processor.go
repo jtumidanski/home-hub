@@ -53,10 +53,7 @@ func (p *Processor) FindOrCreate(email, displayName, givenName, familyName, avat
 
 // UpdateProviderAvatar updates the provider_avatar_url column without touching the user-selected avatar_url.
 func (p *Processor) UpdateProviderAvatar(userID uuid.UUID, url string) error {
-	return p.db.WithContext(p.ctx).
-		Model(&Entity{}).
-		Where("id = ?", userID).
-		Update("provider_avatar_url", url).Error
+	return updateProviderAvatarURL(p.db.WithContext(p.ctx), userID, url)
 }
 
 // ValidateAvatarFormat checks that avatarURL is either empty or matches dicebear:{style}:{seed}.
@@ -76,10 +73,7 @@ func (p *Processor) UpdateAvatar(userID uuid.UUID, avatarURL string) (Model, err
 		return Model{}, err
 	}
 
-	if err := p.db.WithContext(p.ctx).
-		Model(&Entity{}).
-		Where("id = ?", userID).
-		Update("avatar_url", avatarURL).Error; err != nil {
+	if err := updateAvatarURL(p.db.WithContext(p.ctx), userID, avatarURL); err != nil {
 		return Model{}, err
 	}
 
