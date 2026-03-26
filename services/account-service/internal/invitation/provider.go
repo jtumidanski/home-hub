@@ -1,6 +1,8 @@
 package invitation
 
 import (
+	"time"
+
 	"github.com/google/uuid"
 	"github.com/jtumidanski/home-hub/shared/go/database"
 	"gorm.io/gorm"
@@ -15,7 +17,7 @@ func getByID(id uuid.UUID) database.EntityProvider[Entity] {
 // getByHouseholdPending returns pending, non-expired invitations for a household.
 func getByHouseholdPending(householdID uuid.UUID) database.EntityProvider[[]Entity] {
 	return database.SliceQuery[Entity](func(db *gorm.DB) *gorm.DB {
-		return db.Where("household_id = ? AND status = 'pending' AND expires_at > NOW()", householdID)
+		return db.Where("household_id = ? AND status = 'pending' AND expires_at > ?", householdID, time.Now().UTC())
 	})
 }
 
@@ -23,14 +25,14 @@ func getByHouseholdPending(householdID uuid.UUID) database.EntityProvider[[]Enti
 // This is intended to be used with WithoutTenantFilter since the user may not have a tenant yet.
 func getByEmailPending(email string) database.EntityProvider[[]Entity] {
 	return database.SliceQuery[Entity](func(db *gorm.DB) *gorm.DB {
-		return db.Where("email = ? AND status = 'pending' AND expires_at > NOW()", email)
+		return db.Where("email = ? AND status = 'pending' AND expires_at > ?", email, time.Now().UTC())
 	})
 }
 
 // getByHouseholdAndEmailPending checks if a pending invitation already exists.
 func getByHouseholdAndEmailPending(householdID uuid.UUID, email string) database.EntityProvider[Entity] {
 	return database.Query[Entity](func(db *gorm.DB) *gorm.DB {
-		return db.Where("household_id = ? AND email = ? AND status = 'pending' AND expires_at > NOW()", householdID, email)
+		return db.Where("household_id = ? AND email = ? AND status = 'pending' AND expires_at > ?", householdID, email, time.Now().UTC())
 	})
 }
 
@@ -38,7 +40,7 @@ func getByHouseholdAndEmailPending(householdID uuid.UUID, email string) database
 func countByEmailPending(db *gorm.DB, email string) (int64, error) {
 	var count int64
 	err := db.Model(&Entity{}).
-		Where("email = ? AND status = 'pending' AND expires_at > NOW()", email).
+		Where("email = ? AND status = 'pending' AND expires_at > ?", email, time.Now().UTC()).
 		Count(&count).Error
 	return count, err
 }

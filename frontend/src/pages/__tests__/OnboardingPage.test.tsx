@@ -36,13 +36,21 @@ vi.mock("@/lib/hooks/api/use-invitations", () => ({
   useDeclineInvitation: () => ({ mutateAsync: vi.fn(), isPending: false }),
 }));
 
+vi.mock("@/lib/hooks/api/use-auth", () => ({
+  useLogout: () => ({ mutate: vi.fn(), isPending: false }),
+}));
+
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { OnboardingPage } from "../OnboardingPage";
 
 function renderPage() {
+  const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
   return render(
-    <MemoryRouter>
-      <OnboardingPage />
-    </MemoryRouter>,
+    <QueryClientProvider client={queryClient}>
+      <MemoryRouter>
+        <OnboardingPage />
+      </MemoryRouter>
+    </QueryClientProvider>,
   );
 }
 

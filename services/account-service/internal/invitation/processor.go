@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/google/uuid"
+	"github.com/jtumidanski/home-hub/services/account-service/internal/household"
 	"github.com/jtumidanski/home-hub/services/account-service/internal/membership"
 	"github.com/jtumidanski/home-hub/services/account-service/internal/preference"
 	"github.com/jtumidanski/home-hub/shared/go/database"
@@ -98,8 +99,7 @@ func (p *Processor) Revoke(id uuid.UUID, revokerID uuid.UUID) error {
 	if err := p.requirePrivilegedRole(inv.HouseholdID(), revokerID); err != nil {
 		return err
 	}
-	_, err = updateStatus(p.db.WithContext(p.ctx), id, "revoked")
-	return err
+	return updateStatus(p.db.WithContext(p.ctx), id, "revoked")
 }
 
 // Accept accepts a pending invitation: creates membership, handles tenant assignment, creates preference.
@@ -153,11 +153,10 @@ func (p *Processor) Accept(id, userID uuid.UUID, userEmail string, userTenantID 
 	}
 
 	// Update invitation status
-	e, err := updateStatus(db, id, "accepted")
-	if err != nil {
+	if err := updateStatus(db, id, "accepted"); err != nil {
 		return Model{}, err
 	}
-	return Make(e)
+	return model.Map(Make)(getByID(id)(db))()
 }
 
 // Decline sets a pending invitation to declined status.
@@ -176,11 +175,31 @@ func (p *Processor) Decline(id uuid.UUID, userEmail string) (Model, error) {
 		return Model{}, ErrEmailMismatch
 	}
 
-	e, err := updateStatus(db, id, "declined")
-	if err != nil {
+	if err := updateStatus(db, id, "declined"); err != nil {
 		return Model{}, err
 	}
-	return Make(e)
+	return model.Map(Make)(getByID(id)(db))()
+}
+
+// ByEmailPendingWithHouseholds returns pending invitations for an email along with their associated households.
+func (p *Processor) ByEmailPendingWithHouseholds(email string) ([]Model, []household.Model, error) {
+	ctx := database.WithoutTenantFilter(p.ctx)
+	db := p.db.WithContext(ctx)
+
+	invitations, err := model.SliceMap(Make)(getByEmailPending(email)(db))()
+	if err != nil {
+		return nil, nil, err
+	}
+
+	hhProc := household.NewProcessor(p.l, ctx, p.db)
+	households := make([]household.Model, 0, len(invitations))
+	for _, inv := range invitations {
+		hh, err := hhProc.ByIDProvider(inv.HouseholdID())()
+		if err == nil {
+			households = append(households, hh)
+		}
+	}
+	return invitations, households, nil
 }
 
 // requirePrivilegedRole checks that the given user has owner or admin role in the household.

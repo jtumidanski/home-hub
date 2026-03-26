@@ -27,15 +27,11 @@ func create(db *gorm.DB, tenantID, householdID uuid.UUID, email, role string, in
 	return e, nil
 }
 
-func updateStatus(db *gorm.DB, id uuid.UUID, status string) (Entity, error) {
-	var e Entity
-	if err := db.Where("id = ?", id).First(&e).Error; err != nil {
-		return Entity{}, err
-	}
-	e.Status = status
-	e.UpdatedAt = time.Now().UTC()
-	if err := db.Save(&e).Error; err != nil {
-		return Entity{}, err
-	}
-	return e, nil
+func updateStatus(db *gorm.DB, id uuid.UUID, status string) error {
+	return db.Model(&Entity{}).
+		Where("id = ?", id).
+		Updates(map[string]interface{}{
+			"status":     status,
+			"updated_at": time.Now().UTC(),
+		}).Error
 }

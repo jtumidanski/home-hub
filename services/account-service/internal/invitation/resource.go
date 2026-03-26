@@ -9,7 +9,6 @@ import (
 	"github.com/jtumidanski/api2go/jsonapi"
 	"github.com/jtumidanski/home-hub/services/account-service/internal/household"
 	sharedauth "github.com/jtumidanski/home-hub/shared/go/auth"
-	"github.com/jtumidanski/home-hub/shared/go/database"
 	"github.com/jtumidanski/home-hub/shared/go/server"
 	tenantctx "github.com/jtumidanski/home-hub/shared/go/tenant"
 	"github.com/sirupsen/logrus"
@@ -74,34 +73,32 @@ func listMineHandler(db *gorm.DB) server.GetHandler {
 			}
 
 			proc := NewProcessor(d.Logger(), r.Context(), db)
-			models, err := proc.ByEmailPendingProvider(claims.Email)()
+			invitations, households, err := proc.ByEmailPendingWithHouseholds(claims.Email)
 			if err != nil {
 				d.Logger().WithError(err).Error("Failed to list user invitations")
 				server.WriteError(w, http.StatusInternalServerError, "Error", "")
 				return
 			}
 
-			rest, err := TransformSlice(models)
+			rest, err := TransformSlice(invitations)
 			if err != nil {
 				d.Logger().WithError(err).Error("Creating REST models")
 				w.WriteHeader(http.StatusInternalServerError)
 				return
 			}
 
-			// Include household resources so the join flow can display household names.
-			// Bypass tenant filter — the user may not have a tenant yet.
-			noTenantCtx := database.WithoutTenantFilter(r.Context())
+			// Build a lookup map for household REST models.
+			hhMap := make(map[string]*household.RestModel, len(households))
+			for _, hh := range households {
+				hhRest, err := household.Transform(hh)
+				if err == nil {
+					hhMap[hh.Id().String()] = &hhRest
+				}
+			}
+
 			mineRest := make([]MineRestModel, len(rest))
 			for i, rm := range rest {
-				mineRest[i] = MineRestModel{RestModel: rm}
-				hhProc := household.NewProcessor(d.Logger(), noTenantCtx, db)
-				hh, err := hhProc.ByIDProvider(rm.HouseholdID)()
-				if err == nil {
-					hhRest, err := household.Transform(hh)
-					if err == nil {
-						mineRest[i].Household = &hhRest
-					}
-				}
+				mineRest[i] = MineRestModel{RestModel: rm, Household: hhMap[rm.HouseholdID.String()]}
 			}
 
 			server.MarshalSliceResponse[MineRestModel](d.Logger())(w)(c.ServerInformation())(mineRest)
