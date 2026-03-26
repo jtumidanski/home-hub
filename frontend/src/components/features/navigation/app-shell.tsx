@@ -1,6 +1,7 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { Outlet, NavLink, Link } from "react-router-dom";
 import { Settings } from "lucide-react";
+import { useAuth } from "@/components/providers/auth-provider";
 import { HouseholdSwitcher } from "@/components/features/households/household-switcher";
 import { MobileHeader } from "@/components/features/navigation/mobile-header";
 import { MobileDrawer } from "@/components/features/navigation/mobile-drawer";
@@ -13,6 +14,11 @@ import { cn } from "@/lib/utils";
 export function AppShell() {
   const [drawerOpen, setDrawerOpen] = useState(false);
   const { toggleGroup, isGroupOpen } = useNavGroupState();
+  const { appContext } = useAuth();
+
+  const navBadges = useMemo(() => ({
+    pendingInvitationCount: appContext?.attributes.pendingInvitationCount ?? 0,
+  }), [appContext?.attributes.pendingInvitationCount]);
 
   return (
     <div className="flex h-screen flex-col md:flex-row overflow-hidden">
@@ -33,6 +39,7 @@ export function AppShell() {
               group={group}
               isOpen={isGroupOpen(group.key, false)}
               onToggle={() => toggleGroup(group.key)}
+              badges={navBadges}
             />
           ))}
         </nav>

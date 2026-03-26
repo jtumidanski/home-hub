@@ -94,21 +94,26 @@ func TestHandlers(t *testing.T) {
 		}
 	})
 
-	t.Run("PATCH /memberships/{id}", func(t *testing.T) {
-		router, db, tenantID, userID := setupHandlerTest(t)
+	t.Run("PATCH /memberships/{id} - owner updates another member", func(t *testing.T) {
+		router, db, tenantID, ownerID := setupHandlerTest(t)
 
 		l, _ := test.NewNullLogger()
 		ctx := tenantctx.WithContext(
 			httptest.NewRequest(http.MethodGet, "/", nil).Context(),
-			tenantctx.New(tenantID, uuid.Nil, userID),
+			tenantctx.New(tenantID, uuid.Nil, ownerID),
 		)
 		p := NewProcessor(l, ctx, db)
-		m, _ := p.Create(tenantID, uuid.New(), userID, "viewer")
+		householdID := uuid.New()
+		// Create owner membership for the requester
+		p.Create(tenantID, householdID, ownerID, "owner")
+		// Create target membership for another user
+		targetUserID := uuid.New()
+		target, _ := p.Create(tenantID, householdID, targetUserID, "viewer")
 
-		body := `{"data":{"type":"memberships","id":"` + m.Id().String() + `","attributes":{"role":"admin"}}}`
-		req := httptest.NewRequest(http.MethodPatch, "/memberships/"+m.Id().String(), bytes.NewBufferString(body))
+		body := `{"data":{"type":"memberships","id":"` + target.Id().String() + `","attributes":{"role":"admin"}}}`
+		req := httptest.NewRequest(http.MethodPatch, "/memberships/"+target.Id().String(), bytes.NewBufferString(body))
 		req.Header.Set("Content-Type", "application/vnd.api+json")
-		req = withTenant(req, tenantID, userID)
+		req = withTenant(req, tenantID, ownerID)
 		w := httptest.NewRecorder()
 
 		router.ServeHTTP(w, req)
@@ -118,7 +123,31 @@ func TestHandlers(t *testing.T) {
 		}
 	})
 
-	t.Run("DELETE /memberships/{id}", func(t *testing.T) {
+	t.Run("PATCH /memberships/{id} - cannot modify self", func(t *testing.T) {
+		router, db, tenantID, userID := setupHandlerTest(t)
+
+		l, _ := test.NewNullLogger()
+		ctx := tenantctx.WithContext(
+			httptest.NewRequest(http.MethodGet, "/", nil).Context(),
+			tenantctx.New(tenantID, uuid.Nil, userID),
+		)
+		p := NewProcessor(l, ctx, db)
+		m, _ := p.Create(tenantID, uuid.New(), userID, "owner")
+
+		body := `{"data":{"type":"memberships","id":"` + m.Id().String() + `","attributes":{"role":"admin"}}}`
+		req := httptest.NewRequest(http.MethodPatch, "/memberships/"+m.Id().String(), bytes.NewBufferString(body))
+		req.Header.Set("Content-Type", "application/vnd.api+json")
+		req = withTenant(req, tenantID, userID)
+		w := httptest.NewRecorder()
+
+		router.ServeHTTP(w, req)
+
+		if w.Code != http.StatusForbidden {
+			t.Errorf("expected status 403, got %d: %s", w.Code, w.Body.String())
+		}
+	})
+
+	t.Run("DELETE /memberships/{id} - self leave", func(t *testing.T) {
 		router, db, tenantID, userID := setupHandlerTest(t)
 
 		l, _ := test.NewNullLogger()
@@ -137,6 +166,29 @@ func TestHandlers(t *testing.T) {
 
 		if w.Code != http.StatusNoContent {
 			t.Errorf("expected status 204, got %d: %s", w.Code, w.Body.String())
+		}
+	})
+
+	t.Run("DELETE /memberships/{id} - last owner blocked", func(t *testing.T) {
+		router, db, tenantID, userID := setupHandlerTest(t)
+
+		l, _ := test.NewNullLogger()
+		ctx := tenantctx.WithContext(
+			httptest.NewRequest(http.MethodGet, "/", nil).Context(),
+			tenantctx.New(tenantID, uuid.Nil, userID),
+		)
+		p := NewProcessor(l, ctx, db)
+		householdID := uuid.New()
+		m, _ := p.Create(tenantID, householdID, userID, "owner")
+
+		req := httptest.NewRequest(http.MethodDelete, "/memberships/"+m.Id().String(), nil)
+		req = withTenant(req, tenantID, userID)
+		w := httptest.NewRecorder()
+
+		router.ServeHTTP(w, req)
+
+		if w.Code != http.StatusUnprocessableEntity {
+			t.Errorf("expected status 422, got %d: %s", w.Code, w.Body.String())
 		}
 	})
 }

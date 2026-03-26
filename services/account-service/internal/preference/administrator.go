@@ -48,3 +48,16 @@ func setActiveHousehold(db *gorm.DB, id uuid.UUID, householdID uuid.UUID) (Entit
 	}
 	return e, nil
 }
+
+func clearActiveHousehold(db *gorm.DB, id uuid.UUID) (Entity, error) {
+	var e Entity
+	if err := db.Where("id = ?", id).First(&e).Error; err != nil {
+		return Entity{}, err
+	}
+	e.ActiveHouseholdId = nil
+	e.UpdatedAt = time.Now().UTC()
+	if err := db.Save(&e).Error; err != nil {
+		return Entity{}, err
+	}
+	return e, nil
+}

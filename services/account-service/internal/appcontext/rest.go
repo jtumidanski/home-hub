@@ -12,9 +12,10 @@ import (
 // It implements api2go's MarshalLinkedRelations and MarshalIncludedRelations
 // so that relationships and ?include= are handled automatically.
 type RestModel struct {
-	ResolvedTheme      string `json:"resolvedTheme"`
-	ResolvedRole       string `json:"resolvedRole"`
-	CanCreateHousehold bool   `json:"canCreateHousehold"`
+	ResolvedTheme          string `json:"resolvedTheme"`
+	ResolvedRole           string `json:"resolvedRole"`
+	CanCreateHousehold     bool   `json:"canCreateHousehold"`
+	PendingInvitationCount int64  `json:"pendingInvitationCount"`
 
 	// Related resources (not serialized as attributes)
 	Tenant          tenant.RestModel       `json:"-"`
@@ -95,11 +96,12 @@ func TransformContext(resolved *Resolved) (RestModel, error) {
 	}
 
 	rm := RestModel{
-		ResolvedTheme:      resolved.Preference.Theme(),
-		ResolvedRole:       resolved.ResolvedRole,
-		CanCreateHousehold: resolved.CanCreateHousehold,
-		Tenant:             tenantRest,
-		Preference:         prefRest,
+		ResolvedTheme:          resolved.Preference.Theme(),
+		ResolvedRole:           resolved.ResolvedRole,
+		CanCreateHousehold:     resolved.CanCreateHousehold,
+		PendingInvitationCount: resolved.PendingInvitationCount,
+		Tenant:                 tenantRest,
+		Preference:             prefRest,
 	}
 
 	if resolved.ActiveHousehold != nil {

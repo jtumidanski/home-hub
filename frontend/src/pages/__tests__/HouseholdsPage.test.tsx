@@ -26,19 +26,34 @@ vi.mock("@/components/features/weather/location-search", () => ({
   LocationSearch: () => <div data-testid="location-search">Location Search</div>,
 }));
 
+vi.mock("@/lib/hooks/api/use-invitations", () => ({
+  useMyInvitations: () => ({ data: { data: [] } }),
+  useAcceptInvitation: () => ({ mutateAsync: vi.fn(), isPending: false }),
+  useDeclineInvitation: () => ({ mutateAsync: vi.fn(), isPending: false }),
+}));
+
 vi.mock("@/components/features/households/create-household-dialog", () => ({
   CreateHouseholdDialog: ({ open }: { open: boolean }) =>
     open ? <div role="dialog">CreateHouseholdDialog</div> : null,
 }));
 
+import { MemoryRouter } from "react-router-dom";
 import { HouseholdsPage } from "../HouseholdsPage";
+
+function renderPage() {
+  return render(
+    <MemoryRouter>
+      <HouseholdsPage />
+    </MemoryRouter>,
+  );
+}
 
 describe("HouseholdsPage", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     mockUseAuth.mockReturnValue({
       appContext: {
-        attributes: { canCreateHousehold: true },
+        attributes: { canCreateHousehold: true, pendingInvitationCount: 0 },
         relationships: { activeHousehold: { data: { id: "hh-1" } } },
       },
     });
@@ -47,20 +62,20 @@ describe("HouseholdsPage", () => {
 
   it("renders loading skeleton when isLoading is true", () => {
     mockUseHouseholds.mockReturnValue({ data: null, isLoading: true, isError: false });
-    render(<HouseholdsPage />);
+    renderPage();
     expect(screen.queryByText("Households")).not.toBeInTheDocument();
     expect(screen.getByRole("status", { name: "Loading" })).toBeInTheDocument();
   });
 
   it("renders error state when isError is true", () => {
     mockUseHouseholds.mockReturnValue({ data: null, isLoading: false, isError: true });
-    render(<HouseholdsPage />);
+    renderPage();
     expect(screen.getByText(/failed to load households/i)).toBeInTheDocument();
   });
 
   it("renders empty state when there are no households", () => {
     mockUseHouseholds.mockReturnValue({ data: { data: [] }, isLoading: false, isError: false });
-    render(<HouseholdsPage />);
+    renderPage();
     expect(screen.getByText("Households")).toBeInTheDocument();
     expect(screen.getByText(/no households yet/i)).toBeInTheDocument();
   });
@@ -76,7 +91,7 @@ describe("HouseholdsPage", () => {
       isLoading: false,
       isError: false,
     });
-    render(<HouseholdsPage />);
+    renderPage();
     expect(screen.getByText("Main House")).toBeInTheDocument();
     expect(screen.getByText("Beach House")).toBeInTheDocument();
     expect(screen.getByText("Active")).toBeInTheDocument();
@@ -85,7 +100,7 @@ describe("HouseholdsPage", () => {
   it("opens create dialog when New Household button is clicked", async () => {
     const user = userEvent.setup();
     mockUseHouseholds.mockReturnValue({ data: { data: [] }, isLoading: false, isError: false });
-    render(<HouseholdsPage />);
+    renderPage();
 
     expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
     await user.click(screen.getByRole("button", { name: /new household/i }));

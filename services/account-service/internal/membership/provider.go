@@ -25,3 +25,17 @@ func getByHouseholdAndUser(householdID, userID uuid.UUID) database.EntityProvide
 		return db.Where("household_id = ? AND user_id = ?", householdID, userID)
 	})
 }
+
+func getByHousehold(householdID uuid.UUID) database.EntityProvider[[]Entity] {
+	return database.SliceQuery[Entity](func(db *gorm.DB) *gorm.DB {
+		return db.Where("household_id = ?", householdID)
+	})
+}
+
+func countOwnersByHousehold(db *gorm.DB, householdID uuid.UUID) (int64, error) {
+	var count int64
+	err := db.Model(&Entity{}).
+		Where("household_id = ? AND role = 'owner'", householdID).
+		Count(&count).Error
+	return count, err
+}

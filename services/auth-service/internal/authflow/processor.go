@@ -80,7 +80,7 @@ func (p *Processor) HandleCallbackWithUserInfo(userInfo *oidc.UserInfo) (Callbac
 	}
 
 	// Issue tokens — tenant/household will be zeros until account-service onboarding
-	accessToken, err := p.issuer.Issue(u.Id(), [16]byte{}, [16]byte{})
+	accessToken, err := p.issuer.Issue(u.Id(), u.Email(), [16]byte{}, [16]byte{})
 	if err != nil {
 		return CallbackResult{}, err
 	}
@@ -105,8 +105,15 @@ func (p *Processor) HandleRefresh(oldRefreshToken string) (RefreshResult, error)
 		return RefreshResult{}, err
 	}
 
+	// Look up user email for JWT claims
+	userProc := user.NewProcessor(p.l, p.ctx, p.db)
+	u, err := userProc.ByIDProvider(userID)()
+	if err != nil {
+		return RefreshResult{}, fmt.Errorf("failed to look up user: %w", err)
+	}
+
 	// Issue new access token — tenant/household zeros (frontend resolves via context endpoint)
-	accessToken, err := p.issuer.Issue(userID, [16]byte{}, [16]byte{})
+	accessToken, err := p.issuer.Issue(userID, u.Email(), [16]byte{}, [16]byte{})
 	if err != nil {
 		return RefreshResult{}, err
 	}

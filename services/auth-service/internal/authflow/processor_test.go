@@ -114,9 +114,13 @@ func TestHandleRefresh(t *testing.T) {
 	issuer := testIssuer(t)
 
 	// Create a user and refresh token first
-	userID := uuid.New()
+	userProc := user.NewProcessor(l, context.Background(), db)
+	u, err := userProc.FindOrCreate("refresh@example.com", "Refresh User", "Refresh", "User", "")
+	if err != nil {
+		t.Fatalf("create user: %v", err)
+	}
 	rtProc := refreshtoken.NewProcessor(l, context.Background(), db)
-	oldRaw, err := rtProc.Create(userID)
+	oldRaw, err := rtProc.Create(u.Id())
 	if err != nil {
 		t.Fatalf("create refresh token: %v", err)
 	}

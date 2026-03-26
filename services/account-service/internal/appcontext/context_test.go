@@ -6,6 +6,7 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/jtumidanski/home-hub/services/account-service/internal/household"
+	"github.com/jtumidanski/home-hub/services/account-service/internal/invitation"
 	"github.com/jtumidanski/home-hub/services/account-service/internal/membership"
 	"github.com/jtumidanski/home-hub/services/account-service/internal/preference"
 	"github.com/jtumidanski/home-hub/services/account-service/internal/tenant"
@@ -27,6 +28,7 @@ func setupTestDB(t *testing.T) *gorm.DB {
 	db.AutoMigrate(&household.Entity{})
 	db.AutoMigrate(&membership.Entity{})
 	db.AutoMigrate(&preference.Entity{})
+	db.AutoMigrate(&invitation.Entity{})
 	return db
 }
 
@@ -117,7 +119,7 @@ func TestResolve(t *testing.T) {
 			ctx := context.Background()
 
 			tenantID, userID := tt.setup(t, db)
-			resolved, err := Resolve(l, ctx, db, tenantID, userID)
+			resolved, err := Resolve(l, ctx, db, tenantID, userID, "")
 
 			if tt.wantErr {
 				if err == nil {

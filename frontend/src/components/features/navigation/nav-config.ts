@@ -5,6 +5,7 @@ export interface NavItem {
   icon: LucideIcon;
   label: string;
   end?: boolean;
+  badgeKey?: string;
 }
 
 export interface NavGroup {
@@ -41,7 +42,7 @@ export const navGroups: NavGroup[] = [
     key: "management",
     label: "Management",
     items: [
-      { to: "/app/households", icon: Home, label: "Households" },
+      { to: "/app/households", icon: Home, label: "Households", badgeKey: "pendingInvitationCount" },
     ],
   },
 ];

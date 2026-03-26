@@ -51,7 +51,7 @@ func TestIssue_ProducesValidJWT(t *testing.T) {
 	tenantID := uuid.New()
 	householdID := uuid.New()
 
-	tokenStr, err := issuer.Issue(userID, tenantID, householdID)
+	tokenStr, err := issuer.Issue(userID, "test@example.com", tenantID, householdID)
 	if err != nil {
 		t.Fatalf("unexpected error issuing: %v", err)
 	}
@@ -69,6 +69,9 @@ func TestIssue_ProducesValidJWT(t *testing.T) {
 	}
 	if claims.UserID != userID {
 		t.Errorf("expected user ID %s, got %s", userID, claims.UserID)
+	}
+	if claims.Email != "test@example.com" {
+		t.Errorf("expected email test@example.com, got %s", claims.Email)
 	}
 	if claims.TenantID != tenantID {
 		t.Errorf("expected tenant ID %s, got %s", tenantID, claims.TenantID)
@@ -88,7 +91,7 @@ func TestIssue_IncludesKid(t *testing.T) {
 		t.Fatalf("unexpected error: %v", err)
 	}
 
-	tokenStr, err := issuer.Issue(uuid.New(), uuid.New(), uuid.New())
+	tokenStr, err := issuer.Issue(uuid.New(), "test@example.com", uuid.New(), uuid.New())
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
