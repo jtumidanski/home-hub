@@ -1,5 +1,6 @@
 import { useRef, useEffect } from "react";
 import type { CalendarEvent } from "@/types/models/calendar";
+import { useTenant } from "@/context/tenant-context";
 import { EventBlock } from "./event-block";
 import { AllDayEventRow } from "./all-day-event-row";
 import {
@@ -9,6 +10,7 @@ import {
   getWeekDays,
   isToday,
   formatHour,
+  getTimeInZone,
   getEventPosition,
   getEventsForDay,
   layoutOverlappingEvents,
@@ -20,6 +22,8 @@ interface CalendarGridProps {
 }
 
 export function CalendarGrid({ weekStart, events }: CalendarGridProps) {
+  const { household } = useTenant();
+  const timezone = household?.attributes.timezone;
   const scrollRef = useRef<HTMLDivElement>(null);
   const days = getWeekDays(weekStart);
   const hours = Array.from({ length: END_HOUR - START_HOUR }, (_, i) => START_HOUR + i);
@@ -27,13 +31,13 @@ export function CalendarGrid({ weekStart, events }: CalendarGridProps) {
   useEffect(() => {
     if (scrollRef.current) {
       const now = new Date();
-      const currentHour = now.getHours();
+      const { hours: currentHour } = getTimeInZone(now, timezone);
       const scrollTo = Math.max(0, (currentHour - START_HOUR - 1) * HOUR_HEIGHT);
       scrollRef.current.scrollTop = scrollTo;
     }
-  }, []);
+  }, [timezone]);
 
-  const allDayByDay = days.map((day) => getEventsForDay(events, day).allDay);
+  const allDayByDay = days.map((day) => getEventsForDay(events, day, timezone).allDay);
   const hasAllDay = allDayByDay.some((d) => d.length > 0);
 
   return (
@@ -45,13 +49,13 @@ export function CalendarGrid({ weekStart, events }: CalendarGridProps) {
           <div
             key={i}
             className={`flex-1 text-center py-2 border-r last:border-r-0 ${
-              isToday(day) ? "bg-primary/10" : ""
+              isToday(day, timezone) ? "bg-primary/10" : ""
             }`}
           >
             <div className="text-xs text-muted-foreground uppercase">
               {day.toLocaleDateString("en-US", { weekday: "short" })}
             </div>
-            <div className={`text-lg font-semibold ${isToday(day) ? "text-primary" : ""}`}>
+            <div className={`text-lg font-semibold ${isToday(day, timezone) ? "text-primary" : ""}`}>
               {day.getDate()}
             </div>
           </div>
@@ -90,12 +94,13 @@ export function CalendarGrid({ weekStart, events }: CalendarGridProps) {
 
           {/* Day columns */}
           {days.map((day, dayIdx) => {
-            const { timed } = getEventsForDay(events, day);
+            const { timed } = getEventsForDay(events, day, timezone);
             const positioned = layoutOverlappingEvents(timed);
-            const today = isToday(day);
+            const today = isToday(day, timezone);
             const now = new Date();
+            const nowTz = getTimeInZone(now, timezone);
             const currentTimeTop = today
-              ? ((now.getHours() - START_HOUR) * 60 + now.getMinutes()) / 60 * HOUR_HEIGHT
+              ? ((nowTz.hours - START_HOUR) * 60 + nowTz.minutes) / 60 * HOUR_HEIGHT
               : -1;
 
             return (
@@ -124,7 +129,7 @@ export function CalendarGrid({ weekStart, events }: CalendarGridProps) {
 
                 {/* Events */}
                 {positioned.map(({ event, column, totalColumns }) => {
-                  const { top, height } = getEventPosition(event, day);
+                  const { top, height } = getEventPosition(event, day, timezone);
                   const colWidth = 100 / totalColumns;
                   return (
                     <EventBlock

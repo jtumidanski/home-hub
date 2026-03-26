@@ -2,7 +2,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { calendarService } from "@/services/api/calendar";
 import { useTenant } from "@/context/tenant-context";
-import { getErrorMessage } from "@/lib/api/errors";
+import { createErrorFromUnknown, getErrorMessage } from "@/lib/api/errors";
 import type { Tenant } from "@/types/models/tenant";
 import type { Household } from "@/types/models/household";
 
@@ -68,7 +68,6 @@ export function useDisconnectCalendar() {
   return useMutation({
     mutationFn: (id: string) => calendarService.deleteConnection(tenant!, id),
     onSettled: () => {
-      qc.invalidateQueries({ queryKey: calendarKeys.connections(tenant, household) });
       qc.invalidateQueries({ queryKey: calendarKeys.all(tenant, household) });
     },
     onError: (error) => {
@@ -99,13 +98,18 @@ export function useTriggerSync() {
   return useMutation({
     mutationFn: (connectionId: string) => calendarService.triggerSync(tenant!, connectionId),
     onSettled: () => {
-      qc.invalidateQueries({ queryKey: calendarKeys.connections(tenant, household) });
+      qc.invalidateQueries({ queryKey: calendarKeys.all(tenant, household) });
     },
     onSuccess: () => {
       toast.success("Sync triggered");
     },
     onError: (error) => {
-      toast.error(getErrorMessage(error, "Sync failed — try again in a few minutes"));
+      const appError = createErrorFromUnknown(error);
+      if (appError.type === "rate-limited") {
+        toast.error("Sync rate limited — try again in 5 minutes");
+      } else {
+        toast.error(getErrorMessage(error, "Sync failed"));
+      }
     },
   });
 }

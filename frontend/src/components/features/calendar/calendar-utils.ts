@@ -5,6 +5,52 @@ export const START_HOUR = 6;
 export const END_HOUR = 23;
 export const TOTAL_HOURS = END_HOUR - START_HOUR;
 
+/**
+ * Extract the hour and minute of a Date in a given IANA timezone.
+ * Falls back to local time if the timezone is not provided or invalid.
+ */
+export function getTimeInZone(date: Date, timezone?: string): { hours: number; minutes: number } {
+  if (!timezone) {
+    return { hours: date.getHours(), minutes: date.getMinutes() };
+  }
+  try {
+    const parts = new Intl.DateTimeFormat("en-US", {
+      timeZone: timezone,
+      hour: "numeric",
+      minute: "numeric",
+      hour12: false,
+    }).formatToParts(date);
+    const hour = Number(parts.find((p) => p.type === "hour")?.value ?? date.getHours());
+    const minute = Number(parts.find((p) => p.type === "minute")?.value ?? date.getMinutes());
+    return { hours: hour === 24 ? 0 : hour, minutes: minute };
+  } catch {
+    return { hours: date.getHours(), minutes: date.getMinutes() };
+  }
+}
+
+/**
+ * Get the calendar date parts (year, month, day) for a Date in a given timezone.
+ */
+export function getDateInZone(date: Date, timezone?: string): { year: number; month: number; day: number } {
+  if (!timezone) {
+    return { year: date.getFullYear(), month: date.getMonth() + 1, day: date.getDate() };
+  }
+  try {
+    const parts = new Intl.DateTimeFormat("en-US", {
+      timeZone: timezone,
+      year: "numeric",
+      month: "numeric",
+      day: "numeric",
+    }).formatToParts(date);
+    const year = Number(parts.find((p) => p.type === "year")?.value ?? date.getFullYear());
+    const month = Number(parts.find((p) => p.type === "month")?.value ?? date.getMonth() + 1);
+    const day = Number(parts.find((p) => p.type === "day")?.value ?? date.getDate());
+    return { year, month, day };
+  } catch {
+    return { year: date.getFullYear(), month: date.getMonth() + 1, day: date.getDate() };
+  }
+}
+
 export function getWeekDays(startDate: Date): Date[] {
   const days: Date[] = [];
   for (let i = 0; i < 7; i++) {
@@ -23,12 +69,14 @@ export function getStartOfWeek(date: Date): Date {
   return d;
 }
 
-export function isSameDay(a: Date, b: Date): boolean {
-  return a.getFullYear() === b.getFullYear() && a.getMonth() === b.getMonth() && a.getDate() === b.getDate();
+export function isSameDay(a: Date, b: Date, timezone?: string): boolean {
+  const aDate = getDateInZone(a, timezone);
+  const bDate = getDateInZone(b, timezone);
+  return aDate.year === bDate.year && aDate.month === bDate.month && aDate.day === bDate.day;
 }
 
-export function isToday(date: Date): boolean {
-  return isSameDay(date, new Date());
+export function isToday(date: Date, timezone?: string): boolean {
+  return isSameDay(date, new Date(), timezone);
 }
 
 export function formatDateRange(start: Date, end: Date): string {
@@ -50,12 +98,15 @@ export function formatHour(hour: number): string {
   return `${hour - 12} PM`;
 }
 
-export function getEventPosition(event: CalendarEvent, _dayStart: Date): { top: number; height: number } {
+export function getEventPosition(event: CalendarEvent, _dayStart: Date, timezone?: string): { top: number; height: number } {
   const start = new Date(event.attributes.startTime);
   const end = new Date(event.attributes.endTime);
 
-  const startMinutes = (start.getHours() - START_HOUR) * 60 + start.getMinutes();
-  const endMinutes = (end.getHours() - START_HOUR) * 60 + end.getMinutes();
+  const startTz = getTimeInZone(start, timezone);
+  const endTz = getTimeInZone(end, timezone);
+
+  const startMinutes = (startTz.hours - START_HOUR) * 60 + startTz.minutes;
+  const endMinutes = (endTz.hours - START_HOUR) * 60 + endTz.minutes;
 
   const top = Math.max(0, (startMinutes / 60) * HOUR_HEIGHT);
   const height = Math.max(HOUR_HEIGHT / 4, ((endMinutes - startMinutes) / 60) * HOUR_HEIGHT);
@@ -133,7 +184,7 @@ export function layoutOverlappingEvents(events: CalendarEvent[]): PositionedEven
   return positioned;
 }
 
-export function getEventsForDay(events: CalendarEvent[], day: Date): { allDay: CalendarEvent[]; timed: CalendarEvent[] } {
+export function getEventsForDay(events: CalendarEvent[], day: Date, timezone?: string): { allDay: CalendarEvent[]; timed: CalendarEvent[] } {
   const dayStart = new Date(day);
   dayStart.setHours(0, 0, 0, 0);
   const dayEnd = new Date(day);
