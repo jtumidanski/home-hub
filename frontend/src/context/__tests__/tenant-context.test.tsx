@@ -50,8 +50,9 @@ function buildAppContext(overrides?: {
     type: "contexts" as const,
     attributes: {
       resolvedTheme: "light" as const,
-      resolvedRole: "member" as const,
+      resolvedRole: "viewer" as const,
       canCreateHousehold: true,
+      pendingInvitationCount: 0,
     },
     relationships: {
       tenant: { data: { id: tenantId, type: "tenants" as const } },

@@ -11,6 +11,7 @@ interface NavGroupProps {
   onItemClick?: () => void;
   iconSize?: string;
   itemPadding?: string;
+  badges?: Record<string, number>;
 }
 
 export function NavGroup({
@@ -20,6 +21,7 @@ export function NavGroup({
   onItemClick,
   iconSize = "h-4 w-4",
   itemPadding = "py-2",
+  badges = {},
 }: NavGroupProps) {
   const location = useLocation();
   const hasActiveRoute = group.items.some((item) =>
@@ -45,7 +47,7 @@ export function NavGroup({
       </CollapsiblePrimitive.Trigger>
       <CollapsiblePrimitive.Panel className="overflow-hidden transition-all duration-200 data-[state=closed]:animate-collapse data-[state=open]:animate-expand">
         <div className="space-y-0.5 pl-2">
-          {group.items.map(({ to, icon: Icon, label, end }) => (
+          {group.items.map(({ to, icon: Icon, label, end, badgeKey }) => (
             <NavLink
               key={to}
               to={to}
@@ -62,7 +64,12 @@ export function NavGroup({
               }
             >
               <Icon className={iconSize} />
-              {label}
+              <span className="flex-1">{label}</span>
+              {badgeKey && badges[badgeKey] != null && badges[badgeKey]! > 0 && (
+                <span className="ml-auto flex h-5 min-w-5 items-center justify-center rounded-full bg-primary px-1.5 text-[10px] font-medium text-primary-foreground">
+                  {badges[badgeKey]}
+                </span>
+              )}
             </NavLink>
           ))}
         </div>

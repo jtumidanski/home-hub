@@ -7,6 +7,7 @@ import (
 	"github.com/jtumidanski/home-hub/services/account-service/internal/appcontext"
 	"github.com/jtumidanski/home-hub/services/account-service/internal/config"
 	"github.com/jtumidanski/home-hub/services/account-service/internal/household"
+	"github.com/jtumidanski/home-hub/services/account-service/internal/invitation"
 	"github.com/jtumidanski/home-hub/services/account-service/internal/membership"
 	"github.com/jtumidanski/home-hub/services/account-service/internal/preference"
 	"github.com/jtumidanski/home-hub/services/account-service/internal/tenant"
@@ -29,6 +30,7 @@ func main() {
 			household.Migration,
 			membership.Migration,
 			preference.Migration,
+			invitation.Migration,
 		),
 	)
 
@@ -45,6 +47,7 @@ func main() {
 			household.InitializeRoutes(db)(l, si, api)
 			membership.InitializeRoutes(db)(l, si, api)
 			preference.InitializeRoutes(db)(l, si, api)
+			invitation.InitializeRoutes(db)(l, si, api)
 			appcontext.InitializeRoutes(db)(l, si, api)
 		}).
 		Run()

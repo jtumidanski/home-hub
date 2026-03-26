@@ -25,6 +25,12 @@ class AuthService {
     return api.post("/auth/logout");
   }
 
+  getUsersByIds(ids: string[]) {
+    return api.get<ApiListResponse<User>>(
+      `/users?filter[ids]=${ids.join(",")}`,
+    );
+  }
+
   getLoginUrl(provider: string, redirect: string = "/app") {
     return `/api/v1/auth/login/${provider}?redirect=${encodeURIComponent(redirect)}`;
   }

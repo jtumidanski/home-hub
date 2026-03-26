@@ -18,6 +18,7 @@ const accessTokenTTL = 15 * time.Minute
 type Claims struct {
 	jwtgo.RegisteredClaims
 	UserID      uuid.UUID `json:"user_id"`
+	Email       string    `json:"email"`
 	TenantID    uuid.UUID `json:"tenant_id"`
 	HouseholdID uuid.UUID `json:"household_id"`
 }
@@ -52,7 +53,7 @@ func NewIssuer(pemKey string, kid string) (*Issuer, error) {
 }
 
 // Issue creates a signed access token.
-func (i *Issuer) Issue(userID, tenantID, householdID uuid.UUID) (string, error) {
+func (i *Issuer) Issue(userID uuid.UUID, email string, tenantID, householdID uuid.UUID) (string, error) {
 	now := time.Now().UTC()
 	claims := Claims{
 		RegisteredClaims: jwtgo.RegisteredClaims{
@@ -63,6 +64,7 @@ func (i *Issuer) Issue(userID, tenantID, householdID uuid.UUID) (string, error) 
 			ID:        uuid.New().String(),
 		},
 		UserID:      userID,
+		Email:       email,
 		TenantID:    tenantID,
 		HouseholdID: householdID,
 	}

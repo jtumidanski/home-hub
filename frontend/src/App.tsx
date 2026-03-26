@@ -13,6 +13,7 @@ import { TasksPage } from "@/pages/TasksPage";
 import { RemindersPage } from "@/pages/RemindersPage";
 import { SettingsPage } from "@/pages/SettingsPage";
 import { HouseholdsPage } from "@/pages/HouseholdsPage";
+import { HouseholdMembersPage } from "@/pages/HouseholdMembersPage";
 import { WeatherPage } from "@/pages/WeatherPage";
 import { RecipesPage } from "@/pages/RecipesPage";
 import { RecipeDetailPage } from "@/pages/RecipeDetailPage";
@@ -49,6 +50,7 @@ export function App() {
                   <Route path="recipes/:id" element={<RecipeDetailPage />} />
                   <Route path="recipes/:id/edit" element={<RecipeFormPage />} />
                   <Route path="households" element={<HouseholdsPage />} />
+                  <Route path="households/:id/members" element={<HouseholdMembersPage />} />
                 </Route>
                 <Route path="*" element={<Error404Page />} />
               </Routes>

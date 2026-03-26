@@ -30,6 +30,12 @@ vi.mock("@/lib/api/errors", () => ({
   createErrorFromUnknown: (_err: unknown, fallback: string) => ({ message: fallback, type: "unknown" }),
 }));
 
+vi.mock("@/lib/hooks/api/use-invitations", () => ({
+  useMyInvitations: () => ({ data: { data: [] }, isLoading: false }),
+  useAcceptInvitation: () => ({ mutateAsync: vi.fn(), isPending: false }),
+  useDeclineInvitation: () => ({ mutateAsync: vi.fn(), isPending: false }),
+}));
+
 import { OnboardingPage } from "../OnboardingPage";
 
 function renderPage() {
@@ -48,17 +54,22 @@ describe("OnboardingPage", () => {
     });
   });
 
-  it("renders tenant creation step initially", () => {
+  it("renders tenant creation step initially", async () => {
     renderPage();
     expect(screen.getByText("Welcome to Home Hub")).toBeInTheDocument();
-    expect(screen.getByText("Let's set up your account")).toBeInTheDocument();
+    await waitFor(() => {
+      expect(screen.getByText("Let's set up your account")).toBeInTheDocument();
+    });
     expect(screen.getByText("Account Name")).toBeInTheDocument();
     expect(screen.getByPlaceholderText("e.g., The Smith Family")).toBeInTheDocument();
     expect(screen.getByRole("button", { name: /continue/i })).toBeInTheDocument();
   });
 
-  it("pre-fills tenant name from user display name", () => {
+  it("pre-fills tenant name from user display name", async () => {
     renderPage();
+    await waitFor(() => {
+      expect(screen.getByPlaceholderText("e.g., The Smith Family")).toBeInTheDocument();
+    });
     const input = screen.getByPlaceholderText("e.g., The Smith Family");
     expect(input).toHaveValue("Test User's Home");
   });

@@ -20,6 +20,7 @@ import (
 type Claims struct {
 	jwt.RegisteredClaims
 	UserID      uuid.UUID `json:"user_id"`
+	Email       string    `json:"email"`
 	TenantID    uuid.UUID `json:"tenant_id"`
 	HouseholdID uuid.UUID `json:"household_id"`
 }

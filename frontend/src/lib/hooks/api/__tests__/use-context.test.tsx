@@ -42,7 +42,7 @@ describe("useAppContext hook", () => {
       data: {
         id: "current",
         type: "contexts",
-        attributes: { resolvedTheme: "dark", resolvedRole: "owner", canCreateHousehold: true },
+        attributes: { resolvedTheme: "dark", resolvedRole: "owner", canCreateHousehold: true, pendingInvitationCount: 0 },
         relationships: {
           tenant: { data: { type: "tenants", id: "t-1" } },
           activeHousehold: { data: { type: "households", id: "hh-1" } },

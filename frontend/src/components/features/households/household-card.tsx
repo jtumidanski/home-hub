@@ -1,5 +1,7 @@
-import { Home, MapPin } from "lucide-react";
+import { Link } from "react-router-dom";
+import { Home, MapPin, Users } from "lucide-react";
 import { type Household } from "@/types/models/household";
+import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { LocationSearch } from "@/components/features/weather/location-search";
@@ -53,6 +55,11 @@ export function HouseholdCard({ household, isActive }: HouseholdCardProps) {
               {attributes.timezone} &middot; {attributes.units}
             </p>
           </div>
+          <Link to={`/app/households/${household.id}/members`}>
+            <Button variant="ghost" size="sm" className="gap-1">
+              <Users className="h-3.5 w-3.5" />Members
+            </Button>
+          </Link>
           {isActive && <Badge>Active</Badge>}
         </div>
         <div>

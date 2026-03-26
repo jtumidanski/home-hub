@@ -27,6 +27,10 @@ func (p *Processor) ByEmailProvider(email string) model.Provider[Model] {
 	return byEmailProvider(email)(p.db.WithContext(p.ctx))
 }
 
+func (p *Processor) ByIDsProvider(ids []uuid.UUID) model.Provider[[]Model] {
+	return model.SliceMap(modelFromEntity)(getByIDs(ids)(p.db.WithContext(p.ctx)))
+}
+
 func (p *Processor) FindOrCreate(email, displayName, givenName, familyName, avatarURL string) (Model, error) {
 	m, err := p.ByEmailProvider(email)()
 	if err == nil {

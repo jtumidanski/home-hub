@@ -55,3 +55,11 @@ func (p *Processor) SetActiveHousehold(id uuid.UUID, householdID uuid.UUID) (Mod
 	}
 	return Make(e)
 }
+
+func (p *Processor) ClearActiveHousehold(id uuid.UUID) (Model, error) {
+	e, err := clearActiveHousehold(p.db.WithContext(p.ctx), id)
+	if err != nil {
+		return Model{}, err
+	}
+	return Make(e)
+}

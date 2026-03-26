@@ -1,7 +1,8 @@
 export interface ContextAttributes {
   resolvedTheme: "light" | "dark";
-  resolvedRole: "admin" | "member" | "owner";
+  resolvedRole: "owner" | "admin" | "editor" | "viewer";
   canCreateHousehold: boolean;
+  pendingInvitationCount: number;
 }
 
 export interface AppContext {
@@ -19,9 +20,10 @@ export interface AppContext {
 // --- Label maps (F15) ---
 
 export const resolvedRoleLabelMap: Record<ContextAttributes["resolvedRole"], string> = {
-  admin: "Admin",
-  member: "Member",
   owner: "Owner",
+  admin: "Admin",
+  editor: "Editor",
+  viewer: "Viewer",
 };
 
 export const resolvedThemeLabelMap: Record<ContextAttributes["resolvedTheme"], string> = {

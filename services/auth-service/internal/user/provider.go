@@ -34,3 +34,9 @@ func byEmailProvider(email string) func(db *gorm.DB) model.Provider[Model] {
 		return model.Map(modelFromEntity)(getByEmail(email)(db))
 	}
 }
+
+func getByIDs(ids []uuid.UUID) database.EntityProvider[[]Entity] {
+	return database.SliceQuery[Entity](func(db *gorm.DB) *gorm.DB {
+		return db.Where("id IN ?", ids)
+	})
+}

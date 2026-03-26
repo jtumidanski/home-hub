@@ -6,6 +6,7 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/jtumidanski/home-hub/services/account-service/internal/household"
+	"github.com/jtumidanski/home-hub/services/account-service/internal/invitation"
 	"github.com/jtumidanski/home-hub/services/account-service/internal/membership"
 	"github.com/jtumidanski/home-hub/services/account-service/internal/preference"
 	"github.com/jtumidanski/home-hub/services/account-service/internal/tenant"
@@ -16,18 +17,20 @@ import (
 
 // Resolved holds the fully resolved application context for a user.
 type Resolved struct {
-	Tenant             tenant.Model
-	ActiveHousehold    *household.Model
-	Preference         preference.Model
-	Memberships        []membership.Model
-	ResolvedRole       string
-	CanCreateHousehold bool
+	Tenant                 tenant.Model
+	ActiveHousehold        *household.Model
+	Preference             preference.Model
+	Memberships            []membership.Model
+	ResolvedRole           string
+	CanCreateHousehold     bool
+	PendingInvitationCount int64
 }
 
 // Resolve builds the current application context for the given user and tenant.
 // If tenantID is nil, the tenant is resolved from the user's first membership.
 // Context resolution bypasses tenant filtering since it is the bootstrapping query.
-func Resolve(l logrus.FieldLogger, ctx context.Context, db *gorm.DB, tenantID, userID uuid.UUID) (*Resolved, error) {
+// userEmail is used to query pending invitation count (may be empty if unavailable).
+func Resolve(l logrus.FieldLogger, ctx context.Context, db *gorm.DB, tenantID, userID uuid.UUID, userEmail string) (*Resolved, error) {
 	// Bypass tenant filtering — this is the bootstrapping query that establishes
 	// which tenant the user belongs to.
 	ctx = database.WithoutTenantFilter(ctx)
@@ -96,6 +99,17 @@ func Resolve(l logrus.FieldLogger, ctx context.Context, db *gorm.DB, tenantID, u
 	// Resolve role based on active household membership
 	resolved.ResolvedRole = resolveRole(memberships, resolved.ActiveHousehold)
 	resolved.CanCreateHousehold = resolved.ResolvedRole == "owner"
+
+	// Count pending invitations for this user's email (bypasses tenant filter)
+	if userEmail != "" {
+		invProc := invitation.NewProcessor(l, ctx, db)
+		count, err := invProc.CountByEmailPending(userEmail)
+		if err != nil {
+			l.WithError(err).Warn("Failed to count pending invitations")
+		} else {
+			resolved.PendingInvitationCount = count
+		}
+	}
 
 	return resolved, nil
 }
