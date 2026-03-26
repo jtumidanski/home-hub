@@ -10,8 +10,11 @@ import { ConnectCalendarButton } from "@/components/features/calendar/connect-ca
 import { ConnectionStatus } from "@/components/features/calendar/connection-status";
 import { CalendarSelectionPanel } from "@/components/features/calendar/calendar-selection-panel";
 import { useCalendarConnections, useCalendarEvents, useCalendarSources } from "@/lib/hooks/api/use-calendar";
+import { usePackages } from "@/lib/hooks/api/use-packages";
+import { packagesToCalendarEvents } from "@/components/features/packages/package-calendar-overlay";
 import { getStartOfWeek, formatDateRange } from "@/components/features/calendar/calendar-utils";
 import type { CalendarConnection, CalendarEvent } from "@/types/models/calendar";
+import type { Package } from "@/types/models/package";
 
 const MD_BREAKPOINT = 768;
 const mql = typeof window !== "undefined" ? window.matchMedia(`(min-width: ${MD_BREAKPOINT}px)`) : null;
@@ -72,9 +75,13 @@ export function CalendarPage() {
 
   const connectionsQuery = useCalendarConnections();
   const eventsQuery = useCalendarEvents(startISO, endISO);
+  const packagesQuery = usePackages("filter[status]=pre_transit,in_transit,out_for_delivery&filter[hasEta]=true");
 
   const connections = (connectionsQuery.data?.data ?? []) as CalendarConnection[];
-  const events = (eventsQuery.data?.data ?? []) as CalendarEvent[];
+  const calendarEvents = (eventsQuery.data?.data ?? []) as CalendarEvent[];
+  const packages = (packagesQuery.data?.data ?? []) as Package[];
+  const packageEvents = useMemo(() => packagesToCalendarEvents(packages), [packages]);
+  const events = useMemo(() => [...calendarEvents, ...packageEvents], [calendarEvents, packageEvents]);
   const hasCalendar = connections.length > 0 || events.length > 0;
 
   // Derive unique users from events so all household members see the color legend,
