@@ -1,6 +1,6 @@
 # REST API
 
-All endpoints are prefixed with `/api/v1` and require JWT authentication. Request and response bodies use JSON:API format. Tenant and household context are provided via `X-Tenant-ID` and `X-Household-ID` headers.
+All endpoints are prefixed with `/api/v1`. Unless noted otherwise, endpoints require JWT authentication. Request and response bodies use JSON:API format. Tenant and household context are derived from the JWT.
 
 ## Endpoints
 
@@ -43,7 +43,7 @@ Initiates Google Calendar OAuth consent flow. Returns a redirect URL.
 
 ### GET /api/v1/calendar/connections/google/callback
 
-Handles the OAuth callback from Google. Not called directly by the frontend.
+Handles the OAuth callback from Google. Not called directly by the frontend. **This endpoint does not require JWT authentication.**
 
 **Parameters:**
 
