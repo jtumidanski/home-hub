@@ -13,6 +13,7 @@ import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { UserAvatar } from "@/components/ui/user-avatar";
 import { ArrowLeft, Plus, UserMinus, LogOut, Mail, AlertTriangle, Clock, X } from "lucide-react";
 import { createErrorFromUnknown } from "@/lib/api/errors";
 import type { Membership } from "@/types/models/membership";
@@ -162,6 +163,15 @@ export function HouseholdMembersPage() {
 
             return (
               <div key={member.id} className="flex items-center justify-between gap-3 rounded-md border p-3">
+                {u && (
+                  <UserAvatar
+                    avatarUrl={u.attributes.avatarUrl}
+                    providerAvatarUrl={u.attributes.providerAvatarUrl}
+                    displayName={u.attributes.displayName}
+                    userId={u.id}
+                    size="md"
+                  />
+                )}
                 <div className="min-w-0 flex-1">
                   <div className="flex items-center gap-2">
                     <p className="font-medium truncate">

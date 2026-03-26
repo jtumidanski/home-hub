@@ -2,11 +2,18 @@ package user
 
 import (
 	"context"
+	"errors"
+	"regexp"
 
 	"github.com/google/uuid"
 	"github.com/jtumidanski/home-hub/shared/go/model"
 	"github.com/sirupsen/logrus"
 	"gorm.io/gorm"
+)
+
+var (
+	ErrInvalidAvatarFormat = errors.New("avatar must be dicebear:{style}:{seed} or empty")
+	validAvatarPattern     = regexp.MustCompile(`^dicebear:(adventurer|bottts|fun-emoji):[a-zA-Z0-9]{1,64}$`)
 )
 
 type Processor struct {
@@ -42,4 +49,39 @@ func (p *Processor) FindOrCreate(email, displayName, givenName, familyName, avat
 		return Model{}, err
 	}
 	return Make(e)
+}
+
+// UpdateProviderAvatar updates the provider_avatar_url column without touching the user-selected avatar_url.
+func (p *Processor) UpdateProviderAvatar(userID uuid.UUID, url string) error {
+	return p.db.WithContext(p.ctx).
+		Model(&Entity{}).
+		Where("id = ?", userID).
+		Update("provider_avatar_url", url).Error
+}
+
+// ValidateAvatarFormat checks that avatarURL is either empty or matches dicebear:{style}:{seed}.
+func ValidateAvatarFormat(avatarURL string) error {
+	if avatarURL == "" {
+		return nil
+	}
+	if !validAvatarPattern.MatchString(avatarURL) {
+		return ErrInvalidAvatarFormat
+	}
+	return nil
+}
+
+// UpdateAvatar validates and persists a user-selected avatar.
+func (p *Processor) UpdateAvatar(userID uuid.UUID, avatarURL string) (Model, error) {
+	if err := ValidateAvatarFormat(avatarURL); err != nil {
+		return Model{}, err
+	}
+
+	if err := p.db.WithContext(p.ctx).
+		Model(&Entity{}).
+		Where("id = ?", userID).
+		Update("avatar_url", avatarURL).Error; err != nil {
+		return Model{}, err
+	}
+
+	return p.ByIDProvider(userID)()
 }

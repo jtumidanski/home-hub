@@ -1,6 +1,6 @@
 import { api, type RequestOptions } from "@/lib/api/client";
 import type { ApiListResponse, ApiResponse } from "@/types/api/responses";
-import type { User } from "@/types/models/user";
+import type { User, UserUpdateAttributes } from "@/types/models/user";
 
 export interface AuthProvider {
   type: "auth-providers";
@@ -23,6 +23,12 @@ class AuthService {
 
   logout() {
     return api.post("/auth/logout");
+  }
+
+  updateMe(attributes: UserUpdateAttributes) {
+    return api.patch<ApiResponse<User>>("/users/me", {
+      data: { type: "users", attributes },
+    });
   }
 
   getUsersByIds(ids: string[]) {

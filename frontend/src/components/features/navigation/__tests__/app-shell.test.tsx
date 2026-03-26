@@ -57,7 +57,10 @@ describe("AppShell", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     mockUseAuth.mockReturnValue({
-      user: { attributes: { displayName: "Test User", email: "test@example.com" } },
+      user: {
+        id: "test-user-id",
+        attributes: { displayName: "Test User", email: "test@example.com", avatarUrl: "", providerAvatarUrl: "" },
+      },
     });
   });
 

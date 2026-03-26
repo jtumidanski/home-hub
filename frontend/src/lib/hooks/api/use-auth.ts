@@ -1,5 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { authService } from "@/services/api/auth";
+import { userKeys } from "@/lib/hooks/api/use-users";
+import type { UserUpdateAttributes } from "@/types/models/user";
 
 // --- Key factory ---
 // Pattern C (tenant-agnostic): auth endpoints are not tenant-scoped.
@@ -33,6 +35,18 @@ export function useProviders() {
 }
 
 // --- Mutation hooks ---
+
+export function useUpdateMe() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (attributes: UserUpdateAttributes) =>
+      authService.updateMe(attributes),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: authKeys.me() });
+      qc.invalidateQueries({ queryKey: userKeys.all });
+    },
+  });
+}
 
 export function useLogout() {
   return useMutation({

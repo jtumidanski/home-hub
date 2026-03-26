@@ -1,6 +1,7 @@
 package user
 
 import (
+	"errors"
 	"net/http"
 	"strings"
 
@@ -17,7 +18,9 @@ import (
 func InitializeRoutes(db *gorm.DB, issuer *authjwt.Issuer) func(l logrus.FieldLogger, si jsonapi.ServerInformation, api *mux.Router) {
 	return func(l logrus.FieldLogger, si jsonapi.ServerInformation, api *mux.Router) {
 		rh := server.RegisterHandler(l)(si)
+		rih := server.RegisterInputHandler[UpdateRequest](l)(si)
 		api.HandleFunc("/users/me", rh("GetMe", getMeHandler(db, issuer))).Methods(http.MethodGet)
+		api.HandleFunc("/users/me", rih("PatchMe", patchMeHandler(db, issuer))).Methods(http.MethodPatch)
 		api.HandleFunc("/users", rh("ListUsers", listUsersHandler(db, issuer))).Methods(http.MethodGet)
 	}
 }
@@ -39,6 +42,38 @@ func getMeHandler(db *gorm.DB, issuer *authjwt.Issuer) server.GetHandler {
 			}
 
 			rest, err := Transform(u)
+			if err != nil {
+				d.Logger().WithError(err).Error("Creating REST model")
+				w.WriteHeader(http.StatusInternalServerError)
+				return
+			}
+			server.MarshalResponse[RestModel](d.Logger())(w)(c.ServerInformation())(map[string][]string{})(rest)
+		}
+	}
+}
+
+func patchMeHandler(db *gorm.DB, issuer *authjwt.Issuer) server.InputHandler[UpdateRequest] {
+	return func(d *server.HandlerDependency, c *server.HandlerContext, input UpdateRequest) http.HandlerFunc {
+		return func(w http.ResponseWriter, r *http.Request) {
+			claims, err := authjwt.ExtractClaimsFromCookie(r, issuer.PublicKey())
+			if err != nil {
+				server.WriteError(w, http.StatusUnauthorized, "Unauthorized", "Invalid or missing token")
+				return
+			}
+
+			proc := NewProcessor(d.Logger(), r.Context(), db)
+			updated, err := proc.UpdateAvatar(claims.UserID, input.AvatarURL)
+			if err != nil {
+				if errors.Is(err, ErrInvalidAvatarFormat) {
+					server.WriteError(w, http.StatusUnprocessableEntity, "Invalid Avatar", err.Error())
+					return
+				}
+				d.Logger().WithError(err).Error("Updating avatar")
+				w.WriteHeader(http.StatusInternalServerError)
+				return
+			}
+
+			rest, err := Transform(updated)
 			if err != nil {
 				d.Logger().WithError(err).Error("Creating REST model")
 				w.WriteHeader(http.StatusInternalServerError)

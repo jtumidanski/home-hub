@@ -79,6 +79,85 @@ func addAuthCookie(t *testing.T, r *http.Request, issuer *authjwt.Issuer, userID
 	return r
 }
 
+func TestPatchMeHandler(t *testing.T) {
+	t.Run("sets dicebear avatar", func(t *testing.T) {
+		db := setupResourceTestDB(t)
+		issuer := testResourceIssuer(t)
+		router := setupRouter(t, db, issuer)
+
+		u := createUser(t, db, "patch@example.com", "Patch User")
+		body := `{"data":{"type":"users","attributes":{"avatarUrl":"dicebear:adventurer:seed123"}}}`
+		req := httptest.NewRequest(http.MethodPatch, "/users/me", strings.NewReader(body))
+		req.Header.Set("Content-Type", "application/vnd.api+json")
+		req = addAuthCookie(t, req, issuer, u.Id(), u.Email())
+		w := httptest.NewRecorder()
+
+		router.ServeHTTP(w, req)
+
+		if w.Code != http.StatusOK {
+			t.Errorf("expected 200, got %d: %s", w.Code, w.Body.String())
+		}
+		if !strings.Contains(w.Body.String(), "dicebear:adventurer:seed123") {
+			t.Error("expected dicebear avatar in response")
+		}
+	})
+
+	t.Run("clears avatar with empty string", func(t *testing.T) {
+		db := setupResourceTestDB(t)
+		issuer := testResourceIssuer(t)
+		router := setupRouter(t, db, issuer)
+
+		u := createUser(t, db, "clear@example.com", "Clear User")
+		body := `{"data":{"type":"users","attributes":{"avatarUrl":""}}}`
+		req := httptest.NewRequest(http.MethodPatch, "/users/me", strings.NewReader(body))
+		req.Header.Set("Content-Type", "application/vnd.api+json")
+		req = addAuthCookie(t, req, issuer, u.Id(), u.Email())
+		w := httptest.NewRecorder()
+
+		router.ServeHTTP(w, req)
+
+		if w.Code != http.StatusOK {
+			t.Errorf("expected 200, got %d: %s", w.Code, w.Body.String())
+		}
+	})
+
+	t.Run("invalid format returns 422", func(t *testing.T) {
+		db := setupResourceTestDB(t)
+		issuer := testResourceIssuer(t)
+		router := setupRouter(t, db, issuer)
+
+		u := createUser(t, db, "invalid@example.com", "Invalid User")
+		body := `{"data":{"type":"users","attributes":{"avatarUrl":"https://evil.com/hack.png"}}}`
+		req := httptest.NewRequest(http.MethodPatch, "/users/me", strings.NewReader(body))
+		req.Header.Set("Content-Type", "application/vnd.api+json")
+		req = addAuthCookie(t, req, issuer, u.Id(), u.Email())
+		w := httptest.NewRecorder()
+
+		router.ServeHTTP(w, req)
+
+		if w.Code != http.StatusUnprocessableEntity {
+			t.Errorf("expected 422, got %d: %s", w.Code, w.Body.String())
+		}
+	})
+
+	t.Run("unauthenticated returns 401", func(t *testing.T) {
+		db := setupResourceTestDB(t)
+		issuer := testResourceIssuer(t)
+		router := setupRouter(t, db, issuer)
+
+		body := `{"data":{"type":"users","attributes":{"avatarUrl":"dicebear:adventurer:seed"}}}`
+		req := httptest.NewRequest(http.MethodPatch, "/users/me", strings.NewReader(body))
+		req.Header.Set("Content-Type", "application/vnd.api+json")
+		w := httptest.NewRecorder()
+
+		router.ServeHTTP(w, req)
+
+		if w.Code != http.StatusUnauthorized {
+			t.Errorf("expected 401, got %d", w.Code)
+		}
+	})
+}
+
 func TestListUsersHandler(t *testing.T) {
 	t.Run("returns users by IDs", func(t *testing.T) {
 		db := setupResourceTestDB(t)

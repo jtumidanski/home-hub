@@ -32,6 +32,10 @@ func main() {
 		),
 	)
 
+	if err := user.MigrateAvatarData(db); err != nil {
+		l.WithError(err).Fatal("failed to migrate avatar data")
+	}
+
 	issuer, err := authjwt.NewIssuer(cfg.JWTPrivateKey, cfg.JWTKeyID)
 	if err != nil {
 		l.WithError(err).Fatal("failed to initialize JWT issuer")

@@ -104,7 +104,7 @@ function createWrapper(queryClient: QueryClient) {
 
 function mockAuthValue(appContext: ReturnType<typeof buildAppContext> | null) {
   return {
-    user: appContext ? { id: "user-1", type: "users" as const, attributes: { email: "test@example.com", displayName: "Test", givenName: "Test", familyName: "User", avatarUrl: "", createdAt: "2026-01-01T00:00:00Z", updatedAt: "2026-01-01T00:00:00Z" } } : null,
+    user: appContext ? { id: "user-1", type: "users" as const, attributes: { email: "test@example.com", displayName: "Test", givenName: "Test", familyName: "User", avatarUrl: "", providerAvatarUrl: "", createdAt: "2026-01-01T00:00:00Z", updatedAt: "2026-01-01T00:00:00Z" } } : null,
     appContext,
     isLoading: false,
     isAuthenticated: !!appContext,
