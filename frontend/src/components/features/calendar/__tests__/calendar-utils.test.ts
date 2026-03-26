@@ -2,7 +2,6 @@ import { describe, it, expect } from "vitest";
 import type { CalendarEvent } from "@/types/models/calendar";
 import {
   HOUR_HEIGHT,
-  START_HOUR,
   getStartOfWeek,
   getWeekDays,
   isSameDay,
@@ -21,13 +20,12 @@ function makeEvent(overrides: Partial<CalendarEvent["attributes"]> & { id?: stri
     id,
     type: "calendar-events",
     attributes: {
-      connectionId: "conn-1",
-      sourceId: "src-1",
-      externalId: "ext-1",
       title: "Test Event",
+      description: null,
       startTime: "2026-03-26T10:00:00Z",
       endTime: "2026-03-26T11:00:00Z",
       allDay: false,
+      location: null,
       visibility: "default",
       isOwner: true,
       userDisplayName: "Test User",
