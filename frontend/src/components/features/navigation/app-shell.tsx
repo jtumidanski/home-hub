@@ -9,16 +9,19 @@ import { NavGroup } from "@/components/features/navigation/nav-group";
 import { UserMenu } from "@/components/features/navigation/user-menu";
 import { navGroups, settingsNavItem } from "@/components/features/navigation/nav-config";
 import { useNavGroupState } from "@/lib/hooks/use-nav-group-state";
+import { usePackageSummary } from "@/lib/hooks/api/use-packages";
 import { cn } from "@/lib/utils";
 
 export function AppShell() {
   const [drawerOpen, setDrawerOpen] = useState(false);
   const { toggleGroup, isGroupOpen } = useNavGroupState();
   const { appContext } = useAuth();
+  const { data: packageSummary } = usePackageSummary();
 
   const navBadges = useMemo(() => ({
     pendingInvitationCount: appContext?.attributes.pendingInvitationCount ?? 0,
-  }), [appContext?.attributes.pendingInvitationCount]);
+    inTransitCount: packageSummary?.data?.attributes?.inTransitCount ?? 0,
+  }), [appContext?.attributes.pendingInvitationCount, packageSummary]);
 
   return (
     <div className="flex h-screen flex-col md:flex-row overflow-hidden">

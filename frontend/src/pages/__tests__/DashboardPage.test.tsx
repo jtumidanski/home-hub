@@ -21,6 +21,10 @@ vi.mock("@/components/features/weather/weather-widget", () => ({
   WeatherWidget: () => <div data-testid="weather-widget">Weather Widget</div>,
 }));
 
+vi.mock("@/components/features/packages/package-summary-widget", () => ({
+  PackageSummaryWidget: () => null,
+}));
+
 import { DashboardPage } from "../DashboardPage";
 
 describe("DashboardPage", () => {

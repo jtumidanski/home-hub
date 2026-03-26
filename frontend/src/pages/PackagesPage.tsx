@@ -1,4 +1,4 @@
-import { useState, useCallback } from "react";
+import { useState, useCallback, useMemo } from "react";
 import { Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -30,7 +30,17 @@ export function PackagesPage() {
   const params = showArchived ? "filter[archived]=true" : undefined;
   const { data, isLoading, isError, refetch } = usePackages(params);
 
-  const packages: Package[] = (data?.data ?? []) as Package[];
+  const packages: Package[] = useMemo(() => {
+    const list = (data?.data ?? []) as Package[];
+    return [...list].sort((a, b) => {
+      const etaA = a.attributes.estimatedDelivery;
+      const etaB = b.attributes.estimatedDelivery;
+      if (!etaA && !etaB) return 0;
+      if (!etaA) return 1;
+      if (!etaB) return -1;
+      return new Date(etaA).getTime() - new Date(etaB).getTime();
+    });
+  }, [data]);
 
   const handleRefresh = useCallback(async () => {
     await refetch();
