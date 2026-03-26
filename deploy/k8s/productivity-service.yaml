@@ -17,6 +17,7 @@ spec:
       containers:
       - name: productivity-service
         image: ghcr.io/jtumidanski/home-hub-productivity-service:main
+        imagePullPolicy: Always
         ports:
         - containerPort: 8080
         env:

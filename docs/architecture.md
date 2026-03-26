@@ -28,6 +28,7 @@ Core services:
 - recipe-service
 - weather-service
 - calendar-service
+- package-service
 
 Shared modules provide common functionality but do not contain business logic.
 
@@ -56,6 +57,7 @@ Routing:
 /api/v1/recipes -> recipe-service
 /api/v1/weather -> weather-service
 /api/v1/calendar -> calendar-service
+/api/v1/packages -> package-service
 ```
 
 All services are stateless except for database persistence. Authentication is handled by auth-service. Authorization is enforced by each service using JWT claims.
@@ -184,7 +186,32 @@ Rules:
 - private/confidential events masked as "Busy" for non-owners
 - tenant scoped, household scoped
 
-### 3.7 weather-service
+### 3.7 package-service
+
+Responsibilities:
+
+- household package tracking across USPS, UPS, FedEx
+- carrier auto-detection from tracking numbers
+- background status polling with adaptive intervals
+- package lifecycle management (archive, stale detection, cleanup)
+- privacy controls per package
+
+Schema: `package.packages`, `package.tracking_events`
+
+Rules:
+
+- polls carrier APIs via OAuth 2.0 client credentials
+- per-carrier daily rate budgets (USPS: 1000, UPS: 250, FedEx: 500)
+- adaptive polling: 30m default, 15m for out-for-delivery
+- stale after 14 days with no status change
+- auto-archive delivered packages after 7 days
+- hard-delete archived packages after 30 days
+- max 25 active packages per household
+- private packages redacted for non-owners
+- manual refresh rate-limited to once per 5 minutes
+- tenant scoped, household scoped
+
+### 3.8 weather-service
 
 Responsibilities:
 
@@ -285,7 +312,7 @@ Secrets provided externally. No config files required.
 
 ## 8. Persistence
 
-Each service owns its schema: `auth.*`, `account.*`, `productivity.*`, `recipe.*`, `weather.*`, `calendar.*`. No cross-service tables.
+Each service owns its schema: `auth.*`, `account.*`, `productivity.*`, `recipe.*`, `weather.*`, `calendar.*`, `package.*`. No cross-service tables.
 
 Migrations:
 
@@ -329,6 +356,7 @@ ghcr.io/<owner>/home-hub-productivity
 ghcr.io/<owner>/home-hub-recipe
 ghcr.io/<owner>/home-hub-weather
 ghcr.io/<owner>/home-hub-calendar
+ghcr.io/<owner>/home-hub-package
 ghcr.io/<owner>/home-hub-frontend
 ```
 
@@ -350,7 +378,7 @@ Renovate enabled. Supports: Go modules, npm, GitHub Actions, Docker. Automerge d
 
 ## 15. API Testing
 
-Bruno collections under `bruno/` (`auth/`, `account/`, `productivity/`, `recipe/`, `environments/`). Used for manual endpoint testing.
+Bruno collections under `bruno/` (`auth/`, `account/`, `productivity/`, `recipe/`, `packages/`, `environments/`). Used for manual endpoint testing.
 
 ## 16. Shared Modules
 

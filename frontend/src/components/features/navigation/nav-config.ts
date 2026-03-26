@@ -1,4 +1,4 @@
-import { Home, CheckSquare, Bell, Calendar, CloudSun, UtensilsCrossed, Settings, type LucideIcon } from "lucide-react";
+import { Home, CheckSquare, Bell, Calendar, Package, CloudSun, UtensilsCrossed, Settings, type LucideIcon } from "lucide-react";
 
 export interface NavItem {
   to: string;
@@ -29,6 +29,7 @@ export const navGroups: NavGroup[] = [
       { to: "/app/tasks", icon: CheckSquare, label: "Tasks" },
       { to: "/app/reminders", icon: Bell, label: "Reminders" },
       { to: "/app/calendar", icon: Calendar, label: "Calendar" },
+      { to: "/app/packages", icon: Package, label: "Packages", badgeKey: "inTransitCount" },
     ],
   },
   {

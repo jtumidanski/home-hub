@@ -1,0 +1,29 @@
+meta {
+  name: Create Package
+  type: http
+  seq: 1
+}
+
+post {
+  url: {{baseUrl}}/api/v1/packages
+  body: json
+}
+
+headers {
+  Content-Type: application/vnd.api+json
+}
+
+body:json {
+  {
+    "data": {
+      "type": "packages",
+      "attributes": {
+        "trackingNumber": "1Z9999999999999999",
+        "carrier": "ups",
+        "label": "New shoes",
+        "notes": "Expected this week",
+        "private": false
+      }
+    }
+  }
+}

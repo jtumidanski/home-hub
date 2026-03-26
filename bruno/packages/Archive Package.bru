@@ -1,0 +1,14 @@
+meta {
+  name: Archive Package
+  type: http
+  seq: 6
+}
+
+post {
+  url: {{baseUrl}}/api/v1/packages/:id/archive
+  body: none
+}
+
+headers {
+  Accept: application/vnd.api+json
+}

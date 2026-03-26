@@ -8,6 +8,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { CheckSquare, Bell, AlertTriangle } from "lucide-react";
 import { WeatherWidget } from "@/components/features/weather/weather-widget";
+import { PackageSummaryWidget } from "@/components/features/packages/package-summary-widget";
 
 function DashboardSkeleton() {
   return (
@@ -57,6 +58,8 @@ export function DashboardPage() {
         )}
 
         <WeatherWidget />
+
+        <PackageSummaryWidget />
 
         <div className="grid gap-4 md:grid-cols-3">
           <Card>

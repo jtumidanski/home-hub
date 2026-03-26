@@ -1,0 +1,14 @@
+meta {
+  name: Get Summary
+  type: http
+  seq: 9
+}
+
+get {
+  url: {{baseUrl}}/api/v1/packages/summary
+  body: none
+}
+
+headers {
+  Accept: application/vnd.api+json
+}

@@ -19,6 +19,10 @@ vi.mock("@/lib/hooks/api/use-auth", () => ({
   useLogout: () => ({ mutate: mockLogoutMutate }),
 }));
 
+vi.mock("@/lib/hooks/api/use-packages", () => ({
+  usePackageSummary: () => ({ data: null }),
+}));
+
 vi.mock("@/components/features/households/household-switcher", () => ({
   HouseholdSwitcher: () => <div data-testid="household-switcher">Switcher</div>,
 }));
