@@ -8,6 +8,7 @@ export { accountService } from "./account";
 export { productivityService } from "./productivity";
 export { weatherService } from "./weather";
 export { recipeService } from "./recipe";
+export { calendarService } from "./calendar";
 
 // Types re-exported per service
 export type { AuthProvider } from "./auth";

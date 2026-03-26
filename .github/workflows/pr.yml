@@ -10,6 +10,7 @@ jobs:
     outputs:
       auth: ${{ steps.changes.outputs.auth }}
       account: ${{ steps.changes.outputs.account }}
+      calendar: ${{ steps.changes.outputs.calendar }}
       productivity: ${{ steps.changes.outputs.productivity }}
       weather: ${{ steps.changes.outputs.weather }}
       recipe: ${{ steps.changes.outputs.recipe }}
@@ -26,6 +27,9 @@ jobs:
               - 'shared/go/**'
             account:
               - 'services/account-service/**'
+              - 'shared/go/**'
+            calendar:
+              - 'services/calendar-service/**'
               - 'shared/go/**'
             productivity:
               - 'services/productivity-service/**'
@@ -71,6 +75,22 @@ jobs:
       - name: Test
         run: |
           cd services/account-service
+          go test ./... -count=1
+
+  build-calendar:
+    needs: detect-changes
+    if: needs.detect-changes.outputs.calendar == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version: '1.26'
+      - name: Build
+        run: go build ./services/calendar-service/...
+      - name: Test
+        run: |
+          cd services/calendar-service
           go test ./... -count=1
 
   build-productivity:
@@ -177,6 +197,10 @@ jobs:
             context: .
             dockerfile: services/account-service/Dockerfile
             changed: account
+          - service: calendar-service
+            context: .
+            dockerfile: services/calendar-service/Dockerfile
+            changed: calendar
           - service: productivity-service
             context: .
             dockerfile: services/productivity-service/Dockerfile

@@ -14,6 +14,7 @@ frontend/
 services/
   auth-service/
   account-service/
+  calendar-service/
   productivity-service/
 
 shared/go/
@@ -75,6 +76,10 @@ All services use environment variables. See `.env.example` for the full list wit
 | `OIDC_ISSUER_URL` | auth-service | no (default: `https://accounts.google.com`) |
 | `REFRESH_INTERVAL_MINUTES` | weather-service | no (default: `15`) |
 | `CACHE_TTL_MINUTES` | weather-service | no (default: `15`) |
+| `GOOGLE_CALENDAR_CLIENT_ID` | calendar-service | yes |
+| `GOOGLE_CALENDAR_CLIENT_SECRET` | calendar-service | yes |
+| `CALENDAR_TOKEN_ENCRYPTION_KEY` | calendar-service | yes (32-byte base64) |
+| `SYNC_INTERVAL_MINUTES` | calendar-service | no (default: `15`) |
 
 Local development uses `.env`. Do not commit real secrets.
 
@@ -86,7 +91,7 @@ Local development uses `.env`. Do not commit real secrets.
 ./scripts/local-down.sh  # stop compose
 ```
 
-Compose runs: nginx, frontend, auth-service, account-service, productivity-service. Database is external.
+Compose runs: nginx, frontend, auth-service, account-service, calendar-service, productivity-service, weather-service, recipe-service. Database is external.
 
 ## 6. Frontend Development
 
@@ -195,6 +200,9 @@ CI must pass before merge.
 ghcr.io/<owner>/home-hub-auth
 ghcr.io/<owner>/home-hub-account
 ghcr.io/<owner>/home-hub-productivity
+ghcr.io/<owner>/home-hub-recipe
+ghcr.io/<owner>/home-hub-weather
+ghcr.io/<owner>/home-hub-calendar
 ghcr.io/<owner>/home-hub-frontend
 ```
 
@@ -216,9 +224,10 @@ kubectl apply -f deploy/k8s/
 
 Copy `deploy/k8s/secrets.example.yaml` to `deploy/k8s/secrets.yaml` and fill in real values. The example uses `stringData` so values are plain text (K8s base64-encodes them internally). Do not commit `secrets.yaml`.
 
-Two Secret objects are required:
+Three Secret objects are required:
 - `db-credentials` — database connection details
 - `auth-secrets` — JWT key, OIDC client credentials, redirect URI
+- `calendar-secrets` — Google Calendar OAuth credentials, token encryption key
 
 ### TLS setup (self-signed for development)
 
