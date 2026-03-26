@@ -20,7 +20,7 @@ const (
 	revokeEndpoint   = "https://oauth2.googleapis.com/revoke"
 	calendarListURL  = "https://www.googleapis.com/calendar/v3/users/me/calendarList"
 	eventsURLPattern = "https://www.googleapis.com/calendar/v3/calendars/%s/events"
-	calendarScope    = "https://www.googleapis.com/auth/calendar.readonly"
+	calendarScope    = "https://www.googleapis.com/auth/calendar.readonly email"
 
 	maxRetries     = 3
 	initialBackoff = 1 * time.Second

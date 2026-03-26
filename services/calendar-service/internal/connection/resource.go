@@ -14,7 +14,6 @@ import (
 	"github.com/jtumidanski/home-hub/services/calendar-service/internal/crypto"
 	"github.com/jtumidanski/home-hub/services/calendar-service/internal/googlecal"
 	"github.com/jtumidanski/home-hub/services/calendar-service/internal/oauthstate"
-	sharedauth "github.com/jtumidanski/home-hub/shared/go/auth"
 	"github.com/jtumidanski/home-hub/shared/go/server"
 	tenantctx "github.com/jtumidanski/home-hub/shared/go/tenant"
 	"github.com/sirupsen/logrus"
@@ -31,9 +30,16 @@ func InitializeRoutes(db *gorm.DB, gcClient *googlecal.Client, enc *crypto.Encry
 
 		api.HandleFunc("/calendar/connections", rh("ListConnections", listHandler(db))).Methods(http.MethodGet)
 		api.HandleFunc("/calendar/connections/google/authorize", rih("AuthorizeGoogle", authorizeHandler(db, gcClient, cfg))).Methods(http.MethodPost)
-		api.HandleFunc("/calendar/connections/google/callback", rh("GoogleCallback", callbackHandler(db, gcClient, enc, cfg, syncTrigger))).Methods(http.MethodGet)
 		api.HandleFunc("/calendar/connections/{id}", rh("DeleteConnection", deleteHandler(db, gcClient, enc, cascadeDelete))).Methods(http.MethodDelete)
 		api.HandleFunc("/calendar/connections/{id}/sync", rh("TriggerSync", triggerSyncHandler(db, syncTrigger))).Methods(http.MethodPost)
+	}
+}
+
+// InitializePublicRoutes registers routes that do not require JWT authentication (e.g., OAuth callbacks).
+func InitializePublicRoutes(db *gorm.DB, gcClient *googlecal.Client, enc *crypto.Encryptor, cfg config.Config, syncTrigger SyncTrigger) func(l logrus.FieldLogger, si jsonapi.ServerInformation, api *mux.Router) {
+	return func(l logrus.FieldLogger, si jsonapi.ServerInformation, api *mux.Router) {
+		rh := server.RegisterHandler(l)(si)
+		api.HandleFunc("/calendar/connections/google/callback", rh("GoogleCallback", callbackHandler(db, gcClient, enc, cfg, syncTrigger))).Methods(http.MethodGet)
 	}
 }
 
@@ -75,6 +81,7 @@ func authorizeHandler(db *gorm.DB, gcClient *googlecal.Client, cfg config.Config
 			}
 
 			authURL := googlecal.AuthURL(cfg.GoogleCalendarClientID, redirectURI, state.Id().String())
+			d.Logger().WithField("redirect_uri", redirectURI).WithField("auth_url", authURL).Info("generated Google OAuth authorize URL")
 
 			resp := AuthorizeResponse{
 				Id:           state.Id(),
@@ -119,9 +126,9 @@ func callbackHandler(db *gorm.DB, gcClient *googlecal.Client, enc *crypto.Encryp
 			}
 
 			email, err := gcClient.FetchUserEmail(r.Context(), tokenResp.AccessToken)
-			if err != nil {
+			if err != nil || email == "" {
 				d.Logger().WithError(err).Warn("failed to fetch Google user email")
-				email = "unknown"
+				email = "unknown@gmail.com"
 			}
 
 			encAccess, err := enc.Encrypt(tokenResp.AccessToken)
@@ -137,11 +144,7 @@ func callbackHandler(db *gorm.DB, gcClient *googlecal.Client, enc *crypto.Encryp
 				return
 			}
 
-			claims, ok := sharedauth.ClaimsFromContext(r.Context())
-			displayName := "Unknown User"
-			if ok && claims.Email != "" {
-				displayName = claims.Email
-			}
+			displayName := email
 
 			tokenExpiry := time.Now().UTC().Add(time.Duration(tokenResp.ExpiresIn) * time.Second)
 

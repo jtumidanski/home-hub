@@ -26,7 +26,7 @@ export function CalendarGrid({ weekStart, events }: CalendarGridProps) {
   const timezone = household?.attributes.timezone;
   const scrollRef = useRef<HTMLDivElement>(null);
   const days = getWeekDays(weekStart);
-  const hours = Array.from({ length: END_HOUR - START_HOUR }, (_, i) => START_HOUR + i);
+  const hours = Array.from({ length: END_HOUR - START_HOUR + 1 }, (_, i) => START_HOUR + i);
 
   useEffect(() => {
     if (scrollRef.current) {
@@ -78,16 +78,16 @@ export function CalendarGrid({ weekStart, events }: CalendarGridProps) {
 
       {/* Scrollable hour grid */}
       <div ref={scrollRef} className="flex-1 overflow-y-auto">
-        <div className="flex" style={{ height: `${hours.length * HOUR_HEIGHT}px` }}>
+        <div className="flex pt-2" style={{ height: `${hours.length * HOUR_HEIGHT + 8}px` }}>
           {/* Hour labels */}
           <div className="w-16 flex-shrink-0 border-r relative">
             {hours.map((hour) => (
               <div
                 key={hour}
-                className="absolute w-full text-right pr-2 text-xs text-muted-foreground"
-                style={{ top: `${(hour - START_HOUR) * HOUR_HEIGHT}px`, height: `${HOUR_HEIGHT}px` }}
+                className="absolute w-full text-right pr-2 text-xs text-muted-foreground leading-none"
+                style={{ top: `${(hour - START_HOUR) * HOUR_HEIGHT - 6}px` }}
               >
-                <span className="relative -top-2">{formatHour(hour)}</span>
+                {formatHour(hour)}
               </div>
             ))}
           </div>

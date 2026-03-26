@@ -190,18 +190,25 @@ export function getEventsForDay(events: CalendarEvent[], day: Date, _timezone?: 
   const dayEnd = new Date(day);
   dayEnd.setHours(23, 59, 59, 999);
 
+  // For date-only comparison of all-day events (YYYY-MM-DD)
+  const dayDateStr = `${day.getFullYear()}-${String(day.getMonth() + 1).padStart(2, "0")}-${String(day.getDate()).padStart(2, "0")}`;
+
   const allDay: CalendarEvent[] = [];
   const timed: CalendarEvent[] = [];
 
   for (const evt of events) {
-    const start = new Date(evt.attributes.startTime);
-    const end = new Date(evt.attributes.endTime);
-
-    if (end <= dayStart || start > dayEnd) continue;
-
     if (evt.attributes.allDay) {
-      allDay.push(evt);
+      // All-day events: compare by date string only, ignoring timezone.
+      // Start is inclusive, end is exclusive (e.g., Mar 26 00:00Z to Mar 27 00:00Z = one day on Mar 26).
+      const startDate = evt.attributes.startTime.slice(0, 10);
+      const endDate = evt.attributes.endTime.slice(0, 10);
+      if (dayDateStr >= startDate && dayDateStr < endDate) {
+        allDay.push(evt);
+      }
     } else {
+      const start = new Date(evt.attributes.startTime);
+      const end = new Date(evt.attributes.endTime);
+      if (end <= dayStart || start > dayEnd) continue;
       timed.push(evt);
     }
   }

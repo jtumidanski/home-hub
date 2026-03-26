@@ -9,7 +9,6 @@ import { CalendarGrid } from "@/components/features/calendar/calendar-grid";
 import { ConnectCalendarButton } from "@/components/features/calendar/connect-calendar-button";
 import { ConnectionStatus } from "@/components/features/calendar/connection-status";
 import { CalendarSelectionPanel } from "@/components/features/calendar/calendar-selection-panel";
-import { UserLegend } from "@/components/features/calendar/user-legend";
 import { useCalendarConnections, useCalendarEvents, useCalendarSources } from "@/lib/hooks/api/use-calendar";
 import { getStartOfWeek, formatDateRange } from "@/components/features/calendar/calendar-utils";
 import type { CalendarConnection, CalendarEvent } from "@/types/models/calendar";
@@ -52,6 +51,20 @@ export function CalendarPage() {
 
   const connections = (connectionsQuery.data?.data ?? []) as CalendarConnection[];
   const events = (eventsQuery.data?.data ?? []) as CalendarEvent[];
+  const hasCalendar = connections.length > 0 || events.length > 0;
+
+  // Derive unique users from events so all household members see the color legend,
+  // even if they haven't connected their own calendar.
+  const eventUsers = useMemo(() => {
+    const seen = new Map<string, { displayName: string; color: string }>();
+    for (const evt of events) {
+      const { userDisplayName, userColor } = evt.attributes;
+      if (!seen.has(userDisplayName)) {
+        seen.set(userDisplayName, { displayName: userDisplayName, color: userColor });
+      }
+    }
+    return Array.from(seen.values());
+  }, [events]);
   const activeConnection = connections.find((c) => c.attributes.status === "connected");
 
   const sourcesQuery = useCalendarSources(activeConnection?.id ?? null);
@@ -108,9 +121,8 @@ export function CalendarPage() {
             </Button>
           </div>
 
-          {connections.length === 0 ? (
-            <ConnectCalendarButton />
-          ) : (
+          {connections.length === 0 && <ConnectCalendarButton />}
+          {activeConnection && (
             <Button
               variant="outline"
               size="sm"
@@ -122,13 +134,24 @@ export function CalendarPage() {
         </div>
       </div>
 
-      {/* Connection status and legend */}
-      {connections.length > 0 && (
-        <div className="space-y-2">
+      {/* Connection status rows (current user's connections) and household color legend */}
+      {(connections.length > 0 || eventUsers.length > 0) && (
+        <div className="space-y-1">
           {connections.map((conn) => (
             <ConnectionStatus key={conn.id} connection={conn} />
           ))}
-          <UserLegend connections={connections} />
+          {/* Show legend for other household members' calendars (not already shown in ConnectionStatus) */}
+          {eventUsers
+            .filter((u) => !connections.some((c) => c.attributes.userDisplayName === u.displayName))
+            .map((u) => (
+              <div key={u.displayName} className="flex items-center gap-3 text-sm">
+                <div
+                  className="w-3 h-3 rounded-full flex-shrink-0"
+                  style={{ backgroundColor: u.color }}
+                />
+                <span className="text-muted-foreground">{u.displayName}</span>
+              </div>
+            ))}
         </div>
       )}
 
@@ -136,27 +159,25 @@ export function CalendarPage() {
       {showSources && activeConnection && (
         <div className="border rounded-lg p-4">
           <CalendarSelectionPanel connectionId={activeConnection.id} sources={sources} />
-          {connections.length === 0 && <ConnectCalendarButton />}
         </div>
       )}
 
-      {/* Empty state */}
-      {connections.length === 0 ? (
-        <div className="flex-1 flex flex-col items-center justify-center text-center py-16">
-          <h2 className="text-lg font-medium mb-2">No calendars connected</h2>
-          <p className="text-muted-foreground mb-6 max-w-md">
-            Connect your Google Calendar to see your events on the household calendar. All household members can connect their own calendars for a merged view.
-          </p>
-          <ConnectCalendarButton />
-        </div>
-      ) : (
-        /* Calendar grid */
+      {/* Calendar grid or empty state */}
+      {hasCalendar ? (
         <div className="flex-1 min-h-0">
           {eventsQuery.isLoading ? (
             <Skeleton className="h-full w-full" />
           ) : (
             <CalendarGrid weekStart={weekStart} events={events} />
           )}
+        </div>
+      ) : (
+        <div className="flex-1 flex flex-col items-center justify-center text-center py-16">
+          <h2 className="text-lg font-medium mb-2">No calendars connected</h2>
+          <p className="text-muted-foreground mb-6 max-w-md">
+            Connect your Google Calendar to see your events on the household calendar. All household members can connect their own calendars for a merged view.
+          </p>
+          <ConnectCalendarButton />
         </div>
       )}
     </div>

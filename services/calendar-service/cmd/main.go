@@ -75,6 +75,11 @@ func main() {
 	server.New(l).
 		WithAddr(":" + cfg.Port).
 		AddRouteInitializer(func(router *mux.Router) {
+			// Public routes (no JWT required) — must be registered first
+			publicAPI := router.PathPrefix("/api/v1").Subrouter()
+			connection.InitializePublicRoutes(db, gcClient, enc, cfg, syncTrigger)(l, si, publicAPI)
+
+			// Protected routes (JWT required)
 			api := router.PathPrefix("/api/v1").Subrouter()
 			api.Use(sharedauth.Middleware(l, authValidator))
 

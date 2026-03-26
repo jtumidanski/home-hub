@@ -15,12 +15,7 @@ export function ConnectionStatus({ connection }: ConnectionStatusProps) {
   const triggerSync = useTriggerSync();
   const { attributes: attrs } = connection;
 
-  const statusColor = {
-    connected: "bg-green-500/10 text-green-700 border-green-200",
-    syncing: "bg-blue-500/10 text-blue-700 border-blue-200",
-    disconnected: "bg-red-500/10 text-red-700 border-red-200",
-    error: "bg-yellow-500/10 text-yellow-700 border-yellow-200",
-  }[attrs.status] ?? "bg-muted text-muted-foreground";
+  const isHealthy = attrs.status === "connected" || attrs.status === "syncing";
 
   const lastSync = attrs.lastSyncAt
     ? `Last synced ${new Date(attrs.lastSyncAt).toLocaleString([], { month: "short", day: "numeric", hour: "numeric", minute: "2-digit" })}`
@@ -28,10 +23,16 @@ export function ConnectionStatus({ connection }: ConnectionStatusProps) {
 
   return (
     <div className="flex items-center gap-3 text-sm">
-      <Badge variant="outline" className={statusColor}>
-        {attrs.status}
-      </Badge>
-      <span className="text-muted-foreground">{attrs.email}</span>
+      <div
+        className="w-3 h-3 rounded-full flex-shrink-0"
+        style={{ backgroundColor: attrs.userColor }}
+      />
+      {!isHealthy && (
+        <Badge variant="outline" className="bg-red-500/10 text-red-700 border-red-200">
+          {attrs.status}
+        </Badge>
+      )}
+      <span className="text-muted-foreground">{attrs.userDisplayName}</span>
       <span className="text-muted-foreground">·</span>
       <span className="text-muted-foreground">{lastSync}</span>
 

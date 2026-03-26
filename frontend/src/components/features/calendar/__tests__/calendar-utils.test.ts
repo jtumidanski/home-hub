@@ -205,6 +205,33 @@ describe("getEventsForDay", () => {
     expect(timed[0]!.id).toBe("timed");
   });
 
+  it("does not show all-day event on the day before", () => {
+    const dayBefore = new Date(2026, 2, 25);
+    const events = [
+      makeEvent({ id: "allday", startTime: "2026-03-26T00:00:00Z", endTime: "2026-03-27T00:00:00Z", allDay: true }),
+    ];
+    const { allDay } = getEventsForDay(events, dayBefore);
+    expect(allDay).toHaveLength(0);
+  });
+
+  it("does not show all-day event on the end date (exclusive)", () => {
+    const endDay = new Date(2026, 2, 27);
+    const events = [
+      makeEvent({ id: "allday", startTime: "2026-03-26T00:00:00Z", endTime: "2026-03-27T00:00:00Z", allDay: true }),
+    ];
+    const { allDay } = getEventsForDay(events, endDay);
+    expect(allDay).toHaveLength(0);
+  });
+
+  it("shows multi-day all-day event on intermediate days", () => {
+    const middleDay = new Date(2026, 2, 27);
+    const events = [
+      makeEvent({ id: "multi", startTime: "2026-03-26T00:00:00Z", endTime: "2026-03-29T00:00:00Z", allDay: true }),
+    ];
+    const { allDay } = getEventsForDay(events, middleDay);
+    expect(allDay).toHaveLength(1);
+  });
+
   it("excludes events on different days", () => {
     const day = new Date(2026, 2, 26);
     const events = [
