@@ -29,6 +29,7 @@ function makePkg(overrides: Partial<Package["attributes"]> = {}): Package {
       lastPolledAt: null,
       archivedAt: null,
       isOwner: true,
+      userId: "user-1",
       trackingEvents: [],
       createdAt: "2026-03-20T00:00:00Z",
       updatedAt: "2026-03-25T00:00:00Z",

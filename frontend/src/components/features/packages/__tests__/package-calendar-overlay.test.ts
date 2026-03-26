@@ -18,6 +18,7 @@ function makePkg(overrides: Partial<Package["attributes"]> = {}): Package {
       lastPolledAt: null,
       archivedAt: null,
       isOwner: true,
+      userId: "user-1",
       trackingEvents: [],
       createdAt: "2026-03-20T00:00:00Z",
       updatedAt: "2026-03-25T00:00:00Z",
@@ -31,12 +32,13 @@ describe("packagesToCalendarEvents", () => {
     const events = packagesToCalendarEvents([makePkg()]);
 
     expect(events).toHaveLength(1);
-    expect(events[0].id).toBe("pkg-pkg-1");
-    expect(events[0].attributes.title).toBe("UPS: New Keyboard");
-    expect(events[0].attributes.allDay).toBe(true);
-    expect(events[0].attributes.startTime).toBe("2026-04-01T00:00:00Z");
-    expect(events[0].attributes.endTime).toBe("2026-04-01T23:59:59Z");
-    expect(events[0].attributes.userColor).toBe("#0d9488");
+    const event = events[0]!;
+    expect(event.id).toBe("pkg-pkg-1");
+    expect(event.attributes.title).toBe("UPS: New Keyboard");
+    expect(event.attributes.allDay).toBe(true);
+    expect(event.attributes.startTime).toBe("2026-04-01T00:00:00Z");
+    expect(event.attributes.endTime).toBe("2026-04-01T23:59:59Z");
+    expect(event.attributes.userColor).toBe("#0d9488");
   });
 
   it("filters out packages without ETA", () => {
@@ -50,12 +52,12 @@ describe("packagesToCalendarEvents", () => {
 
   it("uses 'Package' as label when none provided", () => {
     const events = packagesToCalendarEvents([makePkg({ label: null })]);
-    expect(events[0].attributes.title).toBe("UPS: Package");
+    expect(events[0]!.attributes.title).toBe("UPS: Package");
   });
 
   it("uses carrier label as userDisplayName", () => {
     const events = packagesToCalendarEvents([makePkg({ carrier: "fedex" })]);
-    expect(events[0].attributes.userDisplayName).toBe("FedEx");
+    expect(events[0]!.attributes.userDisplayName).toBe("FedEx");
   });
 
   it("returns empty array for empty input", () => {
