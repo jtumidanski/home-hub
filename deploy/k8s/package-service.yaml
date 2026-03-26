@@ -1,0 +1,110 @@
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: package-service
+  namespace: home-hub
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: package-service
+  template:
+    metadata:
+      labels:
+        app: package-service
+    spec:
+      containers:
+      - name: package-service
+        image: ghcr.io/jtumidanski/home-hub-package-service:main
+        imagePullPolicy: Always
+        ports:
+        - containerPort: 8080
+        env:
+        - name: DB_HOST
+          valueFrom:
+            secretKeyRef:
+              name: db-credentials
+              key: DB_HOST
+        - name: DB_USER
+          valueFrom:
+            secretKeyRef:
+              name: db-credentials
+              key: DB_USER
+        - name: DB_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: db-credentials
+              key: DB_PASSWORD
+        - name: DB_NAME
+          valueFrom:
+            secretKeyRef:
+              name: db-credentials
+              key: DB_NAME
+        - name: JWKS_URL
+          value: "http://auth-service:8080/api/v1/auth/.well-known/jwks.json"
+        - name: USPS_CLIENT_ID
+          valueFrom:
+            secretKeyRef:
+              name: package-secrets
+              key: USPS_CLIENT_ID
+        - name: USPS_CLIENT_SECRET
+          valueFrom:
+            secretKeyRef:
+              name: package-secrets
+              key: USPS_CLIENT_SECRET
+        - name: UPS_CLIENT_ID
+          valueFrom:
+            secretKeyRef:
+              name: package-secrets
+              key: UPS_CLIENT_ID
+        - name: UPS_CLIENT_SECRET
+          valueFrom:
+            secretKeyRef:
+              name: package-secrets
+              key: UPS_CLIENT_SECRET
+        - name: FEDEX_API_KEY
+          valueFrom:
+            secretKeyRef:
+              name: package-secrets
+              key: FEDEX_API_KEY
+        - name: FEDEX_SECRET_KEY
+          valueFrom:
+            secretKeyRef:
+              name: package-secrets
+              key: FEDEX_SECRET_KEY
+        - name: FEDEX_SANDBOX
+          value: "false"
+        - name: PACKAGE_TOKEN_ENCRYPTION_KEY
+          valueFrom:
+            secretKeyRef:
+              name: package-secrets
+              key: PACKAGE_TOKEN_ENCRYPTION_KEY
+        - name: PACKAGE_POLL_INTERVAL_MINUTES
+          value: "30"
+        - name: PACKAGE_MAX_ACTIVE_PER_HOUSEHOLD
+          value: "25"
+        livenessProbe:
+          httpGet:
+            path: /healthz
+            port: 8080
+          initialDelaySeconds: 5
+          periodSeconds: 10
+        readinessProbe:
+          httpGet:
+            path: /readyz
+            port: 8080
+          initialDelaySeconds: 3
+          periodSeconds: 5
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: package-service
+  namespace: home-hub
+spec:
+  selector:
+    app: package-service
+  ports:
+  - protocol: TCP
+    port: 8080

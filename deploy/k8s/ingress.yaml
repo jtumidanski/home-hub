@@ -92,6 +92,13 @@ spec:
                             name: calendar-service
                             port:
                                 number: 8080
+                  - path: /api/v1/packages
+                    pathType: Prefix
+                    backend:
+                        service:
+                            name: package-service
+                            port:
+                                number: 8080
                   - path: /api/v1/recipes
                     pathType: Prefix
                     backend:
