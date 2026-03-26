@@ -205,7 +205,7 @@ describe("HouseholdMembersPage", () => {
     );
     // Click the first remove icon button
     if (removeButtons.length > 0) {
-      await user.click(removeButtons[0]);
+      await user.click(removeButtons[0]!);
       await waitFor(() => {
         expect(screen.getByText("Remove Member")).toBeInTheDocument();
       });
