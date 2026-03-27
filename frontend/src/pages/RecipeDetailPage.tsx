@@ -79,13 +79,13 @@ export function RecipeDetailPage() {
         <div className="flex items-start justify-between gap-4">
           <div>
             <div className="flex items-center gap-2">
-              <h1 className="text-2xl font-bold">{attrs.title}</h1>
               <span title={plannerTooltip}>
                 {attrs.plannerReady
                   ? <CheckCircle2 className="h-5 w-5 text-green-500" />
                   : <AlertCircle className="h-5 w-5 text-yellow-500" />
                 }
               </span>
+              <h1 className="text-2xl font-bold">{attrs.title}</h1>
             </div>
             {attrs.description && (
               <p className="mt-1 text-muted-foreground">{attrs.description}</p>
