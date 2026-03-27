@@ -11,7 +11,7 @@ import { useCooklangPreview } from "@/lib/hooks/use-cooklang-preview";
 import { CooklangPreview } from "@/components/features/recipes/cooklang-preview";
 import { CooklangHelp } from "@/components/features/recipes/cooklang-help";
 import { PlannerConfigForm } from "@/components/features/recipes/planner-config-form";
-import { IngredientNormalizationPanel } from "@/components/features/recipes/ingredient-normalization-panel";
+import { RecipeIngredients } from "@/components/features/recipes/recipe-ingredients";
 import { useMobile } from "@/lib/hooks/use-mobile";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -19,6 +19,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { createErrorFromUnknown } from "@/lib/api/errors";
+import { extractClassification } from "@/lib/constants/recipe";
 import type { PlannerConfig } from "@/types/models/recipe";
 
 export function RecipeFormPage() {
@@ -57,12 +58,23 @@ export function RecipeFormPage() {
   }, [isEditing, existingData, form]);
 
   const onSubmit = async (values: RecipeFormData) => {
-    const hasPlanner = plannerConfig.classification || plannerConfig.servingsYield;
+    // Derive classification from cooklang tags
+    const classification = extractClassification(derivedTags);
+    // Derive servingsYield from cooklang metadata
+    const parsedServings = derivedServings ? parseInt(derivedServings, 10) : undefined;
+    const servingsYield = parsedServings && !isNaN(parsedServings) ? parsedServings : undefined;
+
+    const mergedConfig: PlannerConfig = {
+      ...plannerConfig,
+      ...(classification ? { classification } : {}),
+      ...(servingsYield ? { servingsYield } : {}),
+    };
+    const hasPlanner = mergedConfig.classification || mergedConfig.servingsYield || mergedConfig.eatWithinDays || mergedConfig.minGapDays || mergedConfig.maxConsecutiveDays;
     const attrs = {
       title: values.title,
       description: values.description || undefined,
       source: values.source,
-      plannerConfig: hasPlanner ? plannerConfig : undefined,
+      plannerConfig: hasPlanner ? mergedConfig : undefined,
     };
 
     try {
@@ -235,12 +247,12 @@ export function RecipeFormPage() {
             </div>
           </div>
 
-          {/* Normalization review panel (edit mode) */}
+          {/* Normalization review (edit mode) */}
           {isEditing && existingIngredients.length > 0 && (
-            <IngredientNormalizationPanel
-              ingredients={existingIngredients}
-              recipeId={id!}
-            />
+            <div>
+              <h3 className="text-sm font-medium mb-2">Ingredient Normalization</h3>
+              <RecipeIngredients ingredients={existingIngredients} recipeId={id!} />
+            </div>
           )}
 
           <div className="flex gap-3">

@@ -124,13 +124,14 @@ func (p *Processor) Update(id uuid.UUID, name, displayName, unitFamily *string) 
 }
 
 func (p *Processor) Delete(id uuid.UUID) error {
-	count, err := getUsageCount(p.db.WithContext(p.ctx), id)
-	if err != nil {
-		return err
-	}
-	if count > 0 {
-		return ErrHasReferences
-	}
+	// Nullify references in recipe_ingredients, setting them back to unresolved
+	p.db.WithContext(p.ctx).Table("recipe_ingredients").
+		Where("canonical_ingredient_id = ?", id).
+		Updates(map[string]interface{}{
+			"canonical_ingredient_id": nil,
+			"normalization_status":    "unresolved",
+			"updated_at":             time.Now().UTC(),
+		})
 
 	return p.db.WithContext(p.ctx).Where("id = ?", id).Delete(&Entity{}).Error
 }
