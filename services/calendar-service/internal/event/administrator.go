@@ -16,16 +16,17 @@ func upsert(db *gorm.DB, e Entity) error {
 		return db.Model(&Entity{}).
 			Where("source_id = ? AND external_id = ?", e.SourceId, e.ExternalId).
 			Updates(map[string]interface{}{
-				"title":             e.Title,
-				"description":       e.Description,
-				"start_time":        e.StartTime,
-				"end_time":          e.EndTime,
-				"all_day":           e.AllDay,
-				"location":          e.Location,
-				"visibility":        e.Visibility,
-				"user_display_name": e.UserDisplayName,
-				"user_color":        e.UserColor,
-				"updated_at":        now,
+				"title":              e.Title,
+				"description":        e.Description,
+				"start_time":         e.StartTime,
+				"end_time":           e.EndTime,
+				"all_day":            e.AllDay,
+				"location":           e.Location,
+				"visibility":         e.Visibility,
+				"user_display_name":  e.UserDisplayName,
+				"user_color":         e.UserColor,
+				"google_calendar_id": e.GoogleCalendarId,
+				"updated_at":         now,
 			}).Error
 	}
 

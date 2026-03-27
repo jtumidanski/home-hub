@@ -2,6 +2,7 @@ package googlecal
 
 import (
 	"context"
+	"bytes"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -20,7 +21,7 @@ const (
 	revokeEndpoint   = "https://oauth2.googleapis.com/revoke"
 	calendarListURL  = "https://www.googleapis.com/calendar/v3/users/me/calendarList"
 	eventsURLPattern = "https://www.googleapis.com/calendar/v3/calendars/%s/events"
-	calendarScope    = "https://www.googleapis.com/auth/calendar.readonly email"
+	calendarScope    = "https://www.googleapis.com/auth/calendar email"
 
 	maxRetries     = 3
 	initialBackoff = 1 * time.Second
@@ -42,15 +43,17 @@ func NewClient(clientID, clientSecret string, l logrus.FieldLogger) *Client {
 	}
 }
 
-func AuthURL(clientID, redirectURI, state string) string {
+func AuthURL(clientID, redirectURI, state string, forceConsent bool) string {
 	params := url.Values{
-		"response_type":   {"code"},
-		"client_id":       {clientID},
-		"redirect_uri":    {redirectURI},
-		"scope":           {calendarScope},
-		"state":           {state},
-		"access_type":     {"offline"},
-		"prompt":          {"consent"},
+		"response_type": {"code"},
+		"client_id":     {clientID},
+		"redirect_uri":  {redirectURI},
+		"scope":         {calendarScope},
+		"state":         {state},
+		"access_type":   {"offline"},
+	}
+	if forceConsent {
+		params.Set("prompt", "consent")
 	}
 	return authEndpoint + "?" + params.Encode()
 }
@@ -183,6 +186,83 @@ func (c *Client) ListEvents(ctx context.Context, accessToken, calendarID string,
 	}, nil
 }
 
+func (c *Client) InsertEvent(ctx context.Context, accessToken, calendarID string, event InsertEventRequest) (*Event, error) {
+	u := fmt.Sprintf(eventsURLPattern, url.PathEscape(calendarID))
+	body, err := json.Marshal(event)
+	if err != nil {
+		return nil, fmt.Errorf("failed to marshal insert event request: %w", err)
+	}
+
+	req, err := http.NewRequestWithContext(ctx, http.MethodPost, u, bytes.NewReader(body))
+	if err != nil {
+		return nil, err
+	}
+	req.Header.Set("Authorization", "Bearer "+accessToken)
+	req.Header.Set("Content-Type", "application/json")
+
+	var result Event
+	if err := c.doWithRetry(req, &result); err != nil {
+		return nil, fmt.Errorf("insert event failed: %w", err)
+	}
+	return &result, nil
+}
+
+func (c *Client) UpdateEvent(ctx context.Context, accessToken, calendarID, eventID string, event UpdateEventRequest) (*Event, error) {
+	u := fmt.Sprintf(eventsURLPattern+"/%s", url.PathEscape(calendarID), url.PathEscape(eventID))
+	body, err := json.Marshal(event)
+	if err != nil {
+		return nil, fmt.Errorf("failed to marshal update event request: %w", err)
+	}
+
+	req, err := http.NewRequestWithContext(ctx, http.MethodPatch, u, bytes.NewReader(body))
+	if err != nil {
+		return nil, err
+	}
+	req.Header.Set("Authorization", "Bearer "+accessToken)
+	req.Header.Set("Content-Type", "application/json")
+
+	var result Event
+	if err := c.doWithRetry(req, &result); err != nil {
+		return nil, fmt.Errorf("update event failed: %w", err)
+	}
+	return &result, nil
+}
+
+func (c *Client) DeleteEvent(ctx context.Context, accessToken, calendarID, eventID string) error {
+	u := fmt.Sprintf(eventsURLPattern+"/%s", url.PathEscape(calendarID), url.PathEscape(eventID))
+
+	req, err := http.NewRequestWithContext(ctx, http.MethodDelete, u, nil)
+	if err != nil {
+		return err
+	}
+	req.Header.Set("Authorization", "Bearer "+accessToken)
+
+	var lastErr error
+	for attempt := 0; attempt <= maxRetries; attempt++ {
+		if attempt > 0 {
+			backoff := time.Duration(math.Pow(2, float64(attempt-1))) * initialBackoff
+			time.Sleep(backoff)
+		}
+
+		resp, err := c.httpClient.Do(req)
+		if err != nil {
+			lastErr = err
+			continue
+		}
+		resp.Body.Close()
+
+		if resp.StatusCode == http.StatusNoContent || resp.StatusCode == http.StatusOK {
+			return nil
+		}
+		if resp.StatusCode == http.StatusTooManyRequests || resp.StatusCode >= 500 {
+			lastErr = fmt.Errorf("Google API returned %d", resp.StatusCode)
+			continue
+		}
+		return fmt.Errorf("Google API delete returned %d", resp.StatusCode)
+	}
+	return fmt.Errorf("Google API delete failed after %d retries: %w", maxRetries, lastErr)
+}
+
 func (c *Client) doWithRetry(req *http.Request, result interface{}) error {
 	var lastErr error
 	for attempt := 0; attempt <= maxRetries; attempt++ {
@@ -190,6 +270,14 @@ func (c *Client) doWithRetry(req *http.Request, result interface{}) error {
 			backoff := time.Duration(math.Pow(2, float64(attempt-1))) * initialBackoff
 			c.l.WithField("backoff", backoff).WithField("attempt", attempt).Debug("retrying Google API call")
 			time.Sleep(backoff)
+
+			// Reset request body for retry if GetBody is available
+			if req.GetBody != nil {
+				newBody, err := req.GetBody()
+				if err == nil {
+					req.Body = newBody
+				}
+			}
 		}
 
 		resp, err := c.httpClient.Do(req)

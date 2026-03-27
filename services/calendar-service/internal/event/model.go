@@ -14,6 +14,7 @@ type Model struct {
 	sourceID        uuid.UUID
 	userID          uuid.UUID
 	externalID      string
+	googleCalendarID string
 	title           string
 	description     string
 	startTime       time.Time
@@ -34,6 +35,7 @@ func (m Model) ConnectionID() uuid.UUID   { return m.connectionID }
 func (m Model) SourceID() uuid.UUID       { return m.sourceID }
 func (m Model) UserID() uuid.UUID         { return m.userID }
 func (m Model) ExternalID() string        { return m.externalID }
+func (m Model) GoogleCalendarID() string  { return m.googleCalendarID }
 func (m Model) Title() string             { return m.title }
 func (m Model) Description() string       { return m.description }
 func (m Model) StartTime() time.Time      { return m.startTime }

@@ -77,6 +77,14 @@ func (p *Processor) Delete(id uuid.UUID) error {
 	return deleteByID(p.db.WithContext(p.ctx), id)
 }
 
+func (p *Processor) ByUserAndProvider(userID uuid.UUID, provider string) (Model, error) {
+	return model.Map(Make)(getByUserAndProvider(userID, provider)(p.noTenantDB()))()
+}
+
+func (p *Processor) UpdateTokensAndWriteAccess(id uuid.UUID, encAccessToken, encRefreshToken string, tokenExpiry time.Time, writeAccess bool) error {
+	return updateTokensAndWriteAccess(p.noTenantDB(), id, encAccessToken, encRefreshToken, tokenExpiry, writeAccess)
+}
+
 func (p *Processor) CheckManualSyncAllowed(conn Model) error {
 	if conn.lastSyncAt != nil && time.Since(*conn.lastSyncAt) < manualSyncCooldown {
 		return ErrSyncRateLimited

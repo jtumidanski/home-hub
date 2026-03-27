@@ -28,6 +28,10 @@ func NewProcessor(l logrus.FieldLogger, ctx context.Context, db *gorm.DB) *Proce
 	return &Processor{l: l, ctx: ctx, db: db}
 }
 
+func (p *Processor) ByID(id uuid.UUID) (Model, error) {
+	return model.Map(Make)(getByID(id)(p.db.WithContext(p.ctx)))()
+}
+
 func (p *Processor) QueryByHouseholdAndTimeRange(householdID uuid.UUID, start, end time.Time) ([]Model, error) {
 	if end.Sub(start) > maxQueryRange {
 		return nil, ErrRangeTooLarge

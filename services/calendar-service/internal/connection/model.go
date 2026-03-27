@@ -24,6 +24,7 @@ type Model struct {
 	tokenExpiry        time.Time
 	userDisplayName    string
 	userColor          string
+	writeAccess        bool
 	lastSyncAt         *time.Time
 	lastSyncEventCount int
 	createdAt          time.Time
@@ -42,6 +43,7 @@ func (m Model) RefreshToken() string      { return m.refreshToken }
 func (m Model) TokenExpiry() time.Time    { return m.tokenExpiry }
 func (m Model) UserDisplayName() string   { return m.userDisplayName }
 func (m Model) UserColor() string         { return m.userColor }
+func (m Model) WriteAccess() bool         { return m.writeAccess }
 func (m Model) LastSyncAt() *time.Time    { return m.lastSyncAt }
 func (m Model) LastSyncEventCount() int   { return m.lastSyncEventCount }
 func (m Model) CreatedAt() time.Time      { return m.createdAt }

@@ -30,8 +30,8 @@ func (p *Processor) noTenantDB() *gorm.DB {
 	return p.db.WithContext(database.WithoutTenantFilter(p.ctx))
 }
 
-func (p *Processor) Create(tenantID, householdID, userID uuid.UUID, redirectURI string) (Model, error) {
-	e, err := create(p.noTenantDB(), tenantID, householdID, userID, redirectURI)
+func (p *Processor) Create(tenantID, householdID, userID uuid.UUID, redirectURI string, reauthorize bool) (Model, error) {
+	e, err := create(p.noTenantDB(), tenantID, householdID, userID, redirectURI, reauthorize)
 	if err != nil {
 		return Model{}, err
 	}

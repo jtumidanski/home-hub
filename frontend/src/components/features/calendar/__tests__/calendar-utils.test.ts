@@ -30,6 +30,9 @@ function makeEvent(overrides: Partial<CalendarEvent["attributes"]> & { id?: stri
       isOwner: true,
       userDisplayName: "Test User",
       userColor: "#4285F4",
+      sourceId: "",
+      connectionId: "",
+      isRecurring: false,
       ...attrs,
     },
   };

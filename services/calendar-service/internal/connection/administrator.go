@@ -22,6 +22,7 @@ func create(db *gorm.DB, tenantID, householdID, userID uuid.UUID, provider, emai
 		TokenExpiry:     tokenExpiry,
 		UserDisplayName: userDisplayName,
 		UserColor:       userColor,
+		WriteAccess:     true,
 		CreatedAt:       now,
 		UpdatedAt:       now,
 	}
@@ -52,6 +53,17 @@ func updateSyncInfo(db *gorm.DB, id uuid.UUID, eventCount int) error {
 		"last_sync_at":          now,
 		"last_sync_event_count": eventCount,
 		"updated_at":            now,
+	}).Error
+}
+
+func updateTokensAndWriteAccess(db *gorm.DB, id uuid.UUID, accessToken, refreshToken string, tokenExpiry time.Time, writeAccess bool) error {
+	return db.Model(&Entity{}).Where("id = ?", id).Updates(map[string]interface{}{
+		"access_token":  accessToken,
+		"refresh_token": refreshToken,
+		"token_expiry":  tokenExpiry,
+		"write_access":  writeAccess,
+		"status":        "connected",
+		"updated_at":    time.Now().UTC(),
 	}).Error
 }
 

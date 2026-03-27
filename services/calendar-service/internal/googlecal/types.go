@@ -38,8 +38,25 @@ type Event struct {
 }
 
 type EventTime struct {
-	DateTime time.Time `json:"dateTime"`
-	Date     string    `json:"date"`
+	DateTime time.Time `json:"dateTime,omitempty"`
+	Date     string    `json:"date,omitempty"`
+}
+
+type InsertEventRequest struct {
+	Summary     string     `json:"summary"`
+	Location    string     `json:"location,omitempty"`
+	Description string     `json:"description,omitempty"`
+	Start       *EventTime `json:"start"`
+	End         *EventTime `json:"end"`
+	Recurrence  []string   `json:"recurrence,omitempty"`
+}
+
+type UpdateEventRequest struct {
+	Summary     *string    `json:"summary,omitempty"`
+	Location    *string    `json:"location,omitempty"`
+	Description *string    `json:"description,omitempty"`
+	Start       *EventTime `json:"start,omitempty"`
+	End         *EventTime `json:"end,omitempty"`
 }
 
 func (et *EventTime) IsAllDay() bool {

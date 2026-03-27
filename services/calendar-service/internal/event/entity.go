@@ -15,6 +15,7 @@ type Entity struct {
 	SourceId        uuid.UUID `gorm:"type:uuid;not null"`
 	UserId          uuid.UUID `gorm:"type:uuid;not null;index"`
 	ExternalId      string    `gorm:"type:varchar(255);not null"`
+	GoogleCalendarId string   `gorm:"type:varchar(255)"`
 	Title           string    `gorm:"type:varchar(500);not null"`
 	Description     string    `gorm:"type:text"`
 	StartTime       time.Time `gorm:"not null;index:idx_events_tenant_household_time"`
@@ -46,6 +47,7 @@ func (m Model) ToEntity() Entity {
 		SourceId:        m.sourceID,
 		UserId:          m.userID,
 		ExternalId:      m.externalID,
+		GoogleCalendarId: m.googleCalendarID,
 		Title:           m.title,
 		Description:     m.description,
 		StartTime:       m.startTime,
@@ -69,6 +71,7 @@ func Make(e Entity) (Model, error) {
 		SetSourceID(e.SourceId).
 		SetUserID(e.UserId).
 		SetExternalID(e.ExternalId).
+		SetGoogleCalendarID(e.GoogleCalendarId).
 		SetTitle(e.Title).
 		SetDescription(e.Description).
 		SetStartTime(e.StartTime).

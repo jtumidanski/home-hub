@@ -4,6 +4,7 @@ export interface CalendarConnectionAttributes {
   email: string;
   userDisplayName: string;
   userColor: string;
+  writeAccess: boolean;
   lastSyncAt: string | null;
   lastSyncEventCount: number;
   createdAt: string;
@@ -39,12 +40,35 @@ export interface CalendarEventAttributes {
   userDisplayName: string;
   userColor: string;
   isOwner: boolean;
+  sourceId: string;
+  connectionId: string;
+  isRecurring: boolean;
 }
 
 export interface CalendarEvent {
   id: string;
   type: "calendar-events";
   attributes: CalendarEventAttributes;
+}
+
+export interface CreateEventData {
+  title: string;
+  start: string;
+  end: string;
+  allDay: boolean;
+  location?: string | undefined;
+  description?: string | undefined;
+  recurrence?: string[] | undefined;
+}
+
+export interface UpdateEventData {
+  title?: string | undefined;
+  start?: string | undefined;
+  end?: string | undefined;
+  allDay?: boolean | undefined;
+  location?: string | undefined;
+  description?: string | undefined;
+  scope?: "single" | "all" | undefined;
 }
 
 export interface AuthorizeResponseAttributes {
