@@ -20,6 +20,7 @@ type Entity struct {
 	TokenExpiry        time.Time  `gorm:"not null"`
 	UserDisplayName    string     `gorm:"type:varchar(255);not null"`
 	UserColor          string     `gorm:"type:varchar(7);not null"`
+	WriteAccess        bool       `gorm:"not null;default:false"`
 	LastSyncAt         *time.Time `gorm:""`
 	LastSyncEventCount int        `gorm:"default:0"`
 	CreatedAt          time.Time  `gorm:"not null"`
@@ -49,6 +50,7 @@ func (m Model) ToEntity() Entity {
 		TokenExpiry:        m.tokenExpiry,
 		UserDisplayName:    m.userDisplayName,
 		UserColor:          m.userColor,
+		WriteAccess:        m.writeAccess,
 		LastSyncAt:         m.lastSyncAt,
 		LastSyncEventCount: m.lastSyncEventCount,
 		CreatedAt:          m.createdAt,
@@ -70,6 +72,7 @@ func Make(e Entity) (Model, error) {
 		SetTokenExpiry(e.TokenExpiry).
 		SetUserDisplayName(e.UserDisplayName).
 		SetUserColor(e.UserColor).
+		SetWriteAccess(e.WriteAccess).
 		SetLastSyncAt(e.LastSyncAt).
 		SetLastSyncEventCount(e.LastSyncEventCount).
 		SetCreatedAt(e.CreatedAt).

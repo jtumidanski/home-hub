@@ -73,14 +73,15 @@ func authorizeHandler(db *gorm.DB, gcClient *googlecal.Client, cfg config.Config
 			redirectURI := buildCallbackURI(r)
 
 			stateProc := oauthstate.NewProcessor(d.Logger(), r.Context(), db)
-			state, err := stateProc.Create(t.Id(), t.HouseholdId(), t.UserId(), input.RedirectUri)
+			state, err := stateProc.Create(t.Id(), t.HouseholdId(), t.UserId(), input.RedirectUri, input.Reauthorize)
 			if err != nil {
 				d.Logger().WithError(err).Error("failed to create oauth state")
 				server.WriteError(w, http.StatusInternalServerError, "Internal Error", "")
 				return
 			}
 
-			authURL := googlecal.AuthURL(cfg.GoogleCalendarClientID, redirectURI, state.Id().String())
+			forceConsent := input.Reauthorize
+			authURL := googlecal.AuthURL(cfg.GoogleCalendarClientID, redirectURI, state.Id().String(), forceConsent)
 			d.Logger().WithField("redirect_uri", redirectURI).WithField("auth_url", authURL).Info("generated Google OAuth authorize URL")
 
 			resp := AuthorizeResponse{
@@ -149,6 +150,30 @@ func callbackHandler(db *gorm.DB, gcClient *googlecal.Client, enc *crypto.Encryp
 			tokenExpiry := time.Now().UTC().Add(time.Duration(tokenResp.ExpiresIn) * time.Second)
 
 			proc := NewProcessor(d.Logger(), r.Context(), db)
+
+			if state.Reauthorize() {
+				existing, findErr := proc.ByUserAndProvider(state.UserID(), "google")
+				if findErr != nil {
+					d.Logger().WithError(findErr).Error("re-authorization: existing connection not found")
+					http.Redirect(w, r, "/app/calendar?error=auth_failed", http.StatusFound)
+					return
+				}
+
+				if err := proc.UpdateTokensAndWriteAccess(existing.Id(), encAccess, encRefresh, tokenExpiry, true); err != nil {
+					d.Logger().WithError(err).Error("failed to update connection for re-authorization")
+					http.Redirect(w, r, "/app/calendar?error=internal", http.StatusFound)
+					return
+				}
+
+				updatedConn, _ := proc.ByIDProvider(existing.Id())()
+				if syncTrigger != nil {
+					go syncTrigger(updatedConn)
+				}
+
+				http.Redirect(w, r, "/app/calendar?connected=true", http.StatusFound)
+				return
+			}
+
 			conn, err := proc.Create(
 				state.TenantID(), state.HouseholdID(), state.UserID(),
 				"google", email, encAccess, encRefresh, displayName, tokenExpiry,

@@ -3,6 +3,7 @@ import { toast } from "sonner";
 import { calendarService } from "@/services/api/calendar";
 import { useTenant } from "@/context/tenant-context";
 import { createErrorFromUnknown, getErrorMessage } from "@/lib/api/errors";
+import type { CreateEventData, UpdateEventData } from "@/types/models/calendar";
 import type { Tenant } from "@/types/models/tenant";
 import type { Household } from "@/types/models/household";
 
@@ -110,6 +111,64 @@ export function useTriggerSync() {
       } else {
         toast.error(getErrorMessage(error, "Sync failed"));
       }
+    },
+  });
+}
+
+export function useCreateEvent() {
+  const qc = useQueryClient();
+  const { tenant, household } = useTenant();
+  return useMutation({
+    mutationFn: ({ connectionId, calendarId, data }: { connectionId: string; calendarId: string; data: CreateEventData }) =>
+      calendarService.createEvent(tenant!, connectionId, calendarId, data),
+    onSettled: () => {
+      qc.invalidateQueries({ queryKey: calendarKeys.all(tenant, household) });
+    },
+    onError: (error) => {
+      toast.error(getErrorMessage(error, "Failed to create event"));
+    },
+  });
+}
+
+export function useUpdateEvent() {
+  const qc = useQueryClient();
+  const { tenant, household } = useTenant();
+  return useMutation({
+    mutationFn: ({ connectionId, eventId, data }: { connectionId: string; eventId: string; data: UpdateEventData }) =>
+      calendarService.updateEvent(tenant!, connectionId, eventId, data),
+    onSettled: () => {
+      qc.invalidateQueries({ queryKey: calendarKeys.all(tenant, household) });
+    },
+    onError: (error) => {
+      toast.error(getErrorMessage(error, "Failed to update event"));
+    },
+  });
+}
+
+export function useDeleteEvent() {
+  const qc = useQueryClient();
+  const { tenant, household } = useTenant();
+  return useMutation({
+    mutationFn: ({ connectionId, eventId, scope }: { connectionId: string; eventId: string; scope: "single" | "all" }) =>
+      calendarService.deleteEvent(tenant!, connectionId, eventId, scope),
+    onSettled: () => {
+      qc.invalidateQueries({ queryKey: calendarKeys.all(tenant, household) });
+    },
+    onError: (error) => {
+      toast.error(getErrorMessage(error, "Failed to delete event"));
+    },
+  });
+}
+
+export function useReauthorizeCalendar() {
+  const { tenant } = useTenant();
+  return useMutation({
+    mutationFn: (redirectUri: string) => calendarService.reauthorizeGoogle(tenant!, redirectUri),
+    onSuccess: (response) => {
+      window.location.href = response.data.attributes.authorizeUrl;
+    },
+    onError: (error) => {
+      toast.error(getErrorMessage(error, "Failed to initiate re-authorization"));
     },
   });
 }

@@ -1,10 +1,57 @@
 package event
 
 import (
+	"regexp"
 	"time"
 
 	"github.com/google/uuid"
 )
+
+var recurringInstancePattern = regexp.MustCompile(`_\d{8}(T\d{6}Z)?$`)
+
+type CreateEventRequest struct {
+	Id          uuid.UUID `json:"-"`
+	Title       string    `json:"title"`
+	Start       string    `json:"start"`
+	End         string    `json:"end"`
+	AllDay      bool      `json:"allDay"`
+	Location    string    `json:"location"`
+	Description string    `json:"description"`
+	Recurrence  []string  `json:"recurrence"`
+}
+
+func (r CreateEventRequest) GetName() string { return "calendar-events" }
+func (r CreateEventRequest) GetID() string   { return r.Id.String() }
+func (r *CreateEventRequest) SetID(id string) error {
+	if id == "" {
+		return nil
+	}
+	var err error
+	r.Id, err = uuid.Parse(id)
+	return err
+}
+
+type UpdateEventRequest struct {
+	Id          uuid.UUID `json:"-"`
+	Title       *string   `json:"title"`
+	Start       *string   `json:"start"`
+	End         *string   `json:"end"`
+	AllDay      *bool     `json:"allDay"`
+	Location    *string   `json:"location"`
+	Description *string   `json:"description"`
+	Scope       string    `json:"scope"`
+}
+
+func (r UpdateEventRequest) GetName() string { return "calendar-events" }
+func (r UpdateEventRequest) GetID() string   { return r.Id.String() }
+func (r *UpdateEventRequest) SetID(id string) error {
+	if id == "" {
+		return nil
+	}
+	var err error
+	r.Id, err = uuid.Parse(id)
+	return err
+}
 
 type RestModel struct {
 	Id              uuid.UUID  `json:"-"`
@@ -18,6 +65,9 @@ type RestModel struct {
 	UserDisplayName string     `json:"userDisplayName"`
 	UserColor       string     `json:"userColor"`
 	IsOwner         bool       `json:"isOwner"`
+	SourceId        string     `json:"sourceId"`
+	ConnectionId    string     `json:"connectionId"`
+	IsRecurring     bool       `json:"isRecurring"`
 }
 
 func (r RestModel) GetName() string { return "calendar-events" }
@@ -39,6 +89,9 @@ func TransformWithPrivacy(m Model, requesterUserID uuid.UUID) (RestModel, error)
 		UserDisplayName: m.UserDisplayName(),
 		UserColor:       m.UserColor(),
 		IsOwner:         isOwner,
+		SourceId:        m.SourceID().String(),
+		ConnectionId:    m.ConnectionID().String(),
+		IsRecurring:     recurringInstancePattern.MatchString(m.ExternalID()),
 	}
 
 	if m.IsPrivate() && !isOwner {

@@ -20,6 +20,7 @@ type Builder struct {
 	sourceID        uuid.UUID
 	userID          uuid.UUID
 	externalID      string
+	googleCalendarID string
 	title           string
 	description     string
 	startTime       time.Time
@@ -42,6 +43,7 @@ func (b *Builder) SetConnectionID(id uuid.UUID) *Builder     { b.connectionID = 
 func (b *Builder) SetSourceID(id uuid.UUID) *Builder         { b.sourceID = id; return b }
 func (b *Builder) SetUserID(id uuid.UUID) *Builder           { b.userID = id; return b }
 func (b *Builder) SetExternalID(eid string) *Builder         { b.externalID = eid; return b }
+func (b *Builder) SetGoogleCalendarID(id string) *Builder    { b.googleCalendarID = id; return b }
 func (b *Builder) SetTitle(t string) *Builder                { b.title = t; return b }
 func (b *Builder) SetDescription(d string) *Builder          { b.description = d; return b }
 func (b *Builder) SetStartTime(t time.Time) *Builder         { b.startTime = t; return b }
@@ -69,6 +71,7 @@ func (b *Builder) Build() (Model, error) {
 		sourceID:        b.sourceID,
 		userID:          b.userID,
 		externalID:      b.externalID,
+		googleCalendarID: b.googleCalendarID,
 		title:           b.title,
 		description:     b.description,
 		startTime:       b.startTime,

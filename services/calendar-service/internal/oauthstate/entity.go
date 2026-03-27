@@ -13,6 +13,7 @@ type Entity struct {
 	HouseholdId uuid.UUID `gorm:"type:uuid;not null"`
 	UserId      uuid.UUID `gorm:"type:uuid;not null"`
 	RedirectUri string    `gorm:"type:varchar(500);not null"`
+	Reauthorize bool      `gorm:"not null;default:false"`
 	ExpiresAt   time.Time `gorm:"not null"`
 	CreatedAt   time.Time `gorm:"not null"`
 }
@@ -28,6 +29,7 @@ func (m Model) ToEntity() Entity {
 		HouseholdId: m.householdID,
 		UserId:      m.userID,
 		RedirectUri: m.redirectURI,
+		Reauthorize: m.reauthorize,
 		ExpiresAt:   m.expiresAt,
 		CreatedAt:   m.createdAt,
 	}
@@ -40,6 +42,7 @@ func Make(e Entity) (Model, error) {
 		SetHouseholdID(e.HouseholdId).
 		SetUserID(e.UserId).
 		SetRedirectURI(e.RedirectUri).
+		SetReauthorize(e.Reauthorize).
 		SetExpiresAt(e.ExpiresAt).
 		SetCreatedAt(e.CreatedAt).
 		Build()

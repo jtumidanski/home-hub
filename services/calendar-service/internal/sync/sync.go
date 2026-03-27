@@ -225,12 +225,13 @@ func (e *Engine) syncSource(ctx context.Context, conn connection.Model, src sour
 		}
 
 		entity := event.Entity{
-			TenantId:        conn.TenantID(),
-			HouseholdId:     conn.HouseholdID(),
-			ConnectionId:    conn.Id(),
-			SourceId:        src.Id(),
-			UserId:          conn.UserID(),
-			ExternalId:      ge.ID,
+			TenantId:         conn.TenantID(),
+			HouseholdId:      conn.HouseholdID(),
+			ConnectionId:     conn.Id(),
+			SourceId:         src.Id(),
+			UserId:           conn.UserID(),
+			ExternalId:       ge.ID,
+			GoogleCalendarId: src.ExternalID(),
 			Title:           title,
 			Description:     ge.Description,
 			StartTime:       startTime,

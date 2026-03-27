@@ -1,13 +1,17 @@
 import { useEffect, useRef } from "react";
-import { X, Clock, MapPin, User } from "lucide-react";
+import { X, Clock, MapPin, User, Pencil, Trash2 } from "lucide-react";
+import { Button } from "@/components/ui/button";
 import type { CalendarEvent } from "@/types/models/calendar";
 
 interface EventPopoverProps {
   event: CalendarEvent;
   onClose: () => void;
+  hasWriteAccess?: boolean | undefined;
+  onEdit?: ((event: CalendarEvent) => void) | undefined;
+  onDelete?: ((event: CalendarEvent) => void) | undefined;
 }
 
-export function EventPopover({ event, onClose }: EventPopoverProps) {
+export function EventPopover({ event, onClose, hasWriteAccess, onEdit, onDelete }: EventPopoverProps) {
   const ref = useRef<HTMLDivElement>(null);
   const { attributes: attrs } = event;
 
@@ -27,6 +31,8 @@ export function EventPopover({ event, onClose }: EventPopoverProps) {
   const timeDisplay = attrs.allDay
     ? "All day"
     : `${startTime.toLocaleTimeString([], { hour: "numeric", minute: "2-digit" })} – ${endTime.toLocaleTimeString([], { hour: "numeric", minute: "2-digit" })}`;
+
+  const canModify = attrs.isOwner && hasWriteAccess;
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/20" onClick={onClose}>
@@ -67,6 +73,29 @@ export function EventPopover({ event, onClose }: EventPopoverProps) {
             <p className="pt-2 border-t text-xs whitespace-pre-wrap">{attrs.description}</p>
           )}
         </div>
+
+        {canModify && (
+          <div className="flex gap-2 mt-3 pt-3 border-t">
+            <Button
+              variant="outline"
+              size="sm"
+              className="flex-1"
+              onClick={() => onEdit?.(event)}
+            >
+              <Pencil className="h-3.5 w-3.5 mr-1.5" />
+              Edit
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              className="flex-1 text-destructive hover:text-destructive"
+              onClick={() => onDelete?.(event)}
+            >
+              <Trash2 className="h-3.5 w-3.5 mr-1.5" />
+              Delete
+            </Button>
+          </div>
+        )}
       </div>
     </div>
   );

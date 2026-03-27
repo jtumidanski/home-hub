@@ -19,10 +19,22 @@ import {
 interface CalendarGridProps {
   weekStart: Date;
   events: CalendarEvent[];
-  dayCount?: number;
+  dayCount?: number | undefined;
+  hasWriteAccess?: boolean | undefined;
+  onSlotClick?: ((date: Date) => void) | undefined;
+  onEditEvent?: ((event: CalendarEvent) => void) | undefined;
+  onDeleteEvent?: ((event: CalendarEvent) => void) | undefined;
 }
 
-export function CalendarGrid({ weekStart, events, dayCount = 7 }: CalendarGridProps) {
+export function CalendarGrid({
+  weekStart,
+  events,
+  dayCount = 7,
+  hasWriteAccess,
+  onSlotClick,
+  onEditEvent,
+  onDeleteEvent,
+}: CalendarGridProps) {
   const { household } = useTenant();
   const timezone = household?.attributes.timezone;
   const scrollRef = useRef<HTMLDivElement>(null);
@@ -40,6 +52,22 @@ export function CalendarGrid({ weekStart, events, dayCount = 7 }: CalendarGridPr
 
   const allDayByDay = days.map((day) => getEventsForDay(events, day, timezone).allDay);
   const hasAllDay = allDayByDay.some((d) => d.length > 0);
+
+  const handleColumnClick = (day: Date, e: React.MouseEvent<HTMLDivElement>) => {
+    if (!hasWriteAccess || !onSlotClick) return;
+    if ((e.target as HTMLElement).closest("button")) return;
+
+    const rect = e.currentTarget.getBoundingClientRect();
+    const yOffset = e.clientY - rect.top;
+    const totalMinutes = START_HOUR * 60 + (yOffset / HOUR_HEIGHT) * 60;
+    const roundedMinutes = Math.round(totalMinutes / 15) * 15;
+    const hour = Math.floor(roundedMinutes / 60);
+    const minute = roundedMinutes % 60;
+
+    const clickedDate = new Date(day);
+    clickedDate.setHours(hour, minute, 0, 0);
+    onSlotClick(clickedDate);
+  };
 
   return (
     <div className="border rounded-lg overflow-hidden bg-background flex flex-col h-full">
@@ -107,7 +135,8 @@ export function CalendarGrid({ weekStart, events, dayCount = 7 }: CalendarGridPr
             return (
               <div
                 key={dayIdx}
-                className={`flex-1 border-r last:border-r-0 relative ${today ? "bg-primary/5" : ""}`}
+                className={`flex-1 border-r last:border-r-0 relative ${today ? "bg-primary/5" : ""} ${hasWriteAccess ? "cursor-pointer" : ""}`}
+                onClick={(e) => handleColumnClick(day, e)}
               >
                 {/* Hour grid lines */}
                 {hours.map((hour) => (
@@ -140,6 +169,9 @@ export function CalendarGrid({ weekStart, events, dayCount = 7 }: CalendarGridPr
                       height={height}
                       left={`${column * colWidth}%`}
                       width={`${colWidth}%`}
+                      hasWriteAccess={hasWriteAccess}
+                      onEdit={onEditEvent}
+                      onDelete={onDeleteEvent}
                     />
                   );
                 })}

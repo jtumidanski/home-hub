@@ -7,7 +7,7 @@ import (
 	"gorm.io/gorm"
 )
 
-func create(db *gorm.DB, tenantID, householdID, userID uuid.UUID, redirectURI string) (Entity, error) {
+func create(db *gorm.DB, tenantID, householdID, userID uuid.UUID, redirectURI string, reauthorize bool) (Entity, error) {
 	now := time.Now().UTC()
 	e := Entity{
 		Id:          uuid.New(),
@@ -15,6 +15,7 @@ func create(db *gorm.DB, tenantID, householdID, userID uuid.UUID, redirectURI st
 		HouseholdId: householdID,
 		UserId:      userID,
 		RedirectUri: redirectURI,
+		Reauthorize: reauthorize,
 		ExpiresAt:   now.Add(10 * time.Minute),
 		CreatedAt:   now,
 	}

@@ -1,18 +1,23 @@
-import { useState, useEffect, useMemo, useSyncExternalStore } from "react";
+import { useState, useEffect, useMemo, useCallback, useSyncExternalStore } from "react";
 import { useSearchParams } from "react-router-dom";
-import { ChevronLeft, ChevronRight } from "lucide-react";
+import { ChevronLeft, ChevronRight, Plus } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { ErrorCard } from "@/components/common/error-card";
 import { CalendarGrid } from "@/components/features/calendar/calendar-grid";
 import { ConnectCalendarButton } from "@/components/features/calendar/connect-calendar-button";
 import { ConnectionStatus } from "@/components/features/calendar/connection-status";
 import { CalendarSelectionPanel } from "@/components/features/calendar/calendar-selection-panel";
-import { useCalendarConnections, useCalendarEvents, useCalendarSources } from "@/lib/hooks/api/use-calendar";
+import { EventFormDialog } from "@/components/features/calendar/event-form-dialog";
+import { RecurringScopeDialog } from "@/components/features/calendar/recurring-scope-dialog";
+import { ReauthorizeBanner } from "@/components/features/calendar/reauthorize-banner";
+import { useCalendarConnections, useCalendarEvents, useCalendarSources, useDeleteEvent } from "@/lib/hooks/api/use-calendar";
 import { usePackages } from "@/lib/hooks/api/use-packages";
 import { packagesToCalendarEvents } from "@/components/features/packages/package-calendar-overlay";
 import { getStartOfWeek, formatDateRange } from "@/components/features/calendar/calendar-utils";
+import { getErrorMessage } from "@/lib/api/errors";
 import type { CalendarConnection, CalendarEvent } from "@/types/models/calendar";
 import type { Package } from "@/types/models/package";
 
@@ -32,7 +37,19 @@ export function CalendarPage() {
   const [weekStart, setWeekStart] = useState(() => getStartOfWeek(new Date()));
   const [showSources, setShowSources] = useState(false);
 
-  // Reset to a sensible start when switching between mobile and desktop
+  // Event CRUD state
+  const [showCreateDialog, setShowCreateDialog] = useState(false);
+  const [prefilledStart, setPrefilledStart] = useState<Date | undefined>();
+  const [editEvent, setEditEvent] = useState<CalendarEvent | null>(null);
+  const [editScope, setEditScope] = useState<"single" | "all">("single");
+  const [showEditDialog, setShowEditDialog] = useState(false);
+  const [deleteTarget, setDeleteTarget] = useState<CalendarEvent | null>(null);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [deleteScope, setDeleteScope] = useState<"single" | "all">("single");
+  const [recurringAction, setRecurringAction] = useState<{ event: CalendarEvent; action: "edit" | "delete" } | null>(null);
+
+  const deleteEvent = useDeleteEvent();
+
   useEffect(() => {
     if (isDesktop) {
       setWeekStart(getStartOfWeek(new Date()));
@@ -84,8 +101,15 @@ export function CalendarPage() {
   const events = useMemo(() => [...calendarEvents, ...packageEvents], [calendarEvents, packageEvents]);
   const hasCalendar = connections.length > 0 || events.length > 0;
 
-  // Derive unique users from events so all household members see the color legend,
-  // even if they haven't connected their own calendar.
+  const hasWriteAccess = useMemo(
+    () => connections.some((c) => c.attributes.writeAccess && c.attributes.status === "connected"),
+    [connections],
+  );
+  const needsReauth = useMemo(
+    () => connections.some((c) => !c.attributes.writeAccess && c.attributes.status === "connected"),
+    [connections],
+  );
+
   const eventUsers = useMemo(() => {
     const seen = new Map<string, { displayName: string; color: string }>();
     for (const evt of events) {
@@ -106,7 +130,6 @@ export function CalendarPage() {
     if (isDesktop) {
       setWeekStart(getStartOfWeek(today));
     } else {
-      // On mobile, center today: show yesterday, today, tomorrow
       const start = new Date(today);
       start.setDate(start.getDate() - 1);
       start.setHours(0, 0, 0, 0);
@@ -122,6 +145,70 @@ export function CalendarPage() {
     const next = new Date(weekStart);
     next.setDate(next.getDate() + dayCount);
     setWeekStart(next);
+  };
+
+  const handleAddEvent = useCallback(() => {
+    setPrefilledStart(undefined);
+    setEditEvent(null);
+    setShowCreateDialog(true);
+  }, []);
+
+  const handleSlotClick = useCallback((date: Date) => {
+    setPrefilledStart(date);
+    setEditEvent(null);
+    setShowCreateDialog(true);
+  }, []);
+
+  const handleEditEvent = useCallback((evt: CalendarEvent) => {
+    if (evt.attributes.isRecurring) {
+      setRecurringAction({ event: evt, action: "edit" });
+    } else {
+      setEditEvent(evt);
+      setEditScope("single");
+      setShowEditDialog(true);
+    }
+  }, []);
+
+  const handleDeleteEvent = useCallback((evt: CalendarEvent) => {
+    if (evt.attributes.isRecurring) {
+      setRecurringAction({ event: evt, action: "delete" });
+    } else {
+      setDeleteTarget(evt);
+      setDeleteScope("single");
+      setShowDeleteConfirm(true);
+    }
+  }, []);
+
+  const handleRecurringScopeSelect = useCallback((scope: "single" | "all") => {
+    if (!recurringAction) return;
+    const { event, action } = recurringAction;
+    setRecurringAction(null);
+
+    if (action === "edit") {
+      setEditEvent(event);
+      setEditScope(scope);
+      setShowEditDialog(true);
+    } else {
+      setDeleteTarget(event);
+      setDeleteScope(scope);
+      setShowDeleteConfirm(true);
+    }
+  }, [recurringAction]);
+
+  const confirmDelete = async () => {
+    if (!deleteTarget) return;
+    try {
+      await deleteEvent.mutateAsync({
+        connectionId: deleteTarget.attributes.connectionId,
+        eventId: deleteTarget.id,
+        scope: deleteScope,
+      });
+      toast.success("Event deleted");
+    } catch (error) {
+      toast.error(getErrorMessage(error, "Failed to delete event"));
+    }
+    setShowDeleteConfirm(false);
+    setDeleteTarget(null);
   };
 
   if (connectionsQuery.isLoading) {
@@ -163,6 +250,13 @@ export function CalendarPage() {
             </Button>
           </div>
 
+          {hasWriteAccess && (
+            <Button size="sm" onClick={handleAddEvent}>
+              <Plus className="h-4 w-4 mr-1" />
+              Add Event
+            </Button>
+          )}
+
           {connections.length === 0 && <ConnectCalendarButton />}
           {activeConnection && (
             <Button
@@ -176,13 +270,15 @@ export function CalendarPage() {
         </div>
       </div>
 
-      {/* Connection status rows (current user's connections) and household color legend */}
+      {/* Re-authorization banner */}
+      {needsReauth && <ReauthorizeBanner />}
+
+      {/* Connection status rows and household color legend */}
       {(connections.length > 0 || eventUsers.length > 0) && (
         <div className="space-y-1">
           {connections.map((conn) => (
             <ConnectionStatus key={conn.id} connection={conn} />
           ))}
-          {/* Show legend for other household members' calendars (not already shown in ConnectionStatus) */}
           {eventUsers
             .filter((u) => !connections.some((c) => c.attributes.userDisplayName === u.displayName))
             .map((u) => (
@@ -210,7 +306,15 @@ export function CalendarPage() {
           {eventsQuery.isLoading ? (
             <Skeleton className="h-full w-full" />
           ) : (
-            <CalendarGrid weekStart={weekStart} events={events} dayCount={dayCount} />
+            <CalendarGrid
+              weekStart={weekStart}
+              events={events}
+              dayCount={dayCount}
+              hasWriteAccess={hasWriteAccess}
+              onSlotClick={handleSlotClick}
+              onEditEvent={handleEditEvent}
+              onDeleteEvent={handleDeleteEvent}
+            />
           )}
         </div>
       ) : (
@@ -222,6 +326,59 @@ export function CalendarPage() {
           <ConnectCalendarButton />
         </div>
       )}
+
+      {/* Create event dialog */}
+      <EventFormDialog
+        open={showCreateDialog}
+        onOpenChange={setShowCreateDialog}
+        connections={connections}
+        sources={sources}
+        prefilledStart={prefilledStart}
+      />
+
+      {/* Edit event dialog */}
+      <EventFormDialog
+        open={showEditDialog}
+        onOpenChange={setShowEditDialog}
+        connections={connections}
+        sources={sources}
+        editEvent={editEvent}
+        editScope={editScope}
+      />
+
+      {/* Recurring scope dialog */}
+      <RecurringScopeDialog
+        open={!!recurringAction}
+        onOpenChange={() => setRecurringAction(null)}
+        action={recurringAction?.action ?? "edit"}
+        onSelect={handleRecurringScopeSelect}
+      />
+
+      {/* Delete confirmation dialog */}
+      <Dialog open={showDeleteConfirm} onOpenChange={setShowDeleteConfirm}>
+        <DialogContent className="max-w-sm">
+          <DialogHeader>
+            <DialogTitle>Delete event</DialogTitle>
+          </DialogHeader>
+          <p className="text-sm text-muted-foreground">
+            Are you sure you want to delete &ldquo;{deleteTarget?.attributes.title}&rdquo;?
+            This will also remove it from Google Calendar.
+          </p>
+          <div className="flex gap-2 justify-end">
+            <Button variant="outline" size="sm" onClick={() => setShowDeleteConfirm(false)}>
+              Cancel
+            </Button>
+            <Button
+              variant="destructive"
+              size="sm"
+              onClick={confirmDelete}
+              disabled={deleteEvent.isPending}
+            >
+              Delete
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

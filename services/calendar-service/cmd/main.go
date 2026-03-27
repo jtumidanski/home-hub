@@ -59,6 +59,10 @@ func main() {
 		syncEngine.SyncConnection(conn)
 	}
 
+	syncConnectionDirect := func(conn connection.Model) {
+		syncEngine.SyncConnection(conn)
+	}
+
 	cascadeDelete := func(ctx context.Context, connectionID uuid.UUID) {
 		syncEngine.DeleteConnectionData(ctx, connectionID)
 	}
@@ -86,6 +90,7 @@ func main() {
 			connection.InitializeRoutes(db, gcClient, enc, cfg, syncTrigger, cascadeDelete)(l, si, api)
 			source.InitializeRoutes(db, ownerCheck)(l, si, api)
 			event.InitializeRoutes(db)(l, si, api)
+			event.InitializeMutationRoutes(db, gcClient, enc, syncConnectionDirect)(l, si, api)
 		}).
 		Run()
 }

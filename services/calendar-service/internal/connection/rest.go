@@ -13,6 +13,7 @@ type RestModel struct {
 	Email              string     `json:"email"`
 	UserDisplayName    string     `json:"userDisplayName"`
 	UserColor          string     `json:"userColor"`
+	WriteAccess        bool       `json:"writeAccess"`
 	LastSyncAt         *time.Time `json:"lastSyncAt"`
 	LastSyncEventCount int        `json:"lastSyncEventCount"`
 	CreatedAt          time.Time  `json:"createdAt"`
@@ -34,6 +35,7 @@ func Transform(m Model) (RestModel, error) {
 		Email:              m.Email(),
 		UserDisplayName:    m.UserDisplayName(),
 		UserColor:          m.UserColor(),
+		WriteAccess:        m.WriteAccess(),
 		LastSyncAt:         m.LastSyncAt(),
 		LastSyncEventCount: m.LastSyncEventCount(),
 		CreatedAt:          m.CreatedAt(),
@@ -55,6 +57,7 @@ func TransformSlice(models []Model) ([]RestModel, error) {
 type AuthorizeRequest struct {
 	Id          uuid.UUID `json:"-"`
 	RedirectUri string    `json:"redirectUri"`
+	Reauthorize bool      `json:"reauthorize"`
 }
 
 func (r AuthorizeRequest) GetName() string { return "calendar-authorization-requests" }

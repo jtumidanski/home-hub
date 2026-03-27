@@ -8,9 +8,12 @@ interface EventBlockProps {
   height: number;
   left: string;
   width: string;
+  hasWriteAccess?: boolean | undefined;
+  onEdit?: ((event: CalendarEvent) => void) | undefined;
+  onDelete?: ((event: CalendarEvent) => void) | undefined;
 }
 
-export function EventBlock({ event, top, height, left, width }: EventBlockProps) {
+export function EventBlock({ event, top, height, left, width, hasWriteAccess, onEdit, onDelete }: EventBlockProps) {
   const [showPopover, setShowPopover] = useState(false);
   const { attributes: attrs } = event;
   const isBusy = attrs.title === "Busy" && !attrs.isOwner;
@@ -38,7 +41,19 @@ export function EventBlock({ event, top, height, left, width }: EventBlockProps)
         )}
       </button>
       {showPopover && (
-        <EventPopover event={event} onClose={() => setShowPopover(false)} />
+        <EventPopover
+          event={event}
+          onClose={() => setShowPopover(false)}
+          hasWriteAccess={hasWriteAccess}
+          onEdit={(evt) => {
+            setShowPopover(false);
+            onEdit?.(evt);
+          }}
+          onDelete={(evt) => {
+            setShowPopover(false);
+            onDelete?.(evt);
+          }}
+        />
       )}
     </>
   );

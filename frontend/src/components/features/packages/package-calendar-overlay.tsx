@@ -32,6 +32,9 @@ export function packagesToCalendarEvents(packages: Package[]): CalendarEvent[] {
           userDisplayName: carrier,
           userColor: "#0d9488", // teal-600 for package events
           isOwner: p.attributes.isOwner,
+          sourceId: "",
+          connectionId: "",
+          isRecurring: false,
         },
       };
     });

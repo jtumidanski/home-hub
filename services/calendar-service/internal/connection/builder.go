@@ -28,6 +28,7 @@ type Builder struct {
 	tokenExpiry        time.Time
 	userDisplayName    string
 	userColor          string
+	writeAccess        bool
 	lastSyncAt         *time.Time
 	lastSyncEventCount int
 	createdAt          time.Time
@@ -48,6 +49,7 @@ func (b *Builder) SetRefreshToken(t string) *Builder         { b.refreshToken = 
 func (b *Builder) SetTokenExpiry(t time.Time) *Builder       { b.tokenExpiry = t; return b }
 func (b *Builder) SetUserDisplayName(n string) *Builder      { b.userDisplayName = n; return b }
 func (b *Builder) SetUserColor(c string) *Builder            { b.userColor = c; return b }
+func (b *Builder) SetWriteAccess(w bool) *Builder            { b.writeAccess = w; return b }
 func (b *Builder) SetLastSyncAt(t *time.Time) *Builder       { b.lastSyncAt = t; return b }
 func (b *Builder) SetLastSyncEventCount(c int) *Builder      { b.lastSyncEventCount = c; return b }
 func (b *Builder) SetCreatedAt(t time.Time) *Builder         { b.createdAt = t; return b }
@@ -82,6 +84,7 @@ func (b *Builder) Build() (Model, error) {
 		tokenExpiry:        b.tokenExpiry,
 		userDisplayName:    b.userDisplayName,
 		userColor:          b.userColor,
+		writeAccess:        b.writeAccess,
 		lastSyncAt:         b.lastSyncAt,
 		lastSyncEventCount: b.lastSyncEventCount,
 		createdAt:          b.createdAt,
