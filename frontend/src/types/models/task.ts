@@ -4,6 +4,7 @@ export interface TaskAttributes {
   status: "pending" | "completed";
   dueOn?: string;
   rolloverEnabled: boolean;
+  ownerUserId?: string | null;
   completedAt?: string;
   deletedAt?: string;
   createdAt: string;
@@ -23,12 +24,13 @@ export interface TaskCreateAttributes {
   notes?: string;
   dueOn?: string;
   rolloverEnabled?: boolean;
+  ownerUserId?: string | null;
 }
 
 // --- Update attributes (F14) ---
 
 export type TaskUpdateAttributes = Partial<
-  Pick<TaskAttributes, "title" | "notes" | "status" | "dueOn" | "rolloverEnabled">
+  Pick<TaskAttributes, "title" | "notes" | "status" | "dueOn" | "rolloverEnabled" | "ownerUserId">
 >;
 
 // --- Label map (F15) ---

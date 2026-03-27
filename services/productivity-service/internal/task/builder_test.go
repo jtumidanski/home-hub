@@ -16,6 +16,7 @@ func TestBuilder_Build(t *testing.T) {
 	tenantID := uuid.New()
 	householdID := uuid.New()
 	completedByUID := uuid.New()
+	ownerUserID := uuid.New()
 
 	tests := []struct {
 		name        string
@@ -35,6 +36,7 @@ func TestBuilder_Build(t *testing.T) {
 					SetStatus("in_progress").
 					SetDueOn(&dueOn).
 					SetRolloverEnabled(true).
+					SetOwnerUserID(&ownerUserID).
 					SetCompletedAt(&completedAt).
 					SetCompletedByUID(&completedByUID).
 					SetCreatedAt(now).
@@ -51,6 +53,7 @@ func TestBuilder_Build(t *testing.T) {
 				require.Equal(t, "in_progress", m.status)
 				require.Equal(t, &dueOn, m.dueOn)
 				require.True(t, m.rolloverEnabled)
+				require.Equal(t, &ownerUserID, m.ownerUserID)
 				require.Equal(t, &completedAt, m.completedAt)
 				require.Equal(t, &completedByUID, m.completedByUID)
 				require.Equal(t, now, m.createdAt)

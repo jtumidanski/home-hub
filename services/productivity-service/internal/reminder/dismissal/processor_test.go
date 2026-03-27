@@ -36,7 +36,7 @@ func TestCreate_SuccessfulDismissal(t *testing.T) {
 
 	remProc := reminder.NewProcessor(l, ctx, db)
 	scheduled := time.Now().UTC().Add(1 * time.Hour)
-	rem, err := remProc.Create(tenantID, householdID, "Test Reminder", "Some notes", scheduled)
+	rem, err := remProc.Create(tenantID, householdID, "Test Reminder", "Some notes", scheduled, nil)
 	require.NoError(t, err)
 
 	dismissalProc := NewProcessor(l, ctx, db)

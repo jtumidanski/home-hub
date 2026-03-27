@@ -52,7 +52,7 @@ export function useCreateReminder() {
   const qc = useQueryClient();
   const { tenant, household } = useTenant();
   return useMutation({
-    mutationFn: (attrs: { title: string; notes?: string; scheduledFor: string }) =>
+    mutationFn: (attrs: { title: string; notes?: string; scheduledFor: string; ownerUserId?: string | null }) =>
       productivityService.createReminder(tenant!, attrs),
     onSettled: () => {
       qc.invalidateQueries({ queryKey: reminderKeys.lists(tenant, household) });

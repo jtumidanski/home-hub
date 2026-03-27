@@ -1,5 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { render, screen } from "@testing-library/react";
+import { MemoryRouter } from "react-router-dom";
 
 const mockUseTaskSummary = vi.fn();
 const mockUseReminderSummary = vi.fn();
@@ -27,6 +28,10 @@ vi.mock("@/components/features/packages/package-summary-widget", () => ({
 
 import { DashboardPage } from "../DashboardPage";
 
+function renderWithRouter(ui: React.ReactElement) {
+  return render(<MemoryRouter>{ui}</MemoryRouter>);
+}
+
 describe("DashboardPage", () => {
   beforeEach(() => {
     vi.clearAllMocks();
@@ -40,14 +45,14 @@ describe("DashboardPage", () => {
   it("renders loading skeleton when either summary is loading", () => {
     mockUseTaskSummary.mockReturnValue({ data: null, isLoading: true, isError: false });
     mockUseReminderSummary.mockReturnValue({ data: null, isLoading: false, isError: false });
-    render(<DashboardPage />);
+    renderWithRouter(<DashboardPage />);
     expect(screen.queryByText("Dashboard")).not.toBeInTheDocument();
     expect(screen.getByRole("status", { name: "Loading" })).toBeInTheDocument();
   });
 
   it("renders error card when task summary fails", () => {
     mockUseTaskSummary.mockReturnValue({ data: null, isLoading: false, isError: true });
-    render(<DashboardPage />);
+    renderWithRouter(<DashboardPage />);
     expect(screen.getByText(/failed to load some dashboard data/i)).toBeInTheDocument();
   });
 
@@ -62,7 +67,7 @@ describe("DashboardPage", () => {
       isLoading: false,
       isError: false,
     });
-    render(<DashboardPage />);
+    renderWithRouter(<DashboardPage />);
 
     expect(screen.getByText("Dashboard")).toBeInTheDocument();
     expect(screen.getByText("You are owner")).toBeInTheDocument();
@@ -74,7 +79,7 @@ describe("DashboardPage", () => {
   });
 
   it("renders dash placeholders when summary data is null", () => {
-    render(<DashboardPage />);
+    renderWithRouter(<DashboardPage />);
     expect(screen.getByText("Dashboard")).toBeInTheDocument();
     const dashes = screen.getAllByText("-");
     expect(dashes.length).toBe(3);

@@ -41,7 +41,7 @@ func TestRestorationProcessor_Create(t *testing.T) {
 			setup: func(t *testing.T, db *gorm.DB) uuid.UUID {
 				l, _ := test.NewNullLogger()
 				taskProc := task.NewProcessor(l, context.Background(), db)
-				m, err := taskProc.Create(tenantID, householdID, "Restore Me", "", nil, false)
+				m, err := taskProc.Create(tenantID, householdID, "Restore Me", "", nil, false, nil)
 				require.NoError(t, err)
 				err = taskProc.Delete(m.Id())
 				require.NoError(t, err)
@@ -71,7 +71,7 @@ func TestRestorationProcessor_Create(t *testing.T) {
 			setup: func(t *testing.T, db *gorm.DB) uuid.UUID {
 				l, _ := test.NewNullLogger()
 				taskProc := task.NewProcessor(l, context.Background(), db)
-				m, err := taskProc.Create(tenantID, householdID, "Not Deleted", "", nil, false)
+				m, err := taskProc.Create(tenantID, householdID, "Not Deleted", "", nil, false, nil)
 				require.NoError(t, err)
 				return m.Id()
 			},

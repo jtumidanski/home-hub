@@ -5,6 +5,7 @@ import type { Tenant } from "@/types/models/tenant";
 import type { TenantCreateAttributes } from "@/types/models/tenant";
 import type { Household, HouseholdUpdateAttributes, HouseholdCreateAttributes } from "@/types/models/household";
 import type { Invitation, InvitationCreateAttributes } from "@/types/models/invitation";
+import type { Member } from "@/types/models/member";
 import type { Membership } from "@/types/models/membership";
 import type { Preference } from "@/types/models/preference";
 
@@ -89,6 +90,13 @@ class AccountService {
 
   declineInvitation(id: string) {
     return api.post<ApiResponse<Invitation>>(`/invitations/${id}/decline`);
+  }
+
+  // --- Household members ---
+
+  listHouseholdMembers(tenant: Tenant, householdId: string) {
+    api.setTenant(tenant);
+    return api.get<ApiListResponse<Member>>(`/households/${householdId}/members`);
   }
 
   // --- Membership endpoints ---

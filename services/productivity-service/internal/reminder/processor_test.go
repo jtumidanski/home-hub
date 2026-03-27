@@ -34,10 +34,12 @@ func TestCreate(t *testing.T) {
 	p := newTestProcessor(t, db)
 
 	scheduled := time.Now().UTC().Add(1 * time.Hour)
-	m, err := p.Create(uuid.New(), uuid.New(), "Test Reminder", "Notes", scheduled)
+	ownerID := uuid.New()
+	m, err := p.Create(uuid.New(), uuid.New(), "Test Reminder", "Notes", scheduled, &ownerID)
 	require.NoError(t, err)
 	require.Equal(t, "Test Reminder", m.Title())
 	require.Equal(t, "Notes", m.Notes())
+	require.Equal(t, &ownerID, m.OwnerUserID())
 }
 
 func TestIsActive(t *testing.T) {
@@ -55,7 +57,7 @@ func TestIsActive(t *testing.T) {
 
 	for _, tc := range tests {
 		t.Run(tc.name, func(t *testing.T) {
-			m, err := p.Create(uuid.New(), uuid.New(), tc.name, "", tc.scheduledFor)
+			m, err := p.Create(uuid.New(), uuid.New(), tc.name, "", tc.scheduledFor, nil)
 			require.NoError(t, err)
 			require.Equal(t, tc.expectActive, m.IsActive())
 		})
@@ -82,7 +84,7 @@ func TestSnooze(t *testing.T) {
 	for _, tc := range tests {
 		t.Run(tc.name, func(t *testing.T) {
 			past := time.Now().UTC().Add(-1 * time.Hour)
-			m, err := p.Create(uuid.New(), uuid.New(), tc.name, "", past)
+			m, err := p.Create(uuid.New(), uuid.New(), tc.name, "", past, nil)
 			require.NoError(t, err)
 
 			snoozedUntil, err := p.Snooze(m.Id(), tc.durationMinutes)
@@ -101,7 +103,7 @@ func TestDismiss(t *testing.T) {
 	p := newTestProcessor(t, db)
 
 	past := time.Now().UTC().Add(-1 * time.Hour)
-	m, err := p.Create(uuid.New(), uuid.New(), "Dismiss Me", "", past)
+	m, err := p.Create(uuid.New(), uuid.New(), "Dismiss Me", "", past, nil)
 	require.NoError(t, err)
 	require.True(t, m.IsActive())
 

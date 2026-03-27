@@ -15,6 +15,7 @@ type Model struct {
 	status          string
 	dueOn           *time.Time
 	rolloverEnabled bool
+	ownerUserID     *uuid.UUID
 	completedAt     *time.Time
 	completedByUID  *uuid.UUID
 	deletedAt       *time.Time
@@ -30,6 +31,7 @@ func (m Model) Notes() string            { return m.notes }
 func (m Model) Status() string           { return m.status }
 func (m Model) DueOn() *time.Time        { return m.dueOn }
 func (m Model) RolloverEnabled() bool    { return m.rolloverEnabled }
+func (m Model) OwnerUserID() *uuid.UUID    { return m.ownerUserID }
 func (m Model) CompletedAt() *time.Time  { return m.completedAt }
 func (m Model) CompletedByUID() *uuid.UUID { return m.completedByUID }
 func (m Model) DeletedAt() *time.Time    { return m.deletedAt }

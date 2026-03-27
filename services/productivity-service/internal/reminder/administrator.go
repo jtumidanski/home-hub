@@ -7,7 +7,7 @@ import (
 	"gorm.io/gorm"
 )
 
-func create(db *gorm.DB, tenantID, householdID uuid.UUID, title, notes string, scheduledFor time.Time) (Entity, error) {
+func create(db *gorm.DB, tenantID, householdID uuid.UUID, title, notes string, scheduledFor time.Time, ownerUserID *uuid.UUID) (Entity, error) {
 	now := time.Now().UTC()
 	e := Entity{
 		Id:           uuid.New(),
@@ -16,6 +16,7 @@ func create(db *gorm.DB, tenantID, householdID uuid.UUID, title, notes string, s
 		Title:        title,
 		Notes:        notes,
 		ScheduledFor: scheduledFor,
+		OwnerUserId:  ownerUserID,
 		CreatedAt:    now,
 		UpdatedAt:    now,
 	}
@@ -25,7 +26,7 @@ func create(db *gorm.DB, tenantID, householdID uuid.UUID, title, notes string, s
 	return e, nil
 }
 
-func update(db *gorm.DB, id uuid.UUID, title, notes string, scheduledFor time.Time) (Entity, error) {
+func update(db *gorm.DB, id uuid.UUID, title, notes string, scheduledFor time.Time, ownerUserID *uuid.UUID) (Entity, error) {
 	var e Entity
 	if err := db.Where("id = ?", id).First(&e).Error; err != nil {
 		return Entity{}, err
@@ -33,6 +34,7 @@ func update(db *gorm.DB, id uuid.UUID, title, notes string, scheduledFor time.Ti
 	e.Title = title
 	e.Notes = notes
 	e.ScheduledFor = scheduledFor
+	e.OwnerUserId = ownerUserID
 	e.UpdatedAt = time.Now().UTC()
 	if err := db.Save(&e).Error; err != nil {
 		return Entity{}, err

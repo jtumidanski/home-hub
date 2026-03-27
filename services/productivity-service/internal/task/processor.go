@@ -41,19 +41,19 @@ func (p *Processor) ByStatusProvider(status string) model.Provider[[]Model] {
 	return model.SliceMap(Make)(getByStatus(status)(p.db.WithContext(p.ctx)))
 }
 
-func (p *Processor) Create(tenantID, householdID uuid.UUID, title, notes string, dueOn *time.Time, rolloverEnabled bool) (Model, error) {
+func (p *Processor) Create(tenantID, householdID uuid.UUID, title, notes string, dueOn *time.Time, rolloverEnabled bool, ownerUserID *uuid.UUID) (Model, error) {
 	if _, err := NewBuilder().SetTitle(title).Build(); err != nil {
 		return Model{}, err
 	}
-	e, err := create(p.db.WithContext(p.ctx), tenantID, householdID, title, notes, "pending", dueOn, rolloverEnabled)
+	e, err := create(p.db.WithContext(p.ctx), tenantID, householdID, title, notes, "pending", dueOn, rolloverEnabled, ownerUserID)
 	if err != nil {
 		return Model{}, err
 	}
 	return Make(e)
 }
 
-func (p *Processor) Update(id uuid.UUID, title, notes, status string, dueOn *time.Time, rolloverEnabled bool, userID uuid.UUID) (Model, error) {
-	e, err := update(p.db.WithContext(p.ctx), id, title, notes, status, dueOn, rolloverEnabled, userID)
+func (p *Processor) Update(id uuid.UUID, title, notes, status string, dueOn *time.Time, rolloverEnabled bool, ownerUserID *uuid.UUID, userID uuid.UUID) (Model, error) {
+	e, err := update(p.db.WithContext(p.ctx), id, title, notes, status, dueOn, rolloverEnabled, ownerUserID, userID)
 	if err != nil {
 		return Model{}, err
 	}
