@@ -58,8 +58,18 @@ func createHandler(db *gorm.DB) server.InputHandler[CreateRequest] {
 				server.WriteError(w, http.StatusBadRequest, "Invalid Date", "scheduledFor must be ISO-8601")
 				return
 			}
+			var ownerUserID *uuid.UUID
+			if input.OwnerUserId != nil {
+				parsed, err := uuid.Parse(*input.OwnerUserId)
+				if err == nil {
+					ownerUserID = &parsed
+				}
+			} else {
+				uid := t.UserId()
+				ownerUserID = &uid
+			}
 			proc := NewProcessor(d.Logger(), r.Context(), db)
-			m, err := proc.Create(t.Id(), t.HouseholdId(), input.Title, input.Notes, scheduledFor)
+			m, err := proc.Create(t.Id(), t.HouseholdId(), input.Title, input.Notes, scheduledFor, ownerUserID)
 			if err != nil {
 				if errors.Is(err, ErrTitleRequired) || errors.Is(err, ErrScheduledForRequired) {
 					server.WriteError(w, http.StatusBadRequest, "Validation Failed", "Title and scheduledFor are required")
@@ -112,8 +122,15 @@ func updateHandler(db *gorm.DB) server.InputHandler[UpdateRequest] {
 					server.WriteError(w, http.StatusBadRequest, "Invalid Date", "")
 					return
 				}
+				var ownerUserID *uuid.UUID
+				if input.OwnerUserId != nil {
+					parsed, err := uuid.Parse(*input.OwnerUserId)
+					if err == nil {
+						ownerUserID = &parsed
+					}
+				}
 				proc := NewProcessor(d.Logger(), r.Context(), db)
-				m, err := proc.Update(id, input.Title, input.Notes, scheduledFor)
+				m, err := proc.Update(id, input.Title, input.Notes, scheduledFor, ownerUserID)
 				if err != nil {
 					if errors.Is(err, gorm.ErrRecordNotFound) {
 						d.Logger().WithError(err).Error("Reminder not found")

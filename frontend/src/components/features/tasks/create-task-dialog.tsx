@@ -4,6 +4,8 @@ import { toast } from "sonner";
 import { useCreateTask } from "@/lib/hooks/api/use-tasks";
 import { createTaskSchema, type CreateTaskFormData, createTaskDefaults } from "@/lib/schemas/task.schema";
 import { createErrorFromUnknown } from "@/lib/api/errors";
+import { useAuth } from "@/components/providers/auth-provider";
+import { OwnerSelect } from "@/components/common/owner-select";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
@@ -17,15 +19,17 @@ interface CreateTaskDialogProps {
 
 export function CreateTaskDialog({ open, onOpenChange }: CreateTaskDialogProps) {
   const createTask = useCreateTask();
+  const { user } = useAuth();
 
+  const defaults = { ...createTaskDefaults, ownerUserId: user?.id ?? "" };
   const form = useForm<CreateTaskFormData>({
     resolver: zodResolver(createTaskSchema),
-    defaultValues: createTaskDefaults,
+    defaultValues: defaults,
   });
 
   const handleOpenChange = (next: boolean) => {
     if (form.formState.isSubmitting) return;
-    if (!next) form.reset(createTaskDefaults);
+    if (!next) form.reset(defaults);
     onOpenChange(next);
   };
 
@@ -35,9 +39,10 @@ export function CreateTaskDialog({ open, onOpenChange }: CreateTaskDialogProps) 
         title: values.title,
         ...(values.notes != null ? { notes: values.notes } : {}),
         ...(values.dueOn ? { dueOn: values.dueOn } : {}),
+        ownerUserId: values.ownerUserId || null,
       });
       toast.success("Task created");
-      form.reset(createTaskDefaults);
+      form.reset(defaults);
       onOpenChange(false);
     } catch (error) {
       toast.error(createErrorFromUnknown(error, "Failed to create task").message);
@@ -86,6 +91,19 @@ export function CreateTaskDialog({ open, onOpenChange }: CreateTaskDialogProps) 
                   <FormLabel>Due Date</FormLabel>
                   <FormControl>
                     <Input type="date" aria-label="Due Date" {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <FormField
+              control={form.control}
+              name="ownerUserId"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Owner</FormLabel>
+                  <FormControl>
+                    <OwnerSelect value={field.value ?? ""} onChange={field.onChange} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>

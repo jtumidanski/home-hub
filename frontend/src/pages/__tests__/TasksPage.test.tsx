@@ -1,6 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
+import { MemoryRouter } from "react-router-dom";
 
 const mockUseTasks = vi.fn();
 const mockUpdateMutateAsync = vi.fn();
@@ -10,6 +11,11 @@ vi.mock("@/lib/hooks/api/use-tasks", () => ({
   useTasks: () => mockUseTasks(),
   useUpdateTask: () => ({ mutateAsync: mockUpdateMutateAsync }),
   useDeleteTask: () => ({ mutateAsync: mockDeleteMutateAsync }),
+}));
+
+vi.mock("@/lib/hooks/api/use-household-members", () => ({
+  useMemberMap: () => new Map(),
+  useHouseholdMembers: () => ({ data: { data: [] } }),
 }));
 
 vi.mock("@/lib/api/errors", () => ({
@@ -27,6 +33,10 @@ vi.mock("@/components/features/tasks/create-task-dialog", () => ({
 
 import { TasksPage } from "../TasksPage";
 
+function renderWithRouter(ui: React.ReactElement) {
+  return render(<MemoryRouter>{ui}</MemoryRouter>);
+}
+
 describe("TasksPage", () => {
   beforeEach(() => {
     vi.clearAllMocks();
@@ -35,7 +45,7 @@ describe("TasksPage", () => {
 
   it("renders loading skeleton when isLoading is true", () => {
     mockUseTasks.mockReturnValue({ data: null, isLoading: true, isError: false });
-    render(<TasksPage />);
+    renderWithRouter(<TasksPage />);
     // Skeleton renders multiple placeholder elements but no heading
     expect(screen.queryByText("Tasks")).not.toBeInTheDocument();
     expect(screen.getByRole("status", { name: "Loading" })).toBeInTheDocument();
@@ -43,13 +53,13 @@ describe("TasksPage", () => {
 
   it("renders error state when isError is true", () => {
     mockUseTasks.mockReturnValue({ data: null, isLoading: false, isError: true });
-    render(<TasksPage />);
+    renderWithRouter(<TasksPage />);
     expect(screen.getByText(/failed to load tasks/i)).toBeInTheDocument();
   });
 
   it("renders empty state when there are no tasks", () => {
     mockUseTasks.mockReturnValue({ data: { data: [] }, isLoading: false, isError: false });
-    render(<TasksPage />);
+    renderWithRouter(<TasksPage />);
     expect(screen.getByText("Tasks")).toBeInTheDocument();
     expect(screen.getByText(/no tasks yet/i)).toBeInTheDocument();
     expect(screen.getByText("Create First Task")).toBeInTheDocument();
@@ -66,7 +76,7 @@ describe("TasksPage", () => {
       isLoading: false,
       isError: false,
     });
-    render(<TasksPage />);
+    renderWithRouter(<TasksPage />);
     expect(screen.getByText("Buy milk")).toBeInTheDocument();
     expect(screen.getByText("Walk dog")).toBeInTheDocument();
     expect(screen.getByText("Due: 2026-04-01")).toBeInTheDocument();
@@ -75,7 +85,7 @@ describe("TasksPage", () => {
   it("opens create dialog when New Task button is clicked", async () => {
     const user = userEvent.setup();
     mockUseTasks.mockReturnValue({ data: { data: [] }, isLoading: false, isError: false });
-    render(<TasksPage />);
+    renderWithRouter(<TasksPage />);
 
     expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
     await user.click(screen.getByRole("button", { name: /new task/i }));

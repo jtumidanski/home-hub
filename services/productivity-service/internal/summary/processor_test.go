@@ -42,9 +42,9 @@ func TestTaskSummary(t *testing.T) {
 			setup: func(t *testing.T, db *gorm.DB) {
 				l, _ := test.NewNullLogger()
 				p := task.NewProcessor(l, context.Background(), db)
-				_, err := p.Create(uuid.New(), uuid.New(), "Task 1", "", nil, false)
+				_, err := p.Create(uuid.New(), uuid.New(), "Task 1", "", nil, false, nil)
 				require.NoError(t, err)
-				_, err = p.Create(uuid.New(), uuid.New(), "Task 2", "", nil, false)
+				_, err = p.Create(uuid.New(), uuid.New(), "Task 2", "", nil, false, nil)
 				require.NoError(t, err)
 			},
 			expectPending: 2,
@@ -54,9 +54,9 @@ func TestTaskSummary(t *testing.T) {
 			setup: func(t *testing.T, db *gorm.DB) {
 				l, _ := test.NewNullLogger()
 				p := task.NewProcessor(l, context.Background(), db)
-				m, err := p.Create(uuid.New(), uuid.New(), "Task", "", nil, false)
+				m, err := p.Create(uuid.New(), uuid.New(), "Task", "", nil, false, nil)
 				require.NoError(t, err)
-				_, err = p.Update(m.Id(), "Task", "", "completed", nil, false, uuid.New())
+				_, err = p.Update(m.Id(), "Task", "", "completed", nil, false, nil, uuid.New())
 				require.NoError(t, err)
 			},
 			expectPending: 0,
@@ -66,7 +66,7 @@ func TestTaskSummary(t *testing.T) {
 			setup: func(t *testing.T, db *gorm.DB) {
 				l, _ := test.NewNullLogger()
 				p := task.NewProcessor(l, context.Background(), db)
-				m, err := p.Create(uuid.New(), uuid.New(), "Task", "", nil, false)
+				m, err := p.Create(uuid.New(), uuid.New(), "Task", "", nil, false, nil)
 				require.NoError(t, err)
 				require.NoError(t, p.Delete(m.Id()))
 			},
@@ -109,7 +109,7 @@ func TestReminderSummary(t *testing.T) {
 				l, _ := test.NewNullLogger()
 				p := reminder.NewProcessor(l, context.Background(), db)
 				past := time.Now().UTC().Add(-1 * time.Hour)
-				_, err := p.Create(uuid.New(), uuid.New(), "Past Reminder", "", past)
+				_, err := p.Create(uuid.New(), uuid.New(), "Past Reminder", "", past, nil)
 				require.NoError(t, err)
 			},
 			expectDueNow:   1,
@@ -122,7 +122,7 @@ func TestReminderSummary(t *testing.T) {
 				l, _ := test.NewNullLogger()
 				p := reminder.NewProcessor(l, context.Background(), db)
 				future := time.Now().UTC().Add(1 * time.Hour)
-				_, err := p.Create(uuid.New(), uuid.New(), "Future Reminder", "", future)
+				_, err := p.Create(uuid.New(), uuid.New(), "Future Reminder", "", future, nil)
 				require.NoError(t, err)
 			},
 			expectDueNow:   0,
@@ -135,7 +135,7 @@ func TestReminderSummary(t *testing.T) {
 				l, _ := test.NewNullLogger()
 				p := reminder.NewProcessor(l, context.Background(), db)
 				past := time.Now().UTC().Add(-1 * time.Hour)
-				m, err := p.Create(uuid.New(), uuid.New(), "Dismissed", "", past)
+				m, err := p.Create(uuid.New(), uuid.New(), "Dismissed", "", past, nil)
 				require.NoError(t, err)
 				require.NoError(t, p.Dismiss(m.Id()))
 			},
@@ -179,14 +179,14 @@ func TestDashboardSummary(t *testing.T) {
 			setup: func(t *testing.T, db *gorm.DB) {
 				l, _ := test.NewNullLogger()
 				tp := task.NewProcessor(l, context.Background(), db)
-				_, err := tp.Create(uuid.New(), uuid.New(), "Task 1", "", nil, false)
+				_, err := tp.Create(uuid.New(), uuid.New(), "Task 1", "", nil, false, nil)
 				require.NoError(t, err)
-				_, err = tp.Create(uuid.New(), uuid.New(), "Task 2", "", nil, false)
+				_, err = tp.Create(uuid.New(), uuid.New(), "Task 2", "", nil, false, nil)
 				require.NoError(t, err)
 
 				rp := reminder.NewProcessor(l, context.Background(), db)
 				past := time.Now().UTC().Add(-1 * time.Hour)
-				_, err = rp.Create(uuid.New(), uuid.New(), "Due Reminder", "", past)
+				_, err = rp.Create(uuid.New(), uuid.New(), "Due Reminder", "", past, nil)
 				require.NoError(t, err)
 			},
 			expectPendingTasks: 2,

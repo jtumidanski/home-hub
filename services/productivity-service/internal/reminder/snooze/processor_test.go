@@ -33,7 +33,7 @@ func createReminder(t *testing.T, db *gorm.DB) reminder.Model {
 	l, _ := test.NewNullLogger()
 	p := reminder.NewProcessor(l, context.Background(), db)
 	past := time.Now().UTC().Add(-1 * time.Hour)
-	m, err := p.Create(uuid.New(), uuid.New(), "Test Reminder", "Notes", past)
+	m, err := p.Create(uuid.New(), uuid.New(), "Test Reminder", "Notes", past, nil)
 	require.NoError(t, err, "failed to create reminder")
 	return m
 }

@@ -20,6 +20,7 @@ type Builder struct {
 	status          string
 	dueOn           *time.Time
 	rolloverEnabled bool
+	ownerUserID     *uuid.UUID
 	completedAt     *time.Time
 	completedByUID  *uuid.UUID
 	deletedAt       *time.Time
@@ -39,6 +40,7 @@ func (b *Builder) SetNotes(notes string) *Builder             { b.notes = notes;
 func (b *Builder) SetStatus(status string) *Builder           { b.status = status; return b }
 func (b *Builder) SetDueOn(dueOn *time.Time) *Builder         { b.dueOn = dueOn; return b }
 func (b *Builder) SetRolloverEnabled(v bool) *Builder         { b.rolloverEnabled = v; return b }
+func (b *Builder) SetOwnerUserID(id *uuid.UUID) *Builder       { b.ownerUserID = id; return b }
 func (b *Builder) SetCompletedAt(t *time.Time) *Builder       { b.completedAt = t; return b }
 func (b *Builder) SetCompletedByUID(id *uuid.UUID) *Builder   { b.completedByUID = id; return b }
 func (b *Builder) SetDeletedAt(t *time.Time) *Builder         { b.deletedAt = t; return b }
@@ -58,6 +60,7 @@ func (b *Builder) Build() (Model, error) {
 		status:          b.status,
 		dueOn:           b.dueOn,
 		rolloverEnabled: b.rolloverEnabled,
+		ownerUserID:     b.ownerUserID,
 		completedAt:     b.completedAt,
 		completedByUID:  b.completedByUID,
 		deletedAt:       b.deletedAt,

@@ -1,11 +1,14 @@
-import { useState, useCallback } from "react";
+import { useState, useCallback, useMemo } from "react";
+import { useSearchParams } from "react-router-dom";
 import { type ColumnDef } from "@tanstack/react-table";
 import { toast } from "sonner";
 import { useTasks, useUpdateTask, useDeleteTask } from "@/lib/hooks/api/use-tasks";
+import { useMemberMap } from "@/lib/hooks/api/use-household-members";
 import { createErrorFromUnknown } from "@/lib/api/errors";
-import { type Task } from "@/types/models/task";
+import { type Task, isTaskOverdue } from "@/types/models/task";
 import { useMobile } from "@/lib/hooks/use-mobile";
 import { PullToRefresh } from "@/components/common/pull-to-refresh";
+import { ListFilterBar } from "@/components/common/list-filter-bar";
 import { TaskCard } from "@/components/features/tasks/task-card";
 import { CreateTaskDialog } from "@/components/features/tasks/create-task-dialog";
 import { DataTable } from "@/components/common/data-table";
@@ -15,14 +18,55 @@ import { Badge } from "@/components/ui/badge";
 import { Plus, Check, Trash2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
+const TASK_STATUS_OPTIONS = [
+  { value: "pending", label: "Pending" },
+  { value: "completed", label: "Completed" },
+  { value: "overdue", label: "Overdue" },
+];
+
+function resolveOwnerName(ownerUserId: string | null | undefined, memberMap: Map<string, string>): string {
+  if (!ownerUserId) return "Everyone";
+  return memberMap.get(ownerUserId) ?? "Former member";
+}
+
 export function TasksPage() {
   const { data, isLoading, isError, refetch } = useTasks();
   const updateTask = useUpdateTask();
   const deleteTask = useDeleteTask();
   const [open, setOpen] = useState(false);
   const isMobile = useMobile();
+  const memberMap = useMemberMap();
+  const [searchParams] = useSearchParams();
 
-  const tasks = (data?.data ?? []) as Task[];
+  const allTasks = (data?.data ?? []) as Task[];
+
+  const filteredTasks = useMemo(() => {
+    let result = allTasks;
+    const query = searchParams.get("q")?.toLowerCase();
+    const status = searchParams.get("status");
+    const owner = searchParams.get("owner");
+
+    if (query) {
+      result = result.filter((t) => t.attributes.title.toLowerCase().includes(query));
+    }
+    if (status && status !== "all") {
+      if (status === "overdue") {
+        result = result.filter((t) => isTaskOverdue(t));
+      } else {
+        result = result.filter((t) => t.attributes.status === status);
+      }
+    }
+    if (owner && owner !== "all") {
+      if (owner === "everyone") {
+        result = result.filter((t) => !t.attributes.ownerUserId);
+      } else {
+        result = result.filter((t) => t.attributes.ownerUserId === owner);
+      }
+    }
+    return result;
+  }, [allTasks, searchParams]);
+
+  const hasActiveFilters = searchParams.has("q") || searchParams.has("status") || searchParams.has("owner");
 
   const toggleComplete = useCallback(async (id: string, currentStatus: string) => {
     try {
@@ -84,10 +128,22 @@ export function TasksPage() {
     {
       id: "status",
       header: "Status",
+      cell: ({ row }) => {
+        const overdue = isTaskOverdue(row.original);
+        return (
+          <Badge variant={row.original.attributes.status === "completed" ? "secondary" : overdue ? "destructive" : "default"}>
+            {overdue ? "overdue" : row.original.attributes.status}
+          </Badge>
+        );
+      },
+    },
+    {
+      id: "owner",
+      header: "Owner",
       cell: ({ row }) => (
-        <Badge variant={row.original.attributes.status === "completed" ? "secondary" : "default"}>
-          {row.original.attributes.status}
-        </Badge>
+        <span className="text-sm text-muted-foreground">
+          {resolveOwnerName(row.original.attributes.ownerUserId, memberMap)}
+        </span>
       ),
     },
     {
@@ -134,19 +190,29 @@ export function TasksPage() {
           </Button>
         </div>
 
+        <ListFilterBar statusOptions={TASK_STATUS_OPTIONS} />
+
         <CreateTaskDialog open={open} onOpenChange={setOpen} />
 
         {isMobile ? (
-          tasks.length === 0 ? (
+          filteredTasks.length === 0 ? (
             <div className="flex flex-col items-center justify-center py-12 text-center">
-              <p className="text-muted-foreground">No tasks yet. Create your first task to get started.</p>
+              <p className="text-muted-foreground">
+                {hasActiveFilters ? "No items found." : "No tasks yet. Create your first task to get started."}
+              </p>
+              {hasActiveFilters && (
+                <Button variant="link" size="sm" onClick={() => window.history.pushState({}, "", window.location.pathname)}>
+                  Clear filters
+                </Button>
+              )}
             </div>
           ) : (
             <div className="space-y-3">
-              {tasks.map((task) => (
+              {filteredTasks.map((task) => (
                 <TaskCard
                   key={task.id}
                   task={task}
+                  ownerName={resolveOwnerName(task.attributes.ownerUserId, memberMap)}
                   onToggleComplete={toggleComplete}
                   onDelete={handleDelete}
                 />
@@ -156,11 +222,11 @@ export function TasksPage() {
         ) : (
           <DataTable
             columns={columns}
-            data={tasks}
-            emptyMessage="No tasks yet. Create your first task to get started."
+            data={filteredTasks}
+            emptyMessage={hasActiveFilters ? "No items found." : "No tasks yet. Create your first task to get started."}
           />
         )}
-        {tasks.length === 0 && (
+        {allTasks.length === 0 && !hasActiveFilters && (
           <div className="flex justify-center">
             <Button variant="outline" onClick={() => setOpen(true)}>
               <Plus className="mr-2 h-4 w-4" />

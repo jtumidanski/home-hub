@@ -4,6 +4,8 @@ import { toast } from "sonner";
 import { useCreateReminder } from "@/lib/hooks/api/use-reminders";
 import { createReminderSchema, type CreateReminderFormData, createReminderDefaults } from "@/lib/schemas/reminder.schema";
 import { createErrorFromUnknown } from "@/lib/api/errors";
+import { useAuth } from "@/components/providers/auth-provider";
+import { OwnerSelect } from "@/components/common/owner-select";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
@@ -17,15 +19,17 @@ interface CreateReminderDialogProps {
 
 export function CreateReminderDialog({ open, onOpenChange }: CreateReminderDialogProps) {
   const createReminder = useCreateReminder();
+  const { user } = useAuth();
 
+  const defaults = { ...createReminderDefaults, ownerUserId: user?.id ?? "" };
   const form = useForm<CreateReminderFormData>({
     resolver: zodResolver(createReminderSchema),
-    defaultValues: createReminderDefaults,
+    defaultValues: defaults,
   });
 
   const handleOpenChange = (next: boolean) => {
     if (form.formState.isSubmitting) return;
-    if (!next) form.reset(createReminderDefaults);
+    if (!next) form.reset(defaults);
     onOpenChange(next);
   };
 
@@ -35,9 +39,10 @@ export function CreateReminderDialog({ open, onOpenChange }: CreateReminderDialo
         title: values.title,
         ...(values.notes != null ? { notes: values.notes } : {}),
         scheduledFor: new Date(values.scheduledFor).toISOString(),
+        ownerUserId: values.ownerUserId || null,
       });
       toast.success("Reminder created");
-      form.reset(createReminderDefaults);
+      form.reset(defaults);
       onOpenChange(false);
     } catch (error) {
       toast.error(createErrorFromUnknown(error, "Failed to create reminder").message);
@@ -86,6 +91,19 @@ export function CreateReminderDialog({ open, onOpenChange }: CreateReminderDialo
                   <FormLabel>Scheduled For</FormLabel>
                   <FormControl>
                     <Input type="datetime-local" aria-label="Scheduled For" {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <FormField
+              control={form.control}
+              name="ownerUserId"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Owner</FormLabel>
+                  <FormControl>
+                    <OwnerSelect value={field.value ?? ""} onChange={field.onChange} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>

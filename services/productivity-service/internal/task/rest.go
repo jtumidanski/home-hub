@@ -13,6 +13,7 @@ type RestModel struct {
 	Status          string     `json:"status"`
 	DueOn           *string    `json:"dueOn,omitempty"`
 	RolloverEnabled bool       `json:"rolloverEnabled"`
+	OwnerUserId     *string    `json:"ownerUserId"`
 	CompletedAt     *time.Time `json:"completedAt,omitempty"`
 	DeletedAt       *time.Time `json:"deletedAt,omitempty"`
 	CreatedAt       time.Time  `json:"createdAt"`
@@ -29,9 +30,15 @@ func Transform(m Model) (RestModel, error) {
 		s := m.DueOn().Format("2006-01-02")
 		dueOn = &s
 	}
+	var ownerUserId *string
+	if m.OwnerUserID() != nil {
+		s := m.OwnerUserID().String()
+		ownerUserId = &s
+	}
 	return RestModel{
 		Id: m.Id(), Title: m.Title(), Notes: m.Notes(), Status: m.Status(),
 		DueOn: dueOn, RolloverEnabled: m.RolloverEnabled(),
+		OwnerUserId: ownerUserId,
 		CompletedAt: m.CompletedAt(), DeletedAt: m.DeletedAt(),
 		CreatedAt: m.CreatedAt(), UpdatedAt: m.UpdatedAt(),
 	}, nil
@@ -55,6 +62,7 @@ type CreateRequest struct {
 	Notes           string    `json:"notes"`
 	DueOn           *string   `json:"dueOn,omitempty"`
 	RolloverEnabled bool      `json:"rolloverEnabled"`
+	OwnerUserId     *string   `json:"ownerUserId,omitempty"`
 }
 
 func (r CreateRequest) GetName() string       { return "tasks" }
@@ -75,6 +83,7 @@ type UpdateRequest struct {
 	Status          string    `json:"status"`
 	DueOn           *string   `json:"dueOn,omitempty"`
 	RolloverEnabled bool      `json:"rolloverEnabled"`
+	OwnerUserId     *string   `json:"ownerUserId,omitempty"`
 }
 
 func (r UpdateRequest) GetName() string       { return "tasks" }

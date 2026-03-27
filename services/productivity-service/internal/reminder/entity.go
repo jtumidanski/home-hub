@@ -14,6 +14,7 @@ type Entity struct {
 	Title            string     `gorm:"type:text;not null"`
 	Notes            string     `gorm:"type:text"`
 	ScheduledFor     time.Time  `gorm:"not null;index"`
+	OwnerUserId      *uuid.UUID `gorm:"type:uuid"`
 	LastDismissedAt  *time.Time
 	LastSnoozedUntil *time.Time
 	CreatedAt        time.Time  `gorm:"not null"`
@@ -28,6 +29,7 @@ func (m Model) ToEntity() Entity {
 	return Entity{
 		Id: m.id, TenantId: m.tenantID, HouseholdId: m.householdID,
 		Title: m.title, Notes: m.notes, ScheduledFor: m.scheduledFor,
+		OwnerUserId: m.ownerUserID,
 		LastDismissedAt: m.lastDismissedAt, LastSnoozedUntil: m.lastSnoozedUntil,
 		CreatedAt: m.createdAt, UpdatedAt: m.updatedAt,
 	}
@@ -41,6 +43,7 @@ func Make(e Entity) (Model, error) {
 		SetTitle(e.Title).
 		SetNotes(e.Notes).
 		SetScheduledFor(e.ScheduledFor).
+		SetOwnerUserID(e.OwnerUserId).
 		SetLastDismissedAt(e.LastDismissedAt).
 		SetLastSnoozedUntil(e.LastSnoozedUntil).
 		SetCreatedAt(e.CreatedAt).

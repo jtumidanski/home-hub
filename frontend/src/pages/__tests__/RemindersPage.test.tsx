@@ -1,6 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
+import { MemoryRouter } from "react-router-dom";
 
 const mockUseReminders = vi.fn();
 const mockSnoozeMutateAsync = vi.fn();
@@ -12,6 +13,11 @@ vi.mock("@/lib/hooks/api/use-reminders", () => ({
   useSnoozeReminder: () => ({ mutateAsync: mockSnoozeMutateAsync }),
   useDismissReminder: () => ({ mutateAsync: mockDismissMutateAsync }),
   useDeleteReminder: () => ({ mutateAsync: mockDeleteMutateAsync }),
+}));
+
+vi.mock("@/lib/hooks/api/use-household-members", () => ({
+  useMemberMap: () => new Map(),
+  useHouseholdMembers: () => ({ data: { data: [] } }),
 }));
 
 vi.mock("@/lib/api/errors", () => ({
@@ -34,6 +40,10 @@ vi.mock("@/components/features/reminders/create-reminder-dialog", () => ({
 
 import { RemindersPage } from "../RemindersPage";
 
+function renderWithRouter(ui: React.ReactElement) {
+  return render(<MemoryRouter>{ui}</MemoryRouter>);
+}
+
 describe("RemindersPage", () => {
   beforeEach(() => {
     vi.clearAllMocks();
@@ -42,20 +52,20 @@ describe("RemindersPage", () => {
 
   it("renders loading skeleton when isLoading is true", () => {
     mockUseReminders.mockReturnValue({ data: null, isLoading: true, isError: false });
-    render(<RemindersPage />);
+    renderWithRouter(<RemindersPage />);
     expect(screen.queryByText("Reminders")).not.toBeInTheDocument();
     expect(screen.getByRole("status", { name: "Loading" })).toBeInTheDocument();
   });
 
   it("renders error state when isError is true", () => {
     mockUseReminders.mockReturnValue({ data: null, isLoading: false, isError: true });
-    render(<RemindersPage />);
+    renderWithRouter(<RemindersPage />);
     expect(screen.getByText(/failed to load reminders/i)).toBeInTheDocument();
   });
 
   it("renders empty state when there are no reminders", () => {
     mockUseReminders.mockReturnValue({ data: { data: [] }, isLoading: false, isError: false });
-    render(<RemindersPage />);
+    renderWithRouter(<RemindersPage />);
     expect(screen.getByText("Reminders")).toBeInTheDocument();
     expect(screen.getByText(/no reminders yet/i)).toBeInTheDocument();
     expect(screen.getByText("Create First Reminder")).toBeInTheDocument();
@@ -75,7 +85,7 @@ describe("RemindersPage", () => {
       isLoading: false,
       isError: false,
     });
-    render(<RemindersPage />);
+    renderWithRouter(<RemindersPage />);
     expect(screen.getByText("Doctor appointment")).toBeInTheDocument();
     expect(screen.getByText("active")).toBeInTheDocument();
   });
@@ -83,7 +93,7 @@ describe("RemindersPage", () => {
   it("opens create dialog when New Reminder button is clicked", async () => {
     const user = userEvent.setup();
     mockUseReminders.mockReturnValue({ data: { data: [] }, isLoading: false, isError: false });
-    render(<RemindersPage />);
+    renderWithRouter(<RemindersPage />);
 
     expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
     await user.click(screen.getByRole("button", { name: /new reminder/i }));

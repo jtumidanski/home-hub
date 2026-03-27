@@ -9,6 +9,14 @@ vi.mock("@/lib/hooks/api/use-tasks", () => ({
   useCreateTask: () => ({ mutateAsync: mockMutateAsync }),
 }));
 
+vi.mock("@/components/providers/auth-provider", () => ({
+  useAuth: () => ({ user: { id: "user-1" } }),
+}));
+
+vi.mock("@/lib/hooks/api/use-household-members", () => ({
+  useHouseholdMembers: () => ({ data: { data: [] } }),
+}));
+
 vi.mock("sonner", () => ({
   toast: {
     success: vi.fn(),
@@ -67,6 +75,7 @@ describe("CreateTaskDialog", () => {
         title: "Buy groceries",
         notes: "Milk and eggs",
         dueOn: "2026-04-01",
+        ownerUserId: "user-1",
       });
     });
   });

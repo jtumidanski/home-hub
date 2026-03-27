@@ -1,11 +1,14 @@
-import { useState, useCallback } from "react";
+import { useState, useCallback, useMemo } from "react";
+import { useSearchParams } from "react-router-dom";
 import { type ColumnDef } from "@tanstack/react-table";
 import { toast } from "sonner";
 import { useReminders, useSnoozeReminder, useDismissReminder, useDeleteReminder } from "@/lib/hooks/api/use-reminders";
+import { useMemberMap } from "@/lib/hooks/api/use-household-members";
 import { createErrorFromUnknown } from "@/lib/api/errors";
 import { type Reminder, isReminderDismissed, isReminderSnoozed } from "@/types/models/reminder";
 import { useMobile } from "@/lib/hooks/use-mobile";
 import { PullToRefresh } from "@/components/common/pull-to-refresh";
+import { ListFilterBar } from "@/components/common/list-filter-bar";
 import { ReminderCard } from "@/components/features/reminders/reminder-card";
 import { CreateReminderDialog } from "@/components/features/reminders/create-reminder-dialog";
 import { DataTable } from "@/components/common/data-table";
@@ -14,6 +17,26 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Plus, Clock, BellOff, Trash2 } from "lucide-react";
 
+const REMINDER_STATUS_OPTIONS = [
+  { value: "active", label: "Active" },
+  { value: "dismissed", label: "Dismissed" },
+  { value: "snoozed", label: "Snoozed" },
+  { value: "upcoming", label: "Upcoming" },
+];
+
+function getReminderStatus(rem: Reminder): string {
+  if (rem.attributes.active) return "active";
+  if (isReminderDismissed(rem)) return "dismissed";
+  if (isReminderSnoozed(rem)) return "snoozed";
+  if (new Date(rem.attributes.scheduledFor) > new Date()) return "upcoming";
+  return "inactive";
+}
+
+function resolveOwnerName(ownerUserId: string | null | undefined, memberMap: Map<string, string>): string {
+  if (!ownerUserId) return "Everyone";
+  return memberMap.get(ownerUserId) ?? "Former member";
+}
+
 export function RemindersPage() {
   const { data, isLoading, isError, refetch } = useReminders();
   const snoozeReminder = useSnoozeReminder();
@@ -21,8 +44,34 @@ export function RemindersPage() {
   const deleteReminder = useDeleteReminder();
   const [open, setOpen] = useState(false);
   const isMobile = useMobile();
+  const memberMap = useMemberMap();
+  const [searchParams] = useSearchParams();
 
-  const reminders = (data?.data ?? []) as Reminder[];
+  const allReminders = (data?.data ?? []) as Reminder[];
+
+  const filteredReminders = useMemo(() => {
+    let result = allReminders;
+    const query = searchParams.get("q")?.toLowerCase();
+    const status = searchParams.get("status");
+    const owner = searchParams.get("owner");
+
+    if (query) {
+      result = result.filter((r) => r.attributes.title.toLowerCase().includes(query));
+    }
+    if (status && status !== "all") {
+      result = result.filter((r) => getReminderStatus(r) === status);
+    }
+    if (owner && owner !== "all") {
+      if (owner === "everyone") {
+        result = result.filter((r) => !r.attributes.ownerUserId);
+      } else {
+        result = result.filter((r) => r.attributes.ownerUserId === owner);
+      }
+    }
+    return result;
+  }, [allReminders, searchParams]);
+
+  const hasActiveFilters = searchParams.has("q") || searchParams.has("status") || searchParams.has("owner");
 
   const handleSnooze = useCallback(async (id: string) => {
     try {
@@ -72,13 +121,22 @@ export function RemindersPage() {
       id: "status",
       header: "Status",
       cell: ({ row }) => {
-        const rem = row.original;
+        const statusLabel = getReminderStatus(row.original);
         return (
-          <Badge variant={rem.attributes.active ? "default" : "secondary"}>
-            {rem.attributes.active ? "active" : isReminderDismissed(rem) ? "dismissed" : isReminderSnoozed(rem) ? "snoozed" : "inactive"}
+          <Badge variant={row.original.attributes.active ? "default" : "secondary"}>
+            {statusLabel}
           </Badge>
         );
       },
+    },
+    {
+      id: "owner",
+      header: "Owner",
+      cell: ({ row }) => (
+        <span className="text-sm text-muted-foreground">
+          {resolveOwnerName(row.original.attributes.ownerUserId, memberMap)}
+        </span>
+      ),
     },
     {
       id: "actions",
@@ -132,19 +190,29 @@ export function RemindersPage() {
           </Button>
         </div>
 
+        <ListFilterBar statusOptions={REMINDER_STATUS_OPTIONS} />
+
         <CreateReminderDialog open={open} onOpenChange={setOpen} />
 
         {isMobile ? (
-          reminders.length === 0 ? (
+          filteredReminders.length === 0 ? (
             <div className="flex flex-col items-center justify-center py-12 text-center">
-              <p className="text-muted-foreground">No reminders yet. Create your first reminder to get started.</p>
+              <p className="text-muted-foreground">
+                {hasActiveFilters ? "No items found." : "No reminders yet. Create your first reminder to get started."}
+              </p>
+              {hasActiveFilters && (
+                <Button variant="link" size="sm" onClick={() => window.history.pushState({}, "", window.location.pathname)}>
+                  Clear filters
+                </Button>
+              )}
             </div>
           ) : (
             <div className="space-y-3">
-              {reminders.map((reminder) => (
+              {filteredReminders.map((reminder) => (
                 <ReminderCard
                   key={reminder.id}
                   reminder={reminder}
+                  ownerName={resolveOwnerName(reminder.attributes.ownerUserId, memberMap)}
                   onSnooze={handleSnooze}
                   onDismiss={handleDismiss}
                   onDelete={handleDelete}
@@ -155,11 +223,11 @@ export function RemindersPage() {
         ) : (
           <DataTable
             columns={columns}
-            data={reminders}
-            emptyMessage="No reminders yet. Create your first reminder to get started."
+            data={filteredReminders}
+            emptyMessage={hasActiveFilters ? "No items found." : "No reminders yet. Create your first reminder to get started."}
           />
         )}
-        {reminders.length === 0 && (
+        {allReminders.length === 0 && !hasActiveFilters && (
           <div className="flex justify-center">
             <Button variant="outline" onClick={() => setOpen(true)}>
               <Plus className="mr-2 h-4 w-4" />

@@ -60,8 +60,18 @@ func createHandler(db *gorm.DB) server.InputHandler[CreateRequest] {
 					dueOn = &parsed
 				}
 			}
+			var ownerUserID *uuid.UUID
+			if input.OwnerUserId != nil {
+				parsed, err := uuid.Parse(*input.OwnerUserId)
+				if err == nil {
+					ownerUserID = &parsed
+				}
+			} else {
+				uid := t.UserId()
+				ownerUserID = &uid
+			}
 			proc := NewProcessor(d.Logger(), r.Context(), db)
-			m, err := proc.Create(t.Id(), t.HouseholdId(), input.Title, input.Notes, dueOn, input.RolloverEnabled)
+			m, err := proc.Create(t.Id(), t.HouseholdId(), input.Title, input.Notes, dueOn, input.RolloverEnabled, ownerUserID)
 			if err != nil {
 				if errors.Is(err, ErrTitleRequired) {
 					server.WriteError(w, http.StatusBadRequest, "Validation Failed", "Task title is required")
@@ -117,8 +127,15 @@ func updateHandler(db *gorm.DB) server.InputHandler[UpdateRequest] {
 						dueOn = &parsed
 					}
 				}
+				var ownerUserID *uuid.UUID
+				if input.OwnerUserId != nil {
+					parsed, err := uuid.Parse(*input.OwnerUserId)
+					if err == nil {
+						ownerUserID = &parsed
+					}
+				}
 				proc := NewProcessor(d.Logger(), r.Context(), db)
-				m, err := proc.Update(id, input.Title, input.Notes, input.Status, dueOn, input.RolloverEnabled, t.UserId())
+				m, err := proc.Update(id, input.Title, input.Notes, input.Status, dueOn, input.RolloverEnabled, ownerUserID, t.UserId())
 				if err != nil {
 					if errors.Is(err, gorm.ErrRecordNotFound) {
 						d.Logger().WithError(err).Error("Task not found")

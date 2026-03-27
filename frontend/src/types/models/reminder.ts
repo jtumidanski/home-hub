@@ -2,6 +2,7 @@ export interface ReminderAttributes {
   title: string;
   notes?: string;
   scheduledFor: string;
+  ownerUserId?: string | null;
   active: boolean;
   lastDismissedAt?: string;
   lastSnoozedUntil?: string;
@@ -21,12 +22,13 @@ export interface ReminderCreateAttributes {
   title: string;
   notes?: string;
   scheduledFor: string;
+  ownerUserId?: string | null;
 }
 
 // --- Update attributes (F14) ---
 
 export type ReminderUpdateAttributes = Partial<
-  Pick<ReminderAttributes, "title" | "notes" | "scheduledFor">
+  Pick<ReminderAttributes, "title" | "notes" | "scheduledFor" | "ownerUserId">
 >;
 
 // --- Helpers (F16) ---

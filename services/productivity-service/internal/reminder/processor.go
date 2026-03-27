@@ -31,19 +31,19 @@ func (p *Processor) AllProvider() model.Provider[[]Model] {
 	return model.SliceMap(Make)(getAll()(p.db.WithContext(p.ctx)))
 }
 
-func (p *Processor) Create(tenantID, householdID uuid.UUID, title, notes string, scheduledFor time.Time) (Model, error) {
+func (p *Processor) Create(tenantID, householdID uuid.UUID, title, notes string, scheduledFor time.Time, ownerUserID *uuid.UUID) (Model, error) {
 	if _, err := NewBuilder().SetTitle(title).SetScheduledFor(scheduledFor).Build(); err != nil {
 		return Model{}, err
 	}
-	e, err := create(p.db.WithContext(p.ctx), tenantID, householdID, title, notes, scheduledFor)
+	e, err := create(p.db.WithContext(p.ctx), tenantID, householdID, title, notes, scheduledFor, ownerUserID)
 	if err != nil {
 		return Model{}, err
 	}
 	return Make(e)
 }
 
-func (p *Processor) Update(id uuid.UUID, title, notes string, scheduledFor time.Time) (Model, error) {
-	e, err := update(p.db.WithContext(p.ctx), id, title, notes, scheduledFor)
+func (p *Processor) Update(id uuid.UUID, title, notes string, scheduledFor time.Time, ownerUserID *uuid.UUID) (Model, error) {
+	e, err := update(p.db.WithContext(p.ctx), id, title, notes, scheduledFor, ownerUserID)
 	if err != nil {
 		return Model{}, err
 	}
