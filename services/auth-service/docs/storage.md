@@ -6,16 +6,17 @@ All tables are created in the PostgreSQL `auth` schema. Schema management is han
 
 ### users
 
-| Column       | Type      | Constraints     |
-|--------------|-----------|-----------------|
-| id           | UUID      | PRIMARY KEY     |
-| email        | TEXT      | NOT NULL        |
-| display_name | TEXT      |                 |
-| given_name   | TEXT      |                 |
-| family_name  | TEXT      |                 |
-| avatar_url   | TEXT      |                 |
-| created_at   | TIMESTAMP | NOT NULL        |
-| updated_at   | TIMESTAMP | NOT NULL        |
+| Column              | Type      | Constraints     |
+|---------------------|-----------|-----------------|
+| id                  | UUID      | PRIMARY KEY     |
+| email               | TEXT      | NOT NULL        |
+| display_name        | TEXT      |                 |
+| given_name          | TEXT      |                 |
+| family_name         | TEXT      |                 |
+| avatar_url          | TEXT      |                 |
+| provider_avatar_url | TEXT      |                 |
+| created_at          | TIMESTAMP | NOT NULL        |
+| updated_at          | TIMESTAMP | NOT NULL        |
 
 ### external_identities
 
@@ -69,3 +70,4 @@ All tables are created in the PostgreSQL `auth` schema. Schema management is han
 
 - Migrations run automatically on service startup via GORM AutoMigrate.
 - Migration order: users, external_identities, oidc_providers, refresh_tokens.
+- After AutoMigrate, `MigrateAvatarData` runs: copies `avatar_url` to `provider_avatar_url` where `provider_avatar_url` is empty and `avatar_url` is not a `dicebear:` descriptor, then clears `avatar_url`. Idempotent.

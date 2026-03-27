@@ -69,6 +69,13 @@ func (p *Processor) HandleCallbackWithUserInfo(userInfo *oidc.UserInfo) (Callbac
 		return CallbackResult{}, err
 	}
 
+	// Refresh provider avatar on every login
+	if userInfo.AvatarURL != "" {
+		if err := userProc.UpdateProviderAvatar(u.Id(), userInfo.AvatarURL); err != nil {
+			p.l.WithError(err).Warn("failed to update provider avatar")
+		}
+	}
+
 	// Link external identity (idempotent — skip if already linked)
 	eiProc := externalidentity.NewProcessor(p.l, p.ctx, p.db)
 	_, linkErr := eiProc.FindByProviderSubject("google", userInfo.Subject)()

@@ -4,6 +4,7 @@ export interface UserAttributes {
   givenName: string;
   familyName: string;
   avatarUrl: string;
+  providerAvatarUrl: string;
   createdAt: string;
   updatedAt: string;
 }

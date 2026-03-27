@@ -179,15 +179,18 @@ Returns the authenticated user's profile. Extracts user ID from the `access_toke
 
 **Response:** JSON:API `users` resource.
 
-| Attribute   | Type   |
-|-------------|--------|
-| email       | string |
-| displayName | string |
-| givenName   | string |
-| familyName  | string |
-| avatarUrl   | string |
-| createdAt   | string |
-| updatedAt   | string |
+| Attribute         | Type   |
+|-------------------|--------|
+| email             | string |
+| displayName       | string |
+| givenName         | string |
+| familyName        | string |
+| avatarUrl         | string |
+| providerAvatarUrl | string |
+| createdAt         | string |
+| updatedAt         | string |
+
+`avatarUrl` contains the user-selected avatar descriptor (`dicebear:{style}:{seed}`) or empty string. `providerAvatarUrl` contains the OIDC provider's picture URL or empty string.
 
 **Error Conditions:**
 
@@ -195,3 +198,67 @@ Returns the authenticated user's profile. Extracts user ID from the `access_toke
 |--------|------------------------------|
 | 401    | Missing or invalid token     |
 | 404    | User not found               |
+
+---
+
+### PATCH /api/v1/users/me
+
+Updates the authenticated user's avatar. Extracts user ID from the `access_token` cookie claims.
+
+**Parameters:** None
+
+**Cookies Required:**
+
+| Name         | Description |
+|--------------|-------------|
+| access_token | JWT         |
+
+**Request Model:** JSON:API `users` resource.
+
+| Attribute | Type   | Description                                      |
+|-----------|--------|--------------------------------------------------|
+| avatarUrl | string | `dicebear:{style}:{seed}` or `""` to clear       |
+
+Allowed styles: `adventurer`, `bottts`, `fun-emoji`. Seed must be 1–64 alphanumeric characters.
+
+**Response:** JSON:API `users` resource (same shape as GET `/api/v1/users/me`).
+
+**Error Conditions:**
+
+| Status | Condition                    |
+|--------|------------------------------|
+| 401    | Missing or invalid token     |
+| 422    | Invalid avatar format        |
+
+---
+
+### GET /api/v1/users
+
+Returns users by ID. Requires authentication.
+
+**Parameters:**
+
+| Name        | In    | Type   | Required |
+|-------------|-------|--------|----------|
+| filter[ids] | query | string | yes      |
+
+Comma-separated list of UUIDs. Maximum 50 IDs per request.
+
+**Cookies Required:**
+
+| Name         | Description |
+|--------------|-------------|
+| access_token | JWT         |
+
+**Response:** JSON:API array of `users` resources (same attributes as GET `/api/v1/users/me`).
+
+Returns empty array if no matching users are found.
+
+**Error Conditions:**
+
+| Status | Condition                    |
+|--------|------------------------------|
+| 400    | Missing filter[ids]          |
+| 400    | More than 50 IDs             |
+| 400    | Invalid UUID in list         |
+| 401    | Missing or invalid token     |

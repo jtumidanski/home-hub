@@ -14,6 +14,11 @@ vi.mock("@/lib/hooks/use-theme-toggle", () => ({
   useThemeToggle: () => mockUseThemeToggle(),
 }));
 
+const mockMutate = vi.fn();
+vi.mock("@/lib/hooks/api/use-auth", () => ({
+  useUpdateMe: () => ({ mutate: mockMutate, isPending: false }),
+}));
+
 import { SettingsPage } from "../SettingsPage";
 
 describe("SettingsPage", () => {
@@ -24,7 +29,7 @@ describe("SettingsPage", () => {
       user: {
         id: "u-1",
         type: "users",
-        attributes: { displayName: "Jane Doe", email: "jane@example.com" },
+        attributes: { displayName: "Jane Doe", email: "jane@example.com", avatarUrl: "", providerAvatarUrl: "" },
       },
       appContext: {
         attributes: { resolvedRole: "owner" },

@@ -73,7 +73,7 @@ const makeMember = (id: string, userId: string, role: string, isLastOwner = fals
 const makeUser = (id: string, name: string, email: string) => ({
   id,
   type: "users",
-  attributes: { displayName: name, email, givenName: "", familyName: "", avatarUrl: "", createdAt: "", updatedAt: "" },
+  attributes: { displayName: name, email, givenName: "", familyName: "", avatarUrl: "", providerAvatarUrl: "", createdAt: "", updatedAt: "" },
 });
 
 const makeInvitation = (id: string, email: string, role: string) => ({

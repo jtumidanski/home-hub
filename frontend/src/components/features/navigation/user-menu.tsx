@@ -3,6 +3,7 @@ import { Moon, Sun, LogOut, ChevronDown } from "lucide-react";
 import { useAuth } from "@/components/providers/auth-provider";
 import { useThemeToggle } from "@/lib/hooks/use-theme-toggle";
 import { useLogout } from "@/lib/hooks/api/use-auth";
+import { UserAvatar } from "@/components/ui/user-avatar";
 import { cn } from "@/lib/utils";
 
 interface UserMenuProps {
@@ -24,7 +25,14 @@ export function UserMenu({ onAction, iconSize = "h-4 w-4" }: UserMenuProps) {
           "flex w-full cursor-pointer items-center justify-between rounded-md p-3 text-left transition-colors hover:bg-sidebar-accent/50 outline-none focus-visible:ring-2 focus-visible:ring-ring",
         )}
       >
-        <div className="min-w-0 flex-1">
+        <UserAvatar
+          avatarUrl={user.attributes.avatarUrl}
+          providerAvatarUrl={user.attributes.providerAvatarUrl}
+          displayName={user.attributes.displayName}
+          userId={user.id}
+          size="sm"
+        />
+        <div className="ml-2 min-w-0 flex-1">
           <p className="truncate text-sm font-medium">{user.attributes.displayName}</p>
           <p className="truncate text-xs text-muted-foreground">{user.attributes.email}</p>
         </div>
