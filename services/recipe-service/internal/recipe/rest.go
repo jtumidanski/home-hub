@@ -4,48 +4,73 @@ import (
 	"time"
 
 	"github.com/google/uuid"
+	"github.com/jtumidanski/home-hub/services/recipe-service/internal/normalization"
+	"github.com/jtumidanski/home-hub/services/recipe-service/internal/planner"
 	"github.com/jtumidanski/home-hub/services/recipe-service/internal/recipe/cooklang"
 )
 
 // RestModel is the JSON:API list representation (no source/parsed data).
 type RestModel struct {
-	Id              uuid.UUID `json:"-"`
-	Title           string    `json:"title"`
-	Description     string    `json:"description,omitempty"`
-	Servings        *int      `json:"servings,omitempty"`
-	PrepTimeMinutes *int      `json:"prepTimeMinutes,omitempty"`
-	CookTimeMinutes *int      `json:"cookTimeMinutes,omitempty"`
-	Tags            []string  `json:"tags"`
-	CreatedAt       time.Time `json:"createdAt"`
-	UpdatedAt       time.Time `json:"updatedAt"`
+	Id                  uuid.UUID `json:"-"`
+	Title               string    `json:"title"`
+	Description         string    `json:"description,omitempty"`
+	Servings            *int      `json:"servings,omitempty"`
+	PrepTimeMinutes     *int      `json:"prepTimeMinutes,omitempty"`
+	CookTimeMinutes     *int      `json:"cookTimeMinutes,omitempty"`
+	Tags                []string  `json:"tags"`
+	PlannerReady        bool      `json:"plannerReady"`
+	Classification      string    `json:"classification,omitempty"`
+	ResolvedIngredients int       `json:"resolvedIngredients"`
+	TotalIngredients    int       `json:"totalIngredients"`
+	CreatedAt           time.Time `json:"createdAt"`
+	UpdatedAt           time.Time `json:"updatedAt"`
 }
 
 func (r RestModel) GetName() string       { return "recipes" }
 func (r RestModel) GetID() string          { return r.Id.String() }
 func (r *RestModel) SetID(id string) error { var err error; r.Id, err = uuid.Parse(id); return err }
 
+// RestPlannerConfigModel is the JSON representation for planner config.
+type RestPlannerConfigModel struct {
+	Classification     string `json:"classification,omitempty"`
+	ServingsYield      *int   `json:"servingsYield,omitempty"`
+	EatWithinDays      *int   `json:"eatWithinDays,omitempty"`
+	MinGapDays         *int   `json:"minGapDays,omitempty"`
+	MaxConsecutiveDays *int   `json:"maxConsecutiveDays,omitempty"`
+}
+
 // RestDetailModel is the JSON:API detail representation with source and parsed data.
 type RestDetailModel struct {
-	Id              uuid.UUID            `json:"-"`
-	Title           string               `json:"title"`
-	Description     string               `json:"description,omitempty"`
-	Servings        *int                 `json:"servings,omitempty"`
-	PrepTimeMinutes *int                 `json:"prepTimeMinutes,omitempty"`
-	CookTimeMinutes *int                 `json:"cookTimeMinutes,omitempty"`
-	SourceURL       string               `json:"sourceUrl,omitempty"`
-	Tags            []string             `json:"tags"`
-	Source          string               `json:"source"`
-	Ingredients     []cooklang.Ingredient `json:"ingredients"`
-	Steps           []cooklang.Step       `json:"steps"`
-	CreatedAt       time.Time            `json:"createdAt"`
-	UpdatedAt       time.Time            `json:"updatedAt"`
+	Id              uuid.UUID                          `json:"-"`
+	Title           string                             `json:"title"`
+	Description     string                             `json:"description,omitempty"`
+	Servings        *int                               `json:"servings,omitempty"`
+	PrepTimeMinutes *int                               `json:"prepTimeMinutes,omitempty"`
+	CookTimeMinutes *int                               `json:"cookTimeMinutes,omitempty"`
+	SourceURL       string                             `json:"sourceUrl,omitempty"`
+	Tags            []string                           `json:"tags"`
+	Source          string                             `json:"source"`
+	Ingredients     []normalization.RestIngredientModel `json:"ingredients"`
+	Steps           []cooklang.Step                    `json:"steps"`
+	PlannerConfig   *RestPlannerConfigModel            `json:"plannerConfig,omitempty"`
+	PlannerReady    bool                               `json:"plannerReady"`
+	PlannerIssues   []string                           `json:"plannerIssues"`
+	CreatedAt       time.Time                          `json:"createdAt"`
+	UpdatedAt       time.Time                          `json:"updatedAt"`
 }
 
 func (r RestDetailModel) GetName() string       { return "recipes" }
 func (r RestDetailModel) GetID() string          { return r.Id.String() }
 func (r *RestDetailModel) SetID(id string) error { var err error; r.Id, err = uuid.Parse(id); return err }
 
-func TransformList(m Model) RestModel {
+type ListEnrichment struct {
+	PlannerReady        bool
+	Classification      string
+	ResolvedIngredients int
+	TotalIngredients    int
+}
+
+func TransformList(m Model, enrichment ListEnrichment) RestModel {
 	tags := m.Tags()
 	if tags == nil {
 		tags = []string{}
@@ -53,18 +78,27 @@ func TransformList(m Model) RestModel {
 	return RestModel{
 		Id: m.Id(), Title: m.Title(), Description: m.Description(),
 		Servings: m.Servings(), PrepTimeMinutes: m.PrepTimeMinutes(), CookTimeMinutes: m.CookTimeMinutes(),
-		Tags: tags, CreatedAt: m.CreatedAt(), UpdatedAt: m.UpdatedAt(),
+		Tags: tags,
+		PlannerReady: enrichment.PlannerReady, Classification: enrichment.Classification,
+		ResolvedIngredients: enrichment.ResolvedIngredients, TotalIngredients: enrichment.TotalIngredients,
+		CreatedAt: m.CreatedAt(), UpdatedAt: m.UpdatedAt(),
 	}
 }
 
-func TransformDetail(m Model, parsed cooklang.ParseResult) RestDetailModel {
+type DetailEnrichment struct {
+	Ingredients []normalization.RestIngredientModel
+	PlannerConfig *RestPlannerConfigModel
+	Readiness     planner.Readiness
+}
+
+func TransformDetail(m Model, parsed cooklang.ParseResult, enrichment DetailEnrichment) RestDetailModel {
 	tags := m.Tags()
 	if tags == nil {
 		tags = []string{}
 	}
-	ingredients := parsed.Ingredients
+	ingredients := enrichment.Ingredients
 	if ingredients == nil {
-		ingredients = []cooklang.Ingredient{}
+		ingredients = []normalization.RestIngredientModel{}
 	}
 	steps := parsed.Steps
 	if steps == nil {
@@ -75,16 +109,9 @@ func TransformDetail(m Model, parsed cooklang.ParseResult) RestDetailModel {
 		Servings: m.Servings(), PrepTimeMinutes: m.PrepTimeMinutes(), CookTimeMinutes: m.CookTimeMinutes(),
 		SourceURL: m.SourceURL(), Tags: tags, Source: m.Source(),
 		Ingredients: ingredients, Steps: steps,
+		PlannerConfig: enrichment.PlannerConfig, PlannerReady: enrichment.Readiness.Ready, PlannerIssues: enrichment.Readiness.Issues,
 		CreatedAt: m.CreatedAt(), UpdatedAt: m.UpdatedAt(),
 	}
-}
-
-func TransformListSlice(models []Model) []RestModel {
-	result := make([]RestModel, len(models))
-	for i, m := range models {
-		result[i] = TransformList(m)
-	}
-	return result
 }
 
 // RestTagModel is the JSON:API representation for a tag with count.
@@ -99,10 +126,11 @@ func (r *RestTagModel) SetID(id string) error { r.Tag = id; return nil }
 
 // RestParseModel is the JSON:API representation for a parse result.
 type RestParseModel struct {
-	Ingredients []cooklang.Ingredient  `json:"ingredients"`
-	Steps       []cooklang.Step        `json:"steps"`
-	Metadata    cooklang.Metadata      `json:"metadata"`
-	Errors      []cooklang.ParseError  `json:"errors,omitempty"`
+	Ingredients   []cooklang.Ingredient             `json:"ingredients"`
+	Steps         []cooklang.Step                   `json:"steps"`
+	Metadata      cooklang.Metadata                 `json:"metadata"`
+	Errors        []cooklang.ParseError             `json:"errors,omitempty"`
+	Normalization []normalization.PreviewResult      `json:"normalization,omitempty"`
 }
 
 func (r RestParseModel) GetName() string       { return "recipe-parse" }
@@ -111,15 +139,16 @@ func (r *RestParseModel) SetID(_ string) error  { return nil }
 
 // CreateRequest is the JSON:API request body for creating a recipe.
 type CreateRequest struct {
-	Id              uuid.UUID `json:"-"`
-	Title           string    `json:"title"`
-	Description     string    `json:"description"`
-	Source          string    `json:"source"`
-	Servings        *int      `json:"servings,omitempty"`
-	PrepTimeMinutes *int      `json:"prepTimeMinutes,omitempty"`
-	CookTimeMinutes *int      `json:"cookTimeMinutes,omitempty"`
-	SourceURL       string    `json:"sourceUrl"`
-	Tags            []string  `json:"tags"`
+	Id              uuid.UUID               `json:"-"`
+	Title           string                  `json:"title"`
+	Description     string                  `json:"description"`
+	Source          string                  `json:"source"`
+	Servings        *int                    `json:"servings,omitempty"`
+	PrepTimeMinutes *int                    `json:"prepTimeMinutes,omitempty"`
+	CookTimeMinutes *int                    `json:"cookTimeMinutes,omitempty"`
+	SourceURL       string                  `json:"sourceUrl"`
+	Tags            []string                `json:"tags"`
+	PlannerConfig   *RestPlannerConfigModel `json:"plannerConfig,omitempty"`
 }
 
 func (r CreateRequest) GetName() string       { return "recipes" }
@@ -135,15 +164,16 @@ func (r *CreateRequest) SetID(id string) error {
 
 // UpdateRequest is the JSON:API request body for updating a recipe.
 type UpdateRequest struct {
-	Id              uuid.UUID `json:"-"`
-	Title           string    `json:"title,omitempty"`
-	Description     string    `json:"description,omitempty"`
-	Source          string    `json:"source,omitempty"`
-	Servings        *int      `json:"servings,omitempty"`
-	PrepTimeMinutes *int      `json:"prepTimeMinutes,omitempty"`
-	CookTimeMinutes *int      `json:"cookTimeMinutes,omitempty"`
-	SourceURL       string    `json:"sourceUrl,omitempty"`
-	Tags            []string  `json:"tags,omitempty"`
+	Id              uuid.UUID               `json:"-"`
+	Title           string                  `json:"title,omitempty"`
+	Description     string                  `json:"description,omitempty"`
+	Source          string                  `json:"source,omitempty"`
+	Servings        *int                    `json:"servings,omitempty"`
+	PrepTimeMinutes *int                    `json:"prepTimeMinutes,omitempty"`
+	CookTimeMinutes *int                    `json:"cookTimeMinutes,omitempty"`
+	SourceURL       string                  `json:"sourceUrl,omitempty"`
+	Tags            []string                `json:"tags,omitempty"`
+	PlannerConfig   *RestPlannerConfigModel `json:"plannerConfig,omitempty"`
 }
 
 func (r UpdateRequest) GetName() string       { return "recipes" }

@@ -4,7 +4,11 @@ import (
 	"context"
 
 	"github.com/gorilla/mux"
+	"github.com/jtumidanski/home-hub/services/recipe-service/internal/audit"
 	"github.com/jtumidanski/home-hub/services/recipe-service/internal/config"
+	"github.com/jtumidanski/home-hub/services/recipe-service/internal/ingredient"
+	"github.com/jtumidanski/home-hub/services/recipe-service/internal/normalization"
+	"github.com/jtumidanski/home-hub/services/recipe-service/internal/planner"
 	"github.com/jtumidanski/home-hub/services/recipe-service/internal/recipe"
 	sharedauth "github.com/jtumidanski/home-hub/shared/go/auth"
 	"github.com/jtumidanski/home-hub/shared/go/database"
@@ -22,6 +26,10 @@ func main() {
 	db := database.Connect(l, cfg.DB,
 		database.SetMigrations(
 			recipe.Migration,
+			ingredient.Migration,
+			normalization.Migration,
+			planner.Migration,
+			audit.Migration,
 		),
 	)
 
@@ -35,6 +43,8 @@ func main() {
 			api.Use(sharedauth.Middleware(l, authValidator))
 
 			recipe.InitializeRoutes(db)(l, si, api)
+			ingredient.InitializeRoutes(db)(l, si, api)
+			normalization.InitializeRoutes(db)(l, si, api)
 		}).
 		Run()
 }

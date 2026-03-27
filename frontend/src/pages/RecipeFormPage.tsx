@@ -1,4 +1,4 @@
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -10,6 +10,8 @@ import { useRecipe, useCreateRecipe, useUpdateRecipe } from "@/lib/hooks/api/use
 import { useCooklangPreview } from "@/lib/hooks/use-cooklang-preview";
 import { CooklangPreview } from "@/components/features/recipes/cooklang-preview";
 import { CooklangHelp } from "@/components/features/recipes/cooklang-help";
+import { PlannerConfigForm } from "@/components/features/recipes/planner-config-form";
+import { IngredientNormalizationPanel } from "@/components/features/recipes/ingredient-normalization-panel";
 import { useMobile } from "@/lib/hooks/use-mobile";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -17,6 +19,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { createErrorFromUnknown } from "@/lib/api/errors";
+import type { PlannerConfig } from "@/types/models/recipe";
 
 export function RecipeFormPage() {
   const { id } = useParams<{ id: string }>();
@@ -27,6 +30,8 @@ export function RecipeFormPage() {
   const { data: existingData } = useRecipe(id ?? "");
   const createRecipe = useCreateRecipe();
   const updateRecipe = useUpdateRecipe();
+
+  const [plannerConfig, setPlannerConfig] = useState<PlannerConfig>({});
 
   const form = useForm<RecipeFormData>({
     resolver: zodResolver(recipeFormSchema),
@@ -45,14 +50,19 @@ export function RecipeFormPage() {
         description: attrs.description ?? "",
         source: attrs.source,
       });
+      if (attrs.plannerConfig) {
+        setPlannerConfig(attrs.plannerConfig);
+      }
     }
   }, [isEditing, existingData, form]);
 
   const onSubmit = async (values: RecipeFormData) => {
+    const hasPlanner = plannerConfig.classification || plannerConfig.servingsYield;
     const attrs = {
       title: values.title,
       description: values.description || undefined,
       source: values.source,
+      plannerConfig: hasPlanner ? plannerConfig : undefined,
     };
 
     try {
@@ -77,6 +87,9 @@ export function RecipeFormPage() {
   const derivedServings = meta?.servings ?? "";
   const derivedPrepTime = meta?.prepTime ?? "";
   const derivedCookTime = meta?.cookTime ?? "";
+
+  // Existing normalized ingredients (edit mode only)
+  const existingIngredients = existingData?.data?.attributes?.ingredients ?? [];
 
   return (
     <div className="p-4 md:p-6 max-w-6xl">
@@ -117,6 +130,9 @@ export function RecipeFormPage() {
               )}
             />
           </div>
+
+          {/* Planner settings */}
+          <PlannerConfigForm value={plannerConfig} onChange={setPlannerConfig} />
 
           {/* Cooklang editor + preview */}
           <div className={isMobile ? "space-y-4" : "grid grid-cols-2 gap-6"}>
@@ -195,9 +211,37 @@ export function RecipeFormPage() {
                   errors={preview.errors}
                   isLoading={preview.isLoading}
                 />
+
+                {/* Normalization status in preview */}
+                {preview.normalization && preview.normalization.length > 0 && (
+                  <div className="border-t pt-3">
+                    <h4 className="text-xs font-medium text-muted-foreground mb-2">Normalization Preview</h4>
+                    <ul className="space-y-1">
+                      {preview.normalization.map((n, i) => (
+                        <li key={i} className="text-xs flex items-center gap-1.5">
+                          <span className={n.status === "unresolved" ? "text-yellow-500" : "text-green-500"}>
+                            {n.status === "unresolved" ? "?" : "✓"}
+                          </span>
+                          <span>{n.rawName}</span>
+                          {n.canonicalName && (
+                            <span className="text-muted-foreground">→ {n.canonicalName}</span>
+                          )}
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
               </div>
             </div>
           </div>
+
+          {/* Normalization review panel (edit mode) */}
+          {isEditing && existingIngredients.length > 0 && (
+            <IngredientNormalizationPanel
+              ingredients={existingIngredients}
+              recipeId={id!}
+            />
+          )}
 
           <div className="flex gap-3">
             <Button type="submit" disabled={form.formState.isSubmitting}>

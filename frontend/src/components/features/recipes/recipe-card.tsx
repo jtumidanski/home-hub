@@ -3,6 +3,7 @@ import { Clock, Trash2, Pencil } from "lucide-react";
 import { Card, CardHeader, CardTitle, CardContent, CardAction } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { CardActionMenu } from "@/components/common/card-action-menu";
+import { PlannerReadyBadge } from "./planner-ready-badge";
 import type { RecipeListItem } from "@/types/models/recipe";
 
 interface RecipeCardProps {
@@ -54,6 +55,15 @@ export function RecipeCard({ recipe, onDelete }: RecipeCardProps) {
               {totalTime} min
             </span>
           )}
+          {attributes.classification && (
+            <Badge variant="secondary" className="text-xs">{attributes.classification}</Badge>
+          )}
+          {attributes.totalIngredients > 0 && (
+            <span className="text-xs text-muted-foreground">
+              {attributes.resolvedIngredients}/{attributes.totalIngredients} resolved
+            </span>
+          )}
+          <PlannerReadyBadge ready={attributes.plannerReady} className="text-xs" />
           {attributes.tags.map((tag) => (
             <Badge key={tag} variant="secondary" className="text-xs">
               {tag}

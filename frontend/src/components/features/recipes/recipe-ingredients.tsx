@@ -1,7 +1,11 @@
-import type { Ingredient } from "@/types/models/recipe";
+import type { Ingredient, RecipeIngredient } from "@/types/models/recipe";
 
 interface RecipeIngredientsProps {
-  ingredients: Ingredient[];
+  ingredients: Ingredient[] | RecipeIngredient[];
+}
+
+function isRecipeIngredient(ing: Ingredient | RecipeIngredient): ing is RecipeIngredient {
+  return "rawName" in ing;
 }
 
 export function RecipeIngredients({ ingredients }: RecipeIngredientsProps) {
@@ -11,15 +15,21 @@ export function RecipeIngredients({ ingredients }: RecipeIngredientsProps) {
 
   return (
     <ul className="space-y-1.5 list-disc list-inside">
-      {ingredients.map((ing, i) => (
-        <li key={i} className="text-sm">
-          {ing.quantity && (
-            <span className="font-medium text-primary">{ing.quantity}{ing.unit ? ` ${ing.unit}` : ""}</span>
-          )}
-          {ing.quantity ? " " : ""}
-          <span>{ing.name}</span>
-        </li>
-      ))}
+      {ingredients.map((ing, i) => {
+        const name = isRecipeIngredient(ing) ? ing.rawName : ing.name;
+        const quantity = isRecipeIngredient(ing) ? ing.rawQuantity : ing.quantity;
+        const unit = isRecipeIngredient(ing) ? ing.rawUnit : ing.unit;
+
+        return (
+          <li key={i} className="text-sm">
+            {quantity && (
+              <span className="font-medium text-primary">{quantity}{unit ? ` ${unit}` : ""}</span>
+            )}
+            {quantity ? " " : ""}
+            <span>{name}</span>
+          </li>
+        );
+      })}
     </ul>
   );
 }

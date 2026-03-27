@@ -16,6 +16,9 @@ function makeRecipe(overrides: Partial<RecipeListItem["attributes"]> = {}): Reci
     attributes: {
       title: "Pasta Carbonara",
       tags: ["italian", "pasta"],
+      plannerReady: false,
+      resolvedIngredients: 0,
+      totalIngredients: 0,
       createdAt: "2026-03-01T00:00:00Z",
       updatedAt: "2026-03-01T00:00:00Z",
       ...overrides,

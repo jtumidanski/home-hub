@@ -6,6 +6,7 @@ import type {
   RecipeUpdateAttributes,
   RecipeTag,
   RecipeParseResult,
+  RecipeIngredient,
 } from "@/types/models/recipe";
 import type { Tenant } from "@/types/models/tenant";
 import type { ApiListResponse } from "@/types/api/responses";
@@ -86,6 +87,20 @@ class RecipeService extends BaseService {
         attributes: { source },
       },
     });
+  }
+
+  resolveIngredient(tenant: Tenant, recipeId: string, ingredientId: string, canonicalIngredientId: string, saveAsAlias: boolean) {
+    return this.create<RecipeIngredient>(tenant, `/recipes/${recipeId}/ingredients/${ingredientId}/resolve`, {
+      data: {
+        type: "ingredient-resolutions",
+        attributes: { canonicalIngredientId, saveAsAlias },
+      },
+    });
+  }
+
+  renormalize(tenant: Tenant, recipeId: string) {
+    this.setTenant(tenant);
+    return api.post(`/recipes/${recipeId}/renormalize`, {});
   }
 }
 

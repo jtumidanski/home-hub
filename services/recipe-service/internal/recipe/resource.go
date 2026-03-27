@@ -1,6 +1,7 @@
 package recipe
 
 import (
+	"context"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -10,6 +11,9 @@ import (
 	"github.com/google/uuid"
 	"github.com/gorilla/mux"
 	"github.com/jtumidanski/api2go/jsonapi"
+	"github.com/jtumidanski/home-hub/services/recipe-service/internal/audit"
+	"github.com/jtumidanski/home-hub/services/recipe-service/internal/normalization"
+	"github.com/jtumidanski/home-hub/services/recipe-service/internal/planner"
 	"github.com/jtumidanski/home-hub/services/recipe-service/internal/recipe/cooklang"
 	"github.com/jtumidanski/home-hub/shared/go/server"
 	tenantctx "github.com/jtumidanski/home-hub/shared/go/tenant"
@@ -43,6 +47,8 @@ func parseHandler(db *gorm.DB) server.InputHandler[ParseRequest] {
 				server.WriteError(w, http.StatusBadRequest, "Source too large", fmt.Sprintf("Source must be under %d bytes", cooklang.MaxSourceSize))
 				return
 			}
+
+			t := tenantctx.MustFromContext(r.Context())
 			proc := NewProcessor(d.Logger(), r.Context(), db)
 			result := proc.ParseSource(input.Source)
 
@@ -57,6 +63,16 @@ func parseHandler(db *gorm.DB) server.InputHandler[ParseRequest] {
 			}
 			if rest.Steps == nil {
 				rest.Steps = []cooklang.Step{}
+			}
+
+			// Add normalization preview
+			if len(result.Ingredients) > 0 && len(result.Errors) == 0 {
+				normProc := normalization.NewProcessor(d.Logger(), r.Context(), db)
+				parsed := make([]normalization.ParsedIngredient, len(result.Ingredients))
+				for i, ing := range result.Ingredients {
+					parsed[i] = normalization.ParsedIngredient{Name: ing.Name, Quantity: ing.Quantity, Unit: ing.Unit}
+				}
+				rest.Normalization = normProc.PreviewNormalization(t.Id(), parsed)
 			}
 
 			server.MarshalResponse[RestParseModel](d.Logger())(w)(c.ServerInformation())(map[string][]string{})(rest)
@@ -80,9 +96,61 @@ func listHandler(db *gorm.DB) server.GetHandler {
 				return
 			}
 
-			rest := TransformListSlice(models)
+			normProc := normalization.NewProcessor(d.Logger(), r.Context(), db)
+			plannerProc := planner.NewProcessor(d.Logger(), r.Context(), db)
 
-			// Write custom response with pagination meta
+			rest := make([]RestModel, len(models))
+			for i, m := range models {
+				enrichment := ListEnrichment{}
+
+				// Get ingredient counts
+				ingredients, err := normProc.GetByRecipeID(m.Id())
+				if err == nil {
+					enrichment.TotalIngredients = len(ingredients)
+					for _, ing := range ingredients {
+						if ing.NormalizationStatus() != normalization.StatusUnresolved {
+							enrichment.ResolvedIngredients++
+						}
+					}
+				}
+
+				// Get planner readiness
+				if pc, err := plannerProc.GetByRecipeID(m.Id()); err == nil {
+					readiness := planner.ComputeReadiness(&pc, m.Servings())
+					enrichment.PlannerReady = readiness.Ready
+					enrichment.Classification = pc.Classification()
+				}
+
+				rest[i] = TransformList(m, enrichment)
+			}
+
+			// Apply filters
+			plannerReadyFilter := r.URL.Query().Get("plannerReady")
+			classificationFilter := r.URL.Query().Get("classification")
+			normStatusFilter := r.URL.Query().Get("normalizationStatus")
+			if plannerReadyFilter != "" || classificationFilter != "" || normStatusFilter != "" {
+				var filtered []RestModel
+				for _, rm := range rest {
+					if plannerReadyFilter == "true" && !rm.PlannerReady {
+						continue
+					}
+					if plannerReadyFilter == "false" && rm.PlannerReady {
+						continue
+					}
+					if classificationFilter != "" && rm.Classification != classificationFilter {
+						continue
+					}
+					if normStatusFilter == "complete" && rm.ResolvedIngredients != rm.TotalIngredients {
+						continue
+					}
+					if normStatusFilter == "incomplete" && (rm.TotalIngredients == 0 || rm.ResolvedIngredients == rm.TotalIngredients) {
+						continue
+					}
+					filtered = append(filtered, rm)
+				}
+				rest = filtered
+			}
+
 			items := make([]jsonapi.MarshalIdentifier, len(rest))
 			for i := range rest {
 				items[i] = &rest[i]
@@ -94,7 +162,6 @@ func listHandler(db *gorm.DB) server.GetHandler {
 				return
 			}
 
-			// Inject meta into response
 			var resp map[string]interface{}
 			json.Unmarshal(result, &resp)
 			resp["meta"] = map[string]interface{}{
@@ -140,7 +207,31 @@ func createHandler(db *gorm.DB) server.InputHandler[CreateRequest] {
 				return
 			}
 
-			rest := TransformDetail(m, parsed)
+			// Trigger normalization pipeline
+			normProc := normalization.NewProcessor(d.Logger(), r.Context(), db)
+			parsedIngredients := toParsedIngredients(parsed.Ingredients)
+			ingredients, err := normProc.NormalizeIngredients(t.Id(), t.HouseholdId(), m.Id(), parsedIngredients)
+			if err != nil {
+				d.Logger().WithError(err).Error("Failed to normalize ingredients")
+			}
+
+			// Handle planner config
+			enrichment := buildDetailEnrichment(d.Logger(), r.Context(), db, m, ingredients)
+			if input.PlannerConfig != nil {
+				plannerProc := planner.NewProcessor(d.Logger(), r.Context(), db)
+				pc, err := plannerProc.CreateOrUpdate(m.Id(), toPlannerAttrs(input.PlannerConfig))
+				if err != nil {
+					d.Logger().WithError(err).Error("Failed to create planner config")
+				} else {
+					enrichment.PlannerConfig = toPlannerRestModel(&pc)
+					enrichment.Readiness = planner.ComputeReadiness(&pc, m.Servings())
+				}
+			}
+
+			// Emit audit
+			audit.Emit(d.Logger(), db.WithContext(r.Context()), t.Id(), "recipe", m.Id(), "recipe.created", t.UserId(), nil)
+
+			rest := TransformDetail(m, parsed, enrichment)
 			server.MarshalCreatedResponse[RestDetailModel](d.Logger())(w)(c.ServerInformation())(rest)
 		}
 	}
@@ -156,7 +247,12 @@ func getHandler(db *gorm.DB) server.GetHandler {
 					server.WriteError(w, http.StatusNotFound, "Not Found", "Recipe not found")
 					return
 				}
-				rest := TransformDetail(m, parsed)
+
+				normProc := normalization.NewProcessor(d.Logger(), r.Context(), db)
+				ingredients, _ := normProc.GetByRecipeID(id)
+				enrichment := buildDetailEnrichment(d.Logger(), r.Context(), db, m, ingredients)
+
+				rest := TransformDetail(m, parsed, enrichment)
 				server.MarshalResponse[RestDetailModel](d.Logger())(w)(c.ServerInformation())(map[string][]string{})(rest)
 			}
 		})
@@ -167,6 +263,7 @@ func updateHandler(db *gorm.DB) server.InputHandler[UpdateRequest] {
 	return func(d *server.HandlerDependency, c *server.HandlerContext, input UpdateRequest) http.HandlerFunc {
 		return server.ParseID("id", func(id uuid.UUID) http.HandlerFunc {
 			return func(w http.ResponseWriter, r *http.Request) {
+				t := tenantctx.MustFromContext(r.Context())
 				attrs := UpdateAttrs{}
 				if input.Title != "" {
 					attrs.Title = &input.Title
@@ -203,7 +300,36 @@ func updateHandler(db *gorm.DB) server.InputHandler[UpdateRequest] {
 					return
 				}
 
-				rest := TransformDetail(m, parsed)
+				// Reconcile ingredients if source changed
+				normProc := normalization.NewProcessor(d.Logger(), r.Context(), db)
+				var ingredients []normalization.Model
+				if input.Source != "" {
+					parsedIngredients := toParsedIngredients(parsed.Ingredients)
+					ingredients, err = normProc.ReconcileIngredients(t.Id(), t.HouseholdId(), id, parsedIngredients)
+					if err != nil {
+						d.Logger().WithError(err).Error("Failed to reconcile ingredients")
+					}
+				} else {
+					ingredients, _ = normProc.GetByRecipeID(id)
+				}
+
+				// Handle planner config
+				enrichment := buildDetailEnrichment(d.Logger(), r.Context(), db, m, ingredients)
+				if input.PlannerConfig != nil {
+					plannerProc := planner.NewProcessor(d.Logger(), r.Context(), db)
+					pc, err := plannerProc.CreateOrUpdate(id, toPlannerAttrs(input.PlannerConfig))
+					if err != nil {
+						d.Logger().WithError(err).Error("Failed to update planner config")
+					} else {
+						enrichment.PlannerConfig = toPlannerRestModel(&pc)
+						enrichment.Readiness = planner.ComputeReadiness(&pc, m.Servings())
+					}
+				}
+
+				// Emit audit
+				audit.Emit(d.Logger(), db.WithContext(r.Context()), t.Id(), "recipe", id, "recipe.updated", t.UserId(), nil)
+
+				rest := TransformDetail(m, parsed, enrichment)
 				server.MarshalResponse[RestDetailModel](d.Logger())(w)(c.ServerInformation())(map[string][]string{})(rest)
 			}
 		})
@@ -214,12 +340,15 @@ func deleteHandler(db *gorm.DB) server.GetHandler {
 	return func(d *server.HandlerDependency, c *server.HandlerContext) http.HandlerFunc {
 		return server.ParseID("id", func(id uuid.UUID) http.HandlerFunc {
 			return func(w http.ResponseWriter, r *http.Request) {
+				t := tenantctx.MustFromContext(r.Context())
 				proc := NewProcessor(d.Logger(), r.Context(), db)
 				if err := proc.Delete(id); err != nil {
 					d.Logger().WithError(err).Error("Failed to delete recipe")
 					server.WriteError(w, http.StatusInternalServerError, "Delete Failed", "")
 					return
 				}
+
+				audit.Emit(d.Logger(), db.WithContext(r.Context()), t.Id(), "recipe", id, "recipe.deleted", t.UserId(), nil)
 				w.WriteHeader(http.StatusNoContent)
 			}
 		})
@@ -235,6 +364,7 @@ func restoreHandler(db *gorm.DB) server.InputHandler[RestorationRequest] {
 				return
 			}
 
+			t := tenantctx.MustFromContext(r.Context())
 			proc := NewProcessor(d.Logger(), r.Context(), db)
 			m, parsed, err := proc.Restore(recipeID)
 			if err != nil {
@@ -251,7 +381,13 @@ func restoreHandler(db *gorm.DB) server.InputHandler[RestorationRequest] {
 				return
 			}
 
-			rest := TransformDetail(m, parsed)
+			normProc := normalization.NewProcessor(d.Logger(), r.Context(), db)
+			ingredients, _ := normProc.GetByRecipeID(recipeID)
+			enrichment := buildDetailEnrichment(d.Logger(), r.Context(), db, m, ingredients)
+
+			audit.Emit(d.Logger(), db.WithContext(r.Context()), t.Id(), "recipe", recipeID, "recipe.restored", t.UserId(), nil)
+
+			rest := TransformDetail(m, parsed, enrichment)
 			server.MarshalResponse[RestDetailModel](d.Logger())(w)(c.ServerInformation())(map[string][]string{})(rest)
 		}
 	}
@@ -275,6 +411,59 @@ func listTagsHandler(db *gorm.DB) server.GetHandler {
 
 			server.MarshalSliceResponse[RestTagModel](d.Logger())(w)(c.ServerInformation())(rest)
 		}
+	}
+}
+
+// Helper functions
+
+func buildDetailEnrichment(l logrus.FieldLogger, ctx context.Context, db *gorm.DB, m Model, ingredients []normalization.Model) DetailEnrichment {
+	enrichment := DetailEnrichment{
+		Ingredients: normalization.TransformIngredients(ingredients),
+	}
+
+	plannerProc := planner.NewProcessor(l, ctx, db)
+	if pc, err := plannerProc.GetByRecipeID(m.Id()); err == nil {
+		enrichment.PlannerConfig = toPlannerRestModel(&pc)
+		enrichment.Readiness = planner.ComputeReadiness(&pc, m.Servings())
+	} else {
+		enrichment.Readiness = planner.ComputeReadiness(nil, m.Servings())
+	}
+
+	return enrichment
+}
+
+func toParsedIngredients(ingredients []cooklang.Ingredient) []normalization.ParsedIngredient {
+	result := make([]normalization.ParsedIngredient, len(ingredients))
+	for i, ing := range ingredients {
+		result[i] = normalization.ParsedIngredient{
+			Name:     ing.Name,
+			Quantity: ing.Quantity,
+			Unit:     ing.Unit,
+		}
+	}
+	return result
+}
+
+func toPlannerAttrs(pc *RestPlannerConfigModel) planner.ConfigAttrs {
+	attrs := planner.ConfigAttrs{
+		ServingsYield:      pc.ServingsYield,
+		EatWithinDays:      pc.EatWithinDays,
+		MinGapDays:         pc.MinGapDays,
+		MaxConsecutiveDays: pc.MaxConsecutiveDays,
+	}
+	if pc.Classification != "" {
+		attrs.Classification = &pc.Classification
+	}
+	return attrs
+}
+
+func toPlannerRestModel(pc *planner.Model) *RestPlannerConfigModel {
+	return &RestPlannerConfigModel{
+		Classification:     pc.Classification(),
+		ServingsYield:      pc.ServingsYield(),
+		EatWithinDays:      pc.EatWithinDays(),
+		MinGapDays:         pc.MinGapDays(),
+		MaxConsecutiveDays: pc.MaxConsecutiveDays(),
 	}
 }
 

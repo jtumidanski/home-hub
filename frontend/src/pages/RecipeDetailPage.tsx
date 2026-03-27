@@ -2,8 +2,11 @@ import { useParams, useNavigate } from "react-router-dom";
 import { ArrowLeft, Pencil, Trash2, Clock, Users, ExternalLink } from "lucide-react";
 import { toast } from "sonner";
 import { useRecipe, useDeleteRecipe } from "@/lib/hooks/api/use-recipes";
+import { useRenormalize } from "@/lib/hooks/api/use-ingredient-normalization";
 import { RecipeIngredients } from "@/components/features/recipes/recipe-ingredients";
 import { RecipeSteps } from "@/components/features/recipes/recipe-steps";
+import { IngredientNormalizationPanel } from "@/components/features/recipes/ingredient-normalization-panel";
+import { PlannerReadyBadge } from "@/components/features/recipes/planner-ready-badge";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -14,6 +17,7 @@ export function RecipeDetailPage() {
   const navigate = useNavigate();
   const { data, isLoading } = useRecipe(id!);
   const deleteRecipe = useDeleteRecipe();
+  const renormalize = useRenormalize();
 
   const recipe = data?.data;
 
@@ -62,7 +66,13 @@ export function RecipeDetailPage() {
 
         <div className="flex items-start justify-between gap-4">
           <div>
-            <h1 className="text-2xl font-bold">{attrs.title}</h1>
+            <div className="flex items-center gap-2">
+              <h1 className="text-2xl font-bold">{attrs.title}</h1>
+              <PlannerReadyBadge
+                ready={attrs.plannerReady}
+                issues={attrs.plannerIssues}
+              />
+            </div>
             {attrs.description && (
               <p className="mt-1 text-muted-foreground">{attrs.description}</p>
             )}
@@ -102,6 +112,9 @@ export function RecipeDetailPage() {
               <ExternalLink className="h-3 w-3" /> Source
             </a>
           )}
+          {attrs.plannerConfig?.classification && (
+            <Badge variant="secondary">{attrs.plannerConfig.classification}</Badge>
+          )}
         </div>
 
         {attrs.tags.length > 0 && (
@@ -115,9 +128,19 @@ export function RecipeDetailPage() {
 
       {/* Ingredients and Instructions — side-by-side on desktop */}
       <div className="grid grid-cols-1 md:grid-cols-[280px_1fr] gap-6 md:gap-8">
-        <div>
-          <h2 className="text-lg font-semibold mb-3">Ingredients</h2>
-          <RecipeIngredients ingredients={attrs.ingredients} />
+        <div className="space-y-4">
+          <div>
+            <h2 className="text-lg font-semibold mb-3">Ingredients</h2>
+            <RecipeIngredients ingredients={attrs.ingredients} />
+          </div>
+
+          {/* Normalization panel */}
+          <IngredientNormalizationPanel
+            ingredients={attrs.ingredients}
+            recipeId={id!}
+            onRenormalize={() => renormalize.mutate(id!)}
+            isRenormalizing={renormalize.isPending}
+          />
         </div>
 
         <div>
@@ -125,6 +148,45 @@ export function RecipeDetailPage() {
           <RecipeSteps steps={attrs.steps} />
         </div>
       </div>
+
+      {/* Planner config display */}
+      {attrs.plannerConfig && (
+        <div className="border rounded-md p-4">
+          <h3 className="text-sm font-medium mb-2">Planner Configuration</h3>
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 text-sm">
+            {attrs.plannerConfig.classification && (
+              <div>
+                <span className="text-muted-foreground text-xs">Classification</span>
+                <p>{attrs.plannerConfig.classification}</p>
+              </div>
+            )}
+            {attrs.plannerConfig.servingsYield && (
+              <div>
+                <span className="text-muted-foreground text-xs">Servings Yield</span>
+                <p>{attrs.plannerConfig.servingsYield}</p>
+              </div>
+            )}
+            {attrs.plannerConfig.eatWithinDays && (
+              <div>
+                <span className="text-muted-foreground text-xs">Eat Within</span>
+                <p>{attrs.plannerConfig.eatWithinDays} days</p>
+              </div>
+            )}
+            {attrs.plannerConfig.minGapDays != null && (
+              <div>
+                <span className="text-muted-foreground text-xs">Min Gap</span>
+                <p>{attrs.plannerConfig.minGapDays} days</p>
+              </div>
+            )}
+            {attrs.plannerConfig.maxConsecutiveDays && (
+              <div>
+                <span className="text-muted-foreground text-xs">Max Consecutive</span>
+                <p>{attrs.plannerConfig.maxConsecutiveDays} days</p>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
     </div>
   );
 }
