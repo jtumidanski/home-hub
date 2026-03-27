@@ -1,7 +1,6 @@
 package event
 
 import (
-	"context"
 	"errors"
 	"net/http"
 	"strings"
@@ -145,43 +144,15 @@ func createEventHandler(db *gorm.DB, gcClient *googlecal.Client, enc *crypto.Enc
 				return
 			}
 
-			accessToken, err := getValidAccessToken(r.Context(), conn, gcClient, enc, connProc)
+			accessToken, err := connProc.GetOrRefreshAccessToken(conn, gcClient, enc)
 			if err != nil {
 				d.Logger().WithError(err).Error("failed to get access token for event creation")
 				server.WriteError(w, http.StatusInternalServerError, "Internal Error", "Failed to authenticate with Google")
 				return
 			}
 
-			gcEvent := googlecal.InsertEventRequest{
-				Summary:     input.Title,
-				Location:    input.Location,
-				Description: input.Description,
-				Recurrence:  input.Recurrence,
-			}
-
-			if input.AllDay {
-				startDate := parseDate(input.Start)
-				endDate := parseDate(input.End)
-				if endDate == "" {
-					endDate = addDay(startDate)
-				}
-				gcEvent.Start = &googlecal.EventTime{Date: startDate}
-				gcEvent.End = &googlecal.EventTime{Date: endDate}
-			} else {
-				startTime := parseDateTime(input.Start)
-				endTime := parseDateTime(input.End)
-				if startTime.IsZero() {
-					server.WriteError(w, http.StatusUnprocessableEntity, "Validation Error", "Invalid start time format")
-					return
-				}
-				if endTime.IsZero() {
-					endTime = startTime.Add(time.Hour)
-				}
-				gcEvent.Start = &googlecal.EventTime{DateTime: startTime}
-				gcEvent.End = &googlecal.EventTime{DateTime: endTime}
-			}
-
-			_, err = gcClient.InsertEvent(r.Context(), accessToken, src.ExternalID(), gcEvent)
+			evtProc := NewProcessor(d.Logger(), r.Context(), db)
+			err = evtProc.CreateOnGoogle(gcClient, accessToken, src.ExternalID(), input)
 			if err != nil {
 				d.Logger().WithError(err).Error("Google Calendar insert event failed")
 				if strings.Contains(err.Error(), "403") {
@@ -246,46 +217,14 @@ func updateEventHandler(db *gorm.DB, gcClient *googlecal.Client, enc *crypto.Enc
 				return
 			}
 
-			accessToken, err := getValidAccessToken(r.Context(), conn, gcClient, enc, connProc)
+			accessToken, err := connProc.GetOrRefreshAccessToken(conn, gcClient, enc)
 			if err != nil {
 				d.Logger().WithError(err).Error("failed to get access token for event update")
 				server.WriteError(w, http.StatusInternalServerError, "Internal Error", "Failed to authenticate with Google")
 				return
 			}
 
-			gcUpdate := googlecal.UpdateEventRequest{}
-			if input.Title != nil {
-				gcUpdate.Summary = input.Title
-			}
-			if input.Location != nil {
-				gcUpdate.Location = input.Location
-			}
-			if input.Description != nil {
-				gcUpdate.Description = input.Description
-			}
-			if input.Start != nil {
-				if input.AllDay != nil && *input.AllDay {
-					gcUpdate.Start = &googlecal.EventTime{Date: parseDate(*input.Start)}
-				} else {
-					st := parseDateTime(*input.Start)
-					gcUpdate.Start = &googlecal.EventTime{DateTime: st}
-				}
-			}
-			if input.End != nil {
-				if input.AllDay != nil && *input.AllDay {
-					gcUpdate.End = &googlecal.EventTime{Date: parseDate(*input.End)}
-				} else {
-					et := parseDateTime(*input.End)
-					gcUpdate.End = &googlecal.EventTime{DateTime: et}
-				}
-			}
-
-			googleEventID := evt.ExternalID()
-			if input.Scope == "all" {
-				googleEventID = extractBaseEventID(googleEventID)
-			}
-
-			_, err = gcClient.UpdateEvent(r.Context(), accessToken, evt.GoogleCalendarID(), googleEventID, gcUpdate)
+			err = evtProc.UpdateOnGoogle(gcClient, accessToken, evt, input)
 			if err != nil {
 				d.Logger().WithError(err).Error("Google Calendar update event failed")
 				server.WriteError(w, http.StatusInternalServerError, "Internal Error", "Failed to update event on Google Calendar")
@@ -358,7 +297,7 @@ func deleteEventHandler(db *gorm.DB, gcClient *googlecal.Client, enc *crypto.Enc
 				return
 			}
 
-			accessToken, err := getValidAccessToken(r.Context(), conn, gcClient, enc, connProc)
+			accessToken, err := connProc.GetOrRefreshAccessToken(conn, gcClient, enc)
 			if err != nil {
 				d.Logger().WithError(err).Error("failed to get access token for event deletion")
 				server.WriteError(w, http.StatusInternalServerError, "Internal Error", "Failed to authenticate with Google")
@@ -366,12 +305,7 @@ func deleteEventHandler(db *gorm.DB, gcClient *googlecal.Client, enc *crypto.Enc
 			}
 
 			scope := r.URL.Query().Get("scope")
-			googleEventID := evt.ExternalID()
-			if scope == "all" {
-				googleEventID = extractBaseEventID(googleEventID)
-			}
-
-			err = gcClient.DeleteEvent(r.Context(), accessToken, evt.GoogleCalendarID(), googleEventID)
+			err = evtProc.DeleteOnGoogle(gcClient, accessToken, evt, scope)
 			if err != nil {
 				d.Logger().WithError(err).Error("Google Calendar delete event failed")
 				server.WriteError(w, http.StatusInternalServerError, "Internal Error", "Failed to delete event on Google Calendar")
@@ -386,87 +320,4 @@ func deleteEventHandler(db *gorm.DB, gcClient *googlecal.Client, enc *crypto.Enc
 			w.WriteHeader(http.StatusNoContent)
 		}
 	}
-}
-
-func getValidAccessToken(ctx context.Context, conn connection.Model, gcClient *googlecal.Client, enc *crypto.Encryptor, connProc *connection.Processor) (string, error) {
-	accessToken, err := enc.Decrypt(conn.AccessToken())
-	if err != nil {
-		return "", err
-	}
-
-	if !conn.IsTokenExpired() {
-		return accessToken, nil
-	}
-
-	refreshToken, err := enc.Decrypt(conn.RefreshToken())
-	if err != nil {
-		return "", err
-	}
-
-	tokenResp, err := gcClient.RefreshToken(ctx, refreshToken)
-	if err != nil {
-		return "", err
-	}
-
-	encAccess, err := enc.Encrypt(tokenResp.AccessToken)
-	if err != nil {
-		return "", err
-	}
-
-	tokenExpiry := time.Now().UTC().Add(time.Duration(tokenResp.ExpiresIn) * time.Second)
-	_ = connProc.UpdateTokens(conn.Id(), encAccess, tokenExpiry)
-
-	return tokenResp.AccessToken, nil
-}
-
-func extractBaseEventID(instanceID string) string {
-	if idx := strings.LastIndex(instanceID, "_"); idx > 0 {
-		suffix := instanceID[idx+1:]
-		if len(suffix) >= 8 && isDigits(suffix[:8]) {
-			return instanceID[:idx]
-		}
-	}
-	return instanceID
-}
-
-func isDigits(s string) bool {
-	for _, c := range s {
-		if c < '0' || c > '9' {
-			return false
-		}
-	}
-	return true
-}
-
-func parseDateTime(s string) time.Time {
-	// Try RFC3339 first (with timezone)
-	t, err := time.Parse(time.RFC3339, s)
-	if err == nil {
-		return t
-	}
-	// Try without timezone (browser local time format)
-	t, err = time.Parse("2006-01-02T15:04:05", s)
-	if err == nil {
-		return t
-	}
-	t, err = time.Parse("2006-01-02T15:04", s)
-	if err == nil {
-		return t
-	}
-	return time.Time{}
-}
-
-func parseDate(s string) string {
-	if len(s) >= 10 {
-		return s[:10]
-	}
-	return s
-}
-
-func addDay(date string) string {
-	t, err := time.Parse("2006-01-02", date)
-	if err != nil {
-		return date
-	}
-	return t.AddDate(0, 0, 1).Format("2006-01-02")
 }

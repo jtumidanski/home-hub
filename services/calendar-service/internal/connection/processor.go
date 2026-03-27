@@ -6,6 +6,8 @@ import (
 	"time"
 
 	"github.com/google/uuid"
+	"github.com/jtumidanski/home-hub/services/calendar-service/internal/crypto"
+	"github.com/jtumidanski/home-hub/services/calendar-service/internal/googlecal"
 	"github.com/jtumidanski/home-hub/shared/go/database"
 	"github.com/jtumidanski/home-hub/shared/go/model"
 	"github.com/sirupsen/logrus"
@@ -83,6 +85,37 @@ func (p *Processor) ByUserAndProvider(userID uuid.UUID, provider string) (Model,
 
 func (p *Processor) UpdateTokensAndWriteAccess(id uuid.UUID, encAccessToken, encRefreshToken string, tokenExpiry time.Time, writeAccess bool) error {
 	return updateTokensAndWriteAccess(p.noTenantDB(), id, encAccessToken, encRefreshToken, tokenExpiry, writeAccess)
+}
+
+func (p *Processor) GetOrRefreshAccessToken(conn Model, gcClient *googlecal.Client, enc *crypto.Encryptor) (string, error) {
+	accessToken, err := enc.Decrypt(conn.AccessToken())
+	if err != nil {
+		return "", err
+	}
+
+	if !conn.IsTokenExpired() {
+		return accessToken, nil
+	}
+
+	refreshToken, err := enc.Decrypt(conn.RefreshToken())
+	if err != nil {
+		return "", err
+	}
+
+	tokenResp, err := gcClient.RefreshToken(p.ctx, refreshToken)
+	if err != nil {
+		return "", err
+	}
+
+	encAccess, err := enc.Encrypt(tokenResp.AccessToken)
+	if err != nil {
+		return "", err
+	}
+
+	tokenExpiry := time.Now().UTC().Add(time.Duration(tokenResp.ExpiresIn) * time.Second)
+	_ = p.UpdateTokens(conn.Id(), encAccess, tokenExpiry)
+
+	return tokenResp.AccessToken, nil
 }
 
 func (p *Processor) CheckManualSyncAllowed(conn Model) error {
