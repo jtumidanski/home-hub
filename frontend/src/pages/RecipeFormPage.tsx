@@ -65,7 +65,9 @@ export function RecipeFormPage() {
     const servingsYield = parsedServings && !isNaN(parsedServings) ? parsedServings : undefined;
 
     const mergedConfig: PlannerConfig = {
-      ...plannerConfig,
+      ...(plannerConfig.eatWithinDays ? { eatWithinDays: plannerConfig.eatWithinDays } : {}),
+      ...(plannerConfig.minGapDays ? { minGapDays: plannerConfig.minGapDays } : {}),
+      ...(plannerConfig.maxConsecutiveDays ? { maxConsecutiveDays: plannerConfig.maxConsecutiveDays } : {}),
       ...(classification ? { classification } : {}),
       ...(servingsYield ? { servingsYield } : {}),
     };
