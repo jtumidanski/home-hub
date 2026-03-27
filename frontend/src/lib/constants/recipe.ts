@@ -1,5 +1,7 @@
 export const CLASSIFICATIONS = ["breakfast", "lunch", "dinner", "snack", "side"] as const;
 
+export const UNIT_FAMILIES = ["", "count", "weight", "volume"] as const;
+
 export type Classification = (typeof CLASSIFICATIONS)[number];
 
 export function isClassification(tag: string): tag is Classification {

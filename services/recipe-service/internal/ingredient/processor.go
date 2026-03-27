@@ -206,11 +206,7 @@ func (p *Processor) SearchWithUsage(tenantID uuid.UUID, query string, page, page
 		if err != nil {
 			return nil, 0, err
 		}
-		models[i] = Model{
-			id: m.id, tenantID: m.tenantID, name: m.name, displayName: m.displayName,
-			unitFamily: m.unitFamily, aliases: m.aliases, aliasCount: m.aliasCount,
-			usageCount: int(e.UsageCount), createdAt: m.createdAt, updatedAt: m.updatedAt,
-		}
+		models[i] = m.WithUsageCount(int(e.UsageCount))
 	}
 	return models, total, nil
 }

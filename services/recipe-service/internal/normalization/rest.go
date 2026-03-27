@@ -53,6 +53,17 @@ func TransformIngredient(m Model) RestIngredientModel {
 	return rest
 }
 
+type RenormalizeRequest struct {
+	Id uuid.UUID `json:"-"`
+}
+
+func (r RenormalizeRequest) GetName() string       { return "recipe-renormalize" }
+func (r RenormalizeRequest) GetID() string          { return r.Id.String() }
+func (r *RenormalizeRequest) SetID(id string) error {
+	if id == "" { return nil }
+	var err error; r.Id, err = uuid.Parse(id); return err
+}
+
 func TransformIngredients(models []Model) []RestIngredientModel {
 	if models == nil {
 		return []RestIngredientModel{}

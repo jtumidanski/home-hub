@@ -17,9 +17,8 @@ import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { createErrorFromUnknown } from "@/lib/api/errors";
+import { UNIT_FAMILIES } from "@/lib/constants/recipe";
 import type { CanonicalIngredientListItem } from "@/types/models/ingredient";
-
-const UNIT_FAMILIES = ["", "count", "weight", "volume"];
 
 export function IngredientDetailPage() {
   const { id } = useParams<{ id: string }>();

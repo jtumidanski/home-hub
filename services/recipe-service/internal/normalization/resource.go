@@ -15,11 +15,11 @@ import (
 
 func InitializeRoutes(db *gorm.DB) func(l logrus.FieldLogger, si jsonapi.ServerInformation, api *mux.Router) {
 	return func(l logrus.FieldLogger, si jsonapi.ServerInformation, api *mux.Router) {
-		rh := server.RegisterHandler(l)(si)
 		rihResolve := server.RegisterInputHandler[ResolveRequest](l)(si)
+		rihRenormalize := server.RegisterInputHandler[RenormalizeRequest](l)(si)
 
 		api.HandleFunc("/recipes/{id}/ingredients/{ingredientId}/resolve", rihResolve("ResolveIngredient", resolveHandler(db))).Methods(http.MethodPost)
-		api.HandleFunc("/recipes/{id}/renormalize", rh("RenormalizeRecipe", renormalizeHandler(db))).Methods(http.MethodPost)
+		api.HandleFunc("/recipes/{id}/renormalize", rihRenormalize("RenormalizeRecipe", renormalizeHandler(db))).Methods(http.MethodPost)
 	}
 }
 
@@ -59,8 +59,8 @@ func resolveHandler(db *gorm.DB) server.InputHandler[ResolveRequest] {
 	}
 }
 
-func renormalizeHandler(db *gorm.DB) server.GetHandler {
-	return func(d *server.HandlerDependency, c *server.HandlerContext) http.HandlerFunc {
+func renormalizeHandler(db *gorm.DB) server.InputHandler[RenormalizeRequest] {
+	return func(d *server.HandlerDependency, c *server.HandlerContext, _ RenormalizeRequest) http.HandlerFunc {
 		return server.ParseID("id", func(recipeID uuid.UUID) http.HandlerFunc {
 			return func(w http.ResponseWriter, r *http.Request) {
 				t := tenantctx.MustFromContext(r.Context())
@@ -77,7 +77,12 @@ func renormalizeHandler(db *gorm.DB) server.GetHandler {
 				for i := range rest {
 					items[i] = &rest[i]
 				}
-				result, _ := jsonapi.MarshalWithURLs(items, c.ServerInformation())
+				result, err := jsonapi.MarshalWithURLs(items, c.ServerInformation())
+				if err != nil {
+					d.Logger().WithError(err).Error("Failed to marshal renormalize response")
+					server.WriteError(w, http.StatusInternalServerError, "Error", "")
+					return
+				}
 
 				w.Header().Set("Content-Type", "application/vnd.api+json")
 				w.WriteHeader(http.StatusOK)

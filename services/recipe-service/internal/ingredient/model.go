@@ -56,3 +56,8 @@ func (m Model) AliasCount() int      { return m.aliasCount }
 func (m Model) UsageCount() int      { return m.usageCount }
 func (m Model) CreatedAt() time.Time { return m.createdAt }
 func (m Model) UpdatedAt() time.Time { return m.updatedAt }
+
+func (m Model) WithUsageCount(count int) Model {
+	m.usageCount = count
+	return m
+}

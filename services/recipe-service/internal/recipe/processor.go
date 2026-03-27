@@ -126,15 +126,15 @@ func (p *Processor) Get(id uuid.UUID) (Model, cooklang.ParseResult, error) {
 	return m, cooklang.Parse(m.Source()), nil
 }
 
-func (p *Processor) List(search string, tags []string, page, pageSize int) ([]Model, int64, error) {
-	if page < 1 {
-		page = 1
+func (p *Processor) List(filters ListFilters) ([]Model, int64, error) {
+	if filters.Page < 1 {
+		filters.Page = 1
 	}
-	if pageSize < 1 || pageSize > 100 {
-		pageSize = 20
+	if filters.PageSize < 1 || filters.PageSize > 100 {
+		filters.PageSize = 20
 	}
 
-	entities, total, err := getAll(search, tags, page, pageSize)(p.db.WithContext(p.ctx))
+	entities, total, err := getAll(filters)(p.db.WithContext(p.ctx))
 	if err != nil {
 		return nil, 0, err
 	}

@@ -82,13 +82,24 @@ func parseHandler(db *gorm.DB) server.InputHandler[ParseRequest] {
 func listHandler(db *gorm.DB) server.GetHandler {
 	return func(d *server.HandlerDependency, c *server.HandlerContext) http.HandlerFunc {
 		return func(w http.ResponseWriter, r *http.Request) {
-			search := r.URL.Query().Get("search")
-			tags := r.URL.Query()["tag"]
-			page := queryInt(r, "page[number]", 1)
-			pageSize := queryInt(r, "page[size]", 20)
+			filters := ListFilters{
+				Search:              r.URL.Query().Get("search"),
+				Tags:                r.URL.Query()["tag"],
+				Page:                queryInt(r, "page[number]", 1),
+				PageSize:            queryInt(r, "page[size]", 20),
+				Classification:      r.URL.Query().Get("classification"),
+				NormalizationStatus: r.URL.Query().Get("normalizationStatus"),
+			}
+			if pr := r.URL.Query().Get("plannerReady"); pr == "true" {
+				v := true
+				filters.PlannerReady = &v
+			} else if pr == "false" {
+				v := false
+				filters.PlannerReady = &v
+			}
 
 			proc := NewProcessor(d.Logger(), r.Context(), db)
-			models, total, err := proc.List(search, tags, page, pageSize)
+			models, total, err := proc.List(filters)
 			if err != nil {
 				d.Logger().WithError(err).Error("Failed to list recipes")
 				server.WriteError(w, http.StatusInternalServerError, "Error", "")
@@ -123,33 +134,6 @@ func listHandler(db *gorm.DB) server.GetHandler {
 				rest[i] = TransformList(m, enrichment)
 			}
 
-			// Apply filters
-			plannerReadyFilter := r.URL.Query().Get("plannerReady")
-			classificationFilter := r.URL.Query().Get("classification")
-			normStatusFilter := r.URL.Query().Get("normalizationStatus")
-			if plannerReadyFilter != "" || classificationFilter != "" || normStatusFilter != "" {
-				var filtered []RestModel
-				for _, rm := range rest {
-					if plannerReadyFilter == "true" && !rm.PlannerReady {
-						continue
-					}
-					if plannerReadyFilter == "false" && rm.PlannerReady {
-						continue
-					}
-					if classificationFilter != "" && rm.Classification != classificationFilter {
-						continue
-					}
-					if normStatusFilter == "complete" && rm.ResolvedIngredients != rm.TotalIngredients {
-						continue
-					}
-					if normStatusFilter == "incomplete" && (rm.TotalIngredients == 0 || rm.ResolvedIngredients == rm.TotalIngredients) {
-						continue
-					}
-					filtered = append(filtered, rm)
-				}
-				rest = filtered
-			}
-
 			items := make([]jsonapi.MarshalIdentifier, len(rest))
 			for i := range rest {
 				items[i] = &rest[i]
@@ -165,8 +149,8 @@ func listHandler(db *gorm.DB) server.GetHandler {
 			json.Unmarshal(result, &resp)
 			resp["meta"] = map[string]interface{}{
 				"total":    total,
-				"page":     page,
-				"pageSize": pageSize,
+				"page":     filters.Page,
+				"pageSize": filters.PageSize,
 			}
 
 			w.Header().Set("Content-Type", "application/vnd.api+json")
