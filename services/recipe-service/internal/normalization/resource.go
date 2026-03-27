@@ -7,7 +7,6 @@ import (
 	"github.com/google/uuid"
 	"github.com/gorilla/mux"
 	"github.com/jtumidanski/api2go/jsonapi"
-	"github.com/jtumidanski/home-hub/services/recipe-service/internal/audit"
 	"github.com/jtumidanski/home-hub/shared/go/server"
 	tenantctx "github.com/jtumidanski/home-hub/shared/go/tenant"
 	"github.com/sirupsen/logrus"
@@ -26,7 +25,7 @@ func InitializeRoutes(db *gorm.DB) func(l logrus.FieldLogger, si jsonapi.ServerI
 
 func resolveHandler(db *gorm.DB) server.InputHandler[ResolveRequest] {
 	return func(d *server.HandlerDependency, c *server.HandlerContext, input ResolveRequest) http.HandlerFunc {
-		return server.ParseID("id", func(recipeID uuid.UUID) http.HandlerFunc {
+		return server.ParseID("id", func(_ uuid.UUID) http.HandlerFunc {
 			return func(w http.ResponseWriter, r *http.Request) {
 				ingredientIDStr := mux.Vars(r)["ingredientId"]
 				ingredientID, err := uuid.Parse(ingredientIDStr)
@@ -41,9 +40,8 @@ func resolveHandler(db *gorm.DB) server.InputHandler[ResolveRequest] {
 					return
 				}
 
-				t := tenantctx.MustFromContext(r.Context())
 				proc := NewProcessor(d.Logger(), r.Context(), db)
-				m, err := proc.ResolveIngredient(ingredientID, canonicalID, input.SaveAsAlias)
+				result, err := proc.ResolveIngredient(ingredientID, canonicalID, input.SaveAsAlias)
 				if err != nil {
 					if errors.Is(err, ErrNotFound) {
 						server.WriteError(w, http.StatusNotFound, "Not Found", "Recipe ingredient not found")
@@ -54,19 +52,7 @@ func resolveHandler(db *gorm.DB) server.InputHandler[ResolveRequest] {
 					return
 				}
 
-				audit.Emit(d.Logger(), db.WithContext(r.Context()), t.Id(), "recipe_ingredient", ingredientID, "normalization.corrected", t.UserId(), map[string]interface{}{
-					"recipe_id":               recipeID,
-					"canonical_ingredient_id": canonicalID,
-					"save_as_alias":           input.SaveAsAlias,
-				})
-
-				if input.SaveAsAlias {
-					audit.Emit(d.Logger(), db.WithContext(r.Context()), t.Id(), "canonical_ingredient", canonicalID, "ingredient.alias_created", t.UserId(), map[string]interface{}{
-						"alias_name": m.RawName(),
-					})
-				}
-
-				rest := TransformIngredient(m)
+				rest := TransformIngredient(result.Model)
 				server.MarshalResponse[RestIngredientModel](d.Logger())(w)(c.ServerInformation())(map[string][]string{})(rest)
 			}
 		})
@@ -79,18 +65,12 @@ func renormalizeHandler(db *gorm.DB) server.GetHandler {
 			return func(w http.ResponseWriter, r *http.Request) {
 				t := tenantctx.MustFromContext(r.Context())
 				proc := NewProcessor(d.Logger(), r.Context(), db)
-				models, summary, err := proc.Renormalize(t.Id(), recipeID)
+				models, _, err := proc.Renormalize(t.Id(), recipeID)
 				if err != nil {
 					d.Logger().WithError(err).Error("Failed to renormalize")
 					server.WriteError(w, http.StatusInternalServerError, "Renormalize Failed", "")
 					return
 				}
-
-				audit.Emit(d.Logger(), db.WithContext(r.Context()), t.Id(), "recipe", recipeID, "recipe.renormalized", t.UserId(), map[string]interface{}{
-					"total":            summary.Total,
-					"changed":          summary.Changed,
-					"still_unresolved": summary.StillUnresolved,
-				})
 
 				rest := TransformIngredients(models)
 				items := make([]jsonapi.MarshalIdentifier, len(rest))

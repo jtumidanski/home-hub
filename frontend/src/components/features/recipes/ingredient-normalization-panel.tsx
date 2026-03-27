@@ -1,6 +1,7 @@
 import { Check, AlertTriangle, RefreshCw } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { cn } from "@/lib/utils";
 import { IngredientResolver } from "./ingredient-resolver";
 import type { RecipeIngredient } from "@/types/models/recipe";
 
@@ -42,7 +43,7 @@ export function IngredientNormalizationPanel({
             onClick={onRenormalize}
             disabled={isRenormalizing}
           >
-            <RefreshCw className={`mr-1 h-3 w-3 ${isRenormalizing ? "animate-spin" : ""}`} />
+            <RefreshCw className={cn("mr-1 h-3 w-3", isRenormalizing && "animate-spin")} />
             Re-normalize
           </Button>
         )}

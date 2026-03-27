@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/google/uuid"
+	"github.com/jtumidanski/home-hub/services/recipe-service/internal/audit"
 	"github.com/jtumidanski/home-hub/services/recipe-service/internal/ingredient"
 	"github.com/sirupsen/logrus"
 	"gorm.io/gorm"
@@ -204,26 +205,51 @@ func (p *Processor) ReconcileIngredients(tenantID, householdID, recipeID uuid.UU
 	return entitiesToModels(newEntities)
 }
 
-func (p *Processor) ResolveIngredient(ingredientID, canonicalIngredientID uuid.UUID, saveAsAlias bool) (Model, error) {
+type ResolveResult struct {
+	Model       Model
+	AliasCreated bool
+}
+
+func (p *Processor) ResolveIngredient(ingredientID, canonicalIngredientID uuid.UUID, saveAsAlias bool) (ResolveResult, error) {
 	e, err := getByID(p.db.WithContext(p.ctx), ingredientID)
 	if err != nil {
-		return Model{}, ErrNotFound
+		return ResolveResult{}, ErrNotFound
 	}
 
 	e.CanonicalIngredientId = &canonicalIngredientID
 	e.NormalizationStatus = string(StatusManuallyConfirmed)
 
 	if err := updateOne(p.db.WithContext(p.ctx), &e); err != nil {
-		return Model{}, err
+		return ResolveResult{}, err
 	}
 
+	aliasCreated := false
 	if saveAsAlias {
 		if err := p.createAliasIfNotExists(e.TenantId, canonicalIngredientID, e.RawName); err != nil {
 			p.l.WithError(err).Warn("Failed to create alias from resolution")
+		} else {
+			aliasCreated = true
 		}
 	}
 
-	return Make(e)
+	m, err := Make(e)
+	if err != nil {
+		return ResolveResult{}, err
+	}
+
+	// Emit audit events
+	audit.Emit(p.l, p.db.WithContext(p.ctx), e.TenantId, "recipe_ingredient", ingredientID, "normalization.corrected", uuid.Nil, map[string]interface{}{
+		"recipe_id":               e.RecipeId,
+		"canonical_ingredient_id": canonicalIngredientID,
+		"save_as_alias":           saveAsAlias,
+	})
+	if aliasCreated {
+		audit.Emit(p.l, p.db.WithContext(p.ctx), e.TenantId, "canonical_ingredient", canonicalIngredientID, "ingredient.alias_created", uuid.Nil, map[string]interface{}{
+			"alias_name": m.RawName(),
+		})
+	}
+
+	return ResolveResult{Model: m, AliasCreated: aliasCreated}, nil
 }
 
 func (p *Processor) createAliasIfNotExists(tenantID, canonicalIngredientID uuid.UUID, aliasName string) error {
@@ -295,6 +321,13 @@ func (p *Processor) Renormalize(tenantID, recipeID uuid.UUID) ([]Model, Renormal
 	if err != nil {
 		return nil, RenormalizeSummary{}, err
 	}
+
+	audit.Emit(p.l, p.db.WithContext(p.ctx), tenantID, "recipe", recipeID, "recipe.renormalized", uuid.Nil, map[string]interface{}{
+		"total":            summary.Total,
+		"changed":          summary.Changed,
+		"still_unresolved": summary.StillUnresolved,
+	})
+
 	return models, summary, nil
 }
 

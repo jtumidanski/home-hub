@@ -23,7 +23,7 @@ export function IngredientsPage() {
   const createIngredient = useCreateIngredient();
   const deleteIngredient = useDeleteIngredient();
 
-  const ingredients = (data?.data ?? []) as CanonicalIngredientListItem[];
+  const ingredients: CanonicalIngredientListItem[] = data?.data ?? [];
 
   const handleRefresh = useCallback(async () => {
     await refetch();

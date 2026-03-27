@@ -2,6 +2,7 @@ package planner
 
 import (
 	"context"
+	"time"
 
 	"github.com/google/uuid"
 	"github.com/sirupsen/logrus"
@@ -27,11 +28,39 @@ type ConfigAttrs struct {
 }
 
 func (p *Processor) CreateOrUpdate(recipeID uuid.UUID, attrs ConfigAttrs) (Model, error) {
-	e, err := upsert(p.db.WithContext(p.ctx), recipeID, attrs.Classification, attrs.ServingsYield, attrs.EatWithinDays, attrs.MinGapDays, attrs.MaxConsecutiveDays)
+	existing, err := getByRecipeID(p.db.WithContext(p.ctx), recipeID)
+	now := time.Now().UTC()
+
+	if err == gorm.ErrRecordNotFound {
+		e := Entity{
+			Id:                 uuid.New(),
+			RecipeId:           recipeID,
+			Classification:     attrs.Classification,
+			ServingsYield:      attrs.ServingsYield,
+			EatWithinDays:      attrs.EatWithinDays,
+			MinGapDays:         attrs.MinGapDays,
+			MaxConsecutiveDays: attrs.MaxConsecutiveDays,
+			CreatedAt:          now,
+			UpdatedAt:          now,
+		}
+		if err := createConfig(p.db.WithContext(p.ctx), &e); err != nil {
+			return Model{}, err
+		}
+		return Make(e)
+	}
 	if err != nil {
 		return Model{}, err
 	}
-	return Make(e)
+
+	existing.Classification = attrs.Classification
+	existing.ServingsYield = attrs.ServingsYield
+	existing.EatWithinDays = attrs.EatWithinDays
+	existing.MinGapDays = attrs.MinGapDays
+	existing.MaxConsecutiveDays = attrs.MaxConsecutiveDays
+	if err := updateConfig(p.db.WithContext(p.ctx), &existing); err != nil {
+		return Model{}, err
+	}
+	return Make(existing)
 }
 
 func (p *Processor) GetByRecipeID(recipeID uuid.UUID) (Model, error) {

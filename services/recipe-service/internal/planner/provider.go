@@ -13,40 +13,11 @@ func getByRecipeID(db *gorm.DB, recipeID uuid.UUID) (Entity, error) {
 	return e, err
 }
 
-func upsert(db *gorm.DB, recipeID uuid.UUID, classification *string, servingsYield, eatWithinDays, minGapDays, maxConsecutiveDays *int) (Entity, error) {
-	var existing Entity
-	err := db.Where("recipe_id = ?", recipeID).First(&existing).Error
+func createConfig(db *gorm.DB, e *Entity) error {
+	return db.Create(e).Error
+}
 
-	now := time.Now().UTC()
-	if err == gorm.ErrRecordNotFound {
-		e := Entity{
-			Id:                 uuid.New(),
-			RecipeId:           recipeID,
-			Classification:     classification,
-			ServingsYield:      servingsYield,
-			EatWithinDays:      eatWithinDays,
-			MinGapDays:         minGapDays,
-			MaxConsecutiveDays: maxConsecutiveDays,
-			CreatedAt:          now,
-			UpdatedAt:          now,
-		}
-		if err := db.Create(&e).Error; err != nil {
-			return Entity{}, err
-		}
-		return e, nil
-	}
-	if err != nil {
-		return Entity{}, err
-	}
-
-	existing.Classification = classification
-	existing.ServingsYield = servingsYield
-	existing.EatWithinDays = eatWithinDays
-	existing.MinGapDays = minGapDays
-	existing.MaxConsecutiveDays = maxConsecutiveDays
-	existing.UpdatedAt = now
-	if err := db.Save(&existing).Error; err != nil {
-		return Entity{}, err
-	}
-	return existing, nil
+func updateConfig(db *gorm.DB, e *Entity) error {
+	e.UpdatedAt = time.Now().UTC()
+	return db.Save(e).Error
 }

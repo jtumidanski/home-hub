@@ -23,7 +23,7 @@ export function IngredientResolver({ recipeId, ingredientId, rawName }: Ingredie
   const resolveIngredient = useResolveIngredient();
   const createIngredient = useCreateIngredient();
 
-  const suggestions = (data?.data ?? []) as CanonicalIngredientListItem[];
+  const suggestions: CanonicalIngredientListItem[] = data?.data ?? [];
 
   const handleResolve = async (canonicalId: string) => {
     try {
@@ -112,7 +112,7 @@ export function IngredientResolver({ recipeId, ingredientId, rawName }: Ingredie
             disabled={createIngredient.isPending}
           >
             <Plus className="mr-1 h-3 w-3" />
-            Create &quot;{searchQuery}&quot;
+            Create &ldquo;{searchQuery}&rdquo;
           </Button>
         )}
         <Button

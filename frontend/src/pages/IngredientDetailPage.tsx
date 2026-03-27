@@ -39,7 +39,8 @@ export function IngredientDetailPage() {
 
   const ingredient = data?.data;
   const recipes = recipesData?.data ?? [];
-  const candidates = ((reassignCandidates?.data ?? []) as CanonicalIngredientListItem[]).filter((c) => c.id !== id);
+  const allCandidates: CanonicalIngredientListItem[] = reassignCandidates?.data ?? [];
+  const candidates = allCandidates.filter((c) => c.id !== id);
 
   const handleAddAlias = async () => {
     if (!newAlias.trim() || !id) return;

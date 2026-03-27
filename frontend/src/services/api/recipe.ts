@@ -17,6 +17,9 @@ interface RecipeListParams {
   tags?: string[] | undefined;
   page?: number | undefined;
   pageSize?: number | undefined;
+  plannerReady?: boolean | undefined;
+  classification?: string | undefined;
+  normalizationStatus?: string | undefined;
 }
 
 export interface RecipeListResponse extends ApiListResponse<RecipeListItem> {
@@ -41,6 +44,9 @@ class RecipeService extends BaseService {
         query.append("tag", tag);
       }
     }
+    if (params?.plannerReady !== undefined) query.set("plannerReady", String(params.plannerReady));
+    if (params?.classification) query.set("classification", params.classification);
+    if (params?.normalizationStatus) query.set("normalizationStatus", params.normalizationStatus);
     if (params?.page) query.set("page[number]", String(params.page));
     if (params?.pageSize) query.set("page[size]", String(params.pageSize));
     const qs = query.toString();

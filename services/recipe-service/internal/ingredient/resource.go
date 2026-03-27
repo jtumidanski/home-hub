@@ -5,7 +5,6 @@ import (
 	"errors"
 	"net/http"
 	"strconv"
-	"time"
 
 	"github.com/google/uuid"
 	"github.com/gorilla/mux"
@@ -45,7 +44,7 @@ func listIngredientsHandler(db *gorm.DB) server.GetHandler {
 			pageSize := queryInt(r, "page[size]", 20)
 
 			proc := NewProcessor(d.Logger(), r.Context(), db)
-			models, total, err := proc.Search(t.Id(), query, page, pageSize)
+			models, total, err := proc.SearchWithUsage(t.Id(), query, page, pageSize)
 			if err != nil {
 				d.Logger().WithError(err).Error("Failed to list ingredients")
 				server.WriteError(w, http.StatusInternalServerError, "Error", "")
@@ -54,8 +53,7 @@ func listIngredientsHandler(db *gorm.DB) server.GetHandler {
 
 			rest := make([]RestModel, len(models))
 			for i, m := range models {
-				usage, _ := proc.GetUsageCount(m.Id())
-				rest[i] = TransformList(m, int(usage))
+				rest[i] = TransformList(m, m.UsageCount())
 			}
 
 			items := make([]jsonapi.MarshalIdentifier, len(rest))
@@ -239,14 +237,6 @@ func removeAliasHandler(db *gorm.DB) server.GetHandler {
 	}
 }
 
-type recipeIngredientRef struct {
-	Id       uuid.UUID `gorm:"type:uuid;primaryKey" json:"-"`
-	RecipeId uuid.UUID `gorm:"type:uuid" json:"recipeId"`
-	RawName  string    `gorm:"type:varchar(255)" json:"rawName"`
-}
-
-func (recipeIngredientRef) TableName() string { return "recipe_ingredients" }
-
 func ingredientRecipesHandler(db *gorm.DB) server.GetHandler {
 	return func(d *server.HandlerDependency, c *server.HandlerContext) http.HandlerFunc {
 		return server.ParseID("id", func(id uuid.UUID) http.HandlerFunc {
@@ -254,13 +244,13 @@ func ingredientRecipesHandler(db *gorm.DB) server.GetHandler {
 				page := queryInt(r, "page[number]", 1)
 				pageSize := queryInt(r, "page[size]", 20)
 
-				query := db.WithContext(r.Context()).Model(&recipeIngredientRef{}).Where("canonical_ingredient_id = ?", id)
-				var total int64
-				query.Count(&total)
-
-				offset := (page - 1) * pageSize
-				var refs []recipeIngredientRef
-				query.Order("created_at DESC").Offset(offset).Limit(pageSize).Find(&refs)
+				proc := NewProcessor(d.Logger(), r.Context(), db)
+				refs, total, err := proc.GetIngredientRecipes(id, page, pageSize)
+				if err != nil {
+					d.Logger().WithError(err).Error("Failed to get ingredient recipes")
+					server.WriteError(w, http.StatusInternalServerError, "Error", "")
+					return
+				}
 
 				w.Header().Set("Content-Type", "application/vnd.api+json")
 				w.WriteHeader(http.StatusOK)
@@ -287,21 +277,14 @@ func reassignHandler(db *gorm.DB) server.InputHandler[ReassignRequest] {
 					return
 				}
 
-				// Reassign all recipe_ingredients referencing this canonical to the target
-				result := db.WithContext(r.Context()).Table("recipe_ingredients").
-					Where("canonical_ingredient_id = ?", id).
-					Updates(map[string]interface{}{
-						"canonical_ingredient_id": targetID,
-						"updated_at":             time.Now().UTC(),
-					})
-				if result.Error != nil {
-					d.Logger().WithError(result.Error).Error("Failed to reassign")
+				proc := NewProcessor(d.Logger(), r.Context(), db)
+				reassigned, err := proc.Reassign(id, targetID)
+				if err != nil {
+					d.Logger().WithError(err).Error("Failed to reassign")
 					server.WriteError(w, http.StatusInternalServerError, "Error", "")
 					return
 				}
 
-				// Now delete the original
-				proc := NewProcessor(d.Logger(), r.Context(), db)
 				if err := proc.Delete(id); err != nil {
 					d.Logger().WithError(err).Error("Failed to delete after reassign")
 					server.WriteError(w, http.StatusInternalServerError, "Error", "")
@@ -312,7 +295,7 @@ func reassignHandler(db *gorm.DB) server.InputHandler[ReassignRequest] {
 				w.WriteHeader(http.StatusOK)
 				json.NewEncoder(w).Encode(map[string]interface{}{
 					"meta": map[string]interface{}{
-						"reassigned": result.RowsAffected,
+						"reassigned": reassigned,
 					},
 				})
 			}

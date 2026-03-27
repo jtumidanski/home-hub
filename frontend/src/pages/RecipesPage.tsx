@@ -18,10 +18,14 @@ export function RecipesPage() {
   const isMobile = useMobile();
   const [search, setSearch] = useState("");
   const [selectedTags, setSelectedTags] = useState<string[]>([]);
+  const [plannerReadyFilter, setPlannerReadyFilter] = useState<string>("");
+  const [classificationFilter, setClassificationFilter] = useState("");
 
   const { data, isLoading, refetch } = useRecipes({
     search: search || undefined,
     tags: selectedTags.length > 0 ? selectedTags : undefined,
+    plannerReady: plannerReadyFilter === "true" ? true : plannerReadyFilter === "false" ? false : undefined,
+    classification: classificationFilter || undefined,
   });
   const { data: tagsData } = useRecipeTags();
   const deleteRecipe = useDeleteRecipe();
@@ -106,6 +110,40 @@ export function RecipesPage() {
             )}
           </div>
         )}
+
+        {/* Filters */}
+        <div className="flex flex-wrap gap-4">
+          <div className="flex items-center gap-1.5">
+            <span className="text-xs text-muted-foreground font-medium">Planner:</span>
+            {[
+              { label: "All", value: "" },
+              { label: "Planner Ready", value: "true" },
+              { label: "Not Ready", value: "false" },
+            ].map((opt) => (
+              <Badge
+                key={opt.value}
+                variant={plannerReadyFilter === opt.value ? "default" : "outline"}
+                className="cursor-pointer text-xs"
+                onClick={() => setPlannerReadyFilter(opt.value)}
+              >
+                {opt.label}
+              </Badge>
+            ))}
+          </div>
+          <div className="flex items-center gap-1.5">
+            <span className="text-xs text-muted-foreground font-medium">Classification:</span>
+            {["", "breakfast", "lunch", "dinner", "snack", "side"].map((c) => (
+              <Badge
+                key={c}
+                variant={classificationFilter === c ? "default" : "outline"}
+                className="cursor-pointer text-xs"
+                onClick={() => setClassificationFilter(c)}
+              >
+                {c || "All"}
+              </Badge>
+            ))}
+          </div>
+        </div>
 
         {/* Loading */}
         {isLoading && (

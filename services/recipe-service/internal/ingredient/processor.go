@@ -168,6 +168,52 @@ func (p *Processor) GetUsageCount(id uuid.UUID) (int64, error) {
 	return getUsageCount(p.db.WithContext(p.ctx), id)
 }
 
+func (p *Processor) GetIngredientRecipes(id uuid.UUID, page, pageSize int) ([]RecipeRef, int64, error) {
+	if page < 1 {
+		page = 1
+	}
+	if pageSize < 1 || pageSize > 100 {
+		pageSize = 20
+	}
+	return getIngredientRecipes(p.db.WithContext(p.ctx), id, page, pageSize)
+}
+
+func (p *Processor) Reassign(fromID, toID uuid.UUID) (int64, error) {
+	count, err := reassignCanonical(p.db.WithContext(p.ctx), fromID, toID)
+	if err != nil {
+		return 0, err
+	}
+	return count, nil
+}
+
+func (p *Processor) SearchWithUsage(tenantID uuid.UUID, query string, page, pageSize int) ([]Model, int64, error) {
+	if page < 1 {
+		page = 1
+	}
+	if pageSize < 1 || pageSize > 100 {
+		pageSize = 20
+	}
+
+	entities, total, err := searchWithUsage(tenantID, query, page, pageSize)(p.db.WithContext(p.ctx))
+	if err != nil {
+		return nil, 0, err
+	}
+
+	models := make([]Model, len(entities))
+	for i, e := range entities {
+		m, err := Make(e.Entity)
+		if err != nil {
+			return nil, 0, err
+		}
+		models[i] = Model{
+			id: m.id, tenantID: m.tenantID, name: m.name, displayName: m.displayName,
+			unitFamily: m.unitFamily, aliases: m.aliases, aliasCount: m.aliasCount,
+			usageCount: int(e.UsageCount), createdAt: m.createdAt, updatedAt: m.updatedAt,
+		}
+	}
+	return models, total, nil
+}
+
 func (p *Processor) Suggest(tenantID uuid.UUID, prefix string, limit int) ([]Model, error) {
 	if limit < 1 || limit > 50 {
 		limit = 20

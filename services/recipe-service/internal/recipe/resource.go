@@ -11,7 +11,6 @@ import (
 	"github.com/google/uuid"
 	"github.com/gorilla/mux"
 	"github.com/jtumidanski/api2go/jsonapi"
-	"github.com/jtumidanski/home-hub/services/recipe-service/internal/audit"
 	"github.com/jtumidanski/home-hub/services/recipe-service/internal/normalization"
 	"github.com/jtumidanski/home-hub/services/recipe-service/internal/planner"
 	"github.com/jtumidanski/home-hub/services/recipe-service/internal/recipe/cooklang"
@@ -228,9 +227,6 @@ func createHandler(db *gorm.DB) server.InputHandler[CreateRequest] {
 				}
 			}
 
-			// Emit audit
-			audit.Emit(d.Logger(), db.WithContext(r.Context()), t.Id(), "recipe", m.Id(), "recipe.created", t.UserId(), nil)
-
 			rest := TransformDetail(m, parsed, enrichment)
 			server.MarshalCreatedResponse[RestDetailModel](d.Logger())(w)(c.ServerInformation())(rest)
 		}
@@ -326,9 +322,6 @@ func updateHandler(db *gorm.DB) server.InputHandler[UpdateRequest] {
 					}
 				}
 
-				// Emit audit
-				audit.Emit(d.Logger(), db.WithContext(r.Context()), t.Id(), "recipe", id, "recipe.updated", t.UserId(), nil)
-
 				rest := TransformDetail(m, parsed, enrichment)
 				server.MarshalResponse[RestDetailModel](d.Logger())(w)(c.ServerInformation())(map[string][]string{})(rest)
 			}
@@ -340,15 +333,12 @@ func deleteHandler(db *gorm.DB) server.GetHandler {
 	return func(d *server.HandlerDependency, c *server.HandlerContext) http.HandlerFunc {
 		return server.ParseID("id", func(id uuid.UUID) http.HandlerFunc {
 			return func(w http.ResponseWriter, r *http.Request) {
-				t := tenantctx.MustFromContext(r.Context())
 				proc := NewProcessor(d.Logger(), r.Context(), db)
 				if err := proc.Delete(id); err != nil {
 					d.Logger().WithError(err).Error("Failed to delete recipe")
 					server.WriteError(w, http.StatusInternalServerError, "Delete Failed", "")
 					return
 				}
-
-				audit.Emit(d.Logger(), db.WithContext(r.Context()), t.Id(), "recipe", id, "recipe.deleted", t.UserId(), nil)
 				w.WriteHeader(http.StatusNoContent)
 			}
 		})
@@ -364,7 +354,6 @@ func restoreHandler(db *gorm.DB) server.InputHandler[RestorationRequest] {
 				return
 			}
 
-			t := tenantctx.MustFromContext(r.Context())
 			proc := NewProcessor(d.Logger(), r.Context(), db)
 			m, parsed, err := proc.Restore(recipeID)
 			if err != nil {
@@ -384,8 +373,6 @@ func restoreHandler(db *gorm.DB) server.InputHandler[RestorationRequest] {
 			normProc := normalization.NewProcessor(d.Logger(), r.Context(), db)
 			ingredients, _ := normProc.GetByRecipeID(recipeID)
 			enrichment := buildDetailEnrichment(d.Logger(), r.Context(), db, m, ingredients)
-
-			audit.Emit(d.Logger(), db.WithContext(r.Context()), t.Id(), "recipe", recipeID, "recipe.restored", t.UserId(), nil)
 
 			rest := TransformDetail(m, parsed, enrichment)
 			server.MarshalResponse[RestDetailModel](d.Logger())(w)(c.ServerInformation())(map[string][]string{})(rest)
