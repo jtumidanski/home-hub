@@ -11,6 +11,7 @@ type RestModel struct {
 	Title            string     `json:"title"`
 	Notes            string     `json:"notes,omitempty"`
 	ScheduledFor     time.Time  `json:"scheduledFor"`
+	OwnerUserId      *string    `json:"ownerUserId"`
 	Active           bool       `json:"active"`
 	LastDismissedAt  *time.Time `json:"lastDismissedAt,omitempty"`
 	LastSnoozedUntil *time.Time `json:"lastSnoozedUntil,omitempty"`
@@ -23,9 +24,14 @@ func (r RestModel) GetID() string          { return r.Id.String() }
 func (r *RestModel) SetID(id string) error { var err error; r.Id, err = uuid.Parse(id); return err }
 
 func Transform(m Model) (RestModel, error) {
+	var ownerUserId *string
+	if m.OwnerUserID() != nil {
+		s := m.OwnerUserID().String()
+		ownerUserId = &s
+	}
 	return RestModel{
 		Id: m.Id(), Title: m.Title(), Notes: m.Notes(),
-		ScheduledFor: m.ScheduledFor(), Active: m.IsActive(),
+		ScheduledFor: m.ScheduledFor(), OwnerUserId: ownerUserId, Active: m.IsActive(),
 		LastDismissedAt: m.LastDismissedAt(), LastSnoozedUntil: m.LastSnoozedUntil(),
 		CreatedAt: m.CreatedAt(), UpdatedAt: m.UpdatedAt(),
 	}, nil
@@ -48,6 +54,7 @@ type CreateRequest struct {
 	Title        string    `json:"title"`
 	Notes        string    `json:"notes"`
 	ScheduledFor string    `json:"scheduledFor"`
+	OwnerUserId  *string   `json:"ownerUserId,omitempty"`
 }
 
 func (r CreateRequest) GetName() string       { return "reminders" }
@@ -66,6 +73,7 @@ type UpdateRequest struct {
 	Title        string    `json:"title"`
 	Notes        string    `json:"notes"`
 	ScheduledFor string    `json:"scheduledFor"`
+	OwnerUserId  *string   `json:"ownerUserId,omitempty"`
 }
 
 func (r UpdateRequest) GetName() string       { return "reminders" }

@@ -52,7 +52,7 @@ export function useCreateTask() {
   const qc = useQueryClient();
   const { tenant, household } = useTenant();
   return useMutation({
-    mutationFn: (attrs: { title: string; notes?: string; dueOn?: string; rolloverEnabled?: boolean }) =>
+    mutationFn: (attrs: { title: string; notes?: string; dueOn?: string; rolloverEnabled?: boolean; ownerUserId?: string | null }) =>
       productivityService.createTask(tenant!, attrs),
     onSettled: () => {
       qc.invalidateQueries({ queryKey: taskKeys.lists(tenant, household) });

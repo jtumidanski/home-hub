@@ -7,11 +7,12 @@ import { cn } from "@/lib/utils";
 
 interface TaskCardProps {
   task: Task;
+  ownerName?: string;
   onToggleComplete: (id: string, currentStatus: string) => void;
   onDelete: (id: string) => void;
 }
 
-export function TaskCard({ task, onToggleComplete, onDelete }: TaskCardProps) {
+export function TaskCard({ task, ownerName, onToggleComplete, onDelete }: TaskCardProps) {
   const { id, attributes } = task;
   const isCompleted = attributes.status === "completed";
 
@@ -51,6 +52,9 @@ export function TaskCard({ task, onToggleComplete, onDelete }: TaskCardProps) {
               <Calendar className="h-3 w-3" />
               {attributes.dueOn}
             </span>
+          )}
+          {ownerName && (
+            <span className="text-xs text-muted-foreground">{ownerName}</span>
           )}
         </div>
       </CardContent>

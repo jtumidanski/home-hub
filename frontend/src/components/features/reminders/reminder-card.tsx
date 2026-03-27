@@ -6,12 +6,13 @@ import { CardActionMenu } from "@/components/common/card-action-menu";
 
 interface ReminderCardProps {
   reminder: Reminder;
+  ownerName?: string;
   onSnooze: (id: string) => void;
   onDismiss: (id: string) => void;
   onDelete: (id: string) => void;
 }
 
-export function ReminderCard({ reminder, onSnooze, onDismiss, onDelete }: ReminderCardProps) {
+export function ReminderCard({ reminder, ownerName, onSnooze, onDismiss, onDelete }: ReminderCardProps) {
   const { id, attributes } = reminder;
 
   const statusLabel = attributes.active
@@ -54,6 +55,9 @@ export function ReminderCard({ reminder, onSnooze, onDismiss, onDelete }: Remind
             <Clock className="h-3 w-3" />
             {new Date(attributes.scheduledFor).toLocaleString()}
           </span>
+          {ownerName && (
+            <span className="text-xs text-muted-foreground">{ownerName}</span>
+          )}
         </div>
       </CardContent>
     </Card>

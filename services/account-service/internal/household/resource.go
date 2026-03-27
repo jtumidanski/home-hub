@@ -23,6 +23,7 @@ func InitializeRoutes(db *gorm.DB) func(l logrus.FieldLogger, si jsonapi.ServerI
 		api.HandleFunc("/households", rihCreate("CreateHousehold", createHandler(db))).Methods(http.MethodPost)
 		api.HandleFunc("/households/{id}", rh("GetHousehold", getHandler(db))).Methods(http.MethodGet)
 		api.HandleFunc("/households/{id}", rihUpdate("UpdateHousehold", updateHandler(db))).Methods(http.MethodPatch)
+		api.HandleFunc("/households/{id}/members", rh("ListHouseholdMembers", listMembersHandler(db))).Methods(http.MethodGet)
 	}
 }
 
@@ -92,6 +93,23 @@ func getHandler(db *gorm.DB) server.GetHandler {
 					return
 				}
 				server.MarshalResponse[RestModel](d.Logger())(w)(c.ServerInformation())(map[string][]string{})(rest)
+			}
+		})
+	}
+}
+
+func listMembersHandler(db *gorm.DB) server.GetHandler {
+	return func(d *server.HandlerDependency, c *server.HandlerContext) http.HandlerFunc {
+		return server.ParseID("id", func(id uuid.UUID) http.HandlerFunc {
+			return func(w http.ResponseWriter, r *http.Request) {
+				members, err := getMembersByHousehold(db.WithContext(r.Context()), id)
+				if err != nil {
+					d.Logger().WithError(err).Error("Failed to list household members")
+					server.WriteError(w, http.StatusInternalServerError, "Error", "")
+					return
+				}
+				rest := TransformMembers(members)
+				server.MarshalSliceResponse[MemberRestModel](d.Logger())(w)(c.ServerInformation())(rest)
 			}
 		})
 	}

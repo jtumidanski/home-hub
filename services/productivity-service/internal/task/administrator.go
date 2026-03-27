@@ -7,7 +7,7 @@ import (
 	"gorm.io/gorm"
 )
 
-func create(db *gorm.DB, tenantID, householdID uuid.UUID, title, notes, status string, dueOn *time.Time, rolloverEnabled bool) (Entity, error) {
+func create(db *gorm.DB, tenantID, householdID uuid.UUID, title, notes, status string, dueOn *time.Time, rolloverEnabled bool, ownerUserID *uuid.UUID) (Entity, error) {
 	now := time.Now().UTC()
 	e := Entity{
 		Id:              uuid.New(),
@@ -18,6 +18,7 @@ func create(db *gorm.DB, tenantID, householdID uuid.UUID, title, notes, status s
 		Status:          status,
 		DueOn:           dueOn,
 		RolloverEnabled: rolloverEnabled,
+		OwnerUserId:     ownerUserID,
 		CreatedAt:       now,
 		UpdatedAt:       now,
 	}
@@ -27,7 +28,7 @@ func create(db *gorm.DB, tenantID, householdID uuid.UUID, title, notes, status s
 	return e, nil
 }
 
-func update(db *gorm.DB, id uuid.UUID, title, notes, status string, dueOn *time.Time, rolloverEnabled bool, userID uuid.UUID) (Entity, error) {
+func update(db *gorm.DB, id uuid.UUID, title, notes, status string, dueOn *time.Time, rolloverEnabled bool, ownerUserID *uuid.UUID, userID uuid.UUID) (Entity, error) {
 	var e Entity
 	if err := db.Where("id = ?", id).First(&e).Error; err != nil {
 		return Entity{}, err
@@ -35,6 +36,7 @@ func update(db *gorm.DB, id uuid.UUID, title, notes, status string, dueOn *time.
 	e.Title = title
 	e.Notes = notes
 	e.RolloverEnabled = rolloverEnabled
+	e.OwnerUserId = ownerUserID
 	if dueOn != nil {
 		e.DueOn = dueOn
 	}

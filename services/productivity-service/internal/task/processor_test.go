@@ -33,12 +33,14 @@ func TestCreate(t *testing.T) {
 	db := setupTestDB(t)
 	p := newTestProcessor(t, db)
 
-	m, err := p.Create(uuid.New(), uuid.New(), "Test Task", "Some notes", nil, false)
+	ownerID := uuid.New()
+	m, err := p.Create(uuid.New(), uuid.New(), "Test Task", "Some notes", nil, false, &ownerID)
 	require.NoError(t, err)
 	require.Equal(t, "Test Task", m.Title())
 	require.Equal(t, "pending", m.Status())
 	require.Equal(t, "Some notes", m.Notes())
 	require.False(t, m.RolloverEnabled())
+	require.Equal(t, &ownerID, m.OwnerUserID())
 }
 
 func TestUpdate_StatusTransitions(t *testing.T) {
@@ -46,7 +48,7 @@ func TestUpdate_StatusTransitions(t *testing.T) {
 	p := newTestProcessor(t, db)
 	userID := uuid.New()
 
-	m, err := p.Create(uuid.New(), uuid.New(), "Task", "", nil, false)
+	m, err := p.Create(uuid.New(), uuid.New(), "Task", "", nil, false, nil)
 	require.NoError(t, err)
 
 	tests := []struct {
@@ -62,7 +64,7 @@ func TestUpdate_StatusTransitions(t *testing.T) {
 	current := m
 	for _, tc := range tests {
 		t.Run(tc.name, func(t *testing.T) {
-			updated, err := p.Update(current.Id(), "Task", "", tc.newStatus, nil, false, userID)
+			updated, err := p.Update(current.Id(), "Task", "", tc.newStatus, nil, false, nil, userID)
 			require.NoError(t, err)
 			require.Equal(t, tc.expectCompleted, updated.IsCompleted())
 			if tc.expectCompletedAt {
@@ -79,7 +81,7 @@ func TestSoftDelete_And_Restore(t *testing.T) {
 	db := setupTestDB(t)
 	p := newTestProcessor(t, db)
 
-	m, err := p.Create(uuid.New(), uuid.New(), "Delete Me", "", nil, false)
+	m, err := p.Create(uuid.New(), uuid.New(), "Delete Me", "", nil, false, nil)
 	require.NoError(t, err)
 
 	require.NoError(t, p.Delete(m.Id()))
@@ -107,7 +109,7 @@ func TestRestore_Errors(t *testing.T) {
 		{
 			name: "not deleted",
 			setup: func() uuid.UUID {
-				m, _ := p.Create(uuid.New(), uuid.New(), "Not Deleted", "", nil, false)
+				m, _ := p.Create(uuid.New(), uuid.New(), "Not Deleted", "", nil, false, nil)
 				return m.Id()
 			},
 			wantErr: ErrNotDeleted,
@@ -115,7 +117,7 @@ func TestRestore_Errors(t *testing.T) {
 		{
 			name: "restore window expired",
 			setup: func() uuid.UUID {
-				m, _ := p.Create(uuid.New(), uuid.New(), "Old Delete", "", nil, false)
+				m, _ := p.Create(uuid.New(), uuid.New(), "Old Delete", "", nil, false, nil)
 				oldTime := time.Now().UTC().Add(-4 * 24 * time.Hour)
 				db.Model(&Entity{}).Where("id = ?", m.Id()).Update("deleted_at", oldTime)
 				return m.Id()

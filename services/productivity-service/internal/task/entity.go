@@ -16,6 +16,7 @@ type Entity struct {
 	Status          string     `gorm:"type:text;not null;default:pending"`
 	DueOn           *time.Time `gorm:"type:date"`
 	RolloverEnabled bool       `gorm:"not null;default:false"`
+	OwnerUserId     *uuid.UUID `gorm:"type:uuid"`
 	CompletedAt     *time.Time
 	CompletedByUserId *uuid.UUID `gorm:"type:uuid"`
 	DeletedAt       *time.Time `gorm:"index"`
@@ -32,6 +33,7 @@ func (m Model) ToEntity() Entity {
 		Id: m.id, TenantId: m.tenantID, HouseholdId: m.householdID,
 		Title: m.title, Notes: m.notes, Status: m.status,
 		DueOn: m.dueOn, RolloverEnabled: m.rolloverEnabled,
+		OwnerUserId: m.ownerUserID,
 		CompletedAt: m.completedAt, CompletedByUserId: m.completedByUID,
 		DeletedAt: m.deletedAt, CreatedAt: m.createdAt, UpdatedAt: m.updatedAt,
 	}
@@ -47,6 +49,7 @@ func Make(e Entity) (Model, error) {
 		SetStatus(e.Status).
 		SetDueOn(e.DueOn).
 		SetRolloverEnabled(e.RolloverEnabled).
+		SetOwnerUserID(e.OwnerUserId).
 		SetCompletedAt(e.CompletedAt).
 		SetCompletedByUID(e.CompletedByUserId).
 		SetDeletedAt(e.DeletedAt).

@@ -19,6 +19,7 @@ type Builder struct {
 	title            string
 	notes            string
 	scheduledFor     time.Time
+	ownerUserID      *uuid.UUID
 	lastDismissedAt  *time.Time
 	lastSnoozedUntil *time.Time
 	createdAt        time.Time
@@ -35,6 +36,7 @@ func (b *Builder) SetHouseholdID(id uuid.UUID) *Builder           { b.householdI
 func (b *Builder) SetTitle(title string) *Builder                  { b.title = title; return b }
 func (b *Builder) SetNotes(notes string) *Builder                  { b.notes = notes; return b }
 func (b *Builder) SetScheduledFor(t time.Time) *Builder            { b.scheduledFor = t; return b }
+func (b *Builder) SetOwnerUserID(id *uuid.UUID) *Builder           { b.ownerUserID = id; return b }
 func (b *Builder) SetLastDismissedAt(t *time.Time) *Builder        { b.lastDismissedAt = t; return b }
 func (b *Builder) SetLastSnoozedUntil(t *time.Time) *Builder       { b.lastSnoozedUntil = t; return b }
 func (b *Builder) SetCreatedAt(t time.Time) *Builder               { b.createdAt = t; return b }
@@ -54,6 +56,7 @@ func (b *Builder) Build() (Model, error) {
 		title:            b.title,
 		notes:            b.notes,
 		scheduledFor:     b.scheduledFor,
+		ownerUserID:      b.ownerUserID,
 		lastDismissedAt:  b.lastDismissedAt,
 		lastSnoozedUntil: b.lastSnoozedUntil,
 		createdAt:        b.createdAt,
