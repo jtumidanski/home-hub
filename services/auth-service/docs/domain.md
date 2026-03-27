@@ -10,16 +10,17 @@ Represents an authenticated user in the system. Users are identified by email an
 
 **Model** (`user.Model`)
 
-| Field       | Type      |
-|-------------|-----------|
-| id          | uuid.UUID |
-| email       | string    |
-| displayName | string    |
-| givenName   | string    |
-| familyName  | string    |
-| avatarURL   | string    |
-| createdAt   | time.Time |
-| updatedAt   | time.Time |
+| Field             | Type      |
+|-------------------|-----------|
+| id                | uuid.UUID |
+| email             | string    |
+| displayName       | string    |
+| givenName         | string    |
+| familyName        | string    |
+| avatarURL         | string    |
+| providerAvatarURL | string    |
+| createdAt         | time.Time |
+| updatedAt         | time.Time |
 
 All fields are immutable after construction. Access is through getter methods.
 
@@ -27,16 +28,26 @@ All fields are immutable after construction. Access is through getter methods.
 
 - Email is unique across all users.
 - Users are created via FindOrCreate: if a user with the given email exists, it is returned; otherwise a new user is created.
+- `avatarURL` stores user-selected avatar descriptors in `dicebear:{style}:{seed}` format or empty string.
+- `providerAvatarURL` stores the OIDC provider's picture URL.
+- Avatar format validation accepts `dicebear:(adventurer|bottts|fun-emoji):{alphanumeric seed, 1-64 chars}` or empty string.
 
 ### Processors
 
 **Processor** (`user.Processor`)
 
-| Method                                                              | Description                                  |
-|---------------------------------------------------------------------|----------------------------------------------|
-| `ByIDProvider(id)`                                                  | Lazy lookup by ID                            |
-| `ByEmailProvider(email)`                                            | Lazy lookup by email                         |
-| `FindOrCreate(email, displayName, givenName, familyName, avatarURL)` | Returns existing user by email or creates new |
+| Method                                                              | Description                                                  |
+|---------------------------------------------------------------------|--------------------------------------------------------------|
+| `ByIDProvider(id)`                                                  | Lazy lookup by ID                                            |
+| `ByEmailProvider(email)`                                            | Lazy lookup by email                                         |
+| `ByIDsProvider(ids)`                                                | Lazy batch lookup by IDs                                     |
+| `FindOrCreate(email, displayName, givenName, familyName, avatarURL)` | Returns existing user by email or creates new                |
+| `UpdateProviderAvatar(userID, url)`                                 | Updates provider_avatar_url without touching user avatar      |
+| `UpdateAvatar(userID, avatarURL)`                                   | Validates format and persists user-selected avatar, returns updated model |
+
+**ValidateAvatarFormat** (`user.ValidateAvatarFormat`)
+
+Package-level function. Accepts empty string or `dicebear:{style}:{seed}` format. Returns `ErrInvalidAvatarFormat` otherwise.
 
 ---
 
