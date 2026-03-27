@@ -9,10 +9,6 @@ vi.mock("@/lib/hooks/api/use-tasks", () => ({
   useCreateTask: () => ({ mutateAsync: mockMutateAsync }),
 }));
 
-vi.mock("@/components/providers/auth-provider", () => ({
-  useAuth: () => ({ user: { id: "user-1" } }),
-}));
-
 vi.mock("@/lib/hooks/api/use-household-members", () => ({
   useHouseholdMembers: () => ({ data: { data: [] } }),
 }));
@@ -32,12 +28,12 @@ describe("CreateTaskDialog", () => {
   });
 
   it("does not render content when closed", () => {
-    render(<CreateTaskDialog open={false} onOpenChange={vi.fn()} />);
+    render(<CreateTaskDialog open={false} onOpenChange={vi.fn()} currentUserId="user-1" members={[]} />);
     expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
   });
 
   it("renders form fields when open", () => {
-    render(<CreateTaskDialog open={true} onOpenChange={vi.fn()} />);
+    render(<CreateTaskDialog open={true} onOpenChange={vi.fn()} currentUserId="user-1" members={[]} />);
     expect(screen.getByRole("dialog")).toBeInTheDocument();
     expect(screen.getByRole("heading", { name: "Create Task" })).toBeInTheDocument();
     expect(screen.getByPlaceholderText("Enter task title")).toBeInTheDocument();
@@ -48,7 +44,7 @@ describe("CreateTaskDialog", () => {
 
   it("shows validation error when submitting with empty title", async () => {
     const user = userEvent.setup();
-    render(<CreateTaskDialog open={true} onOpenChange={vi.fn()} />);
+    render(<CreateTaskDialog open={true} onOpenChange={vi.fn()} currentUserId="user-1" members={[]} />);
 
     await user.click(screen.getByRole("button", { name: /create task/i }));
 
@@ -63,7 +59,7 @@ describe("CreateTaskDialog", () => {
     mockMutateAsync.mockResolvedValue({});
     const onOpenChange = vi.fn();
 
-    render(<CreateTaskDialog open={true} onOpenChange={onOpenChange} />);
+    render(<CreateTaskDialog open={true} onOpenChange={onOpenChange} currentUserId="user-1" members={[]} />);
 
     await user.type(screen.getByPlaceholderText("Enter task title"), "Buy groceries");
     await user.type(screen.getByPlaceholderText("Optional notes"), "Milk and eggs");
@@ -85,7 +81,7 @@ describe("CreateTaskDialog", () => {
     mockMutateAsync.mockResolvedValue({});
     const onOpenChange = vi.fn();
 
-    render(<CreateTaskDialog open={true} onOpenChange={onOpenChange} />);
+    render(<CreateTaskDialog open={true} onOpenChange={onOpenChange} currentUserId="user-1" members={[]} />);
 
     await user.type(screen.getByPlaceholderText("Enter task title"), "Buy groceries");
     await user.click(screen.getByRole("button", { name: /create task/i }));
@@ -101,7 +97,7 @@ describe("CreateTaskDialog", () => {
     mockMutateAsync.mockRejectedValue(new Error("Network error"));
     const onOpenChange = vi.fn();
 
-    render(<CreateTaskDialog open={true} onOpenChange={onOpenChange} />);
+    render(<CreateTaskDialog open={true} onOpenChange={onOpenChange} currentUserId="user-1" members={[]} />);
 
     await user.type(screen.getByPlaceholderText("Enter task title"), "Buy groceries");
     await user.click(screen.getByRole("button", { name: /create task/i }));
@@ -121,7 +117,7 @@ describe("CreateTaskDialog", () => {
     });
 
     const { rerender } = render(
-      <CreateTaskDialog open={isOpen} onOpenChange={onOpenChange} />
+      <CreateTaskDialog open={isOpen} onOpenChange={onOpenChange} currentUserId="user-1" members={[]} />
     );
 
     await user.type(screen.getByPlaceholderText("Enter task title"), "Some task");
@@ -134,7 +130,7 @@ describe("CreateTaskDialog", () => {
     });
 
     // Reopen the dialog after it was closed by submission
-    rerender(<CreateTaskDialog open={true} onOpenChange={onOpenChange} />);
+    rerender(<CreateTaskDialog open={true} onOpenChange={onOpenChange} currentUserId="user-1" members={[]} />);
 
     await waitFor(() => {
       expect(screen.getByPlaceholderText("Enter task title")).toHaveValue("");

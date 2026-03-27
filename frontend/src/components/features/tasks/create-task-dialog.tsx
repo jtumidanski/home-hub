@@ -4,8 +4,8 @@ import { toast } from "sonner";
 import { useCreateTask } from "@/lib/hooks/api/use-tasks";
 import { createTaskSchema, type CreateTaskFormData, createTaskDefaults } from "@/lib/schemas/task.schema";
 import { createErrorFromUnknown } from "@/lib/api/errors";
-import { useAuth } from "@/components/providers/auth-provider";
 import { OwnerSelect } from "@/components/common/owner-select";
+import type { Member } from "@/types/models/member";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
@@ -15,13 +15,14 @@ import { Loader2 } from "lucide-react";
 interface CreateTaskDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
+  currentUserId: string;
+  members: Member[];
 }
 
-export function CreateTaskDialog({ open, onOpenChange }: CreateTaskDialogProps) {
+export function CreateTaskDialog({ open, onOpenChange, currentUserId, members }: CreateTaskDialogProps) {
   const createTask = useCreateTask();
-  const { user } = useAuth();
 
-  const defaults = { ...createTaskDefaults, ownerUserId: user?.id ?? "" };
+  const defaults = { ...createTaskDefaults, ownerUserId: currentUserId };
   const form = useForm<CreateTaskFormData>({
     resolver: zodResolver(createTaskSchema),
     defaultValues: defaults,
@@ -103,7 +104,7 @@ export function CreateTaskDialog({ open, onOpenChange }: CreateTaskDialogProps) 
                 <FormItem>
                   <FormLabel>Owner</FormLabel>
                   <FormControl>
-                    <OwnerSelect value={field.value ?? ""} onChange={field.onChange} />
+                    <OwnerSelect value={field.value ?? ""} onChange={field.onChange} members={members} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>

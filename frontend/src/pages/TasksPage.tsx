@@ -3,7 +3,9 @@ import { useSearchParams } from "react-router-dom";
 import { type ColumnDef } from "@tanstack/react-table";
 import { toast } from "sonner";
 import { useTasks, useUpdateTask, useDeleteTask } from "@/lib/hooks/api/use-tasks";
-import { useMemberMap } from "@/lib/hooks/api/use-household-members";
+import { useMemberMap, useHouseholdMembers } from "@/lib/hooks/api/use-household-members";
+import { useAuth } from "@/components/providers/auth-provider";
+import type { Member } from "@/types/models/member";
 import { createErrorFromUnknown } from "@/lib/api/errors";
 import { type Task, isTaskOverdue } from "@/types/models/task";
 import { useMobile } from "@/lib/hooks/use-mobile";
@@ -35,6 +37,9 @@ export function TasksPage() {
   const deleteTask = useDeleteTask();
   const [open, setOpen] = useState(false);
   const isMobile = useMobile();
+  const { user } = useAuth();
+  const { data: membersData } = useHouseholdMembers();
+  const members = (membersData?.data ?? []) as Member[];
   const memberMap = useMemberMap();
   const [searchParams] = useSearchParams();
 
@@ -192,7 +197,7 @@ export function TasksPage() {
 
         <ListFilterBar statusOptions={TASK_STATUS_OPTIONS} />
 
-        <CreateTaskDialog open={open} onOpenChange={setOpen} />
+        <CreateTaskDialog open={open} onOpenChange={setOpen} currentUserId={user?.id ?? ""} members={members} />
 
         {isMobile ? (
           filteredTasks.length === 0 ? (

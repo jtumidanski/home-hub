@@ -3,7 +3,9 @@ import { useSearchParams } from "react-router-dom";
 import { type ColumnDef } from "@tanstack/react-table";
 import { toast } from "sonner";
 import { useReminders, useSnoozeReminder, useDismissReminder, useDeleteReminder } from "@/lib/hooks/api/use-reminders";
-import { useMemberMap } from "@/lib/hooks/api/use-household-members";
+import { useMemberMap, useHouseholdMembers } from "@/lib/hooks/api/use-household-members";
+import { useAuth } from "@/components/providers/auth-provider";
+import type { Member } from "@/types/models/member";
 import { createErrorFromUnknown } from "@/lib/api/errors";
 import { type Reminder, isReminderDismissed, isReminderSnoozed } from "@/types/models/reminder";
 import { useMobile } from "@/lib/hooks/use-mobile";
@@ -44,6 +46,9 @@ export function RemindersPage() {
   const deleteReminder = useDeleteReminder();
   const [open, setOpen] = useState(false);
   const isMobile = useMobile();
+  const { user } = useAuth();
+  const { data: membersData } = useHouseholdMembers();
+  const members = (membersData?.data ?? []) as Member[];
   const memberMap = useMemberMap();
   const [searchParams] = useSearchParams();
 
@@ -192,7 +197,7 @@ export function RemindersPage() {
 
         <ListFilterBar statusOptions={REMINDER_STATUS_OPTIONS} />
 
-        <CreateReminderDialog open={open} onOpenChange={setOpen} />
+        <CreateReminderDialog open={open} onOpenChange={setOpen} currentUserId={user?.id ?? ""} members={members} />
 
         {isMobile ? (
           filteredReminders.length === 0 ? (

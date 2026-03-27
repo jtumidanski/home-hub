@@ -4,8 +4,8 @@ import { toast } from "sonner";
 import { useCreateReminder } from "@/lib/hooks/api/use-reminders";
 import { createReminderSchema, type CreateReminderFormData, createReminderDefaults } from "@/lib/schemas/reminder.schema";
 import { createErrorFromUnknown } from "@/lib/api/errors";
-import { useAuth } from "@/components/providers/auth-provider";
 import { OwnerSelect } from "@/components/common/owner-select";
+import type { Member } from "@/types/models/member";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
@@ -15,13 +15,14 @@ import { Loader2 } from "lucide-react";
 interface CreateReminderDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
+  currentUserId: string;
+  members: Member[];
 }
 
-export function CreateReminderDialog({ open, onOpenChange }: CreateReminderDialogProps) {
+export function CreateReminderDialog({ open, onOpenChange, currentUserId, members }: CreateReminderDialogProps) {
   const createReminder = useCreateReminder();
-  const { user } = useAuth();
 
-  const defaults = { ...createReminderDefaults, ownerUserId: user?.id ?? "" };
+  const defaults = { ...createReminderDefaults, ownerUserId: currentUserId };
   const form = useForm<CreateReminderFormData>({
     resolver: zodResolver(createReminderSchema),
     defaultValues: defaults,
@@ -103,7 +104,7 @@ export function CreateReminderDialog({ open, onOpenChange }: CreateReminderDialo
                 <FormItem>
                   <FormLabel>Owner</FormLabel>
                   <FormControl>
-                    <OwnerSelect value={field.value ?? ""} onChange={field.onChange} />
+                    <OwnerSelect value={field.value ?? ""} onChange={field.onChange} members={members} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>

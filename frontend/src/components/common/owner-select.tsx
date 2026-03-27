@@ -1,5 +1,4 @@
 import { useMemo } from "react";
-import { useHouseholdMembers } from "@/lib/hooks/api/use-household-members";
 import type { Member } from "@/types/models/member";
 import {
   Select,
@@ -11,14 +10,12 @@ import {
 interface OwnerSelectProps {
   value: string;
   onChange: (value: string) => void;
+  members: Member[];
 }
 
 const EVERYONE_VALUE = "__everyone__";
 
-export function OwnerSelect({ value, onChange }: OwnerSelectProps) {
-  const { data } = useHouseholdMembers();
-  const members = (data?.data ?? []) as Member[];
-
+export function OwnerSelect({ value, onChange, members }: OwnerSelectProps) {
   const displayLabel = useMemo(() => {
     if (!value || value === EVERYONE_VALUE) return "Everyone";
     const member = members.find((m) => m.relationships.user.data.id === value);

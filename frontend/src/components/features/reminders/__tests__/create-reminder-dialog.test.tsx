@@ -9,10 +9,6 @@ vi.mock("@/lib/hooks/api/use-reminders", () => ({
   useCreateReminder: () => ({ mutateAsync: mockMutateAsync }),
 }));
 
-vi.mock("@/components/providers/auth-provider", () => ({
-  useAuth: () => ({ user: { id: "user-1" } }),
-}));
-
 vi.mock("@/lib/hooks/api/use-household-members", () => ({
   useHouseholdMembers: () => ({ data: { data: [] } }),
 }));
@@ -32,12 +28,12 @@ describe("CreateReminderDialog", () => {
   });
 
   it("does not render content when closed", () => {
-    render(<CreateReminderDialog open={false} onOpenChange={vi.fn()} />);
+    render(<CreateReminderDialog open={false} onOpenChange={vi.fn()} currentUserId="user-1" members={[]} />);
     expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
   });
 
   it("renders form fields when open", () => {
-    render(<CreateReminderDialog open={true} onOpenChange={vi.fn()} />);
+    render(<CreateReminderDialog open={true} onOpenChange={vi.fn()} currentUserId="user-1" members={[]} />);
     expect(screen.getByRole("dialog")).toBeInTheDocument();
     expect(screen.getByRole("heading", { name: "Create Reminder" })).toBeInTheDocument();
     expect(screen.getByPlaceholderText("Enter reminder title")).toBeInTheDocument();
@@ -48,7 +44,7 @@ describe("CreateReminderDialog", () => {
 
   it("shows validation error when submitting empty title", async () => {
     const user = userEvent.setup();
-    render(<CreateReminderDialog open={true} onOpenChange={vi.fn()} />);
+    render(<CreateReminderDialog open={true} onOpenChange={vi.fn()} currentUserId="user-1" members={[]} />);
 
     await user.type(screen.getByLabelText("Scheduled For", { selector: "input" }), "2026-04-01T10:00");
 
@@ -62,7 +58,7 @@ describe("CreateReminderDialog", () => {
 
   it("shows validation error when submitting empty scheduledFor", async () => {
     const user = userEvent.setup();
-    render(<CreateReminderDialog open={true} onOpenChange={vi.fn()} />);
+    render(<CreateReminderDialog open={true} onOpenChange={vi.fn()} currentUserId="user-1" members={[]} />);
 
     await user.type(screen.getByPlaceholderText("Enter reminder title"), "Test Reminder");
     await user.click(screen.getByRole("button", { name: /create reminder/i }));
@@ -76,7 +72,7 @@ describe("CreateReminderDialog", () => {
   it("calls mutateAsync with correct data on valid submission", async () => {
     const user = userEvent.setup();
     mockMutateAsync.mockResolvedValue({});
-    render(<CreateReminderDialog open={true} onOpenChange={vi.fn()} />);
+    render(<CreateReminderDialog open={true} onOpenChange={vi.fn()} currentUserId="user-1" members={[]} />);
 
     await user.type(screen.getByPlaceholderText("Enter reminder title"), "Doctor appointment");
     await user.type(screen.getByPlaceholderText("Optional notes"), "Bring insurance card");
@@ -98,7 +94,7 @@ describe("CreateReminderDialog", () => {
     const user = userEvent.setup();
     mockMutateAsync.mockResolvedValue({});
     const onOpenChange = vi.fn();
-    render(<CreateReminderDialog open={true} onOpenChange={onOpenChange} />);
+    render(<CreateReminderDialog open={true} onOpenChange={onOpenChange} currentUserId="user-1" members={[]} />);
 
     await user.type(screen.getByPlaceholderText("Enter reminder title"), "Buy groceries");
     await user.type(screen.getByLabelText("Scheduled For", { selector: "input" }), "2026-04-01T10:00");
@@ -115,7 +111,7 @@ describe("CreateReminderDialog", () => {
     const user = userEvent.setup();
     mockMutateAsync.mockRejectedValue(new Error("Network error"));
     const onOpenChange = vi.fn();
-    render(<CreateReminderDialog open={true} onOpenChange={onOpenChange} />);
+    render(<CreateReminderDialog open={true} onOpenChange={onOpenChange} currentUserId="user-1" members={[]} />);
 
     await user.type(screen.getByPlaceholderText("Enter reminder title"), "Buy groceries");
     await user.type(screen.getByLabelText("Scheduled For", { selector: "input" }), "2026-04-01T10:00");

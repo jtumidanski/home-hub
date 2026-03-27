@@ -18,6 +18,10 @@ vi.mock("@/lib/hooks/api/use-household-members", () => ({
   useHouseholdMembers: () => ({ data: { data: [] } }),
 }));
 
+vi.mock("@/components/providers/auth-provider", () => ({
+  useAuth: () => ({ user: { id: "user-1" } }),
+}));
+
 vi.mock("@/lib/api/errors", () => ({
   createErrorFromUnknown: (_err: unknown, fallback: string) => ({ message: fallback, type: "unknown" }),
 }));
