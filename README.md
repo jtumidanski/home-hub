@@ -13,6 +13,8 @@ Home Hub runs behind a reverse proxy with path-prefix routing. All services are 
 | **account-service** | Tenants, households, memberships, preferences, active context |
 | **productivity-service** | Tasks, reminders, summary projections |
 | **recipe-service** | Recipe storage and retrieval using Cooklang format |
+| **calendar-service** | Google Calendar integration with per-user OAuth and household-merged view |
+| **package-service** | Package delivery tracking across USPS, UPS, and FedEx with background polling |
 | **weather-service** | Weather forecasts, current conditions, and geocoding via Open-Meteo |
 
 Shared Go libraries under `shared/go/` provide auth, database, HTTP, logging, server lifecycle, tenant context, and test utilities. No business logic lives in shared code.
@@ -45,6 +47,8 @@ services/
   account-service/          Households, tenants, memberships
   productivity-service/     Tasks and reminders
   recipe-service/           Recipe management with Cooklang parsing
+  calendar-service/         Google Calendar integration
+  package-service/          Package delivery tracking
   weather-service/          Weather forecasts and geocoding
 shared/go/                  Shared Go libraries
 deploy/

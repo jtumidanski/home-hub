@@ -29,6 +29,9 @@ interface UseRecipesParams {
   tags?: string[] | undefined;
   page?: number | undefined;
   pageSize?: number | undefined;
+  plannerReady?: boolean | undefined;
+  classification?: string | undefined;
+  normalizationStatus?: string | undefined;
 }
 
 export function useRecipes(params?: UseRecipesParams) {

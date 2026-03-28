@@ -16,6 +16,9 @@ function makeRecipe(overrides: Partial<RecipeListItem["attributes"]> = {}): Reci
     attributes: {
       title: "Pasta Carbonara",
       tags: ["italian", "pasta"],
+      plannerReady: false,
+      resolvedIngredients: 0,
+      totalIngredients: 0,
       createdAt: "2026-03-01T00:00:00Z",
       updatedAt: "2026-03-01T00:00:00Z",
       ...overrides,
@@ -53,10 +56,19 @@ describe("RecipeCard", () => {
     expect(screen.getByText("30 min")).toBeInTheDocument();
   });
 
-  it("does not render time when not provided", () => {
+  it("renders ??? min when time is not provided", () => {
     render(<RecipeCard recipe={makeRecipe()} onDelete={vi.fn()} />);
 
-    expect(screen.queryByText(/min/)).not.toBeInTheDocument();
+    expect(screen.getByText("??? min")).toBeInTheDocument();
+  });
+
+  it("shows classification as a tag and deduplicates it from cooklang tags", () => {
+    render(<RecipeCard recipe={makeRecipe({ tags: ["italian", "dinner", "pasta"], classification: "dinner" })} onDelete={vi.fn()} />);
+
+    expect(screen.getByText("italian")).toBeInTheDocument();
+    expect(screen.getByText("pasta")).toBeInTheDocument();
+    // "dinner" appears once (from classification), not twice
+    expect(screen.getAllByText("dinner")).toHaveLength(1);
   });
 
   it("navigates to detail page on card click", async () => {

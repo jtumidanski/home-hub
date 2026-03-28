@@ -11,6 +11,7 @@ import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { createErrorFromUnknown } from "@/lib/api/errors";
+import { CLASSIFICATIONS } from "@/lib/constants/recipe";
 import type { RecipeListItem } from "@/types/models/recipe";
 
 export function RecipesPage() {
@@ -18,15 +19,22 @@ export function RecipesPage() {
   const isMobile = useMobile();
   const [search, setSearch] = useState("");
   const [selectedTags, setSelectedTags] = useState<string[]>([]);
+  const [plannerFilter, setPlannerFilter] = useState<"" | "ready" | "not-ready">("");
+
+  // Extract classification from selected tags
+  const selectedClassification = selectedTags.find((t) => (CLASSIFICATIONS as readonly string[]).includes(t));
+  const selectedNonClassTags = selectedTags.filter((t) => !(CLASSIFICATIONS as readonly string[]).includes(t));
 
   const { data, isLoading, refetch } = useRecipes({
     search: search || undefined,
-    tags: selectedTags.length > 0 ? selectedTags : undefined,
+    tags: selectedNonClassTags.length > 0 ? selectedNonClassTags : undefined,
+    classification: selectedClassification,
+    plannerReady: plannerFilter === "ready" ? true : plannerFilter === "not-ready" ? false : undefined,
   });
   const { data: tagsData } = useRecipeTags();
   const deleteRecipe = useDeleteRecipe();
 
-  const recipes = (data?.data ?? []) as RecipeListItem[];
+  const recipes: RecipeListItem[] = data?.data ?? [];
   const availableTags = (tagsData?.data ?? []) as Array<{ attributes: { tag: string; count: number } }>;
 
   const handleRefresh = useCallback(async () => {
@@ -50,6 +58,8 @@ export function RecipesPage() {
       prev.includes(tag) ? prev.filter((t) => t !== tag) : [...prev, tag],
     );
   };
+
+  const hasActiveFilters = selectedTags.length > 0 || plannerFilter !== "";
 
   return (
     <PullToRefresh onRefresh={handleRefresh}>
@@ -82,9 +92,31 @@ export function RecipesPage() {
           )}
         </div>
 
-        {/* Tag filter */}
-        {availableTags.length > 0 && (
+        {/* Unified filter row */}
+        {(availableTags.length > 0 || true) && (
           <div className="flex flex-wrap gap-1.5">
+            {/* Planner status filters */}
+            <Badge
+              variant={plannerFilter === "ready" ? "default" : "outline"}
+              className="cursor-pointer text-xs"
+              onClick={() => setPlannerFilter(plannerFilter === "ready" ? "" : "ready")}
+            >
+              Planner Ready
+            </Badge>
+            <Badge
+              variant={plannerFilter === "not-ready" ? "default" : "outline"}
+              className="cursor-pointer text-xs"
+              onClick={() => setPlannerFilter(plannerFilter === "not-ready" ? "" : "not-ready")}
+            >
+              Not Ready
+            </Badge>
+
+            {/* Separator */}
+            {availableTags.length > 0 && (
+              <span className="border-l border-border mx-1" />
+            )}
+
+            {/* Tag filters (includes classification tags) */}
             {availableTags.map((t) => (
               <Badge
                 key={t.attributes.tag}
@@ -95,11 +127,12 @@ export function RecipesPage() {
                 {t.attributes.tag} ({t.attributes.count})
               </Badge>
             ))}
-            {selectedTags.length > 0 && (
+
+            {hasActiveFilters && (
               <button
                 type="button"
                 className="inline-flex items-center rounded-md px-2 py-0.5 text-xs text-muted-foreground hover:text-foreground transition-colors"
-                onClick={() => setSelectedTags([])}
+                onClick={() => { setSelectedTags([]); setPlannerFilter(""); }}
               >
                 Clear
               </button>

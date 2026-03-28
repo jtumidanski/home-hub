@@ -32,7 +32,7 @@ func create(db *gorm.DB, tenantID, householdID uuid.UUID, title, source string, 
 
 func update(db *gorm.DB, e *Entity) (Entity, error) {
 	e.UpdatedAt = time.Now().UTC()
-	if err := db.Save(e).Error; err != nil {
+	if err := db.Omit("Tags").Save(e).Error; err != nil {
 		return Entity{}, err
 	}
 	return *e, nil

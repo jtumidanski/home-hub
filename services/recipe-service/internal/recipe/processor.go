@@ -7,8 +7,10 @@ import (
 	"time"
 
 	"github.com/google/uuid"
+	"github.com/jtumidanski/home-hub/services/recipe-service/internal/audit"
 	"github.com/jtumidanski/home-hub/services/recipe-service/internal/recipe/cooklang"
 	"github.com/jtumidanski/home-hub/shared/go/model"
+	tenantctx "github.com/jtumidanski/home-hub/shared/go/tenant"
 	"github.com/sirupsen/logrus"
 	"gorm.io/gorm"
 )
@@ -112,6 +114,7 @@ func (p *Processor) Create(tenantID, householdID uuid.UUID, attrs CreateAttrs) (
 	if err != nil {
 		return Model{}, cooklang.ParseResult{}, err
 	}
+	p.emitAudit(m.Id(), "recipe.created")
 	return m, parsed, nil
 }
 
@@ -123,15 +126,15 @@ func (p *Processor) Get(id uuid.UUID) (Model, cooklang.ParseResult, error) {
 	return m, cooklang.Parse(m.Source()), nil
 }
 
-func (p *Processor) List(search string, tags []string, page, pageSize int) ([]Model, int64, error) {
-	if page < 1 {
-		page = 1
+func (p *Processor) List(filters ListFilters) ([]Model, int64, error) {
+	if filters.Page < 1 {
+		filters.Page = 1
 	}
-	if pageSize < 1 || pageSize > 100 {
-		pageSize = 20
+	if filters.PageSize < 1 || filters.PageSize > 100 {
+		filters.PageSize = 20
 	}
 
-	entities, total, err := getAll(search, tags, page, pageSize)(p.db.WithContext(p.ctx))
+	entities, total, err := getAll(filters)(p.db.WithContext(p.ctx))
 	if err != nil {
 		return nil, 0, err
 	}
@@ -206,11 +209,16 @@ func (p *Processor) Update(id uuid.UUID, attrs UpdateAttrs) (Model, cooklang.Par
 	if err != nil {
 		return Model{}, cooklang.ParseResult{}, err
 	}
+	p.emitAudit(id, "recipe.updated")
 	return m, cooklang.Parse(m.Source()), nil
 }
 
 func (p *Processor) Delete(id uuid.UUID) error {
-	return softDelete(p.db.WithContext(p.ctx), id)
+	if err := softDelete(p.db.WithContext(p.ctx), id); err != nil {
+		return err
+	}
+	p.emitAudit(id, "recipe.deleted")
+	return nil
 }
 
 func (p *Processor) Restore(id uuid.UUID) (Model, cooklang.ParseResult, error) {
@@ -237,6 +245,7 @@ func (p *Processor) Restore(id uuid.UUID) (Model, cooklang.ParseResult, error) {
 	if err != nil {
 		return Model{}, cooklang.ParseResult{}, err
 	}
+	p.emitAudit(id, "recipe.restored")
 	return restored, cooklang.Parse(restored.Source()), nil
 }
 
@@ -248,6 +257,14 @@ func (p *Processor) ParseSource(source string) cooklang.ParseResult {
 	result := cooklang.Parse(source)
 	result.Errors = cooklang.Validate(source)
 	return result
+}
+
+func (p *Processor) emitAudit(entityID uuid.UUID, action string) {
+	t, ok := tenantctx.FromContext(p.ctx)
+	if !ok {
+		return
+	}
+	audit.Emit(p.l, p.db.WithContext(p.ctx), t.Id(), "recipe", entityID, action, t.UserId(), nil)
 }
 
 func mergeStringSlices(slices ...[]string) []string {

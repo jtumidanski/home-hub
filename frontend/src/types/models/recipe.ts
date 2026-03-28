@@ -25,6 +25,37 @@ export interface ParseError {
   message: string;
 }
 
+export interface NormalizationStatus {
+  rawName: string;
+  position: number;
+  status: "matched" | "alias_matched" | "unresolved" | "manually_confirmed";
+  canonicalIngredientId?: string;
+  canonicalName?: string;
+  canonicalUnit?: string;
+  canonicalUnitFamily?: string;
+}
+
+export interface RecipeIngredient {
+  id: string;
+  rawName: string;
+  rawQuantity?: string;
+  rawUnit?: string;
+  position: number;
+  canonicalIngredientId: string | null;
+  canonicalName?: string;
+  canonicalUnit?: string;
+  canonicalUnitFamily?: string;
+  normalizationStatus: "matched" | "alias_matched" | "unresolved" | "manually_confirmed";
+}
+
+export interface PlannerConfig {
+  classification?: string;
+  servingsYield?: number;
+  eatWithinDays?: number;
+  minGapDays?: number;
+  maxConsecutiveDays?: number;
+}
+
 export interface RecipeListAttributes {
   title: string;
   description?: string;
@@ -32,6 +63,10 @@ export interface RecipeListAttributes {
   prepTimeMinutes?: number;
   cookTimeMinutes?: number;
   tags: string[];
+  plannerReady: boolean;
+  classification?: string;
+  resolvedIngredients: number;
+  totalIngredients: number;
   createdAt: string;
   updatedAt: string;
 }
@@ -39,8 +74,10 @@ export interface RecipeListAttributes {
 export interface RecipeDetailAttributes extends RecipeListAttributes {
   sourceUrl?: string;
   source: string;
-  ingredients: Ingredient[];
+  ingredients: RecipeIngredient[];
   steps: Step[];
+  plannerConfig?: PlannerConfig;
+  plannerIssues: string[];
 }
 
 export interface RecipeListItem {
@@ -64,6 +101,7 @@ export interface RecipeCreateAttributes {
   cookTimeMinutes?: number | undefined;
   sourceUrl?: string | undefined;
   tags?: string[] | undefined;
+  plannerConfig?: PlannerConfig | undefined;
 }
 
 export type RecipeUpdateAttributes = {
@@ -75,6 +113,7 @@ export type RecipeUpdateAttributes = {
   cookTimeMinutes?: number | undefined;
   sourceUrl?: string | undefined;
   tags?: string[] | undefined;
+  plannerConfig?: PlannerConfig | undefined;
 };
 
 export interface RecipeTag {
@@ -105,5 +144,6 @@ export interface RecipeParseResult {
     steps: Step[];
     metadata: RecipeMetadata;
     errors?: ParseError[];
+    normalization?: NormalizationStatus[];
   };
 }
