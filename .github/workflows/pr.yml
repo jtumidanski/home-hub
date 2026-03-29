@@ -14,6 +14,7 @@ jobs:
       productivity: ${{ steps.changes.outputs.productivity }}
       weather: ${{ steps.changes.outputs.weather }}
       recipe: ${{ steps.changes.outputs.recipe }}
+      package: ${{ steps.changes.outputs.package }}
       frontend: ${{ steps.changes.outputs.frontend }}
       shared: ${{ steps.changes.outputs.shared }}
     steps:
@@ -39,6 +40,9 @@ jobs:
               - 'shared/go/**'
             recipe:
               - 'services/recipe-service/**'
+              - 'shared/go/**'
+            package:
+              - 'services/package-service/**'
               - 'shared/go/**'
             frontend:
               - 'frontend/**'
@@ -141,6 +145,22 @@ jobs:
           cd services/recipe-service
           go test ./... -count=1
 
+  build-package:
+    needs: detect-changes
+    if: needs.detect-changes.outputs.package == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version: '1.26'
+      - name: Build
+        run: go build ./services/package-service/...
+      - name: Test
+        run: |
+          cd services/package-service
+          go test ./... -count=1
+
   build-shared:
     needs: detect-changes
     if: needs.detect-changes.outputs.shared == 'true'
@@ -213,6 +233,10 @@ jobs:
             context: .
             dockerfile: services/recipe-service/Dockerfile
             changed: recipe
+          - service: package-service
+            context: .
+            dockerfile: services/package-service/Dockerfile
+            changed: package
           - service: frontend
             context: frontend
             dockerfile: frontend/Dockerfile
