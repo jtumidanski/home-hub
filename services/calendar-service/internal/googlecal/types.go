@@ -38,8 +38,8 @@ type Event struct {
 }
 
 type EventTime struct {
-	DateTime time.Time `json:"dateTime,omitempty"`
-	Date     string    `json:"date,omitempty"`
+	DateTime *time.Time `json:"dateTime,omitempty"`
+	Date     string     `json:"date,omitempty"`
 }
 
 type InsertEventRequest struct {
@@ -71,5 +71,8 @@ func (et *EventTime) Time() time.Time {
 		t, _ := time.Parse("2006-01-02", et.Date)
 		return t
 	}
-	return et.DateTime
+	if et.DateTime != nil {
+		return *et.DateTime
+	}
+	return time.Time{}
 }

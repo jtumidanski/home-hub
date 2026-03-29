@@ -83,8 +83,8 @@ func (p *Processor) CreateOnGoogle(gcClient *googlecal.Client, accessToken, cale
 		if endTime.IsZero() {
 			endTime = startTime.Add(time.Hour)
 		}
-		gcEvent.Start = &googlecal.EventTime{DateTime: startTime}
-		gcEvent.End = &googlecal.EventTime{DateTime: endTime}
+		gcEvent.Start = &googlecal.EventTime{DateTime: &startTime}
+		gcEvent.End = &googlecal.EventTime{DateTime: &endTime}
 	}
 
 	_, err := gcClient.InsertEvent(p.ctx, accessToken, calendarID, gcEvent)
@@ -107,7 +107,7 @@ func (p *Processor) UpdateOnGoogle(gcClient *googlecal.Client, accessToken strin
 			gcUpdate.Start = &googlecal.EventTime{Date: parseDate(*input.Start)}
 		} else {
 			st, _ := time.Parse(time.RFC3339, *input.Start)
-			gcUpdate.Start = &googlecal.EventTime{DateTime: st}
+			gcUpdate.Start = &googlecal.EventTime{DateTime: &st}
 		}
 	}
 	if input.End != nil {
@@ -115,7 +115,7 @@ func (p *Processor) UpdateOnGoogle(gcClient *googlecal.Client, accessToken strin
 			gcUpdate.End = &googlecal.EventTime{Date: parseDate(*input.End)}
 		} else {
 			et, _ := time.Parse(time.RFC3339, *input.End)
-			gcUpdate.End = &googlecal.EventTime{DateTime: et}
+			gcUpdate.End = &googlecal.EventTime{DateTime: &et}
 		}
 	}
 
