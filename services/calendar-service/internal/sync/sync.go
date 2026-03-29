@@ -212,6 +212,10 @@ func (e *Engine) syncSource(ctx context.Context, conn connection.Model, src sour
 		}
 		if ge.End != nil {
 			endTime = ge.End.Time()
+			// Google Calendar API end dates are exclusive for all-day events; subtract one day to store inclusive.
+			if allDay {
+				endTime = endTime.AddDate(0, 0, -1)
+			}
 		}
 
 		title := ge.Summary

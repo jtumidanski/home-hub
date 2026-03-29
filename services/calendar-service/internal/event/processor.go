@@ -73,10 +73,11 @@ func (p *Processor) CreateOnGoogle(gcClient *googlecal.Client, accessToken, cale
 		startDate := parseDate(input.Start)
 		endDate := parseDate(input.End)
 		if endDate == "" {
-			endDate = addDay(startDate)
+			endDate = startDate
 		}
+		// Google Calendar API treats end date as exclusive, so add one day.
 		gcEvent.Start = &googlecal.EventTime{Date: startDate}
-		gcEvent.End = &googlecal.EventTime{Date: endDate}
+		gcEvent.End = &googlecal.EventTime{Date: addDay(endDate)}
 	} else {
 		startTime, _ := time.Parse(time.RFC3339, input.Start)
 		endTime, _ := time.Parse(time.RFC3339, input.End)
@@ -112,7 +113,8 @@ func (p *Processor) UpdateOnGoogle(gcClient *googlecal.Client, accessToken strin
 	}
 	if input.End != nil {
 		if input.AllDay != nil && *input.AllDay {
-			gcUpdate.End = &googlecal.EventTime{Date: parseDate(*input.End)}
+			// Google Calendar API treats end date as exclusive, so add one day.
+			gcUpdate.End = &googlecal.EventTime{Date: addDay(parseDate(*input.End))}
 		} else {
 			et, _ := time.Parse(time.RFC3339, *input.End)
 			gcUpdate.End = &googlecal.EventTime{DateTime: &et}
