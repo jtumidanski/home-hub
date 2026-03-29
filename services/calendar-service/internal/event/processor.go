@@ -49,6 +49,10 @@ func (p *Processor) DeleteBySourceAndExternalIDs(sourceID uuid.UUID, externalIDs
 	return deleteBySourceAndExternalIDs(p.noTenantDB(), sourceID, externalIDs)
 }
 
+func (p *Processor) DeleteBySourceExcludingExternalIDs(sourceID uuid.UUID, keepIDs []string) error {
+	return deleteBySourceExcludingExternalIDs(p.noTenantDB(), sourceID, keepIDs)
+}
+
 func (p *Processor) DeleteByConnection(connectionID uuid.UUID) error {
 	return deleteByConnection(p.noTenantDB(), connectionID)
 }

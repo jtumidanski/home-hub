@@ -150,6 +150,7 @@ func (c *Client) ListEvents(ctx context.Context, accessToken, calendarID string,
 
 	if syncToken != "" {
 		params.Set("syncToken", syncToken)
+		params.Set("showDeleted", "true")
 	} else {
 		params.Set("timeMin", timeMin.Format(time.RFC3339))
 		params.Set("timeMax", timeMax.Format(time.RFC3339))

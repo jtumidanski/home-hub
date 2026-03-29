@@ -192,8 +192,11 @@ func (e *Engine) syncSource(ctx context.Context, conn connection.Model, src sour
 		}
 	}
 
+	isFullSync := src.SyncToken() == ""
+
 	evtProc := event.NewProcessor(l, ctx, e.db)
 	var cancelledIDs []string
+	var seenIDs []string
 	eventCount := 0
 
 	for _, ge := range eventsResp.Items {
@@ -201,6 +204,8 @@ func (e *Engine) syncSource(ctx context.Context, conn connection.Model, src sour
 			cancelledIDs = append(cancelledIDs, ge.ID)
 			continue
 		}
+
+		seenIDs = append(seenIDs, ge.ID)
 
 		allDay := false
 		startTime := time.Time{}
@@ -256,6 +261,13 @@ func (e *Engine) syncSource(ctx context.Context, conn connection.Model, src sour
 	if len(cancelledIDs) > 0 {
 		if err := evtProc.DeleteBySourceAndExternalIDs(src.Id(), cancelledIDs); err != nil {
 			l.WithError(err).Warn("failed to delete cancelled events")
+		}
+	}
+
+	// During a full sync, remove any local events not present in Google's response.
+	if isFullSync {
+		if err := evtProc.DeleteBySourceExcludingExternalIDs(src.Id(), seenIDs); err != nil {
+			l.WithError(err).Warn("failed to reconcile stale events")
 		}
 	}
 
