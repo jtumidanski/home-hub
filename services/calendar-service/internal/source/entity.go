@@ -28,7 +28,27 @@ func Migration(db *gorm.DB) error {
 	if err := db.AutoMigrate(&Entity{}); err != nil {
 		return err
 	}
-	return db.Exec("CREATE UNIQUE INDEX IF NOT EXISTS idx_sources_connection_external ON calendar_sources (connection_id, external_id)").Error
+	if err := db.Exec("CREATE UNIQUE INDEX IF NOT EXISTS idx_sources_connection_external ON calendar_sources (connection_id, external_id)").Error; err != nil {
+		return err
+	}
+	// One-time: clear all sync tokens to force a full re-sync.
+	// This corrects stale all-day event end dates and removes orphaned events.
+	return runOnce(db, "clear_sync_tokens_v1", func(tx *gorm.DB) error {
+		return tx.Model(&Entity{}).Where("sync_token != ''").Update("sync_token", "").Error
+	})
+}
+
+func runOnce(db *gorm.DB, key string, fn func(*gorm.DB) error) error {
+	_ = db.Exec("CREATE TABLE IF NOT EXISTS calendar_migrations (key VARCHAR(255) PRIMARY KEY)").Error
+	var count int64
+	db.Table("calendar_migrations").Where("key = ?", key).Count(&count)
+	if count > 0 {
+		return nil
+	}
+	if err := fn(db); err != nil {
+		return err
+	}
+	return db.Exec("INSERT INTO calendar_migrations (key) VALUES (?)", key).Error
 }
 
 func (m Model) ToEntity() Entity {

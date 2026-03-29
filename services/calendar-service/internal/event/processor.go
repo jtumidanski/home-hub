@@ -49,6 +49,10 @@ func (p *Processor) DeleteBySourceAndExternalIDs(sourceID uuid.UUID, externalIDs
 	return deleteBySourceAndExternalIDs(p.noTenantDB(), sourceID, externalIDs)
 }
 
+func (p *Processor) DeleteBySourceExcludingExternalIDs(sourceID uuid.UUID, keepIDs []string) error {
+	return deleteBySourceExcludingExternalIDs(p.noTenantDB(), sourceID, keepIDs)
+}
+
 func (p *Processor) DeleteByConnection(connectionID uuid.UUID) error {
 	return deleteByConnection(p.noTenantDB(), connectionID)
 }
@@ -73,18 +77,19 @@ func (p *Processor) CreateOnGoogle(gcClient *googlecal.Client, accessToken, cale
 		startDate := parseDate(input.Start)
 		endDate := parseDate(input.End)
 		if endDate == "" {
-			endDate = addDay(startDate)
+			endDate = startDate
 		}
+		// Google Calendar API treats end date as exclusive, so add one day.
 		gcEvent.Start = &googlecal.EventTime{Date: startDate}
-		gcEvent.End = &googlecal.EventTime{Date: endDate}
+		gcEvent.End = &googlecal.EventTime{Date: addDay(endDate)}
 	} else {
 		startTime, _ := time.Parse(time.RFC3339, input.Start)
 		endTime, _ := time.Parse(time.RFC3339, input.End)
 		if endTime.IsZero() {
 			endTime = startTime.Add(time.Hour)
 		}
-		gcEvent.Start = &googlecal.EventTime{DateTime: startTime}
-		gcEvent.End = &googlecal.EventTime{DateTime: endTime}
+		gcEvent.Start = &googlecal.EventTime{DateTime: &startTime}
+		gcEvent.End = &googlecal.EventTime{DateTime: &endTime}
 	}
 
 	_, err := gcClient.InsertEvent(p.ctx, accessToken, calendarID, gcEvent)
@@ -107,15 +112,16 @@ func (p *Processor) UpdateOnGoogle(gcClient *googlecal.Client, accessToken strin
 			gcUpdate.Start = &googlecal.EventTime{Date: parseDate(*input.Start)}
 		} else {
 			st, _ := time.Parse(time.RFC3339, *input.Start)
-			gcUpdate.Start = &googlecal.EventTime{DateTime: st}
+			gcUpdate.Start = &googlecal.EventTime{DateTime: &st}
 		}
 	}
 	if input.End != nil {
 		if input.AllDay != nil && *input.AllDay {
-			gcUpdate.End = &googlecal.EventTime{Date: parseDate(*input.End)}
+			// Google Calendar API treats end date as exclusive, so add one day.
+			gcUpdate.End = &googlecal.EventTime{Date: addDay(parseDate(*input.End))}
 		} else {
 			et, _ := time.Parse(time.RFC3339, *input.End)
-			gcUpdate.End = &googlecal.EventTime{DateTime: et}
+			gcUpdate.End = &googlecal.EventTime{DateTime: &et}
 		}
 	}
 

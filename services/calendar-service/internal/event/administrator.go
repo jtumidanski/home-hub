@@ -42,6 +42,14 @@ func deleteBySourceAndExternalIDs(db *gorm.DB, sourceID uuid.UUID, externalIDs [
 	return db.Where("source_id = ? AND external_id IN ?", sourceID, externalIDs).Delete(&Entity{}).Error
 }
 
+func deleteBySourceExcludingExternalIDs(db *gorm.DB, sourceID uuid.UUID, keepIDs []string) error {
+	q := db.Where("source_id = ?", sourceID)
+	if len(keepIDs) > 0 {
+		q = q.Where("external_id NOT IN ?", keepIDs)
+	}
+	return q.Delete(&Entity{}).Error
+}
+
 func deleteByConnection(db *gorm.DB, connectionID uuid.UUID) error {
 	return db.Where("connection_id = ?", connectionID).Delete(&Entity{}).Error
 }

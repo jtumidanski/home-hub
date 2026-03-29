@@ -199,7 +199,7 @@ describe("getEventsForDay", () => {
     const day = new Date(2026, 2, 26);
     const events = [
       makeEvent({ id: "timed", startTime: "2026-03-26T10:00:00", endTime: "2026-03-26T11:00:00", allDay: false }),
-      makeEvent({ id: "allday", startTime: "2026-03-26T00:00:00", endTime: "2026-03-27T00:00:00", allDay: true }),
+      makeEvent({ id: "allday", startTime: "2026-03-26T00:00:00", endTime: "2026-03-26T00:00:00", allDay: true }),
     ];
     const { allDay, timed } = getEventsForDay(events, day);
     expect(allDay).toHaveLength(1);
@@ -211,27 +211,27 @@ describe("getEventsForDay", () => {
   it("does not show all-day event on the day before", () => {
     const dayBefore = new Date(2026, 2, 25);
     const events = [
-      makeEvent({ id: "allday", startTime: "2026-03-26T00:00:00Z", endTime: "2026-03-27T00:00:00Z", allDay: true }),
+      makeEvent({ id: "allday", startTime: "2026-03-26T00:00:00Z", endTime: "2026-03-26T00:00:00Z", allDay: true }),
     ];
     const { allDay } = getEventsForDay(events, dayBefore);
     expect(allDay).toHaveLength(0);
   });
 
-  it("does not show all-day event on the end date (exclusive)", () => {
-    const endDay = new Date(2026, 2, 27);
+  it("does not show all-day event on the day after end date (inclusive)", () => {
+    const dayAfter = new Date(2026, 2, 27);
     const events = [
-      makeEvent({ id: "allday", startTime: "2026-03-26T00:00:00Z", endTime: "2026-03-27T00:00:00Z", allDay: true }),
+      makeEvent({ id: "allday", startTime: "2026-03-26T00:00:00Z", endTime: "2026-03-26T00:00:00Z", allDay: true }),
     ];
-    const { allDay } = getEventsForDay(events, endDay);
+    const { allDay } = getEventsForDay(events, dayAfter);
     expect(allDay).toHaveLength(0);
   });
 
-  it("shows multi-day all-day event on intermediate days", () => {
-    const middleDay = new Date(2026, 2, 27);
+  it("shows multi-day all-day event on all days including end date", () => {
+    const endDay = new Date(2026, 2, 29);
     const events = [
       makeEvent({ id: "multi", startTime: "2026-03-26T00:00:00Z", endTime: "2026-03-29T00:00:00Z", allDay: true }),
     ];
-    const { allDay } = getEventsForDay(events, middleDay);
+    const { allDay } = getEventsForDay(events, endDay);
     expect(allDay).toHaveLength(1);
   });
 
