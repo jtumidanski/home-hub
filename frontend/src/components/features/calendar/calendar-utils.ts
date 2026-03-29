@@ -199,10 +199,10 @@ export function getEventsForDay(events: CalendarEvent[], day: Date, _timezone?: 
   for (const evt of events) {
     if (evt.attributes.allDay) {
       // All-day events: compare by date string only, ignoring timezone.
-      // Start is inclusive, end is exclusive (e.g., Mar 26 00:00Z to Mar 27 00:00Z = one day on Mar 26).
+      // Both start and end are inclusive (e.g., Apr 1 to Apr 3 = three days).
       const startDate = evt.attributes.startTime.slice(0, 10);
       const endDate = evt.attributes.endTime.slice(0, 10);
-      if (dayDateStr >= startDate && dayDateStr < endDate) {
+      if (dayDateStr >= startDate && dayDateStr <= endDate) {
         allDay.push(evt);
       }
     } else {
