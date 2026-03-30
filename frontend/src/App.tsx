@@ -20,6 +20,7 @@ import { RecipeDetailPage } from "@/pages/RecipeDetailPage";
 import { RecipeFormPage } from "@/pages/RecipeFormPage";
 import { IngredientsPage } from "@/pages/IngredientsPage";
 import { IngredientDetailPage } from "@/pages/IngredientDetailPage";
+import { MealsPage } from "@/pages/MealsPage";
 import { CalendarPage } from "@/pages/CalendarPage";
 import { PackagesPage } from "@/pages/PackagesPage";
 import { Error404Page } from "@/components/common/error-page";
@@ -55,6 +56,7 @@ export function App() {
                   <Route path="recipes/new" element={<RecipeFormPage />} />
                   <Route path="recipes/:id" element={<RecipeDetailPage />} />
                   <Route path="recipes/:id/edit" element={<RecipeFormPage />} />
+                  <Route path="meals" element={<MealsPage />} />
                   <Route path="ingredients" element={<IngredientsPage />} />
                   <Route path="ingredients/:id" element={<IngredientDetailPage />} />
                   <Route path="households" element={<HouseholdsPage />} />
