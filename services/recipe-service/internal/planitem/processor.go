@@ -94,7 +94,7 @@ type UpdateAttrs struct {
 }
 
 func (p *Processor) UpdateItem(itemID uuid.UUID, planStartsOn time.Time, attrs UpdateAttrs) (Model, error) {
-	e, err := getByID(p.db.WithContext(p.ctx), itemID)
+	e, err := getByID(itemID)(p.db.WithContext(p.ctx))()
 	if err != nil {
 		return Model{}, ErrNotFound
 	}
@@ -139,7 +139,7 @@ func (p *Processor) UpdateItem(itemID uuid.UUID, planStartsOn time.Time, attrs U
 }
 
 func (p *Processor) RemoveItem(itemID, planWeekID uuid.UUID) error {
-	e, err := getByID(p.db.WithContext(p.ctx), itemID)
+	e, err := getByID(itemID)(p.db.WithContext(p.ctx))()
 	if err != nil {
 		return ErrNotFound
 	}
@@ -156,7 +156,7 @@ func (p *Processor) RemoveItem(itemID, planWeekID uuid.UUID) error {
 }
 
 func (p *Processor) GetByPlanWeekID(planWeekID uuid.UUID) ([]Model, error) {
-	entities, err := getByPlanWeekID(p.db.WithContext(p.ctx), planWeekID)
+	entities, err := getByPlanWeekID(planWeekID)(p.db.WithContext(p.ctx))()
 	if err != nil {
 		return nil, err
 	}
@@ -189,7 +189,7 @@ func (p *Processor) GetRecipeUsage(recipeIDs []uuid.UUID) (map[uuid.UUID]RecipeU
 }
 
 func (p *Processor) CopyItems(sourcePlanWeekID, targetPlanWeekID uuid.UUID, dayOffset int) error {
-	entities, err := getByPlanWeekID(p.db.WithContext(p.ctx), sourcePlanWeekID)
+	entities, err := getByPlanWeekID(sourcePlanWeekID)(p.db.WithContext(p.ctx))()
 	if err != nil {
 		return err
 	}

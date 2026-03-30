@@ -7,6 +7,11 @@ export const planFormSchema = z.object({
 
 export type PlanFormData = z.infer<typeof planFormSchema>;
 
+export const planFormDefaults: PlanFormData = {
+  starts_on: "",
+  name: "",
+};
+
 export const planItemFormSchema = z.object({
   day: z.string().min(1, "Day is required"),
   slot: z.enum(["breakfast", "lunch", "dinner", "snack", "side"] as const, { message: "Slot is required" }),
@@ -17,3 +22,15 @@ export const planItemFormSchema = z.object({
 });
 
 export type PlanItemFormData = z.infer<typeof planItemFormSchema>;
+
+export const planItemPopoverSchema = planItemFormSchema.omit({ recipe_id: true });
+
+export type PlanItemPopoverFormData = z.infer<typeof planItemPopoverSchema>;
+
+export const planItemPopoverDefaults: PlanItemPopoverFormData = {
+  day: "",
+  slot: "dinner",
+  serving_multiplier: null,
+  planned_servings: null,
+  notes: null,
+};

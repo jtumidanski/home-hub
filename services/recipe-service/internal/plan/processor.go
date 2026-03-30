@@ -8,6 +8,7 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/jtumidanski/home-hub/services/recipe-service/internal/audit"
+	"github.com/jtumidanski/home-hub/services/recipe-service/internal/export"
 	"github.com/jtumidanski/home-hub/shared/go/model"
 	tenantctx "github.com/jtumidanski/home-hub/shared/go/tenant"
 	"github.com/sirupsen/logrus"
@@ -188,6 +189,22 @@ func (p *Processor) Duplicate(sourceID uuid.UUID, tenantID, householdID, userID 
 		"source_plan_id": source.Id().String(),
 	})
 	return newPlan, nil
+}
+
+func (p *Processor) ExportMarkdown(id uuid.UUID, exportProc interface{ GenerateMarkdown(export.PlanData) string }) (string, error) {
+	m, err := p.Get(id)
+	if err != nil {
+		return "", err
+	}
+
+	markdown := exportProc.GenerateMarkdown(export.PlanData{
+		ID: m.Id(), Name: m.Name(), StartsOn: m.StartsOn(),
+	})
+
+	p.emitAudit(m.Id(), "plan.exported", map[string]interface{}{
+		"format": "markdown",
+	})
+	return markdown, nil
 }
 
 func (p *Processor) Delete(id uuid.UUID) error {

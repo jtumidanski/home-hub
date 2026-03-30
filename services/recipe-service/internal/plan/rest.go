@@ -1,430 +1,135 @@
 package plan
 
 import (
-	"context"
-	"encoding/json"
-	"errors"
-	"net/http"
-	"strconv"
 	"time"
 
 	"github.com/google/uuid"
-	"github.com/gorilla/mux"
-	"github.com/jtumidanski/api2go/jsonapi"
-	"github.com/jtumidanski/home-hub/services/recipe-service/internal/audit"
-	"github.com/jtumidanski/home-hub/services/recipe-service/internal/export"
-	"github.com/jtumidanski/home-hub/services/recipe-service/internal/planitem"
-	"github.com/jtumidanski/home-hub/services/recipe-service/internal/planner"
-	"github.com/jtumidanski/home-hub/services/recipe-service/internal/recipe"
-	"github.com/jtumidanski/home-hub/shared/go/server"
-	tenantctx "github.com/jtumidanski/home-hub/shared/go/tenant"
-	"github.com/sirupsen/logrus"
-	"gorm.io/gorm"
 )
 
-// planProviderImpl implements planitem.PlanProvider to break the import cycle.
-type planProviderImpl struct {
-	db *gorm.DB
+// RestListModel is the JSON:API list representation with item_count.
+type RestListModel struct {
+	Id        uuid.UUID `json:"-"`
+	StartsOn  string    `json:"starts_on"`
+	Name      string    `json:"name"`
+	Locked    bool      `json:"locked"`
+	ItemCount int64     `json:"item_count"`
+	CreatedAt time.Time `json:"created_at"`
+	UpdatedAt time.Time `json:"updated_at"`
 }
 
-func (pp *planProviderImpl) GetPlan(id uuid.UUID) (planitem.PlanInfo, error) {
-	var e Entity
-	if err := pp.db.Where("id = ?", id).First(&e).Error; err != nil {
-		return planitem.PlanInfo{}, err
-	}
-	return planitem.PlanInfo{
-		ID:       e.Id,
-		StartsOn: e.StartsOn,
-		Locked:   e.Locked,
-	}, nil
+func (r RestListModel) GetName() string       { return "plans" }
+func (r RestListModel) GetID() string          { return r.Id.String() }
+func (r *RestListModel) SetID(id string) error { var err error; r.Id, err = uuid.Parse(id); return err }
+
+// RestItemModel is the nested plan item in detail response.
+type RestItemModel struct {
+	Id                   uuid.UUID `json:"id"`
+	Day                  string    `json:"day"`
+	Slot                 string    `json:"slot"`
+	RecipeID             uuid.UUID `json:"recipe_id"`
+	RecipeTitle          string    `json:"recipe_title"`
+	RecipeServings       *int      `json:"recipe_servings"`
+	RecipeClassification string    `json:"recipe_classification,omitempty"`
+	RecipeDeleted        bool      `json:"recipe_deleted"`
+	ServingMultiplier    *float64  `json:"serving_multiplier"`
+	PlannedServings      *int      `json:"planned_servings"`
+	Notes                *string   `json:"notes"`
+	Position             int       `json:"position"`
 }
 
-func InitializeRoutes(db *gorm.DB) func(l logrus.FieldLogger, si jsonapi.ServerInformation, api *mux.Router) {
-	return func(l logrus.FieldLogger, si jsonapi.ServerInformation, api *mux.Router) {
-		rh := server.RegisterHandler(l)(si)
-		rihCreate := server.RegisterInputHandler[CreateRequest](l)(si)
-		rihUpdate := server.RegisterInputHandler[UpdateRequest](l)(si)
-		rihDuplicate := server.RegisterInputHandler[DuplicateRequest](l)(si)
-		rihAddItem := server.RegisterInputHandler[planitem.CreateItemRequest](l)(si)
-		rihUpdateItem := server.RegisterInputHandler[planitem.UpdateItemRequest](l)(si)
-
-		pp := &planProviderImpl{db: db}
-
-		api.HandleFunc("/meals/plans", rihCreate("CreatePlan", createPlanHandler(db))).Methods(http.MethodPost)
-		api.HandleFunc("/meals/plans", rh("ListPlans", listPlansHandler(db))).Methods(http.MethodGet)
-		api.HandleFunc("/meals/plans/{planId}", rh("GetPlan", getPlanHandler(db))).Methods(http.MethodGet)
-		api.HandleFunc("/meals/plans/{planId}", rihUpdate("UpdatePlan", updatePlanHandler(db))).Methods(http.MethodPatch)
-		api.HandleFunc("/meals/plans/{planId}/lock", rh("LockPlan", lockPlanHandler(db))).Methods(http.MethodPost)
-		api.HandleFunc("/meals/plans/{planId}/unlock", rh("UnlockPlan", unlockPlanHandler(db))).Methods(http.MethodPost)
-		api.HandleFunc("/meals/plans/{planId}/duplicate", rihDuplicate("DuplicatePlan", duplicatePlanHandler(db))).Methods(http.MethodPost)
-
-		// Plan item routes
-		api.HandleFunc("/meals/plans/{planId}/items", rihAddItem("AddPlanItem", planitem.AddItemHandler(db, pp))).Methods(http.MethodPost)
-		api.HandleFunc("/meals/plans/{planId}/items/{itemId}", rihUpdateItem("UpdatePlanItem", planitem.UpdateItemHandler(db, pp))).Methods(http.MethodPatch)
-		api.HandleFunc("/meals/plans/{planId}/items/{itemId}", rh("RemovePlanItem", planitem.RemoveItemHandler(db, pp))).Methods(http.MethodDelete)
-
-		// Export routes
-		api.HandleFunc("/meals/plans/{planId}/export/markdown", rh("ExportMarkdown", exportMarkdownHandler(db))).Methods(http.MethodGet)
-		api.HandleFunc("/meals/plans/{planId}/ingredients", rh("GetPlanIngredients", getIngredientsHandler(db))).Methods(http.MethodGet)
-	}
+// RestDetailModel is the JSON:API detail representation with items.
+type RestDetailModel struct {
+	Id        uuid.UUID       `json:"-"`
+	StartsOn  string          `json:"starts_on"`
+	Name      string          `json:"name"`
+	Locked    bool            `json:"locked"`
+	CreatedBy uuid.UUID       `json:"created_by"`
+	Items     []RestItemModel `json:"items"`
+	CreatedAt time.Time       `json:"created_at"`
+	UpdatedAt time.Time       `json:"updated_at"`
 }
 
-func createPlanHandler(db *gorm.DB) server.InputHandler[CreateRequest] {
-	return func(d *server.HandlerDependency, c *server.HandlerContext, input CreateRequest) http.HandlerFunc {
-		return func(w http.ResponseWriter, r *http.Request) {
-			t := tenantctx.MustFromContext(r.Context())
+func (r RestDetailModel) GetName() string       { return "plans" }
+func (r RestDetailModel) GetID() string          { return r.Id.String() }
+func (r *RestDetailModel) SetID(id string) error { var err error; r.Id, err = uuid.Parse(id); return err }
 
-			startsOn, err := time.Parse("2006-01-02", input.StartsOn)
-			if err != nil {
-				server.WriteError(w, http.StatusBadRequest, "Validation Failed", "starts_on must be a valid date (YYYY-MM-DD)")
-				return
-			}
-
-			proc := NewProcessor(d.Logger(), r.Context(), db)
-			m, err := proc.Create(t.Id(), t.HouseholdId(), t.UserId(), CreateAttrs{
-				StartsOn: startsOn,
-				Name:     input.Name,
-			})
-			if err != nil {
-				if errors.Is(err, ErrAlreadyExists) {
-					server.WriteError(w, http.StatusConflict, "Conflict", "A plan already exists for this household and week")
-					return
-				}
-				if errors.Is(err, ErrStartsOnRequired) {
-					server.WriteError(w, http.StatusBadRequest, "Validation Failed", err.Error())
-					return
-				}
-				d.Logger().WithError(err).Error("Failed to create plan")
-				server.WriteError(w, http.StatusInternalServerError, "Create Failed", "")
-				return
-			}
-
-			rest := TransformDetail(m, []RestItemModel{})
-			server.MarshalCreatedResponse[RestDetailModel](d.Logger())(w)(c.ServerInformation())(rest)
-		}
+func TransformList(m Model, itemCount int64) RestListModel {
+	return RestListModel{
+		Id:        m.Id(),
+		StartsOn:  m.StartsOn().Format("2006-01-02"),
+		Name:      m.Name(),
+		Locked:    m.Locked(),
+		ItemCount: itemCount,
+		CreatedAt: m.CreatedAt(),
+		UpdatedAt: m.UpdatedAt(),
 	}
 }
 
-func listPlansHandler(db *gorm.DB) server.GetHandler {
-	return func(d *server.HandlerDependency, c *server.HandlerContext) http.HandlerFunc {
-		return func(w http.ResponseWriter, r *http.Request) {
-			filters := ListFilters{
-				Page:     queryInt(r, "page[number]", 1),
-				PageSize: queryInt(r, "page[size]", 20),
-			}
-
-			if startsOnStr := r.URL.Query().Get("starts_on"); startsOnStr != "" {
-				startsOn, err := time.Parse("2006-01-02", startsOnStr)
-				if err == nil {
-					filters.StartsOn = &startsOn
-				}
-			}
-
-			proc := NewProcessor(d.Logger(), r.Context(), db)
-			models, total, err := proc.List(filters)
-			if err != nil {
-				d.Logger().WithError(err).Error("Failed to list plans")
-				server.WriteError(w, http.StatusInternalServerError, "Error", "")
-				return
-			}
-
-			itemProc := planitem.NewProcessor(d.Logger(), r.Context(), db)
-			rest := make([]RestListModel, len(models))
-			for i, m := range models {
-				count, _ := itemProc.CountByPlanWeekID(m.Id())
-				rest[i] = TransformList(m, count)
-			}
-
-			items := make([]jsonapi.MarshalIdentifier, len(rest))
-			for i := range rest {
-				items[i] = &rest[i]
-			}
-			result, err := jsonapi.MarshalWithURLs(items, c.ServerInformation())
-			if err != nil {
-				d.Logger().WithError(err).Error("Failed to marshal response")
-				server.WriteError(w, http.StatusInternalServerError, "Error", "")
-				return
-			}
-
-			var resp map[string]interface{}
-			json.Unmarshal(result, &resp)
-			resp["meta"] = map[string]interface{}{
-				"total":    total,
-				"page":     filters.Page,
-				"pageSize": filters.PageSize,
-			}
-
-			w.Header().Set("Content-Type", "application/vnd.api+json")
-			w.WriteHeader(http.StatusOK)
-			json.NewEncoder(w).Encode(resp)
-		}
+func TransformDetail(m Model, items []RestItemModel) RestDetailModel {
+	if items == nil {
+		items = []RestItemModel{}
+	}
+	return RestDetailModel{
+		Id:        m.Id(),
+		StartsOn:  m.StartsOn().Format("2006-01-02"),
+		Name:      m.Name(),
+		Locked:    m.Locked(),
+		CreatedBy: m.CreatedBy(),
+		Items:     items,
+		CreatedAt: m.CreatedAt(),
+		UpdatedAt: m.UpdatedAt(),
 	}
 }
 
-func getPlanHandler(db *gorm.DB) server.GetHandler {
-	return func(d *server.HandlerDependency, c *server.HandlerContext) http.HandlerFunc {
-		return server.ParseID("planId", func(id uuid.UUID) http.HandlerFunc {
-			return func(w http.ResponseWriter, r *http.Request) {
-				proc := NewProcessor(d.Logger(), r.Context(), db)
-				m, err := proc.Get(id)
-				if err != nil {
-					server.WriteError(w, http.StatusNotFound, "Not Found", "Plan not found")
-					return
-				}
-
-				items := buildItemsResponse(d.Logger(), r.Context(), db, m)
-				rest := TransformDetail(m, items)
-				server.MarshalResponse[RestDetailModel](d.Logger())(w)(c.ServerInformation())(map[string][]string{})(rest)
-			}
-		})
+func TransformListSlice(models []Model, itemCounts []int64) []RestListModel {
+	result := make([]RestListModel, len(models))
+	for i, m := range models {
+		result[i] = TransformList(m, itemCounts[i])
 	}
+	return result
 }
 
-func updatePlanHandler(db *gorm.DB) server.InputHandler[UpdateRequest] {
-	return func(d *server.HandlerDependency, c *server.HandlerContext, input UpdateRequest) http.HandlerFunc {
-		return server.ParseID("planId", func(id uuid.UUID) http.HandlerFunc {
-			return func(w http.ResponseWriter, r *http.Request) {
-				proc := NewProcessor(d.Logger(), r.Context(), db)
-				m, err := proc.UpdateName(id, input.Name)
-				if err != nil {
-					if errors.Is(err, ErrNotFound) {
-						server.WriteError(w, http.StatusNotFound, "Not Found", "Plan not found")
-						return
-					}
-					if errors.Is(err, ErrLocked) {
-						server.WriteError(w, http.StatusConflict, "Conflict", "Plan is locked")
-						return
-					}
-					d.Logger().WithError(err).Error("Failed to update plan")
-					server.WriteError(w, http.StatusInternalServerError, "Update Failed", "")
-					return
-				}
-
-				items := buildItemsResponse(d.Logger(), r.Context(), db, m)
-				rest := TransformDetail(m, items)
-				server.MarshalResponse[RestDetailModel](d.Logger())(w)(c.ServerInformation())(map[string][]string{})(rest)
-			}
-		})
-	}
+// CreateRequest is the JSON:API request body for creating a plan.
+type CreateRequest struct {
+	Id       uuid.UUID `json:"-"`
+	StartsOn string    `json:"starts_on"`
+	Name     string    `json:"name,omitempty"`
 }
 
-func lockPlanHandler(db *gorm.DB) server.GetHandler {
-	return func(d *server.HandlerDependency, c *server.HandlerContext) http.HandlerFunc {
-		return server.ParseID("planId", func(id uuid.UUID) http.HandlerFunc {
-			return func(w http.ResponseWriter, r *http.Request) {
-				proc := NewProcessor(d.Logger(), r.Context(), db)
-				m, err := proc.Lock(id)
-				if err != nil {
-					if errors.Is(err, ErrNotFound) {
-						server.WriteError(w, http.StatusNotFound, "Not Found", "Plan not found")
-						return
-					}
-					if errors.Is(err, ErrAlreadyLocked) {
-						server.WriteError(w, http.StatusConflict, "Conflict", "Plan is already locked")
-						return
-					}
-					d.Logger().WithError(err).Error("Failed to lock plan")
-					server.WriteError(w, http.StatusInternalServerError, "Error", "")
-					return
-				}
-
-				items := buildItemsResponse(d.Logger(), r.Context(), db, m)
-				rest := TransformDetail(m, items)
-				server.MarshalResponse[RestDetailModel](d.Logger())(w)(c.ServerInformation())(map[string][]string{})(rest)
-			}
-		})
+func (r CreateRequest) GetName() string       { return "plans" }
+func (r CreateRequest) GetID() string          { return r.Id.String() }
+func (r *CreateRequest) SetID(id string) error {
+	if id == "" {
+		return nil
 	}
+	var err error
+	r.Id, err = uuid.Parse(id)
+	return err
 }
 
-func unlockPlanHandler(db *gorm.DB) server.GetHandler {
-	return func(d *server.HandlerDependency, c *server.HandlerContext) http.HandlerFunc {
-		return server.ParseID("planId", func(id uuid.UUID) http.HandlerFunc {
-			return func(w http.ResponseWriter, r *http.Request) {
-				proc := NewProcessor(d.Logger(), r.Context(), db)
-				m, err := proc.Unlock(id)
-				if err != nil {
-					if errors.Is(err, ErrNotFound) {
-						server.WriteError(w, http.StatusNotFound, "Not Found", "Plan not found")
-						return
-					}
-					if errors.Is(err, ErrNotLocked) {
-						server.WriteError(w, http.StatusConflict, "Conflict", "Plan is not locked")
-						return
-					}
-					d.Logger().WithError(err).Error("Failed to unlock plan")
-					server.WriteError(w, http.StatusInternalServerError, "Error", "")
-					return
-				}
-
-				items := buildItemsResponse(d.Logger(), r.Context(), db, m)
-				rest := TransformDetail(m, items)
-				server.MarshalResponse[RestDetailModel](d.Logger())(w)(c.ServerInformation())(map[string][]string{})(rest)
-			}
-		})
-	}
+// UpdateRequest is the JSON:API request body for updating a plan.
+type UpdateRequest struct {
+	Id   uuid.UUID `json:"-"`
+	Name string    `json:"name"`
 }
 
-func duplicatePlanHandler(db *gorm.DB) server.InputHandler[DuplicateRequest] {
-	return func(d *server.HandlerDependency, c *server.HandlerContext, input DuplicateRequest) http.HandlerFunc {
-		return server.ParseID("planId", func(id uuid.UUID) http.HandlerFunc {
-			return func(w http.ResponseWriter, r *http.Request) {
-				t := tenantctx.MustFromContext(r.Context())
+func (r UpdateRequest) GetName() string       { return "plans" }
+func (r UpdateRequest) GetID() string          { return r.Id.String() }
+func (r *UpdateRequest) SetID(id string) error { var err error; r.Id, err = uuid.Parse(id); return err }
 
-				targetStartsOn, err := time.Parse("2006-01-02", input.StartsOn)
-				if err != nil {
-					server.WriteError(w, http.StatusBadRequest, "Validation Failed", "starts_on must be a valid date (YYYY-MM-DD)")
-					return
-				}
-
-				proc := NewProcessor(d.Logger(), r.Context(), db)
-				source, err := proc.Get(id)
-				if err != nil {
-					server.WriteError(w, http.StatusNotFound, "Not Found", "Source plan not found")
-					return
-				}
-
-				newPlan, err := proc.Duplicate(id, t.Id(), t.HouseholdId(), t.UserId(), targetStartsOn)
-				if err != nil {
-					if errors.Is(err, ErrAlreadyExists) {
-						server.WriteError(w, http.StatusConflict, "Conflict", "A plan already exists for the target week")
-						return
-					}
-					d.Logger().WithError(err).Error("Failed to duplicate plan")
-					server.WriteError(w, http.StatusInternalServerError, "Duplicate Failed", "")
-					return
-				}
-
-				// Copy items with day offset
-				dayOffset := int(targetStartsOn.Sub(source.StartsOn()).Hours() / 24)
-				itemProc := planitem.NewProcessor(d.Logger(), r.Context(), db)
-				if err := itemProc.CopyItems(source.Id(), newPlan.Id(), dayOffset); err != nil {
-					d.Logger().WithError(err).Error("Failed to copy plan items")
-				}
-
-				items := buildItemsResponse(d.Logger(), r.Context(), db, newPlan)
-				rest := TransformDetail(newPlan, items)
-				server.MarshalCreatedResponse[RestDetailModel](d.Logger())(w)(c.ServerInformation())(rest)
-			}
-		})
-	}
+// DuplicateRequest is the JSON:API request body for duplicating a plan.
+type DuplicateRequest struct {
+	Id       uuid.UUID `json:"-"`
+	StartsOn string    `json:"starts_on"`
 }
 
-// buildItemsResponse enriches plan items with recipe metadata.
-func buildItemsResponse(l logrus.FieldLogger, ctx context.Context, db *gorm.DB, m Model) []RestItemModel {
-	itemProc := planitem.NewProcessor(l, ctx, db)
-	items, err := itemProc.GetByPlanWeekID(m.Id())
-	if err != nil {
-		l.WithError(err).Error("Failed to get plan items")
-		return []RestItemModel{}
+func (r DuplicateRequest) GetName() string       { return "plans" }
+func (r DuplicateRequest) GetID() string          { return r.Id.String() }
+func (r *DuplicateRequest) SetID(id string) error {
+	if id == "" {
+		return nil
 	}
-
-	recipeProc := recipe.NewProcessor(l, ctx, db)
-	plannerProc := planner.NewProcessor(l, ctx, db)
-
-	restItems := make([]RestItemModel, len(items))
-	for i, item := range items {
-		ri := RestItemModel{
-			Id:                item.Id(),
-			Day:               item.Day().Format("2006-01-02"),
-			Slot:              item.Slot(),
-			RecipeID:          item.RecipeID(),
-			ServingMultiplier: item.ServingMultiplier(),
-			PlannedServings:   item.PlannedServings(),
-			Notes:             item.Notes(),
-			Position:          item.Position(),
-		}
-
-		// Enrich with recipe metadata
-		rm, _, recipeErr := recipeProc.Get(item.RecipeID())
-		if recipeErr != nil {
-			ri.RecipeDeleted = true
-			ri.RecipeTitle = "(deleted recipe)"
-		} else {
-			ri.RecipeTitle = rm.Title()
-			ri.RecipeServings = rm.Servings()
-			ri.RecipeDeleted = false
-		}
-
-		// Get classification from planner config
-		if pc, err := plannerProc.GetByRecipeID(item.RecipeID()); err == nil {
-			ri.RecipeClassification = pc.Classification()
-			if ri.RecipeServings == nil && pc.ServingsYield() != nil {
-				ri.RecipeServings = pc.ServingsYield()
-			}
-		}
-
-		restItems[i] = ri
-	}
-	return restItems
-}
-
-func exportMarkdownHandler(db *gorm.DB) server.GetHandler {
-	return func(d *server.HandlerDependency, c *server.HandlerContext) http.HandlerFunc {
-		return server.ParseID("planId", func(id uuid.UUID) http.HandlerFunc {
-			return func(w http.ResponseWriter, r *http.Request) {
-				proc := NewProcessor(d.Logger(), r.Context(), db)
-				m, err := proc.Get(id)
-				if err != nil {
-					server.WriteError(w, http.StatusNotFound, "Not Found", "Plan not found")
-					return
-				}
-
-				exportProc := export.NewProcessor(d.Logger(), r.Context(), db)
-				markdown := exportProc.GenerateMarkdown(export.PlanData{
-					ID: m.Id(), Name: m.Name(), StartsOn: m.StartsOn(),
-				})
-
-				// Emit audit event
-				t, ok := tenantctx.FromContext(r.Context())
-				if ok {
-					audit.Emit(d.Logger(), db.WithContext(r.Context()), t.Id(), "plan", m.Id(), "plan.exported", t.UserId(), map[string]interface{}{
-						"format": "markdown",
-					})
-				}
-
-				w.Header().Set("Content-Type", "text/markdown; charset=utf-8")
-				w.WriteHeader(http.StatusOK)
-				w.Write([]byte(markdown))
-			}
-		})
-	}
-}
-
-func getIngredientsHandler(db *gorm.DB) server.GetHandler {
-	return func(d *server.HandlerDependency, c *server.HandlerContext) http.HandlerFunc {
-		return server.ParseID("planId", func(id uuid.UUID) http.HandlerFunc {
-			return func(w http.ResponseWriter, r *http.Request) {
-				proc := NewProcessor(d.Logger(), r.Context(), db)
-				m, err := proc.Get(id)
-				if err != nil {
-					server.WriteError(w, http.StatusNotFound, "Not Found", "Plan not found")
-					return
-				}
-
-				exportProc := export.NewProcessor(d.Logger(), r.Context(), db)
-				consolidated := exportProc.ConsolidateIngredients(export.PlanData{
-					ID: m.Id(), Name: m.Name(), StartsOn: m.StartsOn(),
-				})
-
-				rest := make([]export.RestIngredientModel, len(consolidated))
-				for i, ci := range consolidated {
-					rest[i] = export.TransformIngredient(ci)
-				}
-
-				server.MarshalSliceResponse[export.RestIngredientModel](d.Logger())(w)(c.ServerInformation())(rest)
-			}
-		})
-	}
-}
-
-func queryInt(r *http.Request, key string, defaultVal int) int {
-	s := r.URL.Query().Get(key)
-	if s == "" {
-		return defaultVal
-	}
-	v, err := strconv.Atoi(s)
-	if err != nil || v < 1 {
-		return defaultVal
-	}
-	return v
+	var err error
+	r.Id, err = uuid.Parse(id)
+	return err
 }

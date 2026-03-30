@@ -96,6 +96,13 @@ export function ExportModal({ open, onClose, planId, planName }: ExportModalProp
   );
 }
 
+function parseBoldText(text: string): React.ReactNode[] {
+  const parts = text.split(/\*\*(.+?)\*\*/g);
+  return parts.map((part, i) =>
+    i % 2 === 1 ? <strong key={i}>{part}</strong> : part
+  );
+}
+
 function MarkdownPreview({ content }: { content: string }) {
   const lines = content.split("\n");
   return (
@@ -107,7 +114,7 @@ function MarkdownPreview({ content }: { content: string }) {
           const text = line.slice(2);
           return (
             <div key={i} className="ml-4 before:content-['•'] before:mr-2 before:text-muted-foreground">
-              <span dangerouslySetInnerHTML={{ __html: text.replace(/\*\*(.+?)\*\*/g, "<strong>$1</strong>") }} />
+              <span>{parseBoldText(text)}</span>
             </div>
           );
         }

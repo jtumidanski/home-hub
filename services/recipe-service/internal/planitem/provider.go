@@ -2,21 +2,20 @@ package planitem
 
 import (
 	"github.com/google/uuid"
+	"github.com/jtumidanski/home-hub/shared/go/database"
 	"gorm.io/gorm"
 )
 
-func getByID(db *gorm.DB, id uuid.UUID) (Entity, error) {
-	var e Entity
-	err := db.Where("id = ?", id).First(&e).Error
-	return e, err
+func getByID(id uuid.UUID) database.EntityProvider[Entity] {
+	return database.Query[Entity](func(db *gorm.DB) *gorm.DB {
+		return db.Where("id = ?", id)
+	})
 }
 
-func getByPlanWeekID(db *gorm.DB, planWeekID uuid.UUID) ([]Entity, error) {
-	var entities []Entity
-	err := db.Where("plan_week_id = ?", planWeekID).
-		Order("day ASC, position ASC").
-		Find(&entities).Error
-	return entities, err
+func getByPlanWeekID(planWeekID uuid.UUID) database.EntityProvider[[]Entity] {
+	return database.SliceQuery[Entity](func(db *gorm.DB) *gorm.DB {
+		return db.Where("plan_week_id = ?", planWeekID).Order("day ASC, position ASC")
+	})
 }
 
 func getMaxPosition(db *gorm.DB, planWeekID uuid.UUID, day string, slot string) (int, error) {

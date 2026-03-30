@@ -39,6 +39,14 @@ func TransformItem(m Model) RestModel {
 	}
 }
 
+func TransformItemSlice(models []Model) []RestModel {
+	result := make([]RestModel, len(models))
+	for i, m := range models {
+		result[i] = TransformItem(m)
+	}
+	return result
+}
+
 // CreateItemRequest is the JSON:API request body for adding a plan item.
 type CreateItemRequest struct {
 	Id                uuid.UUID `json:"-"`

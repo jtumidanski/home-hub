@@ -17,6 +17,14 @@ func (r RestIngredientModel) GetName() string       { return "plan-ingredients" 
 func (r RestIngredientModel) GetID() string          { return r.Id.String() }
 func (r *RestIngredientModel) SetID(id string) error { var err error; r.Id, err = uuid.Parse(id); return err }
 
+func TransformIngredientSlice(ingredients []ConsolidatedIngredient) []RestIngredientModel {
+	result := make([]RestIngredientModel, len(ingredients))
+	for i, ci := range ingredients {
+		result[i] = TransformIngredient(ci)
+	}
+	return result
+}
+
 func TransformIngredient(ci ConsolidatedIngredient) RestIngredientModel {
 	var displayName *string
 	if ci.DisplayName != "" {

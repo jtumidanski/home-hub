@@ -1,6 +1,7 @@
 import { X, AlertTriangle } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { cn } from "@/lib/utils";
 import type { PlanItemAttributes, Slot } from "@/types/models/meal-plan";
 import { SLOTS } from "@/types/models/meal-plan";
 
@@ -70,9 +71,10 @@ export function WeekGrid({ startsOn, items, locked, onCellClick, onItemClick, on
                 return (
                   <td
                     key={`${day.dateStr}-${slot}`}
-                    className={`p-1 align-top border-l min-h-[60px] ${
+                    className={cn(
+                      "p-1 align-top border-l min-h-[60px]",
                       locked ? "bg-muted/30" : "hover:bg-accent/50 cursor-pointer"
-                    }`}
+                    )}
                     onClick={() => {
                       if (!locked) onCellClick(day.dateStr, slot);
                     }}
