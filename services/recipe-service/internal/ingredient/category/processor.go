@@ -43,7 +43,7 @@ func NewProcessor(l logrus.FieldLogger, ctx context.Context, db *gorm.DB) *Proce
 }
 
 func (p *Processor) List(tenantID uuid.UUID) ([]Model, error) {
-	entities, err := GetByTenantID(tenantID)(p.db.WithContext(p.ctx))()
+	entities, err := GetAll()(p.db.WithContext(p.ctx))()
 	if err != nil {
 		return nil, err
 	}
@@ -53,7 +53,7 @@ func (p *Processor) List(tenantID uuid.UUID) ([]Model, error) {
 		if err := p.seedDefaults(tenantID); err != nil {
 			return nil, err
 		}
-		entities, err = GetByTenantID(tenantID)(p.db.WithContext(p.ctx))()
+		entities, err = GetAll()(p.db.WithContext(p.ctx))()
 		if err != nil {
 			return nil, err
 		}
@@ -71,10 +71,13 @@ func (p *Processor) List(tenantID uuid.UUID) ([]Model, error) {
 	return models, nil
 }
 
+// seedDefaults inserts default categories for a new tenant within a transaction.
+// Direct entity construction is used here because seed data is static and the
+// transaction-based race-condition check requires operating within a single tx.
 func (p *Processor) seedDefaults(tenantID uuid.UUID) error {
 	return p.db.WithContext(p.ctx).Transaction(func(tx *gorm.DB) error {
-		// Re-check inside transaction to avoid race
-		count, err := CountByTenantID(tenantID)(tx)
+		// Re-check inside transaction to avoid race condition
+		count, err := countAll(tx)
 		if err != nil {
 			return err
 		}
@@ -103,11 +106,11 @@ func (p *Processor) Create(tenantID uuid.UUID, name string) (Model, error) {
 	}
 
 	// Check for duplicate name
-	if _, err := GetByName(tenantID, name)(p.db.WithContext(p.ctx))(); err == nil {
+	if _, err := GetByName(name)(p.db.WithContext(p.ctx))(); err == nil {
 		return Model{}, ErrDuplicateName
 	}
 
-	maxOrder, err := GetMaxSortOrder(tenantID)(p.db.WithContext(p.ctx))
+	maxOrder, err := getMaxSortOrder(p.db.WithContext(p.ctx))
 	if err != nil {
 		return Model{}, err
 	}
@@ -123,9 +126,9 @@ func (p *Processor) Create(tenantID uuid.UUID, name string) (Model, error) {
 	return Make(e)
 }
 
-func (p *Processor) Update(id uuid.UUID, tenantID uuid.UUID, name *string, sortOrder *int) (Model, error) {
+func (p *Processor) Update(id uuid.UUID, name *string, sortOrder *int) (Model, error) {
 	e, err := GetByID(id)(p.db.WithContext(p.ctx))()
-	if err != nil || e.TenantId != tenantID {
+	if err != nil {
 		return Model{}, ErrNotFound
 	}
 
@@ -138,7 +141,7 @@ func (p *Processor) Update(id uuid.UUID, tenantID uuid.UUID, name *string, sortO
 			return Model{}, ErrNameTooLong
 		}
 		// Check duplicate name (exclude self)
-		if existing, err := GetByName(tenantID, trimmed)(p.db.WithContext(p.ctx))(); err == nil && existing.Id != id {
+		if existing, err := GetByName(trimmed)(p.db.WithContext(p.ctx))(); err == nil && existing.Id != id {
 			return Model{}, ErrDuplicateName
 		}
 		e.Name = trimmed
@@ -162,9 +165,8 @@ func (p *Processor) Update(id uuid.UUID, tenantID uuid.UUID, name *string, sortO
 	return m.WithIngredientCount(int(count)), nil
 }
 
-func (p *Processor) Delete(id uuid.UUID, tenantID uuid.UUID) error {
-	e, err := GetByID(id)(p.db.WithContext(p.ctx))()
-	if err != nil || e.TenantId != tenantID {
+func (p *Processor) Delete(id uuid.UUID) error {
+	if _, err := GetByID(id)(p.db.WithContext(p.ctx))(); err != nil {
 		return ErrNotFound
 	}
 	// FK ON DELETE SET NULL handles nullifying ingredient category_id

@@ -91,7 +91,6 @@ func updateHandler(db *gorm.DB) server.InputHandler[UpdateRequest] {
 	return func(d *server.HandlerDependency, c *server.HandlerContext, input UpdateRequest) http.HandlerFunc {
 		return server.ParseID("id", func(id uuid.UUID) http.HandlerFunc {
 			return func(w http.ResponseWriter, r *http.Request) {
-				t := tenantctx.MustFromContext(r.Context())
 				proc := NewProcessor(d.Logger(), r.Context(), db)
 
 				var name *string
@@ -99,7 +98,7 @@ func updateHandler(db *gorm.DB) server.InputHandler[UpdateRequest] {
 					name = &input.Name
 				}
 
-				m, err := proc.Update(id, t.Id(), name, input.SortOrder)
+				m, err := proc.Update(id, name, input.SortOrder)
 				if err != nil {
 					if errors.Is(err, ErrNotFound) {
 						server.WriteError(w, http.StatusNotFound, "Not Found", "Category not found")
@@ -134,10 +133,9 @@ func deleteHandler(db *gorm.DB) server.GetHandler {
 	return func(d *server.HandlerDependency, c *server.HandlerContext) http.HandlerFunc {
 		return server.ParseID("id", func(id uuid.UUID) http.HandlerFunc {
 			return func(w http.ResponseWriter, r *http.Request) {
-				t := tenantctx.MustFromContext(r.Context())
 				proc := NewProcessor(d.Logger(), r.Context(), db)
 
-				if err := proc.Delete(id, t.Id()); err != nil {
+				if err := proc.Delete(id); err != nil {
 					if errors.Is(err, ErrNotFound) {
 						server.WriteError(w, http.StatusNotFound, "Not Found", "Category not found")
 						return

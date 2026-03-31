@@ -11,6 +11,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
 import { createErrorFromUnknown } from "@/lib/api/errors";
+import { categoryNameSchema } from "@/lib/schemas/ingredient-category.schema";
 
 export function CategoryManager() {
   const { data, isLoading } = useIngredientCategories();
@@ -25,9 +26,13 @@ export function CategoryManager() {
   const categories = data?.data ?? [];
 
   const handleCreate = async () => {
-    if (!newName.trim()) return;
+    const result = categoryNameSchema.safeParse({ name: newName });
+    if (!result.success) {
+      toast.error(result.error.issues[0].message);
+      return;
+    }
     try {
-      await createCategory.mutateAsync({ name: newName.trim() });
+      await createCategory.mutateAsync({ name: result.data.name });
       toast.success("Category created");
       setNewName("");
     } catch (error) {
@@ -36,9 +41,13 @@ export function CategoryManager() {
   };
 
   const handleRename = async (id: string) => {
-    if (!editName.trim()) return;
+    const result = categoryNameSchema.safeParse({ name: editName });
+    if (!result.success) {
+      toast.error(result.error.issues[0].message);
+      return;
+    }
     try {
-      await updateCategory.mutateAsync({ id, attrs: { name: editName.trim() } });
+      await updateCategory.mutateAsync({ id, attrs: { name: result.data.name } });
       toast.success("Category renamed");
       setEditingId(null);
     } catch (error) {

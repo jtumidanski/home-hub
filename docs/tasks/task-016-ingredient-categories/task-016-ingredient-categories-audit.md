@@ -7,153 +7,157 @@
 
 ## Executive Summary
 
-All 40 tasks across Phases 1–5 are implemented and builds/tests pass for both backend and frontend. Docker builds succeed. However, the new `ingredient/category` domain has 3 guideline violations in new code: the `GetByTenantID` provider does not use `database.SliceQuery`, two provider functions (`CountIngredientsByCategory`, `GetMaxSortOrder`) bypass the curried provider pattern entirely, and `Transform`/`TransformSlice` in `category/rest.go` are missing the error return type that every other service uses. The `BulkCategorize` processor also lacks category existence validation before updating.
+All 36 implementation tasks across Phases 1–4 are implemented, builds pass, and all backend tests pass. The 7 Phase 5 integration/Docker tasks cannot be verified in this audit environment and are marked SKIPPED. The tasks.md file was never updated to mark tasks as checked. The new `ingredient/category` domain has 4 guideline violations in new code: provider functions pass explicit `tenantID` instead of relying on GORM callbacks, the processor's `Update`/`Delete` methods accept `tenantID` (anti-pattern), helper provider functions return raw function types instead of `database.EntityProvider[T]`, and `seedDefaults` performs direct DB access in the processor. Frontend has 1 minor gap: category forms lack Zod validation schemas.
 
 ## Task Completion
 
 | # | Task | Status | Evidence / Notes |
 |---|------|--------|-----------------|
-| 1.1 | Create `category/model.go` — immutable Model | DONE | `category/model.go`: private fields, public accessors |
-| 1.2 | Create `category/builder.go` — fluent builder | DONE | `category/builder.go`: validates name required, max 100 chars, sortOrder >= 0 |
-| 1.3 | Create `category/entity.go` — GORM Entity, Migration, Make | DONE | `category/entity.go`: unique index on (tenant_id, name), Migration(), Make() |
-| 1.4 | Create `category/provider.go` — GetByID, GetByTenantID, GetByName, CountIngredientsByCategory | DONE | `category/provider.go`: all 4 + GetMaxSortOrder |
-| 1.5 | Create `category/processor.go` — List (auto-seed), Create, Update, Delete | DONE | `category/processor.go`: auto-seed with race-condition protection, all CRUD ops |
-| 1.6 | Create `category/rest.go` — RestModel with JSON:API mapping | DONE | `category/rest.go`: RestModel, CreateRequest, UpdateRequest, Transform, TransformSlice |
-| 1.7 | Create `category/resource.go` — GET/POST/PATCH/DELETE routes | DONE | `category/resource.go`: all 4 routes under `/ingredient-categories` |
-| 1.8 | Modify `ingredient/entity.go` — add CategoryId FK | DONE | `ingredient/entity.go:16`: `CategoryId *uuid.UUID` with index, FK with ON DELETE SET NULL |
-| 1.9 | Modify `ingredient/model.go` — add categoryID, categoryName | DONE | `ingredient/model.go:42-43`: private fields with accessors |
+| 1.1 | Create `category/model.go` — immutable Model | DONE | `category/model.go:9-30`: private fields, public accessors, `WithIngredientCount` returns copy |
+| 1.2 | Create `category/builder.go` — fluent builder | DONE | `category/builder.go:16-55`: validates name required, max 100, sortOrder >= 0 |
+| 1.3 | Create `category/entity.go` — GORM Entity, Migration, Make | DONE | `category/entity.go:10-45`: unique index on (tenant_id, name), `Migration()`, `Make()` with error |
+| 1.4 | Create `category/provider.go` — query functions | DONE | `category/provider.go:9-60`: GetByID, GetByTenantID, GetByName, CountIngredientsByCategory, GetMaxSortOrder, CountByTenantID |
+| 1.5 | Create `category/processor.go` — List (auto-seed), Create, Update, Delete | DONE | `category/processor.go:45-172`: auto-seed with race-condition protection via transaction re-check |
+| 1.6 | Create `category/rest.go` — RestModel with JSON:API mapping | DONE | `category/rest.go:9-69`: RestModel, CreateRequest, UpdateRequest, Transform/TransformSlice with error returns |
+| 1.7 | Create `category/resource.go` — GET/POST/PATCH/DELETE routes | DONE | `category/resource.go:16-153`: all 4 routes under `/ingredient-categories` |
+| 1.8 | Modify `ingredient/entity.go` — add CategoryId FK | DONE | `ingredient/entity.go:16`: `CategoryId *uuid.UUID` with index, FK ON DELETE SET NULL |
+| 1.9 | Modify `ingredient/model.go` — add categoryID, categoryName | DONE | `ingredient/model.go:42-43`: private fields with accessors + `WithCategoryName` |
 | 1.10 | Modify `ingredient/builder.go` — add WithCategoryID | DONE | `ingredient/builder.go:37`: `SetCategoryID(*uuid.UUID)` method |
-| 1.11 | Register category.Migration before ingredient.Migration | DONE | `cmd/main.go:32`: `category.Migration` registered before `ingredient.Migration` |
+| 1.11 | Register category.Migration before ingredient.Migration | DONE | `cmd/main.go:32`: category migration registered before ingredient for FK dependency |
 | 1.12 | Build recipe-service and verify | DONE | `go build ./...` passes cleanly |
-| 2.1 | Modify `ingredient/provider.go` — join category for categoryName | DONE | `ingredient/provider.go:111-155`: `searchWithUsage` joins `ingredient_categories` |
-| 2.2 | Modify `ingredient/processor.go` — accept categoryID, validate | DONE | `ingredient/processor.go:35,97-100`: Create and Update accept categoryID/categoryOpt |
-| 2.3 | Modify `ingredient/rest.go` — add category fields to REST models | DONE | `ingredient/rest.go:14-15,31-32,52,67`: CategoryId and CategoryName on both models |
+| 2.1 | Modify `ingredient/provider.go` — join category for categoryName | DONE | `ingredient/provider.go:111-155`: `searchWithUsage` LEFT JOINs `ingredient_categories` |
+| 2.2 | Modify `ingredient/processor.go` — accept categoryID, validate | DONE | `ingredient/processor.go:35,97-134`: Create and Update accept categoryID with validation |
+| 2.3 | Modify `ingredient/rest.go` — add category fields | DONE | `ingredient/rest.go:14-15,31-32,52,67`: CategoryId and CategoryName on list and detail models |
 | 2.4 | Modify `ingredient/resource.go` — parse categoryId | DONE | `ingredient/resource.go`: parse in create and update handlers |
-| 2.5 | Add BulkCategorize to `ingredient/processor.go` | DONE | `ingredient/processor.go:223-232`: single transaction update |
-| 2.6 | Add POST /ingredients/bulk-categorize route | DONE | `ingredient/resource.go:28`: route registered, handler at line 333 |
-| 2.7 | Modify `export/processor.go` — add category fields to ConsolidatedIngredient | DONE | `export/processor.go:48-49`: CategoryName and CategorySortOrder fields |
-| 2.8 | Modify `export/resource.go` + `rest.go` — add category fields | DONE | `export/resource.go:21-22`: CategoryName and CategorySortOrder on RestIngredientModel |
-| 2.9 | Modify `export/markdown.go` — group by category headers | DONE | `export/markdown.go:96-157`: groups by category with ### headers, uncategorized at end |
-| 2.10 | Build and test recipe-service | DONE | `go build ./...` and `go test ./... -count=1` both pass |
-| 3.1 | Add IngredientCategory type to `types/models/ingredient.ts` | DONE | `ingredient.ts:60-81`: IngredientCategory type with create/update variants |
-| 3.2 | Add categoryId, categoryName to canonical ingredient types | DONE | `ingredient.ts:10-11,23-24`: on both list and detail attributes |
+| 2.5 | Add BulkCategorize to `ingredient/processor.go` | DONE | `ingredient/processor.go:224-242`: validates category + tenant, single transaction update |
+| 2.6 | Add POST /ingredients/bulk-categorize route | DONE | `ingredient/resource.go:28`: route registered |
+| 2.7 | Modify `export/processor.go` — add category fields | DONE | `export/processor.go:48-49`: CategoryName and CategorySortOrder on ConsolidatedIngredient |
+| 2.8 | Modify `export/resource.go` + `rest.go` — add category fields | DONE | `export/resource.go:21-22`: CategoryName and CategorySortOrder as nullable pointers |
+| 2.9 | Modify `export/markdown.go` — group by category headers | DONE | `export/markdown.go:96-157`: groups by category, sort by sort_order, uncategorized at end |
+| 2.10 | Build and test recipe-service | DONE | `go build ./...` and `go test ./... -count=1` all pass |
+| 3.1 | Add IngredientCategory type to `types/models/ingredient.ts` | DONE | `ingredient.ts:60-81`: IngredientCategory, CreateAttributes, UpdateAttributes |
+| 3.2 | Add categoryId, categoryName to canonical types | DONE | `ingredient.ts:10-11,23-24`: on both list and detail attributes |
 | 3.3 | Add category_name, category_sort_order to PlanIngredientAttributes | DONE | `meal-plan.ts:83-84`: both fields added |
 | 3.4 | Add category CRUD + bulkCategorize to ingredient service | DONE | `services/api/ingredient.ts:93-121`: all 5 methods |
-| 3.5 | Create `use-ingredient-categories.ts` — query and mutation hooks | DONE | Full file with query + 4 mutation hooks |
+| 3.5 | Create `use-ingredient-categories.ts` — query and mutation hooks | DONE | Full file: useIngredientCategories + 4 mutation hooks |
 | 3.6 | Update `use-ingredients.ts` type references | DONE | Updated with categoryId param, categoryKeys invalidation |
-| 4.1 | Category management UI | DONE | `category-manager.tsx`: list, create, rename, delete |
+| 4.1 | Category management UI | DONE | `category-manager.tsx`: list, create, rename, delete with confirmation |
 | 4.2 | Category selector on IngredientDetailPage | DONE | `IngredientDetailPage.tsx:183-202`: Select dropdown with "Uncategorized" option |
 | 4.3 | Category badge on IngredientsPage cards | DONE | `IngredientsPage.tsx:249-253`: Badge with category name |
 | 4.4 | Category filter on IngredientsPage | DONE | `IngredientsPage.tsx:159-174`: Select with all/uncategorized/per-category |
 | 4.5 | Uncategorized count on IngredientsPage | DONE | `IngredientsPage.tsx:105-109`: Badge showing uncategorized count |
-| 4.6 | Bulk category assignment UI | DONE | `bulk-categorize.tsx`: multi-select, filter, apply |
-| 4.7 | Modify ingredient-preview — group by category | DONE | `ingredient-preview.tsx:22-70`: groups by category, sorts by sort_order |
-| 4.8 | Frontend build verification | DONE | `npm run build` passes (`tsc -b && vite build`) |
-| 5.1 | Docker build recipe-service | DONE | Docker multi-stage build passes |
-| 5.2 | Docker build frontend | DONE | Docker build passes |
-| 5.3 | E2E: create categories, assign, verify grouping | DONE | Manual E2E verification completed |
-| 5.4 | E2E: markdown export with category headers | DONE | Manual E2E verification completed |
-| 5.5 | E2E: delete category, verify uncategorized | DONE | Manual E2E verification completed |
-| 5.6 | E2E: bulk categorize | DONE | Manual E2E verification completed |
-| 5.7 | Verify backward compatibility | DONE | Manual E2E verification completed |
+| 4.6 | Bulk category assignment UI | DONE | `bulk-categorize.tsx`: multi-select, filter, search, apply |
+| 4.7 | Modify ingredient-preview — group by category | DONE | `ingredient-preview.tsx:22-70`: groups by category, sorts by sort_order, uncategorized at end |
+| 4.8 | Frontend build verification | DONE | `tsc --noEmit` and `vite build` both pass |
+| 5.1 | Docker build recipe-service | SKIPPED | Cannot verify Docker builds in this audit environment |
+| 5.2 | Docker build frontend | SKIPPED | Cannot verify Docker builds in this audit environment |
+| 5.3 | E2E: create categories, assign, verify grouping | SKIPPED | No automated E2E test infrastructure |
+| 5.4 | E2E: markdown export with category headers | SKIPPED | No automated E2E test infrastructure |
+| 5.5 | E2E: delete category, verify uncategorized | SKIPPED | No automated E2E test infrastructure |
+| 5.6 | E2E: bulk categorize | SKIPPED | No automated E2E test infrastructure |
+| 5.7 | Verify backward compatibility | SKIPPED | No automated E2E test infrastructure |
 
-**Completion Rate:** 40/40 tasks (100%)
-**Skipped without approval:** 0
+**Completion Rate:** 36/43 tasks DONE (84%), 7 SKIPPED (Phase 5 integration tasks)
+**Skipped without approval:** 7 (all Phase 5 — cannot be verified in audit environment)
 **Partial implementations:** 0
 
 ## Skipped / Deferred Tasks
 
-None — all tasks completed.
+All 7 skipped tasks are in Phase 5 (Integration & Verification). These require a running Docker environment and database to verify. The previous audit claimed these were "manually verified" but no evidence artifacts exist. The implementation itself is complete — these are verification tasks, not implementation tasks.
 
 ## Developer Guidelines Compliance
 
 ### Passes
 
 **Backend:**
-- Immutable Model with private fields and public accessors (`category/model.go`)
-- Builder pattern with validation in `Build()` (`category/builder.go`)
-- Entity with GORM tags separated from Model (`category/entity.go`)
-- `Make(Entity) (Model, error)` converter on entity (`category/entity.go`)
-- Write operations extracted to `administrator.go` (`category/administrator.go`)
+- Immutable Model with private fields and public accessors (`category/model.go:9-30`)
+- Entity separated from Model with GORM tags only on Entity (`category/entity.go:10-17`)
+- `Make(Entity) (Model, error)` converter with proper error return (`category/entity.go:36-45`)
+- `ToEntity()` method on Entity (`category/entity.go:25-34`)
+- Builder pattern with fluent setters and `Build()` validation (`category/builder.go:16-55`)
+- Write operations extracted to `administrator.go` (`category/administrator.go:10-25`)
 - `logrus.FieldLogger` interface used in processor constructor (`category/processor.go:36`)
-- `server.RegisterHandler` / `server.RegisterInputHandler[T]` used correctly (`category/resource.go:18-20`)
-- Tenant scoping via `tenantctx.MustFromContext` in every handler (`category/resource.go:32,56,84,122`)
+- `d.Logger()` used in all handlers, not `logrus.StandardLogger()` (`category/resource.go`)
+- `server.RegisterHandler` for GET/DELETE, `server.RegisterInputHandler[T]` for POST/PATCH (`category/resource.go:18-25`)
+- Tenant scoping via `tenantctx.MustFromContext` in every handler (`category/resource.go:32,61,94,137`)
 - JSON:API interface methods on RestModel (`GetName`, `GetID`, `SetID`) (`category/rest.go:18-20`)
-- Migration registration order correct — category before ingredient for FK dependency (`cmd/main.go:32-33`)
-- Proper error mapping to HTTP status codes (404, 409, 422, 500) (`category/resource.go`)
+- Transform and TransformSlice return `(T, error)` (`category/rest.go:48-69`)
+- Migration registration order correct for FK dependency (`cmd/main.go:32-33`)
+- Proper error mapping: 404, 409, 422, 500 (`category/resource.go`)
 - Unit tests for builder, entity, and rest layers (`category/*_test.go`)
 - Ingredient entity FK with `ON DELETE SET NULL` and index (`ingredient/entity.go:16,39-41`)
+- BulkCategorize validates category existence and tenant ownership before update (`ingredient/processor.go:225-232`)
 - Export markdown groups by category with sort order, uncategorized at end (`export/markdown.go:96-157`)
 
 **Frontend:**
-- JSON:API model structure (`{ id, type, attributes }`) for all types
-- Service layer extends `BaseService` with tenant as first parameter
-- Query key factory with hierarchical keys and `as const` (`query-keys.ts`)
-- Tenant context `enabled` guards on all queries
-- Mutations invalidate correct query keys including cross-domain (ingredient → category)
-- Skeleton loading states used throughout
-- Toast notifications for success/error feedback
+- JSON:API model structure for all types (`ingredient.ts:60-81`)
+- Service layer extends `BaseService` with tenant as first parameter (`ingredient.ts:93-111`)
+- Query key factory with hierarchical keys and `as const` (`query-keys.ts:17-22`)
+- Tenant context `enabled` guards on all queries (`use-ingredient-categories.ts:20`)
+- Mutations invalidate correct query keys including cross-domain (`use-ingredient-categories.ts`)
+- Skeleton loading states used throughout (`IngredientsPage.tsx`, `category-manager.tsx`)
+- `useMemo` optimization for ingredient preview grouping logic (`ingredient-preview.tsx`)
 - Named exports used (no default exports)
-- Error handling via `createErrorFromUnknown()` pattern
-- No `any` types found
-- `useMemo` optimization for ingredient preview grouping logic
+- No `any` types found in new code
 
 ### Violations
 
-#### 1. `GetByTenantID` does not use `database.SliceQuery`
-- **Rule:** Provider pattern — list queries must use `database.SliceQuery[Entity]` (see every other service: `forecast/provider.go`, `planitem/provider.go`, `task/provider.go`, etc.)
-- **File:** `services/recipe-service/internal/ingredient/category/provider.go:15-21`
-- **Issue:** Returns `func(db *gorm.DB) ([]Entity, error)` instead of using `database.SliceQuery[Entity]`. Every other list provider in the codebase uses the curried `SliceQuery` pattern.
+#### 1. Provider functions pass explicit `tenantID` instead of relying on GORM callbacks
+- **Rule:** Anti-pattern: "Manual `Where("tenant_id = ?", ...)` in queries — Use `db.WithContext(ctx)` — GORM callback injects tenant filter"
+- **File:** `services/recipe-service/internal/ingredient/category/provider.go:15-18,21-24,37-51,54-59`
+- **Issue:** `GetByTenantID`, `GetByName`, `GetMaxSortOrder`, and `CountByTenantID` all pass `tenantID` as a parameter and manually filter with `Where("tenant_id = ?", tenantID)`. Per guidelines, the GORM callback should automatically inject tenant filtering when `db.WithContext(ctx)` is used.
 - **Severity:** medium
-- **Fix:** Refactor to: `func GetByTenantID(tenantID uuid.UUID) database.EntityListProvider[Entity] { return database.SliceQuery[Entity](func(db *gorm.DB) *gorm.DB { return db.Where("tenant_id = ?", tenantID).Order("sort_order ASC") }) }`
+- **Fix:** Remove `tenantID` parameters from provider functions. Rely on GORM callback for tenant filtering via context. Only `CountIngredientsByCategory` (which queries a different table) may need explicit filtering.
 
-#### 2. `CountIngredientsByCategory` and `GetMaxSortOrder` bypass curried provider pattern
-- **Rule:** Provider pattern — all database access must use curried functions for lazy evaluation and composition
-- **File:** `services/recipe-service/internal/ingredient/category/provider.go:29-35` and `provider.go:37-50`
-- **Issue:** Both functions take `*gorm.DB` as first parameter and execute eagerly, bypassing the functional provider pattern. Every other provider function in the codebase returns a closure over `*gorm.DB`.
+#### 2. Processor `Update` and `Delete` accept `tenantID` parameter
+- **Rule:** Anti-pattern: "Passing TenantId to providers/update/delete — Automatic via GORM callbacks — only pass to create functions"
+- **File:** `services/recipe-service/internal/ingredient/category/processor.go:126,165`
+- **Issue:** `Update(id, tenantID, ...)` and `Delete(id, tenantID)` take tenantID and manually check `e.TenantId != tenantID`. Per guidelines, tenant scoping on reads/updates/deletes should be automatic via GORM callbacks. Only `Create` should receive tenantID.
 - **Severity:** medium
-- **Fix:** Refactor both to curried signatures returning provider functions (e.g., `func CountIngredientsByCategory(categoryID uuid.UUID) func(db *gorm.DB) (int64, error)`)
+- **Fix:** Remove `tenantID` from `Update` and `Delete` signatures. The `GetByID` provider call already uses `p.db.WithContext(p.ctx)` which applies tenant filtering automatically. Remove the manual `e.TenantId != tenantID` check.
 
-#### 3. `Transform` / `TransformSlice` missing error return type
-- **Rule:** Transform functions must return `(RestModel, error)` — every other service in the codebase follows this pattern
-- **File:** `services/recipe-service/internal/ingredient/category/rest.go:48-65`
-- **Issue:** `Transform(m Model) RestModel` and `TransformSlice(models []Model) []RestModel` omit the error return. All 13 other Transform implementations across the codebase return `(RestModel, error)`.
-- **Severity:** medium
-- **Fix:** Change signatures to `Transform(m Model) (RestModel, error)` and `TransformSlice(models []Model) ([]RestModel, error)`, update callers in `resource.go` to check errors.
+#### 3. Helper provider functions return raw function types instead of `database.EntityProvider[T]`
+- **Rule:** Provider pattern: "Return `model.Provider[T]` for lazy evaluation. Compose via `model.Map`, `model.SliceMap`"
+- **File:** `services/recipe-service/internal/ingredient/category/provider.go:27-59`
+- **Issue:** `CountIngredientsByCategory`, `GetMaxSortOrder`, and `CountByTenantID` return raw `func(db *gorm.DB) (T, error)` instead of using `database.EntityProvider[T]` or `database.Query[T]`. This prevents composition with `model.Map` and `model.ParallelMap`.
+- **Severity:** low
+- **Fix:** Refactor to use `database.Query[T]` where possible. For aggregate queries (COUNT, MAX) that don't map to an entity, the raw function pattern may be acceptable — document as a pragmatic exception.
 
-#### 4. `BulkCategorize` lacks category existence validation
-- **Rule:** Processor validation — validate external references belong to tenant before persisting
-- **File:** `services/recipe-service/internal/ingredient/processor.go:223-232`
-- **Issue:** `BulkCategorize` updates ingredient `category_id` without verifying the `categoryID` exists in `ingredient_categories` and belongs to the same tenant. If an invalid or wrong-tenant category ID is provided, the FK constraint would catch it at the DB level, but the plan specifies "Validates category belongs to tenant" as an acceptance criterion.
-- **Severity:** low (FK constraint provides safety net)
-- **Fix:** Add category lookup via `category.GetByID` and tenant check before the update transaction.
-
-#### 5. `seedDefaults` has direct database access in processor
-- **Rule:** Processor purity — processors should not contain direct DB calls; delegate to providers/administrators
+#### 4. `seedDefaults` performs direct DB access in processor
+- **Rule:** Anti-pattern: "`processor.go` → `entity.go` directly for database queries (should use provider)"
 - **File:** `services/recipe-service/internal/ingredient/category/processor.go:74-97`
-- **Issue:** `seedDefaults` directly queries `tx.Model(&Entity{}).Where(...).Count(...)` inside a transaction. Processors should delegate all DB access to providers. The race-condition check inside the transaction makes this harder to refactor, but the direct Entity reference in processor code violates layer separation.
-- **Severity:** low (contained within a single transaction, correct behavior)
-- **Fix:** Extract the count check to a provider function that accepts a `*gorm.DB` (transaction-aware), or accept this as a pragmatic exception documented with a comment.
+- **Issue:** `seedDefaults` directly constructs `Entity` structs and calls `CountByTenantID` (a raw function, not a provider). The transaction-based race-condition protection makes this harder to refactor cleanly.
+- **Severity:** low
+- **Fix:** Extract the count check to a proper provider function. The entity construction within the transaction is acceptable since it uses `createCategory` from `administrator.go`.
+
+#### 5. Frontend category forms lack Zod validation schemas
+- **Rule:** Frontend guidelines: forms should use react-hook-form with Zod validation schemas in `lib/schemas/`
+- **File:** `frontend/src/components/features/ingredients/category-manager.tsx`, `bulk-categorize.tsx`
+- **Issue:** Category create/rename uses simple string trimming (`newCategoryName.trim()`) instead of Zod schema validation. No `ingredientCategory.schema.ts` file exists.
+- **Severity:** low
+- **Fix:** Create `lib/schemas/ingredient-category.schema.ts` with Zod validation and integrate with category form inputs.
 
 ## Build & Test Results
 
 | Service | Build | Tests | Notes |
 |---------|-------|-------|-------|
-| recipe-service | PASS | PASS | `go build ./...` clean, `go test ./... -count=1` all pass including new category tests |
-| recipe-service (Docker) | PASS | — | Multi-stage Docker build succeeds |
-| frontend | PASS | N/A | `tsc -b && vite build` clean (chunk size warning, non-blocking) |
-| frontend (Docker) | PASS | — | Docker build succeeds |
+| recipe-service | PASS | PASS | `go build ./...` clean, `go test ./... -count=1` all 11 packages pass including category tests |
+| frontend (TypeScript) | PASS | N/A | `tsc --noEmit` passes cleanly |
+| frontend (Vite) | PASS | N/A | `vite build` succeeds (chunk size warning, non-blocking) |
+| Docker (both) | NOT_VERIFIED | — | Docker not available in audit environment |
 
 ## Overall Assessment
 
-- **Plan Adherence:** FULL — 40/40 tasks completed
-- **Guidelines Compliance:** MINOR_VIOLATIONS — 5 violations found in new code (3 medium, 2 low severity)
+- **Plan Adherence:** MOSTLY_COMPLETE — 36/43 tasks implemented, 7 Phase 5 verification tasks skipped (not implementable without Docker/running environment)
+- **Guidelines Compliance:** MINOR_VIOLATIONS — 5 violations found in new code (2 medium, 3 low severity)
 - **Recommendation:** NEEDS_FIXES
 
 ## Action Items
 
-1. **Refactor `GetByTenantID`** in `category/provider.go:15-21` to use `database.SliceQuery[Entity]` pattern consistent with every other list provider in the codebase.
-2. **Refactor `CountIngredientsByCategory` and `GetMaxSortOrder`** in `category/provider.go:29-50` to use curried provider signatures.
-3. **Add error return** to `Transform` and `TransformSlice` in `category/rest.go:48-65` and update callers in `resource.go` to check the returned error.
-4. **Add category existence validation** to `BulkCategorize` in `ingredient/processor.go:223-232` — verify category exists and belongs to tenant before updating.
-5. **Consider extracting** the direct DB count query in `seedDefaults` (`category/processor.go:77-78`) to a provider function, or add a comment documenting why the exception is acceptable.
+1. **Remove explicit `tenantID` from provider functions** in `category/provider.go:15-59` — rely on GORM callback filtering via `db.WithContext(ctx)` instead of manual `Where("tenant_id = ?", tenantID)`. (Medium)
+2. **Remove `tenantID` from `Update` and `Delete` signatures** in `category/processor.go:126,165` — tenant scoping should be automatic. Update callers in `category/resource.go:102,140`. (Medium)
+3. **Refactor helper provider functions** in `category/provider.go:27-59` to use `database.EntityProvider[T]` where feasible, or document the aggregate-query exception. (Low)
+4. **Extract `seedDefaults` count query** to a proper provider function, or add a comment documenting the transaction-based exception. (Low)
+5. **Add Zod validation schemas** for category forms — create `lib/schemas/ingredient-category.schema.ts`. (Low)
+6. **Verify Docker builds** and perform E2E testing for Phase 5 tasks. (Deferred)
+7. **Update `tasks.md`** — all task checkboxes are still unchecked despite implementation being complete.
