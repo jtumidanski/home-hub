@@ -8,6 +8,8 @@ import (
 	"github.com/jtumidanski/home-hub/services/recipe-service/internal/config"
 	"github.com/jtumidanski/home-hub/services/recipe-service/internal/ingredient"
 	"github.com/jtumidanski/home-hub/services/recipe-service/internal/normalization"
+	"github.com/jtumidanski/home-hub/services/recipe-service/internal/plan"
+	"github.com/jtumidanski/home-hub/services/recipe-service/internal/planitem"
 	"github.com/jtumidanski/home-hub/services/recipe-service/internal/planner"
 	"github.com/jtumidanski/home-hub/services/recipe-service/internal/recipe"
 	sharedauth "github.com/jtumidanski/home-hub/shared/go/auth"
@@ -30,6 +32,8 @@ func main() {
 			normalization.Migration,
 			planner.Migration,
 			audit.Migration,
+			plan.Migration,
+			planitem.Migration,
 		),
 	)
 
@@ -45,6 +49,7 @@ func main() {
 			recipe.InitializeRoutes(db)(l, si, api)
 			ingredient.InitializeRoutes(db)(l, si, api)
 			normalization.InitializeRoutes(db)(l, si, api)
+			plan.InitializeRoutes(db)(l, si, api)
 		}).
 		Run()
 }

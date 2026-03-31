@@ -55,6 +55,8 @@ Routing:
 /api/v1/reminders -> productivity-service
 /api/v1/summary -> productivity-service
 /api/v1/recipes -> recipe-service
+/api/v1/ingredients -> recipe-service
+/api/v1/meals -> recipe-service
 /api/v1/weather -> weather-service
 /api/v1/calendar -> calendar-service
 /api/v1/packages -> package-service

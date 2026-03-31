@@ -22,6 +22,8 @@ type RestModel struct {
 	Classification      string    `json:"classification,omitempty"`
 	ResolvedIngredients int       `json:"resolvedIngredients"`
 	TotalIngredients    int       `json:"totalIngredients"`
+	LastUsedDate        *string   `json:"lastUsedDate,omitempty"`
+	UsageCount          int64     `json:"usageCount,omitempty"`
 	CreatedAt           time.Time `json:"createdAt"`
 	UpdatedAt           time.Time `json:"updatedAt"`
 }
@@ -68,6 +70,8 @@ type ListEnrichment struct {
 	Classification      string
 	ResolvedIngredients int
 	TotalIngredients    int
+	LastUsedDate        *string
+	UsageCount          int64
 }
 
 func TransformList(m Model, enrichment ListEnrichment) RestModel {
@@ -81,6 +85,7 @@ func TransformList(m Model, enrichment ListEnrichment) RestModel {
 		Tags: tags,
 		PlannerReady: enrichment.PlannerReady, Classification: enrichment.Classification,
 		ResolvedIngredients: enrichment.ResolvedIngredients, TotalIngredients: enrichment.TotalIngredients,
+		LastUsedDate: enrichment.LastUsedDate, UsageCount: enrichment.UsageCount,
 		CreatedAt: m.CreatedAt(), UpdatedAt: m.UpdatedAt(),
 	}
 }

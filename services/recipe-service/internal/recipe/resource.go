@@ -109,6 +109,17 @@ func listHandler(db *gorm.DB) server.GetHandler {
 			normProc := normalization.NewProcessor(d.Logger(), r.Context(), db)
 			plannerProc := planner.NewProcessor(d.Logger(), r.Context(), db)
 
+			// Optionally fetch usage data
+			includeUsage := r.URL.Query().Get("include_usage") == "true"
+			var usageMap map[uuid.UUID]recipeUsageResult
+			if includeUsage && len(models) > 0 {
+				recipeIDs := make([]uuid.UUID, len(models))
+				for i, m := range models {
+					recipeIDs[i] = m.Id()
+				}
+				usageMap = getRecipeUsageFromPlanItems(db.WithContext(r.Context()), recipeIDs)
+			}
+
 			rest := make([]RestModel, len(models))
 			for i, m := range models {
 				enrichment := ListEnrichment{}
@@ -129,6 +140,14 @@ func listHandler(db *gorm.DB) server.GetHandler {
 					readiness := planner.ComputeReadiness(&pc, m.Servings())
 					enrichment.PlannerReady = readiness.Ready
 					enrichment.Classification = pc.Classification()
+				}
+
+				// Add usage data if requested
+				if includeUsage && usageMap != nil {
+					if usage, ok := usageMap[m.Id()]; ok {
+						enrichment.LastUsedDate = usage.lastUsedDay
+						enrichment.UsageCount = usage.usageCount
+					}
 				}
 
 				rest[i] = TransformList(m, enrichment)

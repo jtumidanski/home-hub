@@ -263,6 +263,24 @@ class ApiClient {
     return this.deduplicatedRequest(dedupeKey, fetcher);
   }
 
+  async getText(path: string, options?: RequestOptions): Promise<string> {
+    const url = `${this.baseUrl}${path}`;
+    const fetcher = async (): Promise<string> => {
+      const response = await this.fetchWithRetry(
+        url,
+        { credentials: "include", headers: this.buildHeaders(undefined, options) },
+        options,
+      );
+      if (response.status === 401 && !this.isRefreshPath(path)) {
+        return this.handleUnauthorized<string>(() => fetcher());
+      }
+      if (!response.ok) throw await this.handleError(response);
+      return response.text();
+    };
+    if (options?.skipDeduplication) return fetcher();
+    return this.deduplicatedRequest(`GET:${url}:${this.tenantId ?? ""}`, fetcher);
+  }
+
   async getList<T>(path: string, options?: RequestOptions): Promise<T[]> {
     return this.get<T[]>(path, options);
   }

@@ -101,6 +101,39 @@ type TagCount struct {
 	Count int64
 }
 
+type recipeUsageResult struct {
+	recipeID    uuid.UUID
+	lastUsedDay *string
+	usageCount  int64
+}
+
+type recipeUsageRow struct {
+	RecipeID    uuid.UUID `gorm:"column:recipe_id"`
+	LastUsedDay *string   `gorm:"column:last_used_day"`
+	UsageCount  int64     `gorm:"column:usage_count"`
+}
+
+func getRecipeUsageFromPlanItems(db *gorm.DB, recipeIDs []uuid.UUID) map[uuid.UUID]recipeUsageResult {
+	if len(recipeIDs) == 0 {
+		return nil
+	}
+	var rows []recipeUsageRow
+	db.Table("plan_items").
+		Select("recipe_id, MAX(day) as last_used_day, COUNT(*) as usage_count").
+		Where("recipe_id IN ?", recipeIDs).
+		Group("recipe_id").
+		Find(&rows)
+	result := make(map[uuid.UUID]recipeUsageResult, len(rows))
+	for _, r := range rows {
+		result[r.RecipeID] = recipeUsageResult{
+			recipeID:    r.RecipeID,
+			lastUsedDay: r.LastUsedDay,
+			usageCount:  r.UsageCount,
+		}
+	}
+	return result
+}
+
 func getAllTags(db *gorm.DB) ([]TagCount, error) {
 	var results []TagCount
 	err := db.Model(&TagEntity{}).

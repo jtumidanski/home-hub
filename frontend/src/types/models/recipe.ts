@@ -67,6 +67,8 @@ export interface RecipeListAttributes {
   classification?: string;
   resolvedIngredients: number;
   totalIngredients: number;
+  lastUsedDate?: string;
+  usageCount?: number;
   createdAt: string;
   updatedAt: string;
 }
