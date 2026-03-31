@@ -2,6 +2,7 @@ package cooklang
 
 import (
 	"fmt"
+	"math"
 	"regexp"
 	"strconv"
 	"strings"
@@ -536,22 +537,49 @@ func parseFloat(s string) float64 {
 	return f
 }
 
-// ParseMinutes extracts minutes from strings like "20 minutes", "35 min", or "20".
+// ParseMinutes extracts minutes from duration strings.
+// Supports compound formats like "1h 20m", "1h20m", "1 hour 20 minutes",
+// simple formats like "2h", "45m", "90 minutes", "20",
+// and fractional hours like "1.5 hours".
 func ParseMinutes(s string) *int {
 	s = strings.TrimSpace(s)
 	if s == "" {
 		return nil
 	}
-	re := regexp.MustCompile(`(\d+)`)
-	match := re.FindString(s)
-	if match == "" {
-		return nil
+
+	var totalMinutes float64
+	matched := false
+
+	// Match fractional or integer hours: "1.5 hours", "1.5h", "2 hours", "2h"
+	hourRe := regexp.MustCompile(`(\d+(?:\.\d+)?)\s*h(?:ours?)?`)
+	for _, m := range hourRe.FindAllStringSubmatch(s, -1) {
+		var h float64
+		fmt.Sscanf(m[1], "%f", &h)
+		totalMinutes += h * 60
+		matched = true
 	}
-	v, err := strconv.Atoi(match)
-	if err != nil {
-		return nil
+
+	// Match integer minutes: "20 minutes", "20m", "20 min"
+	minRe := regexp.MustCompile(`(\d+)\s*m(?:in(?:utes?)?)?`)
+	for _, m := range minRe.FindAllStringSubmatch(s, -1) {
+		v, _ := strconv.Atoi(m[1])
+		totalMinutes += float64(v)
+		matched = true
 	}
-	return &v
+
+	if matched {
+		result := int(math.Round(totalMinutes))
+		return &result
+	}
+
+	// Fallback: bare number (e.g. "20")
+	bareRe := regexp.MustCompile(`^(\d+)$`)
+	if m := bareRe.FindStringSubmatch(s); m != nil {
+		v, _ := strconv.Atoi(m[1])
+		return &v
+	}
+
+	return nil
 }
 
 // ParseServings extracts a serving count from strings like "4", "4 servings".

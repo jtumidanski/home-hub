@@ -4,6 +4,7 @@ import { Card, CardHeader, CardTitle, CardContent, CardAction } from "@/componen
 import { Badge } from "@/components/ui/badge";
 import { CardActionMenu } from "@/components/common/card-action-menu";
 import { filterClassificationTags } from "@/lib/constants/recipe";
+import { toTitleCase } from "@/lib/utils";
 import type { RecipeListItem, RecipeListAttributes } from "@/types/models/recipe";
 
 interface RecipeCardProps {
@@ -91,7 +92,7 @@ export function RecipeCard({ recipe, onDelete }: RecipeCardProps) {
           </span>
           {allTags.map((tag) => (
             <Badge key={tag} variant="secondary" className="text-xs">
-              {tag}
+              {toTitleCase(tag)}
             </Badge>
           ))}
         </div>

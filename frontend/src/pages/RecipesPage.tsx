@@ -12,6 +12,7 @@ import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { createErrorFromUnknown } from "@/lib/api/errors";
 import { CLASSIFICATIONS } from "@/lib/constants/recipe";
+import { toTitleCase } from "@/lib/utils";
 import type { RecipeListItem } from "@/types/models/recipe";
 
 export function RecipesPage() {
@@ -124,7 +125,7 @@ export function RecipesPage() {
                 className="cursor-pointer text-xs"
                 onClick={() => toggleTag(t.attributes.tag)}
               >
-                {t.attributes.tag} ({t.attributes.count})
+                {toTitleCase(t.attributes.tag)} ({t.attributes.count})
               </Badge>
             ))}
 

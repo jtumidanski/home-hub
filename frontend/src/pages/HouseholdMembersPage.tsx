@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useParams, Link } from "react-router-dom";
+import { useParams, useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 import { useAuth } from "@/components/providers/auth-provider";
 import { useHouseholdMembers, useUpdateMemberRole, useRemoveMember, useLeaveHousehold } from "@/lib/hooks/api/use-memberships";
@@ -24,6 +24,7 @@ import type { User } from "@/types/models/user";
 
 export function HouseholdMembersPage() {
   const { id: householdId } = useParams<{ id: string }>();
+  const navigate = useNavigate();
   const { appContext, user } = useAuth();
   const [inviteOpen, setInviteOpen] = useState(false);
   const [confirmRemove, setConfirmRemove] = useState<Membership | null>(null);
@@ -117,12 +118,10 @@ export function HouseholdMembersPage() {
 
   return (
     <div className="p-4 md:p-6 space-y-6">
-      <div className="flex items-center gap-3">
-        <Link to="/app/households">
-          <Button variant="ghost" size="icon">
-            <ArrowLeft className="h-4 w-4" />
-          </Button>
-        </Link>
+      <div className="space-y-3">
+        <Button variant="ghost" size="sm" onClick={() => navigate("/app/households")}>
+          <ArrowLeft className="mr-1 h-4 w-4" /> Households
+        </Button>
         <h1 className="text-xl md:text-2xl font-semibold">Household Members</h1>
       </div>
 

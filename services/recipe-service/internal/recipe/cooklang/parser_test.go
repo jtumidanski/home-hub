@@ -326,6 +326,18 @@ func TestParseMinutes(t *testing.T) {
 		{"35 min", intPtr(35)},
 		{"20", intPtr(20)},
 		{"", nil},
+		// Compound durations
+		{"1h 20m", intPtr(80)},
+		{"1h20m", intPtr(80)},
+		{"1 hour 20 minutes", intPtr(80)},
+		{"2h", intPtr(120)},
+		{"45m", intPtr(45)},
+		{"90 minutes", intPtr(90)},
+		{"1.5 hours", intPtr(90)},
+		{"1.5h", intPtr(90)},
+		{"2 hours 30 minutes", intPtr(150)},
+		{"1 hour", intPtr(60)},
+		{"0.5 hours", intPtr(30)},
 	}
 	for _, tt := range tests {
 		result := ParseMinutes(tt.input)

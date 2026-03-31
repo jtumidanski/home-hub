@@ -10,6 +10,7 @@ import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { createErrorFromUnknown } from "@/lib/api/errors";
 import { filterClassificationTags } from "@/lib/constants/recipe";
+import { toTitleCase } from "@/lib/utils";
 
 export function RecipeDetailPage() {
   const { id } = useParams<{ id: string }>();
@@ -140,7 +141,7 @@ export function RecipeDetailPage() {
         {allTags.length > 0 && (
           <div className="flex flex-wrap gap-1.5">
             {allTags.map((tag) => (
-              <Badge key={tag} variant="secondary">{tag}</Badge>
+              <Badge key={tag} variant="secondary">{toTitleCase(tag)}</Badge>
             ))}
           </div>
         )}
