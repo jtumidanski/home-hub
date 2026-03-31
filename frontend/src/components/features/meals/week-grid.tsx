@@ -49,12 +49,12 @@ export function WeekGrid({ startsOn, items, locked, onCellClick, onItemClick, on
 
   return (
     <div className="overflow-x-auto">
-      <table className="w-full border-collapse text-sm">
+      <table className="w-full border-collapse text-sm table-fixed">
         <thead>
           <tr>
-            <th className="p-2 text-left font-medium text-muted-foreground w-20">Slot</th>
+            <th className="p-2 text-left font-medium text-muted-foreground" style={{ width: 80 }}>Slot</th>
             {days.map((day) => (
-              <th key={day.dateStr} className="p-2 text-center font-medium text-muted-foreground min-w-[140px]">
+              <th key={day.dateStr} className="p-2 text-center font-medium text-muted-foreground">
                 {day.label}
               </th>
             ))}
