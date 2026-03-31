@@ -26,7 +26,7 @@ export function BulkCategorize() {
   const [search, setSearch] = useState("");
   const [targetCategoryId, setTargetCategoryId] = useState<string>("");
 
-  const allIngredients: CanonicalIngredientListItem[] = ingredientsData?.data ?? [];
+  const allIngredients: CanonicalIngredientListItem[] = useMemo(() => ingredientsData?.data ?? [], [ingredientsData]);
   const categories = categoriesData?.data ?? [];
 
   const filteredIngredients = useMemo(() => {

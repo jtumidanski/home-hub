@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -38,12 +38,10 @@ export function OnboardingPage() {
   const myInvitations = (myInvitationsData?.data ?? []) as Invitation[];
   const includedHouseholds = ((myInvitationsData as { included?: Household[] })?.included ?? []) as Household[];
 
-  // Auto-advance to standard onboarding if no pending invitations
-  useEffect(() => {
-    if (step === "invitations" && !invitationsLoading && myInvitations.length === 0) {
-      setStep("tenant");
-    }
-  }, [step, invitationsLoading, myInvitations.length]);
+  // Auto-advance past invitations step if no pending invitations
+  const effectiveStep = step === "invitations" && !invitationsLoading && myInvitations.length === 0
+    ? "tenant"
+    : step;
 
   const handleAcceptInvitation = async (id: string) => {
     try {
@@ -112,15 +110,15 @@ export function OnboardingPage() {
         <CardHeader className="text-center">
           <CardTitle className="text-2xl">Welcome to Home Hub</CardTitle>
           <CardDescription>
-            {step === "invitations"
+            {effectiveStep === "invitations"
               ? "You have pending invitations"
-              : step === "tenant"
+              : effectiveStep === "tenant"
                 ? "Let's set up your account"
                 : "Now create your first household"}
           </CardDescription>
         </CardHeader>
         <CardContent>
-          {step === "invitations" && !invitationsLoading && myInvitations.length > 0 && (
+          {effectiveStep === "invitations" && !invitationsLoading && myInvitations.length > 0 && (
             <div className="space-y-4">
               <p className="text-sm text-muted-foreground">
                 You've been invited to join a household. Accept an invitation to get started, or create your own.
@@ -173,7 +171,7 @@ export function OnboardingPage() {
             </div>
           )}
 
-          {step === "tenant" && (
+          {effectiveStep === "tenant" && (
             <Form {...tenantForm}>
               <form onSubmit={tenantForm.handleSubmit(onTenantSubmit)} className="space-y-4">
                 <FormField
@@ -197,7 +195,7 @@ export function OnboardingPage() {
             </Form>
           )}
 
-          {step === "household" && (
+          {effectiveStep === "household" && (
             <Form {...householdForm}>
               <form onSubmit={householdForm.handleSubmit(onHouseholdSubmit)} className="space-y-4">
                 <FormField

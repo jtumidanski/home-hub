@@ -94,8 +94,7 @@ export function RecipesPage() {
         </div>
 
         {/* Unified filter row */}
-        {(availableTags.length > 0 || true) && (
-          <div className="flex flex-wrap gap-1.5">
+        <div className="flex flex-wrap gap-1.5">
             {/* Planner status filters */}
             <Badge
               variant={plannerFilter === "ready" ? "default" : "outline"}
@@ -139,7 +138,6 @@ export function RecipesPage() {
               </button>
             )}
           </div>
-        )}
 
         {/* Loading */}
         {isLoading && (

@@ -1,54 +1,64 @@
-import { useState, useEffect, useRef, useCallback } from "react";
+import { useState, useEffect, useRef } from "react";
 
 export function useWakeLock(enabled: boolean) {
   const [isActive, setIsActive] = useState(false);
   const sentinelRef = useRef<WakeLockSentinel | null>(null);
   const isSupported = typeof navigator !== "undefined" && "wakeLock" in navigator;
 
-  const acquire = useCallback(async () => {
-    if (!isSupported || !enabled) return;
-    try {
-      sentinelRef.current = await navigator.wakeLock.request("screen");
-      setIsActive(true);
-      sentinelRef.current.addEventListener("release", () => {
-        setIsActive(false);
-      });
-    } catch {
-      setIsActive(false);
-    }
-  }, [isSupported, enabled]);
-
-  const release = useCallback(async () => {
-    if (sentinelRef.current) {
-      await sentinelRef.current.release();
-      sentinelRef.current = null;
-      setIsActive(false);
-    }
-  }, []);
-
-  // Acquire/release based on enabled flag
+  /* eslint-disable react-hooks/set-state-in-effect -- wake lock lifecycle requires synchronizing active state with external API */
   useEffect(() => {
-    if (enabled) {
-      acquire();
-    } else {
-      release();
+    if (!enabled || !isSupported) {
+      // Release if we had one
+      const sentinel = sentinelRef.current;
+      if (sentinel) {
+        sentinel.release().then(() => {
+          sentinelRef.current = null;
+        });
+      }
+      setIsActive(false);
+      return;
     }
-    return () => {
-      release();
-    };
-  }, [enabled, acquire, release]);
 
-  // Re-acquire on visibility change (tab refocus)
-  useEffect(() => {
-    if (!enabled || !isSupported) return;
-    const handler = () => {
-      if (document.visibilityState === "visible") {
+    let cancelled = false;
+
+    async function acquire() {
+      try {
+        const sentinel = await navigator.wakeLock.request("screen");
+        if (cancelled) {
+          await sentinel.release();
+          return;
+        }
+        sentinelRef.current = sentinel;
+        setIsActive(true);
+        sentinel.addEventListener("release", () => {
+          if (!cancelled) setIsActive(false);
+        });
+      } catch {
+        if (!cancelled) setIsActive(false);
+      }
+    }
+
+    acquire();
+
+    // Re-acquire on tab refocus
+    const onVisibilityChange = () => {
+      if (document.visibilityState === "visible" && !cancelled) {
         acquire();
       }
     };
-    document.addEventListener("visibilitychange", handler);
-    return () => document.removeEventListener("visibilitychange", handler);
-  }, [enabled, isSupported, acquire]);
+    document.addEventListener("visibilitychange", onVisibilityChange);
+
+    return () => {
+      cancelled = true;
+      document.removeEventListener("visibilitychange", onVisibilityChange);
+      const sentinel = sentinelRef.current;
+      if (sentinel) {
+        sentinel.release();
+        sentinelRef.current = null;
+      }
+    };
+  }, [enabled, isSupported]);
+  /* eslint-enable react-hooks/set-state-in-effect */
 
   return { isSupported, isActive };
 }

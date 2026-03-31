@@ -17,7 +17,7 @@ interface CategoryGroup {
 
 export function IngredientPreview({ planId }: IngredientPreviewProps) {
   const { data, isLoading } = usePlanIngredients(planId);
-  const ingredients = data?.data ?? [];
+  const ingredients = useMemo(() => data?.data ?? [], [data]);
 
   const groups = useMemo(() => {
     if (ingredients.length === 0) return [];

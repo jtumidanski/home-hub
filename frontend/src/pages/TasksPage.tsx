@@ -43,7 +43,7 @@ export function TasksPage() {
   const memberMap = useMemberMap();
   const [searchParams] = useSearchParams();
 
-  const allTasks = (data?.data ?? []) as Task[];
+  const allTasks = useMemo(() => (data?.data ?? []) as Task[], [data]);
 
   const filteredTasks = useMemo(() => {
     let result = allTasks;

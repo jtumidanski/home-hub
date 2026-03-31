@@ -69,6 +69,9 @@ export function WeatherWidget() {
   const locationSet = household && hasLocation(household);
   const { data, isLoading, isError } = useCurrentWeather();
   const { data: forecastData } = useWeatherForecast();
+  const fetchedAt = data?.data?.attributes?.fetchedAt;
+  // eslint-disable-next-line react-hooks/purity -- Date.now() is intentionally impure: we need a fresh stale check each render
+  const isStale = fetchedAt ? Date.now() - new Date(fetchedAt).getTime() > 60 * 60 * 1000 : false;
 
   if (!locationSet) {
     return (
@@ -112,8 +115,6 @@ export function WeatherWidget() {
       </Card>
     );
   }
-
-  const isStale = Date.now() - new Date(weather.fetchedAt).getTime() > 60 * 60 * 1000;
 
   return (
     <Card

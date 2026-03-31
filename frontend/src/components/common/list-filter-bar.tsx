@@ -19,7 +19,7 @@ interface ListFilterBarProps {
 export function ListFilterBar({ statusOptions }: ListFilterBarProps) {
   const [searchParams, setSearchParams] = useSearchParams();
   const { data } = useHouseholdMembers();
-  const members = (data?.data ?? []) as Member[];
+  const members = useMemo(() => (data?.data ?? []) as Member[], [data]);
 
   const query = searchParams.get("q") ?? "";
   const status = searchParams.get("status") ?? "all";

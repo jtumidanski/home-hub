@@ -10,15 +10,11 @@ export function RecipeSteps({ steps }: RecipeStepsProps) {
     return <p className="text-sm text-muted-foreground">No steps found.</p>;
   }
 
-  let currentSection = "";
-
   return (
     <div className="space-y-4">
-      {steps.map((step) => {
-        const showSection = step.section && step.section !== currentSection;
-        if (step.section) {
-          currentSection = step.section;
-        }
+      {steps.map((step, idx) => {
+        const prevSection = idx > 0 ? steps[idx - 1]?.section : undefined;
+        const showSection = !!step.section && step.section !== prevSection;
 
         return (
           <div key={step.number}>

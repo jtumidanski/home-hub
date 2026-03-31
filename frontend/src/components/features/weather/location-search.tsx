@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect, useCallback } from "react";
+import { useState, useRef, useEffect, useCallback, useMemo } from "react";
 import { useGeocodingSearch } from "@/lib/hooks/api/use-weather";
 import { Input } from "@/components/ui/input";
 import { X, MapPin, Loader2 } from "lucide-react";
@@ -21,15 +21,13 @@ export function LocationSearch({ value, onSelect, onClear, isPending }: Location
   const inputRef = useRef<HTMLInputElement>(null);
 
   const { data } = useGeocodingSearch(debouncedQuery);
-  const results = data?.data ?? [];
+  const results = useMemo(() => data?.data ?? [], [data]);
 
   // Clear optimistic value when server value arrives
   const displayValue = value ?? optimisticValue;
-  useEffect(() => {
-    if (value) {
-      setOptimisticValue(null);
-    }
-  }, [value]);
+  if (value && optimisticValue !== null) {
+    setOptimisticValue(null);
+  }
 
   // Debounce query
   useEffect(() => {
@@ -38,12 +36,11 @@ export function LocationSearch({ value, onSelect, onClear, isPending }: Location
   }, [query]);
 
   // Open dropdown when results arrive
-  useEffect(() => {
-    if (results.length > 0 && query.length >= 2) {
-      setOpen(true);
-      setSelectedIndex(-1);
-    }
-  }, [results, query]);
+  const shouldOpen = results.length > 0 && query.length >= 2;
+  if (shouldOpen && !open) {
+    setOpen(true);
+    setSelectedIndex(-1);
+  }
 
   // Close dropdown on outside click
   useEffect(() => {
