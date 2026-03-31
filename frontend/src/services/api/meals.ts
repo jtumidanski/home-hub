@@ -99,10 +99,9 @@ class MealsService extends BaseService {
 
   exportMarkdown(tenant: Tenant, planId: string): Promise<string> {
     this.setTenant(tenant);
-    return api.get<string>(`/meals/plans/${planId}/export/markdown`, {
+    return api.getText(`/meals/plans/${planId}/export/markdown`, {
       headers: { Accept: "text/markdown" },
-      rawResponse: true,
-    } as never);
+    });
   }
 
   getIngredients(tenant: Tenant, planId: string) {

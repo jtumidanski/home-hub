@@ -180,6 +180,17 @@ func (p *Processor) Update(id uuid.UUID, attrs UpdateAttrs) (Model, cooklang.Par
 		if parsed.Metadata.Source != "" && (e.SourceURL == nil || *e.SourceURL == "") {
 			e.SourceURL = &parsed.Metadata.Source
 		}
+		// Re-derive servings, prep time, and cook time from metadata when
+		// the source changes and no explicit override was provided.
+		if attrs.Servings == nil && parsed.Metadata.Servings != "" {
+			e.Servings = cooklang.ParseServings(parsed.Metadata.Servings)
+		}
+		if attrs.PrepTimeMinutes == nil && parsed.Metadata.PrepTime != "" {
+			e.PrepTimeMinutes = cooklang.ParseMinutes(parsed.Metadata.PrepTime)
+		}
+		if attrs.CookTimeMinutes == nil && parsed.Metadata.CookTime != "" {
+			e.CookTimeMinutes = cooklang.ParseMinutes(parsed.Metadata.CookTime)
+		}
 	}
 	if attrs.Servings != nil {
 		e.Servings = attrs.Servings

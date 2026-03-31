@@ -442,13 +442,69 @@ func isSingleWordNameChar(r rune) bool {
 	return unicode.IsLetter(r) || unicode.IsDigit(r) || r == '-' || r == '\''
 }
 
+// knownUnits is a set of recognized unit abbreviations used to distinguish
+// a unit word from a descriptor word (e.g., "tsp" is a unit, "small" is not).
+var knownUnits = map[string]bool{
+	"tsp": true, "teaspoon": true, "teaspoons": true,
+	"tbsp": true, "tablespoon": true, "tablespoons": true,
+	"cup": true, "cups": true,
+	"oz": true, "ounce": true, "ounces": true,
+	"lb": true, "pound": true, "pounds": true,
+	"g": true, "gram": true, "grams": true,
+	"kg": true, "kilogram": true, "kilograms": true,
+	"ml": true, "milliliter": true, "milliliters": true,
+	"l": true, "liter": true, "liters": true,
+	"pinch": true, "pinches": true, "dash": true, "dashes": true,
+	"clove": true, "cloves": true, "sprig": true, "sprigs": true,
+	"head": true, "heads": true, "bunch": true, "bunches": true,
+	"stalk": true, "stalks": true, "slice": true, "slices": true,
+	"each": true, "piece": true, "pcs": true, "whole": true,
+}
+
+// qtyRe matches a leading numeric portion: integer, decimal, or fraction.
+// Examples: "2", "1.5", "1/2", "2 1/4" (mixed number)
+var qtyRe = regexp.MustCompile(`^(\d+(?:\.\d+)?(?:\s+\d+)?(?:/\d+)?)`)
+
+// noSpaceUnitRe matches numbers directly followed by a unit: "8oz", "16oz"
+var noSpaceUnitRe = regexp.MustCompile(`^(\d+(?:\.\d+)?)(` + strings.Join(unitKeys(), "|") + `)$`)
+
+func unitKeys() []string {
+	keys := make([]string, 0, len(knownUnits))
+	for k := range knownUnits {
+		keys = append(keys, k)
+	}
+	return keys
+}
+
 func parseQuantityUnit(content string) (string, string) {
 	content = strings.TrimSpace(content)
 	if content == "" {
 		return "", ""
 	}
+	// Canonical Cooklang separator
 	if idx := strings.Index(content, "%"); idx >= 0 {
 		return strings.TrimSpace(content[:idx]), strings.TrimSpace(content[idx+1:])
+	}
+	// No-space unit: "8oz", "16oz"
+	if m := noSpaceUnitRe.FindStringSubmatch(content); m != nil {
+		return m[1], m[2]
+	}
+	// Extract leading quantity, then check if the next word is a known unit.
+	if m := qtyRe.FindString(content); m != "" {
+		rest := strings.TrimSpace(content[len(m):])
+		if rest == "" {
+			return m, ""
+		}
+		// Check if the next word is a known unit
+		nextWord := rest
+		if idx := strings.IndexAny(rest, " ,;("); idx >= 0 {
+			nextWord = rest[:idx]
+		}
+		if knownUnits[strings.ToLower(nextWord)] {
+			return strings.TrimSpace(m), strings.ToLower(nextWord)
+		}
+		// Not a known unit — return the full content as quantity (it's a description)
+		return content, ""
 	}
 	return content, ""
 }

@@ -43,12 +43,27 @@ export function IngredientPreview({ planId }: IngredientPreviewProps) {
         </div>
       )}
       <ul className="space-y-1 text-sm">
-        {ingredients.map((ing) => (
-          <li key={ing.id} className={`${!ing.attributes.resolved ? "text-muted-foreground italic" : ""}`}>
-            {formatQuantity(ing.attributes.quantity)} {ing.attributes.unit}{" "}
-            {ing.attributes.display_name ?? ing.attributes.name}
-          </li>
-        ))}
+        {ingredients.map((ing) => {
+          const extras = ing.attributes.extra_quantities ?? [];
+          const name = ing.attributes.display_name ?? ing.attributes.name;
+          return (
+            <li key={ing.id} className={`${!ing.attributes.resolved ? "text-muted-foreground italic" : ""}`}>
+              {formatQuantity(ing.attributes.quantity)} {ing.attributes.unit}{" "}
+              {extras.length > 0 && (
+                <>
+                  {"+ "}
+                  {extras.map((eq, i) => (
+                    <span key={i}>
+                      {formatQuantity(eq.quantity)} {eq.unit}
+                      {i < extras.length - 1 ? " + " : " "}
+                    </span>
+                  ))}
+                </>
+              )}
+              {name}
+            </li>
+          );
+        })}
       </ul>
     </div>
   );

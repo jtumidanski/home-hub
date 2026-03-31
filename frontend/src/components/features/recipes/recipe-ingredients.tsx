@@ -1,4 +1,4 @@
-import { Check, AlertTriangle, RefreshCw } from "lucide-react";
+import { Check, AlertTriangle, RefreshCw, CircleAlert } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { IngredientResolver } from "./ingredient-resolver";
@@ -48,6 +48,9 @@ export function RecipeIngredients({
   const isNormalized = hasNormalizationData(ingredients);
 
   const hasUnresolved = isNormalized && ingredients.some((i) => i.normalizationStatus === "unresolved");
+  const hasUnitWarnings = isNormalized && ingredients.some(
+    (i) => i.normalizationStatus !== "unresolved" && i.rawUnit && !i.canonicalUnit
+  );
 
   return (
     <div className="space-y-2">
@@ -65,6 +68,12 @@ export function RecipeIngredients({
           </Button>
         </div>
       )}
+      {isNormalized && hasUnitWarnings && (
+        <div className="flex items-center gap-1 text-xs text-yellow-600">
+          <CircleAlert className="h-3 w-3" />
+          Some units are not recognized and may affect meal plan ingredient consolidation
+        </div>
+      )}
 
       <ul className="space-y-1.5">
         {ingredients.map((ing, i) => {
@@ -72,6 +81,11 @@ export function RecipeIngredients({
             return (
               <li key={ing.id} className="flex items-center gap-1.5 text-sm">
                 <StatusIcon status={ing.normalizationStatus} />
+                {ing.normalizationStatus !== "unresolved" && ing.rawUnit && !ing.canonicalUnit && (
+                  <span title={`Unit '${ing.rawUnit}' is not recognized and may prevent ingredient consolidation in meal exports`}>
+                    <CircleAlert className="h-3.5 w-3.5 text-yellow-500 shrink-0" />
+                  </span>
+                )}
                 <span className="flex-1">
                   {ing.rawQuantity && (
                     <span className="font-medium text-primary">
@@ -80,7 +94,12 @@ export function RecipeIngredients({
                   )}{" "}
                   {ing.rawName}
                   {ing.canonicalName && ing.normalizationStatus !== "unresolved" && (
-                    <span className="text-muted-foreground text-xs ml-1">→ {ing.canonicalName}</span>
+                    <span className="text-muted-foreground text-xs ml-1">
+                      → {ing.canonicalName}
+                      {ing.canonicalUnit && ing.rawUnit && ing.canonicalUnit !== ing.rawUnit && (
+                        <> ({ing.rawUnit} → {ing.canonicalUnit})</>
+                      )}
+                    </span>
                   )}
                 </span>
                 {ing.normalizationStatus === "unresolved" && !readOnly && recipeId && (

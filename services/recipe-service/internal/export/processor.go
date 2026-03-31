@@ -2,7 +2,9 @@ package export
 
 import (
 	"context"
+	"regexp"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/google/uuid"
@@ -22,15 +24,22 @@ type PlanData struct {
 	StartsOn time.Time
 }
 
+// QuantityUnit is an additional quantity+unit pair for cross-family grouping.
+type QuantityUnit struct {
+	Quantity float64
+	Unit     string
+}
+
 // ConsolidatedIngredient represents a single line in the ingredient export.
 type ConsolidatedIngredient struct {
-	ID          uuid.UUID
-	Name        string
-	DisplayName string
-	Quantity    float64
-	Unit        string
-	UnitFamily  string
-	Resolved    bool
+	ID               uuid.UUID
+	Name             string
+	DisplayName      string
+	Quantity         float64
+	Unit             string
+	UnitFamily       string
+	Resolved         bool
+	ExtraQuantities  []QuantityUnit
 }
 
 type Processor struct {
@@ -57,12 +66,19 @@ func (p *Processor) ConsolidateIngredients(pd PlanData) []ConsolidatedIngredient
 	plannerProc := planner.NewProcessor(p.l, p.ctx, p.db)
 	ingredientProc := ingredient.NewProcessor(p.l, p.ctx, p.db)
 
-	// Key: canonical_ingredient_id + canonical_unit for resolved ingredients.
-	type consolidationKey struct {
-		CanonicalID uuid.UUID
-		Unit        string
+	// Accumulator per canonical ingredient, keyed by base unit.
+	type baseUnitAccum struct {
+		baseUnit string
+		qty      float64
 	}
-	resolved := make(map[consolidationKey]*ConsolidatedIngredient)
+	type ingredientAccum struct {
+		id          uuid.UUID
+		name        string
+		displayName string
+		unitFamily  string
+		units       map[string]*baseUnitAccum // base unit → accumulated qty
+	}
+	resolved := make(map[uuid.UUID]*ingredientAccum)
 	var unresolved []ConsolidatedIngredient
 
 	for _, item := range items {
@@ -98,28 +114,34 @@ func (p *Processor) ConsolidateIngredients(pd PlanData) []ConsolidatedIngredient
 				continue
 			}
 
-			if ing.CanonicalIngredientID() != nil && ing.CanonicalUnit() != "" {
-				key := consolidationKey{
-					CanonicalID: *ing.CanonicalIngredientID(),
-					Unit:        ing.CanonicalUnit(),
+			if ing.CanonicalIngredientID() != nil {
+				canonID := *ing.CanonicalIngredientID()
+				unit := ing.CanonicalUnit()
+				if unit == "" {
+					unit = ing.RawUnit()
 				}
-				if existing, ok := resolved[key]; ok {
-					existing.Quantity += qty
+				baseUnit, factor := toBaseUnit(unit)
+				normalizedQty := qty * factor
+
+				acc, ok := resolved[canonID]
+				if !ok {
+					acc = &ingredientAccum{
+						id:    canonID,
+						name:  ing.RawName(),
+						units: make(map[string]*baseUnitAccum),
+					}
+					if canonical, err := ingredientProc.Get(canonID); err == nil {
+						acc.displayName = canonical.DisplayName()
+						acc.name = canonical.Name()
+						acc.unitFamily = canonical.UnitFamily()
+					}
+					resolved[canonID] = acc
+				}
+
+				if existing, ok := acc.units[baseUnit]; ok {
+					existing.qty += normalizedQty
 				} else {
-					ci := ConsolidatedIngredient{
-						ID:       *ing.CanonicalIngredientID(),
-						Name:     ing.RawName(),
-						Quantity: qty,
-						Unit:     ing.CanonicalUnit(),
-						Resolved: true,
-					}
-					// Look up display name
-					if canonical, err := ingredientProc.Get(*ing.CanonicalIngredientID()); err == nil {
-						ci.DisplayName = canonical.DisplayName()
-						ci.Name = canonical.Name()
-						ci.UnitFamily = canonical.UnitFamily()
-					}
-					resolved[key] = &ci
+					acc.units[baseUnit] = &baseUnitAccum{baseUnit: baseUnit, qty: normalizedQty}
 				}
 			} else {
 				unresolved = append(unresolved, ConsolidatedIngredient{
@@ -134,8 +156,27 @@ func (p *Processor) ConsolidateIngredients(pd PlanData) []ConsolidatedIngredient
 	}
 
 	result := make([]ConsolidatedIngredient, 0, len(resolved)+len(unresolved))
-	for _, ci := range resolved {
-		result = append(result, *ci)
+	for _, acc := range resolved {
+		// Collect all base-unit entries, convert to display units
+		var pairs []QuantityUnit
+		for _, bu := range acc.units {
+			displayUnit, displayQty := fromBaseUnit(bu.baseUnit, bu.qty)
+			pairs = append(pairs, QuantityUnit{Quantity: displayQty, Unit: displayUnit})
+		}
+		// First pair is primary, rest are extras
+		ci := ConsolidatedIngredient{
+			ID:          acc.id,
+			Name:        acc.name,
+			DisplayName: acc.displayName,
+			Quantity:    pairs[0].Quantity,
+			Unit:        pairs[0].Unit,
+			UnitFamily:  acc.unitFamily,
+			Resolved:    true,
+		}
+		if len(pairs) > 1 {
+			ci.ExtraQuantities = pairs[1:]
+		}
+		result = append(result, ci)
 	}
 	result = append(result, unresolved...)
 	return result
@@ -165,13 +206,136 @@ func getServingsYield(recipeID uuid.UUID, recipeProc *recipe.Processor, plannerP
 	return 0
 }
 
+// fractionRe matches a pure fraction like "1/2" or "3/4"
+var fractionRe = regexp.MustCompile(`^(\d+)/(\d+)`)
+
+// mixedNumberRe matches "2 1/4" style mixed numbers
+var mixedNumberRe = regexp.MustCompile(`^(\d+)\s+(\d+)/(\d+)`)
+
+// leadingIntRe matches a leading integer or decimal
+var leadingIntRe = regexp.MustCompile(`^(\d+(?:\.\d+)?)`)
+
 func parseQuantity(raw string) float64 {
 	if raw == "" {
 		return 0
 	}
-	v, err := strconv.ParseFloat(raw, 64)
-	if err != nil {
-		return 0
+	raw = strings.TrimSpace(raw)
+	// Handle additive expressions: "1 + 1", "to taste + to taste"
+	if strings.Contains(raw, " + ") {
+		parts := strings.Split(raw, " + ")
+		var total float64
+		for _, p := range parts {
+			v := parseQuantity(strings.TrimSpace(p))
+			total += v
+		}
+		return total
 	}
-	return v
+	// Try direct float first (e.g., "1.5", "3")
+	if v, err := strconv.ParseFloat(raw, 64); err == nil {
+		return v
+	}
+	// Try mixed number: "2 1/4"
+	if m := mixedNumberRe.FindStringSubmatch(raw); m != nil {
+		whole, _ := strconv.ParseFloat(m[1], 64)
+		num, _ := strconv.ParseFloat(m[2], 64)
+		den, _ := strconv.ParseFloat(m[3], 64)
+		if den != 0 {
+			return whole + num/den
+		}
+	}
+	// Try fraction: "1/2", "3/4"
+	if m := fractionRe.FindStringSubmatch(raw); m != nil {
+		num, _ := strconv.ParseFloat(m[1], 64)
+		den, _ := strconv.ParseFloat(m[2], 64)
+		if den != 0 {
+			return num / den
+		}
+	}
+	// Extract leading integer from complex strings: "3 small-medium, ..."
+	if m := leadingIntRe.FindStringSubmatch(raw); m != nil {
+		v, _ := strconv.ParseFloat(m[1], 64)
+		return v
+	}
+	return 0
+}
+
+// toBaseUnit converts a canonical unit to its family's base unit and returns
+// the conversion factor. E.g., "tablespoon" → ("teaspoon", 3.0).
+// Units without a known conversion are returned as-is with factor 1.
+func toBaseUnit(unit string) (string, float64) {
+	switch unit {
+	// Volume → teaspoon
+	case "teaspoon":
+		return "teaspoon", 1
+	case "tablespoon":
+		return "teaspoon", 3
+	case "cup":
+		return "teaspoon", 48
+	case "fluid ounce":
+		return "teaspoon", 6
+	case "milliliter":
+		return "teaspoon", 0.202884
+	case "liter":
+		return "teaspoon", 202.884
+	// Weight → ounce
+	case "gram":
+		return "gram", 1
+	case "kilogram":
+		return "gram", 1000
+	case "ounce":
+		return "ounce", 1
+	case "pound":
+		return "ounce", 16
+	default:
+		return unit, 1
+	}
+}
+
+// volumeSteps are volume units ordered from largest to smallest with their
+// teaspoon equivalents.
+var volumeSteps = []struct {
+	unit      string
+	teaspoons float64
+}{
+	{"cup", 48},
+	{"tablespoon", 3},
+	{"teaspoon", 1},
+}
+
+// weightOzSteps for ounce-family.
+var weightOzSteps = []struct {
+	unit   string
+	ounces float64
+}{
+	{"pound", 16},
+	{"ounce", 1},
+}
+
+// fromBaseUnit converts a quantity in a base unit to the most readable display unit.
+func fromBaseUnit(baseUnit string, qty float64) (string, float64) {
+	switch baseUnit {
+	case "teaspoon":
+		for _, step := range volumeSteps {
+			converted := qty / step.teaspoons
+			if converted >= 1 {
+				return step.unit, converted
+			}
+		}
+		return "teaspoon", qty
+	case "gram":
+		if qty >= 1000 {
+			return "kilogram", qty / 1000
+		}
+		return "gram", qty
+	case "ounce":
+		for _, step := range weightOzSteps {
+			converted := qty / step.ounces
+			if converted >= 1 {
+				return step.unit, converted
+			}
+		}
+		return "ounce", qty
+	default:
+		return baseUnit, qty
+	}
 }

@@ -67,6 +67,11 @@ export interface PlanItemResponse {
 }
 
 // Consolidated ingredient (from GET /meals/plans/{planId}/ingredients)
+export interface PlanIngredientExtraQuantity {
+  quantity: number;
+  unit: string;
+}
+
 export interface PlanIngredientAttributes {
   name: string;
   display_name: string | null;
@@ -74,6 +79,7 @@ export interface PlanIngredientAttributes {
   unit: string;
   unit_family: string;
   resolved: boolean;
+  extra_quantities?: PlanIngredientExtraQuantity[];
 }
 
 export interface PlanIngredient {

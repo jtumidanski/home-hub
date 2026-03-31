@@ -2,15 +2,22 @@ package export
 
 import "github.com/google/uuid"
 
+// RestQuantityUnit is an additional quantity+unit pair.
+type RestQuantityUnit struct {
+	Quantity float64 `json:"quantity"`
+	Unit     string  `json:"unit"`
+}
+
 // RestIngredientModel is the JSON:API representation for a consolidated ingredient.
 type RestIngredientModel struct {
-	Id          uuid.UUID `json:"-"`
-	Name        string    `json:"name"`
-	DisplayName *string   `json:"display_name"`
-	Quantity    float64   `json:"quantity"`
-	Unit        string    `json:"unit"`
-	UnitFamily  string    `json:"unit_family"`
-	Resolved    bool      `json:"resolved"`
+	Id              uuid.UUID        `json:"-"`
+	Name            string           `json:"name"`
+	DisplayName     *string          `json:"display_name"`
+	Quantity        float64          `json:"quantity"`
+	Unit            string           `json:"unit"`
+	UnitFamily      string           `json:"unit_family"`
+	Resolved        bool             `json:"resolved"`
+	ExtraQuantities []RestQuantityUnit `json:"extra_quantities,omitempty"`
 }
 
 func (r RestIngredientModel) GetName() string       { return "plan-ingredients" }
@@ -30,7 +37,7 @@ func TransformIngredient(ci ConsolidatedIngredient) RestIngredientModel {
 	if ci.DisplayName != "" {
 		displayName = &ci.DisplayName
 	}
-	return RestIngredientModel{
+	rest := RestIngredientModel{
 		Id:          ci.ID,
 		Name:        ci.Name,
 		DisplayName: displayName,
@@ -39,4 +46,11 @@ func TransformIngredient(ci ConsolidatedIngredient) RestIngredientModel {
 		UnitFamily:  ci.UnitFamily,
 		Resolved:    ci.Resolved,
 	}
+	for _, eq := range ci.ExtraQuantities {
+		rest.ExtraQuantities = append(rest.ExtraQuantities, RestQuantityUnit{
+			Quantity: eq.Quantity,
+			Unit:     eq.Unit,
+		})
+	}
+	return rest
 }

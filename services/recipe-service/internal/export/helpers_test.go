@@ -18,7 +18,12 @@ func TestParseQuantity(t *testing.T) {
 		{"zero", "0", 0},
 		{"negative", "-1", -1.0},
 		{"invalid string returns 0", "abc", 0},
-		{"mixed string returns 0", "1a", 0},
+		{"mixed string extracts leading number", "1a", 1},
+		{"complex description extracts leading number", "3 small-medium, cut into matchsticks", 3},
+		{"fraction string", "1/2", 0.5},
+		{"mixed number", "2 1/4", 2.25},
+		{"additive expression", "1 + 1", 2},
+		{"to taste returns 0", "to taste", 0},
 		{"large number", "1000.25", 1000.25},
 		{"leading zero", "0.5", 0.5},
 	}

@@ -174,7 +174,7 @@ export function MealsPage() {
   };
 
   return (
-    <div className="space-y-4">
+    <div className="p-4 md:p-6 space-y-4">
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <div>
@@ -260,6 +260,7 @@ export function MealsPage() {
           weekDays={weekDays}
           initialDay={selectorDay}
           initialSlot={selectorSlot}
+          recipeServings={selectedRecipe.attributes.servings}
         />
       )}
 
@@ -271,6 +272,7 @@ export function MealsPage() {
           onSave={handleEditItem}
           weekDays={weekDays}
           editItem={editItem}
+          recipeServings={editItem.recipe_servings}
         />
       )}
 
