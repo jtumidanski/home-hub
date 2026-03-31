@@ -7,14 +7,16 @@ import (
 )
 
 type RestModel struct {
-	Id          uuid.UUID  `json:"-"`
-	Name        string     `json:"name"`
-	DisplayName string     `json:"displayName,omitempty"`
-	UnitFamily  string     `json:"unitFamily,omitempty"`
-	AliasCount  int        `json:"aliasCount"`
-	UsageCount  int        `json:"usageCount"`
-	CreatedAt   time.Time  `json:"createdAt"`
-	UpdatedAt   time.Time  `json:"updatedAt"`
+	Id           uuid.UUID  `json:"-"`
+	Name         string     `json:"name"`
+	DisplayName  string     `json:"displayName,omitempty"`
+	UnitFamily   string     `json:"unitFamily,omitempty"`
+	CategoryId   *uuid.UUID `json:"categoryId,omitempty"`
+	CategoryName string     `json:"categoryName,omitempty"`
+	AliasCount   int        `json:"aliasCount"`
+	UsageCount   int        `json:"usageCount"`
+	CreatedAt    time.Time  `json:"createdAt"`
+	UpdatedAt    time.Time  `json:"updatedAt"`
 }
 
 func (r RestModel) GetName() string       { return "ingredients" }
@@ -22,13 +24,15 @@ func (r RestModel) GetID() string          { return r.Id.String() }
 func (r *RestModel) SetID(id string) error { var err error; r.Id, err = uuid.Parse(id); return err }
 
 type RestDetailModel struct {
-	Id          uuid.UUID       `json:"-"`
-	Name        string          `json:"name"`
-	DisplayName string          `json:"displayName,omitempty"`
-	UnitFamily  string          `json:"unitFamily,omitempty"`
-	Aliases     []RestAliasModel `json:"aliases"`
-	CreatedAt   time.Time       `json:"createdAt"`
-	UpdatedAt   time.Time       `json:"updatedAt"`
+	Id           uuid.UUID        `json:"-"`
+	Name         string           `json:"name"`
+	DisplayName  string           `json:"displayName,omitempty"`
+	UnitFamily   string           `json:"unitFamily,omitempty"`
+	CategoryId   *uuid.UUID       `json:"categoryId,omitempty"`
+	CategoryName string           `json:"categoryName,omitempty"`
+	Aliases      []RestAliasModel `json:"aliases"`
+	CreatedAt    time.Time        `json:"createdAt"`
+	UpdatedAt    time.Time        `json:"updatedAt"`
 }
 
 func (r RestDetailModel) GetName() string       { return "ingredients" }
@@ -45,6 +49,7 @@ type CreateRequest struct {
 	Name        string    `json:"name"`
 	DisplayName string    `json:"displayName"`
 	UnitFamily  string    `json:"unitFamily"`
+	CategoryId  *string   `json:"categoryId,omitempty"`
 }
 
 func (r CreateRequest) GetName() string       { return "ingredients" }
@@ -59,6 +64,7 @@ type UpdateRequest struct {
 	DisplayName string    `json:"displayName,omitempty"`
 	UnitFamily  string    `json:"unitFamily,omitempty"`
 	Name        string    `json:"name,omitempty"`
+	CategoryId  *string   `json:"categoryId"`
 }
 
 func (r UpdateRequest) GetName() string       { return "ingredients" }
@@ -89,10 +95,28 @@ func (r *ReassignRequest) SetID(id string) error {
 	var err error; r.Id, err = uuid.Parse(id); return err
 }
 
+type BulkCategorizeRequest struct {
+	Id            uuid.UUID `json:"-"`
+	IngredientIds []string  `json:"ingredient_ids"`
+	CategoryId    string    `json:"category_id"`
+}
+
+func (r BulkCategorizeRequest) GetName() string       { return "ingredient-bulk-categorize" }
+func (r BulkCategorizeRequest) GetID() string          { return r.Id.String() }
+func (r *BulkCategorizeRequest) SetID(id string) error {
+	if id == "" {
+		return nil
+	}
+	var err error
+	r.Id, err = uuid.Parse(id)
+	return err
+}
+
 func TransformList(m Model, usageCount int) RestModel {
 	return RestModel{
 		Id: m.Id(), Name: m.Name(), DisplayName: m.DisplayName(),
-		UnitFamily: m.UnitFamily(), AliasCount: m.AliasCount(), UsageCount: usageCount,
+		UnitFamily: m.UnitFamily(), CategoryId: m.CategoryID(), CategoryName: m.CategoryName(),
+		AliasCount: m.AliasCount(), UsageCount: usageCount,
 		CreatedAt: m.CreatedAt(), UpdatedAt: m.UpdatedAt(),
 	}
 }
@@ -104,7 +128,8 @@ func TransformDetail(m Model) RestDetailModel {
 	}
 	return RestDetailModel{
 		Id: m.Id(), Name: m.Name(), DisplayName: m.DisplayName(),
-		UnitFamily: m.UnitFamily(), Aliases: aliases,
+		UnitFamily: m.UnitFamily(), CategoryId: m.CategoryID(), CategoryName: m.CategoryName(),
+		Aliases: aliases,
 		CreatedAt: m.CreatedAt(), UpdatedAt: m.UpdatedAt(),
 	}
 }

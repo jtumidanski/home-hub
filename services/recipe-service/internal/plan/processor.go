@@ -198,7 +198,7 @@ func (p *Processor) ExportMarkdown(id uuid.UUID, exportProc interface{ GenerateM
 	}
 
 	markdown := exportProc.GenerateMarkdown(export.PlanData{
-		ID: m.Id(), Name: m.Name(), StartsOn: m.StartsOn(),
+		ID: m.Id(), TenantID: m.TenantID(), Name: m.Name(), StartsOn: m.StartsOn(),
 	})
 
 	p.emitAudit(m.Id(), "plan.exported", map[string]interface{}{

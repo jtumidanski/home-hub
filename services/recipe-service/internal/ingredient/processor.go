@@ -32,7 +32,7 @@ func (p *Processor) ByIDProvider(id uuid.UUID) model.Provider[Model] {
 	return model.Map(Make)(GetByID(id)(p.db.WithContext(p.ctx)))
 }
 
-func (p *Processor) Create(tenantID uuid.UUID, name, displayName, unitFamily string) (Model, error) {
+func (p *Processor) Create(tenantID uuid.UUID, name, displayName, unitFamily string, categoryID *uuid.UUID) (Model, error) {
 	normalized := strings.ToLower(strings.TrimSpace(name))
 	if _, err := NewBuilder().SetName(normalized).SetUnitFamily(unitFamily).Build(); err != nil {
 		return Model{}, err
@@ -51,7 +51,8 @@ func (p *Processor) Create(tenantID uuid.UUID, name, displayName, unitFamily str
 	e := Entity{
 		Id: uuid.New(), TenantId: tenantID,
 		Name: normalized, DisplayName: dn, UnitFamily: uf,
-		CreatedAt: now, UpdatedAt: now,
+		CategoryId: categoryID,
+		CreatedAt:  now, UpdatedAt: now,
 	}
 	if err := p.db.WithContext(p.ctx).Create(&e).Error; err != nil {
 		return Model{}, err
@@ -93,7 +94,12 @@ func (p *Processor) Search(tenantID uuid.UUID, query string, page, pageSize int)
 	return models, total, nil
 }
 
-func (p *Processor) Update(id uuid.UUID, name, displayName, unitFamily *string) (Model, error) {
+type UpdateCategoryOpt struct {
+	Set   bool       // true means the caller wants to change the category
+	Value *uuid.UUID // nil = clear category, non-nil = assign category
+}
+
+func (p *Processor) Update(id uuid.UUID, name, displayName, unitFamily *string, categoryOpt *UpdateCategoryOpt) (Model, error) {
 	e, err := GetByID(id)(p.db.WithContext(p.ctx))()
 	if err != nil {
 		return Model{}, ErrNotFound
@@ -114,6 +120,9 @@ func (p *Processor) Update(id uuid.UUID, name, displayName, unitFamily *string) 
 			}
 			e.UnitFamily = unitFamily
 		}
+	}
+	if categoryOpt != nil && categoryOpt.Set {
+		e.CategoryId = categoryOpt.Value
 	}
 
 	e.UpdatedAt = time.Now().UTC()
@@ -187,15 +196,15 @@ func (p *Processor) Reassign(fromID, toID uuid.UUID) (int64, error) {
 	return count, nil
 }
 
-func (p *Processor) SearchWithUsage(tenantID uuid.UUID, query string, page, pageSize int) ([]Model, int64, error) {
+func (p *Processor) SearchWithUsage(tenantID uuid.UUID, query string, categoryFilter string, page, pageSize int) ([]Model, int64, error) {
 	if page < 1 {
 		page = 1
 	}
-	if pageSize < 1 || pageSize > 100 {
+	if pageSize < 1 || pageSize > 200 {
 		pageSize = 20
 	}
 
-	entities, total, err := searchWithUsage(tenantID, query, page, pageSize)(p.db.WithContext(p.ctx))
+	entities, total, err := searchWithUsage(tenantID, query, categoryFilter, page, pageSize)(p.db.WithContext(p.ctx))
 	if err != nil {
 		return nil, 0, err
 	}
@@ -206,9 +215,20 @@ func (p *Processor) SearchWithUsage(tenantID uuid.UUID, query string, page, page
 		if err != nil {
 			return nil, 0, err
 		}
-		models[i] = m.WithUsageCount(int(e.UsageCount))
+		models[i] = m.WithUsageCount(int(e.UsageCount)).WithCategoryName(e.CategoryName)
 	}
 	return models, total, nil
+}
+
+func (p *Processor) BulkCategorize(tenantID uuid.UUID, ingredientIDs []uuid.UUID, categoryID uuid.UUID) error {
+	return p.db.WithContext(p.ctx).Transaction(func(tx *gorm.DB) error {
+		return tx.Table("canonical_ingredients").
+			Where("id IN ? AND tenant_id = ?", ingredientIDs, tenantID).
+			Updates(map[string]interface{}{
+				"category_id": categoryID,
+				"updated_at":  time.Now().UTC(),
+			}).Error
+	})
 }
 
 func (p *Processor) Suggest(tenantID uuid.UUID, prefix string, limit int) ([]Model, error) {

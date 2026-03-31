@@ -9,7 +9,10 @@ import (
 	"time"
 
 	"github.com/google/uuid"
+	"math"
+
 	"github.com/jtumidanski/home-hub/services/recipe-service/internal/ingredient"
+	"github.com/jtumidanski/home-hub/services/recipe-service/internal/ingredient/category"
 	"github.com/jtumidanski/home-hub/services/recipe-service/internal/normalization"
 	"github.com/jtumidanski/home-hub/services/recipe-service/internal/planitem"
 	"github.com/jtumidanski/home-hub/services/recipe-service/internal/planner"
@@ -21,6 +24,7 @@ import (
 // PlanData is a minimal representation of a plan, avoiding an import of the plan package.
 type PlanData struct {
 	ID       uuid.UUID
+	TenantID uuid.UUID
 	Name     string
 	StartsOn time.Time
 }
@@ -33,14 +37,16 @@ type QuantityUnit struct {
 
 // ConsolidatedIngredient represents a single line in the ingredient export.
 type ConsolidatedIngredient struct {
-	ID               uuid.UUID
-	Name             string
-	DisplayName      string
-	Quantity         float64
-	Unit             string
-	UnitFamily       string
-	Resolved         bool
-	ExtraQuantities  []QuantityUnit
+	ID                uuid.UUID
+	Name              string
+	DisplayName       string
+	Quantity          float64
+	Unit              string
+	UnitFamily        string
+	Resolved          bool
+	ExtraQuantities   []QuantityUnit
+	CategoryName      string
+	CategorySortOrder int
 }
 
 type Processor struct {
@@ -73,14 +79,31 @@ func (p *Processor) ConsolidateIngredients(pd PlanData) []ConsolidatedIngredient
 		qty      float64
 	}
 	type ingredientAccum struct {
-		id          uuid.UUID
-		name        string
-		displayName string
-		unitFamily  string
-		units       map[string]*baseUnitAccum // base unit → accumulated qty
+		id                uuid.UUID
+		name              string
+		displayName       string
+		unitFamily        string
+		categoryName      string
+		categorySortOrder int
+		units             map[string]*baseUnitAccum // base unit → accumulated qty
 	}
 	resolved := make(map[uuid.UUID]*ingredientAccum)
 	var unresolved []ConsolidatedIngredient
+
+	// Build category lookup map for sort order
+	type catInfo struct {
+		name      string
+		sortOrder int
+	}
+	categoryByID := make(map[uuid.UUID]catInfo)
+	if pd.TenantID != uuid.Nil {
+		categoryProc := category.NewProcessor(p.l, p.ctx, p.db)
+		if cats, err := categoryProc.List(pd.TenantID); err == nil {
+			for _, c := range cats {
+				categoryByID[c.Id()] = catInfo{name: c.Name(), sortOrder: c.SortOrder()}
+			}
+		}
+	}
 
 	for _, item := range items {
 		multiplier := effectiveMultiplier(item, recipeProc, plannerProc)
@@ -135,6 +158,12 @@ func (p *Processor) ConsolidateIngredients(pd PlanData) []ConsolidatedIngredient
 						acc.displayName = canonical.DisplayName()
 						acc.name = canonical.Name()
 						acc.unitFamily = canonical.UnitFamily()
+						if canonical.CategoryID() != nil {
+							if ci, ok := categoryByID[*canonical.CategoryID()]; ok {
+								acc.categoryName = ci.name
+								acc.categorySortOrder = ci.sortOrder
+							}
+						}
 					}
 					resolved[canonID] = acc
 				}
@@ -157,12 +186,23 @@ func (p *Processor) ConsolidateIngredients(pd PlanData) []ConsolidatedIngredient
 	}
 
 	result := make([]ConsolidatedIngredient, 0, len(resolved)+len(unresolved))
-	// Sort resolved ingredients alphabetically by display name for stable output.
+	// Sort resolved ingredients by category sort order, then alphabetically by display name.
 	sortedAccums := make([]*ingredientAccum, 0, len(resolved))
 	for _, acc := range resolved {
 		sortedAccums = append(sortedAccums, acc)
 	}
 	sort.Slice(sortedAccums, func(i, j int) bool {
+		// Uncategorized (sortOrder 0, no category) sorts last
+		oi, oj := sortedAccums[i].categorySortOrder, sortedAccums[j].categorySortOrder
+		if sortedAccums[i].categoryName == "" {
+			oi = math.MaxInt32
+		}
+		if sortedAccums[j].categoryName == "" {
+			oj = math.MaxInt32
+		}
+		if oi != oj {
+			return oi < oj
+		}
 		ni, nj := sortedAccums[i].displayName, sortedAccums[j].displayName
 		if ni == "" {
 			ni = sortedAccums[i].name
@@ -181,13 +221,15 @@ func (p *Processor) ConsolidateIngredients(pd PlanData) []ConsolidatedIngredient
 		}
 		// First pair is primary, rest are extras
 		ci := ConsolidatedIngredient{
-			ID:          acc.id,
-			Name:        acc.name,
-			DisplayName: acc.displayName,
-			Quantity:    pairs[0].Quantity,
-			Unit:        pairs[0].Unit,
-			UnitFamily:  acc.unitFamily,
-			Resolved:    true,
+			ID:                acc.id,
+			Name:              acc.name,
+			DisplayName:       acc.displayName,
+			Quantity:          pairs[0].Quantity,
+			Unit:              pairs[0].Unit,
+			UnitFamily:        acc.unitFamily,
+			Resolved:          true,
+			CategoryName:      acc.categoryName,
+			CategorySortOrder: acc.categorySortOrder,
 		}
 		if len(pairs) > 1 {
 			ci.ExtraQuantities = pairs[1:]

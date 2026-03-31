@@ -18,6 +18,14 @@ import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { createErrorFromUnknown } from "@/lib/api/errors";
 import { UNIT_FAMILIES } from "@/lib/constants/recipe";
+import { useIngredientCategories } from "@/lib/hooks/api/use-ingredient-categories";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import type { CanonicalIngredientListItem } from "@/types/models/ingredient";
 
 export function IngredientDetailPage() {
@@ -31,6 +39,7 @@ export function IngredientDetailPage() {
   const addAlias = useAddAlias();
   const removeAlias = useRemoveAlias();
 
+  const { data: categoriesData } = useIngredientCategories();
   const [newAlias, setNewAlias] = useState("");
   const [showReassign, setShowReassign] = useState(false);
   const [reassignSearch, setReassignSearch] = useState("");
@@ -38,6 +47,7 @@ export function IngredientDetailPage() {
 
   const ingredient = data?.data;
   const recipes = recipesData?.data ?? [];
+  const categories = categoriesData?.data ?? [];
   const allCandidates: CanonicalIngredientListItem[] = reassignCandidates?.data ?? [];
   const candidates = allCandidates.filter((c) => c.id !== id);
 
@@ -67,7 +77,7 @@ export function IngredientDetailPage() {
     try {
       await deleteIngredient.mutateAsync(id);
       toast.success("Ingredient deleted");
-      navigate("/app/ingredients");
+      navigate(-1);
     } catch (error) {
       toast.error(createErrorFromUnknown(error, "Failed to delete ingredient").message);
       // If has references, show reassign option
@@ -80,9 +90,20 @@ export function IngredientDetailPage() {
     try {
       await reassignIngredient.mutateAsync({ id, targetId });
       toast.success("Ingredient reassigned and deleted");
-      navigate("/app/ingredients");
+      navigate(-1);
     } catch (error) {
       toast.error(createErrorFromUnknown(error, "Failed to reassign").message);
+    }
+  };
+
+  const handleUpdateCategory = async (categoryId: string) => {
+    if (!id) return;
+    try {
+      const value = categoryId === "none" ? null : categoryId;
+      await updateIngredient.mutateAsync({ id, attrs: { categoryId: value } });
+      toast.success("Category updated");
+    } catch (error) {
+      toast.error(createErrorFromUnknown(error, "Failed to update").message);
     }
   };
 
@@ -110,7 +131,7 @@ export function IngredientDetailPage() {
     return (
       <div className="p-4 md:p-6">
         <p className="text-muted-foreground">Ingredient not found.</p>
-        <Button variant="ghost" className="mt-2" onClick={() => navigate("/app/ingredients")}>
+        <Button variant="ghost" className="mt-2" onClick={() => navigate(-1)}>
           <ArrowLeft className="mr-1 h-4 w-4" /> Back to ingredients
         </Button>
       </div>
@@ -123,7 +144,7 @@ export function IngredientDetailPage() {
     <div className="p-4 md:p-6 space-y-6 max-w-3xl">
       {/* Header */}
       <div className="space-y-3">
-        <Button variant="ghost" size="sm" onClick={() => navigate("/app/ingredients")}>
+        <Button variant="ghost" size="sm" onClick={() => navigate(-1)}>
           <ArrowLeft className="mr-1 h-4 w-4" /> Ingredients
         </Button>
 
@@ -156,6 +177,28 @@ export function IngredientDetailPage() {
             </Button>
           ))}
         </div>
+      </div>
+
+      {/* Category */}
+      <div>
+        <h3 className="text-sm font-medium mb-2">Category</h3>
+        <Select value={attrs.categoryId ?? "none"} onValueChange={(v) => v && handleUpdateCategory(v)}>
+          <SelectTrigger>
+            <SelectValue placeholder="Uncategorized">
+              {attrs.categoryId
+                ? categories.find((c) => c.id === attrs.categoryId)?.attributes.name ?? "Uncategorized"
+                : "Uncategorized"}
+            </SelectValue>
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="none">Uncategorized</SelectItem>
+            {categories.map((cat) => (
+              <SelectItem key={cat.id} value={cat.id}>
+                {cat.attributes.name}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
       </div>
 
       {/* Aliases */}

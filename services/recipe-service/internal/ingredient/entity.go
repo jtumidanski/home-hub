@@ -13,6 +13,7 @@ type Entity struct {
 	Name        string        `gorm:"type:varchar(255);not null;uniqueIndex:idx_canonical_ingredient_tenant_name"`
 	DisplayName *string       `gorm:"type:varchar(255)"`
 	UnitFamily  *string       `gorm:"type:varchar(20)"`
+	CategoryId  *uuid.UUID    `gorm:"type:uuid;index:idx_canonical_ingredient_category"`
 	Aliases     []AliasEntity `gorm:"foreignKey:CanonicalIngredientId;constraint:OnDelete:CASCADE"`
 	CreatedAt   time.Time     `gorm:"not null"`
 	UpdatedAt   time.Time     `gorm:"not null"`
@@ -31,7 +32,14 @@ type AliasEntity struct {
 func (AliasEntity) TableName() string { return "canonical_ingredient_aliases" }
 
 func Migration(db *gorm.DB) error {
-	return db.AutoMigrate(&Entity{}, &AliasEntity{})
+	if err := db.AutoMigrate(&Entity{}, &AliasEntity{}); err != nil {
+		return err
+	}
+	// Add FK with ON DELETE SET NULL for category_id -> ingredient_categories
+	if !db.Migrator().HasConstraint(&Entity{}, "fk_canonical_ingredients_category") {
+		return db.Exec("ALTER TABLE canonical_ingredients ADD CONSTRAINT fk_canonical_ingredients_category FOREIGN KEY (category_id) REFERENCES ingredient_categories(id) ON DELETE SET NULL").Error
+	}
+	return nil
 }
 
 func Make(e Entity) (Model, error) {
@@ -53,6 +61,7 @@ func Make(e Entity) (Model, error) {
 		SetName(e.Name).
 		SetDisplayName(displayName).
 		SetUnitFamily(unitFamily).
+		SetCategoryID(e.CategoryId).
 		SetAliases(aliases).
 		SetAliasCount(len(e.Aliases)).
 		SetCreatedAt(e.CreatedAt).

@@ -391,7 +391,7 @@ func getIngredientsHandler(db *gorm.DB) server.GetHandler {
 
 				exportProc := export.NewProcessor(d.Logger(), r.Context(), db)
 				consolidated := exportProc.ConsolidateIngredients(export.PlanData{
-					ID: m.Id(), Name: m.Name(), StartsOn: m.StartsOn(),
+					ID: m.Id(), TenantID: m.TenantID(), Name: m.Name(), StartsOn: m.StartsOn(),
 				})
 
 				rest := export.TransformIngredientSlice(consolidated)
