@@ -22,8 +22,10 @@ func InitializeRoutes(db *gorm.DB) func(l logrus.FieldLogger, si jsonapi.ServerI
 		rihUpdate := server.RegisterInputHandler[UpdateRequest](l)(si)
 		rihAlias := server.RegisterInputHandler[AddAliasRequest](l)(si)
 		rihReassign := server.RegisterInputHandler[ReassignRequest](l)(si)
+		rihBulk := server.RegisterInputHandler[BulkCategorizeRequest](l)(si)
 
 		api.HandleFunc("/ingredients", rh("ListIngredients", listIngredientsHandler(db))).Methods(http.MethodGet)
+		api.HandleFunc("/ingredients/bulk-categorize", rihBulk("BulkCategorize", bulkCategorizeHandler(db))).Methods(http.MethodPost)
 		api.HandleFunc("/ingredients", rihCreate("CreateIngredient", createIngredientHandler(db))).Methods(http.MethodPost)
 		api.HandleFunc("/ingredients/{id}", rh("GetIngredient", getIngredientHandler(db))).Methods(http.MethodGet)
 		api.HandleFunc("/ingredients/{id}", rihUpdate("UpdateIngredient", updateIngredientHandler(db))).Methods(http.MethodPatch)
@@ -40,11 +42,12 @@ func listIngredientsHandler(db *gorm.DB) server.GetHandler {
 		return func(w http.ResponseWriter, r *http.Request) {
 			t := tenantctx.MustFromContext(r.Context())
 			query := r.URL.Query().Get("search")
+			categoryFilter := r.URL.Query().Get("filter[category_id]")
 			page := queryInt(r, "page[number]", 1)
 			pageSize := queryInt(r, "page[size]", 20)
 
 			proc := NewProcessor(d.Logger(), r.Context(), db)
-			models, total, err := proc.SearchWithUsage(t.Id(), query, page, pageSize)
+			models, total, err := proc.SearchWithUsage(t.Id(), query, categoryFilter, page, pageSize)
 			if err != nil {
 				d.Logger().WithError(err).Error("Failed to list ingredients")
 				server.WriteError(w, http.StatusInternalServerError, "Error", "")
@@ -87,8 +90,18 @@ func createIngredientHandler(db *gorm.DB) server.InputHandler[CreateRequest] {
 		return func(w http.ResponseWriter, r *http.Request) {
 			t := tenantctx.MustFromContext(r.Context())
 
+			var categoryID *uuid.UUID
+			if input.CategoryId != nil && *input.CategoryId != "" {
+				cid, err := uuid.Parse(*input.CategoryId)
+				if err != nil {
+					server.WriteError(w, http.StatusUnprocessableEntity, "Validation Failed", "categoryId must be a valid UUID")
+					return
+				}
+				categoryID = &cid
+			}
+
 			proc := NewProcessor(d.Logger(), r.Context(), db)
-			m, err := proc.Create(t.Id(), input.Name, input.DisplayName, input.UnitFamily)
+			m, err := proc.Create(t.Id(), input.Name, input.DisplayName, input.UnitFamily, categoryID)
 			if err != nil {
 				if errors.Is(err, ErrNameRequired) {
 					server.WriteError(w, http.StatusBadRequest, "Validation Failed", err.Error())
@@ -141,8 +154,22 @@ func updateIngredientHandler(db *gorm.DB) server.InputHandler[UpdateRequest] {
 					unitFamily = &input.UnitFamily
 				}
 
+				var categoryOpt *UpdateCategoryOpt
+				if input.CategoryId != nil {
+					opt := UpdateCategoryOpt{Set: true}
+					if *input.CategoryId != "" {
+						cid, err := uuid.Parse(*input.CategoryId)
+						if err != nil {
+							server.WriteError(w, http.StatusUnprocessableEntity, "Validation Failed", "categoryId must be a valid UUID")
+							return
+						}
+						opt.Value = &cid
+					}
+					categoryOpt = &opt
+				}
+
 				proc := NewProcessor(d.Logger(), r.Context(), db)
-				m, err := proc.Update(id, name, displayName, unitFamily)
+				m, err := proc.Update(id, name, displayName, unitFamily, categoryOpt)
 				if err != nil {
 					if errors.Is(err, ErrNotFound) {
 						server.WriteError(w, http.StatusNotFound, "Not Found", "Ingredient not found")
@@ -300,6 +327,48 @@ func reassignHandler(db *gorm.DB) server.InputHandler[ReassignRequest] {
 				})
 			}
 		})
+	}
+}
+
+func bulkCategorizeHandler(db *gorm.DB) server.InputHandler[BulkCategorizeRequest] {
+	return func(d *server.HandlerDependency, c *server.HandlerContext, input BulkCategorizeRequest) http.HandlerFunc {
+		return func(w http.ResponseWriter, r *http.Request) {
+			t := tenantctx.MustFromContext(r.Context())
+
+			if len(input.IngredientIds) == 0 {
+				server.WriteError(w, http.StatusUnprocessableEntity, "Validation Failed", "ingredient_ids must not be empty")
+				return
+			}
+			if len(input.IngredientIds) > 200 {
+				server.WriteError(w, http.StatusUnprocessableEntity, "Validation Failed", "ingredient_ids must not exceed 200 items")
+				return
+			}
+
+			categoryID, err := uuid.Parse(input.CategoryId)
+			if err != nil {
+				server.WriteError(w, http.StatusUnprocessableEntity, "Validation Failed", "category_id must be a valid UUID")
+				return
+			}
+
+			ingredientIDs := make([]uuid.UUID, len(input.IngredientIds))
+			for i, idStr := range input.IngredientIds {
+				parsed, err := uuid.Parse(idStr)
+				if err != nil {
+					server.WriteError(w, http.StatusUnprocessableEntity, "Validation Failed", "all ingredient_ids must be valid UUIDs")
+					return
+				}
+				ingredientIDs[i] = parsed
+			}
+
+			proc := NewProcessor(d.Logger(), r.Context(), db)
+			if err := proc.BulkCategorize(t.Id(), ingredientIDs, categoryID); err != nil {
+				d.Logger().WithError(err).Error("Failed to bulk categorize ingredients")
+				server.WriteError(w, http.StatusInternalServerError, "Error", "")
+				return
+			}
+
+			w.WriteHeader(http.StatusNoContent)
+		}
 	}
 }
 

@@ -3,27 +3,12 @@ import { toast } from "sonner";
 import { ingredientService } from "@/services/api/ingredient";
 import { useTenant } from "@/context/tenant-context";
 import { getErrorMessage } from "@/lib/api/errors";
+import { ingredientKeys, categoryKeys } from "./query-keys";
 import type {
   CanonicalIngredientCreateAttributes,
   CanonicalIngredientUpdateAttributes,
 } from "@/types/models/ingredient";
-import type { Tenant } from "@/types/models/tenant";
-import type { Household } from "@/types/models/household";
-
-// --- Key factory ---
-
-export const ingredientKeys = {
-  all: (tenant: Tenant | null, household: Household | null) =>
-    ["ingredients", tenant?.id ?? "no-tenant", household?.id ?? "no-household"] as const,
-  lists: (tenant: Tenant | null, household: Household | null) =>
-    [...ingredientKeys.all(tenant, household), "list"] as const,
-  details: (tenant: Tenant | null, household: Household | null) =>
-    [...ingredientKeys.all(tenant, household), "detail"] as const,
-  detail: (tenant: Tenant | null, household: Household | null, id: string) =>
-    [...ingredientKeys.details(tenant, household), id] as const,
-  recipes: (tenant: Tenant | null, household: Household | null, id: string) =>
-    [...ingredientKeys.detail(tenant, household, id), "recipes"] as const,
-};
+export { ingredientKeys } from "./query-keys";
 
 // --- Query hooks ---
 
@@ -31,6 +16,7 @@ interface UseIngredientsParams {
   search?: string;
   page?: number;
   pageSize?: number;
+  categoryId?: string;
 }
 
 export function useIngredients(params?: UseIngredientsParams) {
@@ -92,6 +78,7 @@ export function useUpdateIngredient() {
     onSettled: (_data, _err, variables) => {
       qc.invalidateQueries({ queryKey: ingredientKeys.lists(tenant, household) });
       qc.invalidateQueries({ queryKey: ingredientKeys.detail(tenant, household, variables.id) });
+      qc.invalidateQueries({ queryKey: categoryKeys.lists(tenant, household) });
     },
     onError: (error) => {
       toast.error(getErrorMessage(error, "Failed to update ingredient"));
@@ -106,6 +93,7 @@ export function useDeleteIngredient() {
     mutationFn: (id: string) => ingredientService.deleteIngredient(tenant!, id),
     onSettled: () => {
       qc.invalidateQueries({ queryKey: ingredientKeys.lists(tenant, household) });
+      qc.invalidateQueries({ queryKey: categoryKeys.lists(tenant, household) });
     },
     onError: (error) => {
       toast.error(getErrorMessage(error, "Failed to delete ingredient"));

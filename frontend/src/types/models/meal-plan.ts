@@ -80,6 +80,8 @@ export interface PlanIngredientAttributes {
   unit_family: string;
   resolved: boolean;
   extra_quantities?: PlanIngredientExtraQuantity[];
+  category_name: string | null;
+  category_sort_order: number | null;
 }
 
 export interface PlanIngredient {

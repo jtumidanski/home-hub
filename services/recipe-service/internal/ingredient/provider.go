@@ -97,18 +97,29 @@ func reassignCanonical(db *gorm.DB, fromID, toID uuid.UUID) (int64, error) {
 	return result.RowsAffected, result.Error
 }
 
-type entityWithUsage struct {
+type entityWithCategory struct {
 	Entity
-	UsageCount int64
+	CategoryName string
 }
 
-func searchWithUsage(tenantID uuid.UUID, query string, page, pageSize int) func(db *gorm.DB) ([]entityWithUsage, int64, error) {
+type entityWithUsage struct {
+	Entity
+	UsageCount   int64
+	CategoryName string
+}
+
+func searchWithUsage(tenantID uuid.UUID, query string, categoryFilter string, page, pageSize int) func(db *gorm.DB) ([]entityWithUsage, int64, error) {
 	return func(db *gorm.DB) ([]entityWithUsage, int64, error) {
 		q := db.Model(&Entity{}).Where("canonical_ingredients.tenant_id = ?", tenantID)
 
 		if query != "" {
 			pattern := "%" + strings.ToLower(query) + "%"
 			q = q.Where("canonical_ingredients.name ILIKE ? OR EXISTS (SELECT 1 FROM canonical_ingredient_aliases WHERE canonical_ingredient_aliases.canonical_ingredient_id = canonical_ingredients.id AND canonical_ingredient_aliases.name ILIKE ?)", pattern, pattern)
+		}
+		if categoryFilter == "null" {
+			q = q.Where("canonical_ingredients.category_id IS NULL")
+		} else if categoryFilter != "" {
+			q = q.Where("canonical_ingredients.category_id = ?", categoryFilter)
 		}
 
 		var total int64
@@ -118,17 +129,23 @@ func searchWithUsage(tenantID uuid.UUID, query string, page, pageSize int) func(
 
 		offset := (page - 1) * pageSize
 		var results []entityWithUsage
-		err := db.Table("canonical_ingredients").
-			Select("canonical_ingredients.*, COALESCE((SELECT COUNT(*) FROM recipe_ingredients WHERE recipe_ingredients.canonical_ingredient_id = canonical_ingredients.id), 0) as usage_count").
+		dataQ := db.Table("canonical_ingredients").
+			Select("canonical_ingredients.*, COALESCE((SELECT COUNT(*) FROM recipe_ingredients WHERE recipe_ingredients.canonical_ingredient_id = canonical_ingredients.id), 0) as usage_count, COALESCE(ingredient_categories.name, '') as category_name").
+			Joins("LEFT JOIN ingredient_categories ON ingredient_categories.id = canonical_ingredients.category_id").
 			Where("canonical_ingredients.tenant_id = ?", tenantID).
 			Scopes(func(tx *gorm.DB) *gorm.DB {
 				if query != "" {
 					pattern := "%" + strings.ToLower(query) + "%"
-					return tx.Where("canonical_ingredients.name ILIKE ? OR EXISTS (SELECT 1 FROM canonical_ingredient_aliases WHERE canonical_ingredient_aliases.canonical_ingredient_id = canonical_ingredients.id AND canonical_ingredient_aliases.name ILIKE ?)", pattern, pattern)
+					tx = tx.Where("canonical_ingredients.name ILIKE ? OR EXISTS (SELECT 1 FROM canonical_ingredient_aliases WHERE canonical_ingredient_aliases.canonical_ingredient_id = canonical_ingredients.id AND canonical_ingredient_aliases.name ILIKE ?)", pattern, pattern)
+				}
+				if categoryFilter == "null" {
+					tx = tx.Where("canonical_ingredients.category_id IS NULL")
+				} else if categoryFilter != "" {
+					tx = tx.Where("canonical_ingredients.category_id = ?", categoryFilter)
 				}
 				return tx
-			}).
-			Preload("Aliases").
+			})
+		err := dataQ.Preload("Aliases").
 			Order("canonical_ingredients.name ASC").
 			Offset(offset).
 			Limit(pageSize).

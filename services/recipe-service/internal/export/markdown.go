@@ -93,16 +93,66 @@ func (p *Processor) GenerateMarkdown(pd PlanData) string {
 		}
 	}
 
-	// Consolidated ingredients
+	// Consolidated ingredients grouped by category
 	consolidated := p.ConsolidateIngredients(pd)
 	if len(consolidated) > 0 {
-		sb.WriteString("\n## Consolidated Ingredients\n")
+		sb.WriteString("\n## Shopping List\n")
+
+		// Group by category
+		type categoryGroup struct {
+			name        string
+			sortOrder   int
+			ingredients []ConsolidatedIngredient
+		}
+		groupMap := make(map[string]*categoryGroup)
+		var uncategorized []ConsolidatedIngredient
+
 		for _, ci := range consolidated {
-			name := ci.DisplayName
-			if name == "" {
-				name = ci.Name
+			if ci.CategoryName == "" {
+				uncategorized = append(uncategorized, ci)
+			} else {
+				g, ok := groupMap[ci.CategoryName]
+				if !ok {
+					g = &categoryGroup{name: ci.CategoryName, sortOrder: ci.CategorySortOrder}
+					groupMap[ci.CategoryName] = g
+				}
+				g.ingredients = append(g.ingredients, ci)
 			}
-			sb.WriteString(fmt.Sprintf("- %s %s %s\n", formatQuantity(ci.Quantity), ci.Unit, name))
+		}
+
+		// Sort groups by sort order
+		groups := make([]*categoryGroup, 0, len(groupMap))
+		for _, g := range groupMap {
+			groups = append(groups, g)
+		}
+		sort.Slice(groups, func(i, j int) bool {
+			return groups[i].sortOrder < groups[j].sortOrder
+		})
+
+		for _, g := range groups {
+			sb.WriteString(fmt.Sprintf("\n### %s\n", g.name))
+			for _, ci := range g.ingredients {
+				name := ci.DisplayName
+				if name == "" {
+					name = ci.Name
+				}
+				sb.WriteString(fmt.Sprintf("- %s %s %s\n", formatQuantity(ci.Quantity), ci.Unit, name))
+			}
+		}
+
+		if len(uncategorized) > 0 {
+			sb.WriteString("\n### Uncategorized\n")
+			for _, ci := range uncategorized {
+				name := ci.DisplayName
+				if name == "" {
+					name = ci.Name
+				}
+				if !ci.Resolved {
+					sb.WriteString(fmt.Sprintf("- %s %s %s _(unresolved)_\n", formatQuantity(ci.Quantity), ci.Unit, name))
+				} else {
+					sb.WriteString(fmt.Sprintf("- %s %s %s\n", formatQuantity(ci.Quantity), ci.Unit, name))
+				}
+			}
 		}
 	}
 
