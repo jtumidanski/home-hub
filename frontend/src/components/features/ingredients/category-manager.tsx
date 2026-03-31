@@ -28,7 +28,7 @@ export function CategoryManager() {
   const handleCreate = async () => {
     const result = categoryNameSchema.safeParse({ name: newName });
     if (!result.success) {
-      toast.error(result.error.issues[0].message);
+      toast.error(result.error?.issues[0]?.message ?? "Validation failed");
       return;
     }
     try {
@@ -43,7 +43,7 @@ export function CategoryManager() {
   const handleRename = async (id: string) => {
     const result = categoryNameSchema.safeParse({ name: editName });
     if (!result.success) {
-      toast.error(result.error.issues[0].message);
+      toast.error(result.error?.issues[0]?.message ?? "Validation failed");
       return;
     }
     try {
