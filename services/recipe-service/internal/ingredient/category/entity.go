@@ -22,6 +22,17 @@ func Migration(db *gorm.DB) error {
 	return db.AutoMigrate(&Entity{})
 }
 
+func (m Model) ToEntity() Entity {
+	return Entity{
+		Id:        m.id,
+		TenantId:  m.tenantID,
+		Name:      m.name,
+		SortOrder: m.sortOrder,
+		CreatedAt: m.createdAt,
+		UpdatedAt: m.updatedAt,
+	}
+}
+
 func Make(e Entity) (Model, error) {
 	return NewBuilder().
 		SetId(e.Id).

@@ -1,6 +1,7 @@
 import { useMemo } from "react";
 import { AlertTriangle } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
+import { cn } from "@/lib/utils";
 import { usePlanIngredients } from "@/lib/hooks/api/use-meals";
 import type { PlanIngredient } from "@/types/models/meal-plan";
 
@@ -110,7 +111,7 @@ export function IngredientPreview({ planId }: IngredientPreviewProps) {
               const extras = ing.attributes.extra_quantities ?? [];
               const name = ing.attributes.display_name ?? ing.attributes.name;
               return (
-                <li key={ing.id} className={`${!ing.attributes.resolved ? "text-muted-foreground italic" : ""}`}>
+                <li key={ing.id} className={cn(!ing.attributes.resolved && "text-muted-foreground italic")}>
                   {formatQuantity(ing.attributes.quantity)} {ing.attributes.unit}{" "}
                   {extras.length > 0 && (
                     <>

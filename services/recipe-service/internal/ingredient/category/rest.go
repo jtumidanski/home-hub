@@ -55,3 +55,11 @@ func Transform(m Model) RestModel {
 		UpdatedAt:       m.UpdatedAt(),
 	}
 }
+
+func TransformSlice(models []Model) []RestModel {
+	result := make([]RestModel, len(models))
+	for i, m := range models {
+		result[i] = Transform(m)
+	}
+	return result
+}

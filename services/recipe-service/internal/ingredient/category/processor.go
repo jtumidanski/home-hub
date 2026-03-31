@@ -4,7 +4,6 @@ import (
 	"context"
 	"errors"
 	"strings"
-	"time"
 
 	"github.com/google/uuid"
 	"github.com/sirupsen/logrus"
@@ -83,17 +82,13 @@ func (p *Processor) seedDefaults(tenantID uuid.UUID) error {
 			return nil
 		}
 
-		now := time.Now().UTC()
 		for _, dc := range defaultCategories {
 			e := Entity{
-				Id:        uuid.New(),
 				TenantId:  tenantID,
 				Name:      dc.Name,
 				SortOrder: dc.SortOrder,
-				CreatedAt: now,
-				UpdatedAt: now,
 			}
-			if err := tx.Create(&e).Error; err != nil {
+			if err := createCategory(tx, &e); err != nil {
 				return err
 			}
 		}
@@ -117,16 +112,12 @@ func (p *Processor) Create(tenantID uuid.UUID, name string) (Model, error) {
 		return Model{}, err
 	}
 
-	now := time.Now().UTC()
 	e := Entity{
-		Id:        uuid.New(),
 		TenantId:  tenantID,
 		Name:      name,
 		SortOrder: maxOrder + 1,
-		CreatedAt: now,
-		UpdatedAt: now,
 	}
-	if err := p.db.WithContext(p.ctx).Create(&e).Error; err != nil {
+	if err := createCategory(p.db.WithContext(p.ctx), &e); err != nil {
 		return Model{}, err
 	}
 	return Make(e)
@@ -159,8 +150,7 @@ func (p *Processor) Update(id uuid.UUID, tenantID uuid.UUID, name *string, sortO
 		e.SortOrder = *sortOrder
 	}
 
-	e.UpdatedAt = time.Now().UTC()
-	if err := p.db.WithContext(p.ctx).Save(&e).Error; err != nil {
+	if err := updateCategory(p.db.WithContext(p.ctx), &e); err != nil {
 		return Model{}, err
 	}
 
@@ -178,5 +168,5 @@ func (p *Processor) Delete(id uuid.UUID, tenantID uuid.UUID) error {
 		return ErrNotFound
 	}
 	// FK ON DELETE SET NULL handles nullifying ingredient category_id
-	return p.db.WithContext(p.ctx).Where("id = ?", id).Delete(&Entity{}).Error
+	return deleteCategory(p.db.WithContext(p.ctx), id)
 }

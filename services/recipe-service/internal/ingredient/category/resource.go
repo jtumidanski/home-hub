@@ -39,10 +39,10 @@ func listHandler(db *gorm.DB) server.GetHandler {
 				return
 			}
 
-			rest := make([]*RestModel, len(models))
-			for i, m := range models {
-				r := Transform(m)
-				rest[i] = &r
+			transformed := TransformSlice(models)
+			rest := make([]*RestModel, len(transformed))
+			for i := range transformed {
+				rest[i] = &transformed[i]
 			}
 
 			server.MarshalSliceResponse[*RestModel](d.Logger())(w)(c.ServerInformation())(rest)
