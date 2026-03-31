@@ -35,8 +35,8 @@ describe("RecipeCard", () => {
     render(<RecipeCard recipe={makeRecipe()} onDelete={vi.fn()} />);
 
     expect(screen.getByText("Pasta Carbonara")).toBeInTheDocument();
-    expect(screen.getByText("italian")).toBeInTheDocument();
-    expect(screen.getByText("pasta")).toBeInTheDocument();
+    expect(screen.getByText("Italian")).toBeInTheDocument();
+    expect(screen.getByText("Pasta")).toBeInTheDocument();
   });
 
   it("renders description when provided", () => {
@@ -65,10 +65,10 @@ describe("RecipeCard", () => {
   it("shows classification as a tag and deduplicates it from cooklang tags", () => {
     render(<RecipeCard recipe={makeRecipe({ tags: ["italian", "dinner", "pasta"], classification: "dinner" })} onDelete={vi.fn()} />);
 
-    expect(screen.getByText("italian")).toBeInTheDocument();
-    expect(screen.getByText("pasta")).toBeInTheDocument();
+    expect(screen.getByText("Italian")).toBeInTheDocument();
+    expect(screen.getByText("Pasta")).toBeInTheDocument();
     // "dinner" appears once (from classification), not twice
-    expect(screen.getAllByText("dinner")).toHaveLength(1);
+    expect(screen.getAllByText("Dinner")).toHaveLength(1);
   });
 
   it("navigates to detail page on card click", async () => {
