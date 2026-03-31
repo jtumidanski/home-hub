@@ -24,7 +24,10 @@ func TestTransform(t *testing.T) {
 		t.Fatalf("unexpected error: %v", err)
 	}
 
-	r := Transform(m)
+	r, err := Transform(m)
+	if err != nil {
+		t.Fatalf("Transform() error: %v", err)
+	}
 
 	if r.Id != id {
 		t.Errorf("Id = %v, want %v", r.Id, id)
@@ -59,7 +62,10 @@ func TestTransformSlice(t *testing.T) {
 		models[i] = m
 	}
 
-	result := TransformSlice(models)
+	result, err := TransformSlice(models)
+	if err != nil {
+		t.Fatalf("TransformSlice() error: %v", err)
+	}
 
 	if len(result) != 3 {
 		t.Fatalf("TransformSlice length = %d, want 3", len(result))
@@ -72,7 +78,10 @@ func TestTransformSlice(t *testing.T) {
 }
 
 func TestTransformSlice_Empty(t *testing.T) {
-	result := TransformSlice([]Model{})
+	result, err := TransformSlice([]Model{})
+	if err != nil {
+		t.Fatalf("TransformSlice() error: %v", err)
+	}
 	if len(result) != 0 {
 		t.Errorf("TransformSlice(empty) length = %d, want 0", len(result))
 	}

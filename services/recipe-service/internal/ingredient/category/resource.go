@@ -39,7 +39,12 @@ func listHandler(db *gorm.DB) server.GetHandler {
 				return
 			}
 
-			transformed := TransformSlice(models)
+			transformed, err := TransformSlice(models)
+			if err != nil {
+				d.Logger().WithError(err).Error("Failed to transform ingredient categories")
+				server.WriteError(w, http.StatusInternalServerError, "Error", "")
+				return
+			}
 			rest := make([]*RestModel, len(transformed))
 			for i := range transformed {
 				rest[i] = &transformed[i]
@@ -71,7 +76,12 @@ func createHandler(db *gorm.DB) server.InputHandler[CreateRequest] {
 				return
 			}
 
-			rest := Transform(m)
+			rest, err := Transform(m)
+			if err != nil {
+				d.Logger().WithError(err).Error("Failed to transform ingredient category")
+				server.WriteError(w, http.StatusInternalServerError, "Error", "")
+				return
+			}
 			server.MarshalCreatedResponse[RestModel](d.Logger())(w)(c.ServerInformation())(rest)
 		}
 	}
@@ -108,7 +118,12 @@ func updateHandler(db *gorm.DB) server.InputHandler[UpdateRequest] {
 					return
 				}
 
-				rest := Transform(m)
+				rest, err := Transform(m)
+				if err != nil {
+					d.Logger().WithError(err).Error("Failed to transform ingredient category")
+					server.WriteError(w, http.StatusInternalServerError, "Error", "")
+					return
+				}
 				server.MarshalResponse[RestModel](d.Logger())(w)(c.ServerInformation())(map[string][]string{})(rest)
 			}
 		})

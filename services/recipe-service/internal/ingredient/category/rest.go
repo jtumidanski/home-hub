@@ -45,7 +45,7 @@ func (r UpdateRequest) GetName() string       { return "ingredient-categories" }
 func (r UpdateRequest) GetID() string          { return r.Id.String() }
 func (r *UpdateRequest) SetID(id string) error { var err error; r.Id, err = uuid.Parse(id); return err }
 
-func Transform(m Model) RestModel {
+func Transform(m Model) (RestModel, error) {
 	return RestModel{
 		Id:              m.Id(),
 		Name:            m.Name(),
@@ -53,13 +53,17 @@ func Transform(m Model) RestModel {
 		IngredientCount: m.IngredientCount(),
 		CreatedAt:       m.CreatedAt(),
 		UpdatedAt:       m.UpdatedAt(),
-	}
+	}, nil
 }
 
-func TransformSlice(models []Model) []RestModel {
+func TransformSlice(models []Model) ([]RestModel, error) {
 	result := make([]RestModel, len(models))
 	for i, m := range models {
-		result[i] = Transform(m)
+		r, err := Transform(m)
+		if err != nil {
+			return nil, err
+		}
+		result[i] = r
 	}
-	return result
+	return result, nil
 }

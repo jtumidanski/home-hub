@@ -43,7 +43,7 @@ func NewProcessor(l logrus.FieldLogger, ctx context.Context, db *gorm.DB) *Proce
 }
 
 func (p *Processor) List(tenantID uuid.UUID) ([]Model, error) {
-	entities, err := GetByTenantID(tenantID)(p.db.WithContext(p.ctx))
+	entities, err := GetByTenantID(tenantID)(p.db.WithContext(p.ctx))()
 	if err != nil {
 		return nil, err
 	}
@@ -53,7 +53,7 @@ func (p *Processor) List(tenantID uuid.UUID) ([]Model, error) {
 		if err := p.seedDefaults(tenantID); err != nil {
 			return nil, err
 		}
-		entities, err = GetByTenantID(tenantID)(p.db.WithContext(p.ctx))
+		entities, err = GetByTenantID(tenantID)(p.db.WithContext(p.ctx))()
 		if err != nil {
 			return nil, err
 		}
@@ -65,7 +65,7 @@ func (p *Processor) List(tenantID uuid.UUID) ([]Model, error) {
 		if err != nil {
 			return nil, err
 		}
-		count, _ := CountIngredientsByCategory(p.db.WithContext(p.ctx), e.Id)
+		count, _ := CountIngredientsByCategory(e.Id)(p.db.WithContext(p.ctx))
 		models[i] = m.WithIngredientCount(int(count))
 	}
 	return models, nil
@@ -74,8 +74,8 @@ func (p *Processor) List(tenantID uuid.UUID) ([]Model, error) {
 func (p *Processor) seedDefaults(tenantID uuid.UUID) error {
 	return p.db.WithContext(p.ctx).Transaction(func(tx *gorm.DB) error {
 		// Re-check inside transaction to avoid race
-		var count int64
-		if err := tx.Model(&Entity{}).Where("tenant_id = ?", tenantID).Count(&count).Error; err != nil {
+		count, err := CountByTenantID(tenantID)(tx)
+		if err != nil {
 			return err
 		}
 		if count > 0 {
@@ -107,7 +107,7 @@ func (p *Processor) Create(tenantID uuid.UUID, name string) (Model, error) {
 		return Model{}, ErrDuplicateName
 	}
 
-	maxOrder, err := GetMaxSortOrder(p.db.WithContext(p.ctx), tenantID)
+	maxOrder, err := GetMaxSortOrder(tenantID)(p.db.WithContext(p.ctx))
 	if err != nil {
 		return Model{}, err
 	}
@@ -158,7 +158,7 @@ func (p *Processor) Update(id uuid.UUID, tenantID uuid.UUID, name *string, sortO
 	if err != nil {
 		return Model{}, err
 	}
-	count, _ := CountIngredientsByCategory(p.db.WithContext(p.ctx), e.Id)
+	count, _ := CountIngredientsByCategory(e.Id)(p.db.WithContext(p.ctx))
 	return m.WithIngredientCount(int(count)), nil
 }
 
