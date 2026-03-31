@@ -1,5 +1,5 @@
 import type { Step } from "@/types/models/recipe";
-import { cn } from "@/lib/utils";
+import { StepSegment } from "./step-segment";
 
 interface RecipeStepsProps {
   steps: Step[];
@@ -32,37 +32,9 @@ export function RecipeSteps({ steps }: RecipeStepsProps) {
                 {step.number}
               </span>
               <p className="text-sm leading-relaxed pt-0.5">
-                {step.segments.map((seg, i) => {
-                  switch (seg.type) {
-                    case "ingredient":
-                      return (
-                        <span key={i} className={cn("font-medium text-orange-600 dark:text-orange-400")}>
-                          {seg.name}
-                          {seg.quantity && <span className="text-xs ml-0.5">({seg.quantity}{seg.unit && ` ${seg.unit}`})</span>}
-                        </span>
-                      );
-                    case "cookware":
-                      return (
-                        <span key={i} className="font-medium text-blue-600 dark:text-blue-400">
-                          {seg.name}
-                        </span>
-                      );
-                    case "timer":
-                      return (
-                        <span key={i} className="font-medium text-green-600 dark:text-green-400">
-                          {seg.quantity} {seg.unit}
-                        </span>
-                      );
-                    case "reference":
-                      return (
-                        <span key={i} className="font-medium text-purple-600 dark:text-purple-400 italic">
-                          {seg.name}
-                        </span>
-                      );
-                    default:
-                      return <span key={i}>{seg.value}</span>;
-                  }
-                })}
+                {step.segments.map((seg, i) => (
+                  <StepSegment key={i} segment={seg} />
+                ))}
               </p>
             </div>
           </div>
