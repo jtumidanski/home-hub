@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Copy, Download, FileText } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
@@ -17,13 +17,13 @@ export function ExportModal({ open, onClose, planId, planName }: ExportModalProp
   const [showRaw, setShowRaw] = useState(false);
   const exportMutation = useExportMarkdown();
 
-  const handleOpen = () => {
-    if (!markdown) {
+  useEffect(() => {
+    if (open && !markdown && !exportMutation.isPending) {
       exportMutation.mutate(planId, {
         onSuccess: (data) => setMarkdown(data),
       });
     }
-  };
+  }, [open]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const copyToClipboard = async () => {
     if (!markdown) return;
@@ -46,7 +46,6 @@ export function ExportModal({ open, onClose, planId, planName }: ExportModalProp
     <Dialog
       open={open}
       onOpenChange={(o) => {
-        if (o) handleOpen();
         if (!o) {
           onClose();
           setMarkdown(null);
