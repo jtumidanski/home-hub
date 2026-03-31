@@ -1,12 +1,26 @@
+import { useState } from "react";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Calendar } from "@/components/ui/calendar";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 
 interface WeekSelectorProps {
   startsOn: Date;
   onWeekChange: (newStartsOn: Date) => void;
 }
 
+function getMonday(date: Date): Date {
+  const d = new Date(date);
+  const day = d.getDay();
+  const diff = day === 0 ? -6 : 1 - day;
+  d.setDate(d.getDate() + diff);
+  d.setHours(0, 0, 0, 0);
+  return d;
+}
+
 export function WeekSelector({ startsOn, onWeekChange }: WeekSelectorProps) {
+  const [open, setOpen] = useState(false);
+
   const endDate = new Date(startsOn);
   endDate.setDate(endDate.getDate() + 6);
 
@@ -25,14 +39,10 @@ export function WeekSelector({ startsOn, onWeekChange }: WeekSelectorProps) {
     onWeekChange(next);
   };
 
-  const goToCurrentWeek = () => {
-    const today = new Date();
-    const day = today.getDay();
-    const diff = day === 0 ? -6 : 1 - day; // Monday start
-    const monday = new Date(today);
-    monday.setDate(today.getDate() + diff);
-    monday.setHours(0, 0, 0, 0);
-    onWeekChange(monday);
+  const handleCalendarSelect = (date: Date | undefined) => {
+    if (!date) return;
+    onWeekChange(getMonday(date));
+    setOpen(false);
   };
 
   return (
@@ -40,12 +50,21 @@ export function WeekSelector({ startsOn, onWeekChange }: WeekSelectorProps) {
       <Button variant="outline" size="icon" onClick={goToPreviousWeek}>
         <ChevronLeft className="h-4 w-4" />
       </Button>
-      <button
-        onClick={goToCurrentWeek}
-        className="text-sm font-medium min-w-[180px] text-center hover:underline cursor-pointer"
-      >
-        {formatDate(startsOn)} – {formatDate(endDate)}, {endDate.getFullYear()}
-      </button>
+      <Popover open={open} onOpenChange={setOpen}>
+        <PopoverTrigger
+          className="text-sm font-medium min-w-[180px] text-center hover:underline cursor-pointer"
+        >
+          {formatDate(startsOn)} – {formatDate(endDate)}, {endDate.getFullYear()}
+        </PopoverTrigger>
+        <PopoverContent className="w-auto p-0" align="center">
+          <Calendar
+            mode="single"
+            selected={startsOn}
+            onSelect={handleCalendarSelect}
+            defaultMonth={startsOn}
+          />
+        </PopoverContent>
+      </Popover>
       <Button variant="outline" size="icon" onClick={goToNextWeek}>
         <ChevronRight className="h-4 w-4" />
       </Button>

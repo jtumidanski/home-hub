@@ -2,7 +2,7 @@ import { useCallback } from "react";
 import { Link } from "react-router-dom";
 import { useTaskSummary } from "@/lib/hooks/api/use-tasks";
 import { useReminderSummary } from "@/lib/hooks/api/use-reminders";
-import { useAuth } from "@/components/providers/auth-provider";
+
 import { PullToRefresh } from "@/components/common/pull-to-refresh";
 import { ErrorCard } from "@/components/common/error-card";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -28,7 +28,7 @@ function DashboardSkeleton() {
 }
 
 export function DashboardPage() {
-  const { appContext } = useAuth();
+
   const { data: taskData, isLoading: taskLoading, isError: taskError, refetch: refetchTasks } = useTaskSummary();
   const { data: reminderData, isLoading: reminderLoading, isError: reminderError, refetch: refetchReminders } = useReminderSummary();
 
@@ -49,9 +49,6 @@ export function DashboardPage() {
       <div className="p-4 md:p-6 space-y-6">
         <div>
           <h1 className="text-xl md:text-2xl font-semibold">Dashboard</h1>
-          <p className="text-muted-foreground">
-            {appContext?.attributes.resolvedRole && `You are ${appContext.attributes.resolvedRole}`}
-          </p>
         </div>
 
         {(taskError || reminderError) && (

@@ -1,5 +1,5 @@
 import { X, AlertTriangle } from "lucide-react";
-import { Badge } from "@/components/ui/badge";
+
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import type { PlanItemAttributes, Slot } from "@/types/models/meal-plan";
@@ -110,11 +110,7 @@ export function WeekGrid({ startsOn, items, locked, onCellClick, onItemClick, on
                               </Button>
                             )}
                           </div>
-                          {item.recipe_classification && (
-                            <Badge variant="secondary" className="mt-0.5 text-[10px] px-1 py-0">
-                              {item.recipe_classification}
-                            </Badge>
-                          )}
+
                           {(item.planned_servings || (item.serving_multiplier && item.serving_multiplier !== 1)) && (
                             <div className="text-muted-foreground mt-0.5">
                               {item.planned_servings

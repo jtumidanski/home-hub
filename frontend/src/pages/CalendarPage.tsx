@@ -1,11 +1,13 @@
 import { useState, useEffect, useMemo, useCallback, useSyncExternalStore } from "react";
 import { useSearchParams } from "react-router-dom";
-import { ChevronLeft, ChevronRight, Plus } from "lucide-react";
+import { ChevronLeft, ChevronRight, Plus, CalendarIcon } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { ErrorCard } from "@/components/common/error-card";
+import { Calendar } from "@/components/ui/calendar";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { CalendarGrid } from "@/components/features/calendar/calendar-grid";
 import { ConnectCalendarButton } from "@/components/features/calendar/connect-calendar-button";
 import { ConnectionStatus } from "@/components/features/calendar/connection-status";
@@ -36,6 +38,7 @@ export function CalendarPage() {
   const [searchParams, setSearchParams] = useSearchParams();
   const [weekStart, setWeekStart] = useState(() => getStartOfWeek(new Date()));
   const [showSources, setShowSources] = useState(false);
+  const [calPickerOpen, setCalPickerOpen] = useState(false);
 
   // Event CRUD state
   const [showCreateDialog, setShowCreateDialog] = useState(false);
@@ -125,17 +128,6 @@ export function CalendarPage() {
   const sourcesQuery = useCalendarSources(activeConnection?.id ?? null);
   const sources = sourcesQuery.data?.data ?? [];
 
-  const goToday = () => {
-    const today = new Date();
-    if (isDesktop) {
-      setWeekStart(getStartOfWeek(today));
-    } else {
-      const start = new Date(today);
-      start.setDate(start.getDate() - 1);
-      start.setHours(0, 0, 0, 0);
-      setWeekStart(start);
-    }
-  };
   const goPrev = () => {
     const prev = new Date(weekStart);
     prev.setDate(prev.getDate() - dayCount);
@@ -145,6 +137,19 @@ export function CalendarPage() {
     const next = new Date(weekStart);
     next.setDate(next.getDate() + dayCount);
     setWeekStart(next);
+  };
+
+  const handleCalendarSelect = (date: Date | undefined) => {
+    if (!date) return;
+    if (isDesktop) {
+      setWeekStart(getStartOfWeek(date));
+    } else {
+      const start = new Date(date);
+      start.setDate(start.getDate() - 1);
+      start.setHours(0, 0, 0, 0);
+      setWeekStart(start);
+    }
+    setCalPickerOpen(false);
   };
 
   const handleAddEvent = useCallback(() => {
@@ -242,9 +247,22 @@ export function CalendarPage() {
             <Button variant="ghost" size="sm" onClick={goPrev}>
               <ChevronLeft className="h-4 w-4" />
             </Button>
-            <Button variant="ghost" size="sm" onClick={goToday} className="px-3">
-              Today
-            </Button>
+            <Popover open={calPickerOpen} onOpenChange={setCalPickerOpen}>
+              <PopoverTrigger
+                className="inline-flex items-center justify-center gap-1 rounded-md px-3 h-8 text-sm font-medium hover:bg-accent hover:text-accent-foreground cursor-pointer"
+              >
+                <CalendarIcon className="h-4 w-4" />
+                Today
+              </PopoverTrigger>
+              <PopoverContent className="w-auto p-0" align="center">
+                <Calendar
+                  mode="single"
+                  selected={weekStart}
+                  onSelect={handleCalendarSelect}
+                  defaultMonth={weekStart}
+                />
+              </PopoverContent>
+            </Popover>
             <Button variant="ghost" size="sm" onClick={goNext}>
               <ChevronRight className="h-4 w-4" />
             </Button>

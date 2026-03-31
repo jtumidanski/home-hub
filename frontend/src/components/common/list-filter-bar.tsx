@@ -8,7 +8,6 @@ import {
   SelectContent,
   SelectItem,
   SelectTrigger,
-  SelectValue,
 } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
 import { X } from "lucide-react";
@@ -61,7 +60,7 @@ export function ListFilterBar({ statusOptions }: ListFilterBarProps) {
       />
       <Select value={status} onValueChange={(v) => updateParam("status", v ?? "all")}>
         <SelectTrigger className="w-36">
-          <SelectValue placeholder="Status" />
+          <span>{status === "all" ? "All statuses" : statusOptions.find((o) => o.value === status)?.label ?? status}</span>
         </SelectTrigger>
         <SelectContent>
           <SelectItem value="all">All statuses</SelectItem>
