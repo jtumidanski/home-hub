@@ -3,6 +3,7 @@ package export
 import (
 	"context"
 	"regexp"
+	"sort"
 	"strconv"
 	"strings"
 	"time"
@@ -156,7 +157,22 @@ func (p *Processor) ConsolidateIngredients(pd PlanData) []ConsolidatedIngredient
 	}
 
 	result := make([]ConsolidatedIngredient, 0, len(resolved)+len(unresolved))
+	// Sort resolved ingredients alphabetically by display name for stable output.
+	sortedAccums := make([]*ingredientAccum, 0, len(resolved))
 	for _, acc := range resolved {
+		sortedAccums = append(sortedAccums, acc)
+	}
+	sort.Slice(sortedAccums, func(i, j int) bool {
+		ni, nj := sortedAccums[i].displayName, sortedAccums[j].displayName
+		if ni == "" {
+			ni = sortedAccums[i].name
+		}
+		if nj == "" {
+			nj = sortedAccums[j].name
+		}
+		return ni < nj
+	})
+	for _, acc := range sortedAccums {
 		// Collect all base-unit entries, convert to display units
 		var pairs []QuantityUnit
 		for _, bu := range acc.units {
