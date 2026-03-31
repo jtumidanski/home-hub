@@ -17,7 +17,8 @@ export class BaseService {
     api.setTenant(tenant);
   }
 
-  protected validate<T>(_data: T): ValidationError[] {
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  protected validate<T>(_: T): ValidationError[] {
     return [];
   }
 

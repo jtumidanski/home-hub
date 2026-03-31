@@ -3,9 +3,9 @@ export interface ApiResponse<T = unknown> {
   included?: Array<Record<string, unknown>>;
 }
 
-export interface ApiListResponse<T = unknown> extends ApiResponse<T[]> {}
+export type ApiListResponse<T = unknown> = ApiResponse<T[]>;
 
-export interface ApiSingleResponse<T = unknown> extends ApiResponse<T> {}
+export type ApiSingleResponse<T = unknown> = ApiResponse<T>;
 
 export interface JsonApiError {
   status: string;

@@ -53,6 +53,7 @@ export function CalendarPage() {
 
   const deleteEvent = useDeleteEvent();
 
+  /* eslint-disable react-hooks/set-state-in-effect -- adjusting week start when viewport changes between mobile/desktop */
   useEffect(() => {
     if (isDesktop) {
       setWeekStart(getStartOfWeek(new Date()));
@@ -64,6 +65,7 @@ export function CalendarPage() {
       setWeekStart(start);
     }
   }, [isDesktop]);
+  /* eslint-enable react-hooks/set-state-in-effect */
 
   useEffect(() => {
     if (searchParams.get("connected") === "true") {
@@ -97,9 +99,9 @@ export function CalendarPage() {
   const eventsQuery = useCalendarEvents(startISO, endISO);
   const packagesQuery = usePackages("filter[status]=pre_transit,in_transit,out_for_delivery&filter[hasEta]=true");
 
-  const connections = (connectionsQuery.data?.data ?? []) as CalendarConnection[];
-  const calendarEvents = (eventsQuery.data?.data ?? []) as CalendarEvent[];
-  const packages = (packagesQuery.data?.data ?? []) as Package[];
+  const connections = useMemo(() => (connectionsQuery.data?.data ?? []) as CalendarConnection[], [connectionsQuery.data]);
+  const calendarEvents = useMemo(() => (eventsQuery.data?.data ?? []) as CalendarEvent[], [eventsQuery.data]);
+  const packages = useMemo(() => (packagesQuery.data?.data ?? []) as Package[], [packagesQuery.data]);
   const packageEvents = useMemo(() => packagesToCalendarEvents(packages), [packages]);
   const events = useMemo(() => [...calendarEvents, ...packageEvents], [calendarEvents, packageEvents]);
   const hasCalendar = connections.length > 0 || events.length > 0;

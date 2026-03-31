@@ -52,7 +52,7 @@ export function RemindersPage() {
   const memberMap = useMemberMap();
   const [searchParams] = useSearchParams();
 
-  const allReminders = (data?.data ?? []) as Reminder[];
+  const allReminders = useMemo(() => (data?.data ?? []) as Reminder[], [data]);
 
   const filteredReminders = useMemo(() => {
     let result = allReminders;

@@ -1,10 +1,12 @@
+import { useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import { ArrowLeft, Pencil, Trash2, Clock, Users, ExternalLink, CheckCircle2, AlertCircle } from "lucide-react";
+import { ArrowLeft, Pencil, Trash2, Clock, Users, ExternalLink, CheckCircle2, AlertCircle, Maximize2 } from "lucide-react";
 import { toast } from "sonner";
 import { useRecipe, useDeleteRecipe } from "@/lib/hooks/api/use-recipes";
 import { useRenormalize } from "@/lib/hooks/api/use-ingredient-normalization";
 import { RecipeIngredients } from "@/components/features/recipes/recipe-ingredients";
 import { RecipeSteps } from "@/components/features/recipes/recipe-steps";
+import { CookMode } from "@/components/features/recipes/cook-mode";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -18,6 +20,7 @@ export function RecipeDetailPage() {
   const { data, isLoading } = useRecipe(id!);
   const deleteRecipe = useDeleteRecipe();
   const renormalize = useRenormalize();
+  const [cookModeOpen, setCookModeOpen] = useState(false);
 
   const recipe = data?.data;
 
@@ -93,6 +96,9 @@ export function RecipeDetailPage() {
             )}
           </div>
           <div className="flex gap-2 shrink-0">
+            <Button variant="outline" size="sm" onClick={() => setCookModeOpen(true)}>
+              <Maximize2 className="mr-1 h-4 w-4" /> Cook Mode
+            </Button>
             <Button variant="outline" size="sm" onClick={() => navigate(`/app/recipes/${id}/edit`)}>
               <Pencil className="mr-1 h-4 w-4" /> Edit
             </Button>
@@ -164,6 +170,13 @@ export function RecipeDetailPage() {
           <RecipeSteps steps={attrs.steps} />
         </div>
       </div>
+
+      <CookMode
+        steps={attrs.steps}
+        title={attrs.title}
+        open={cookModeOpen}
+        onClose={() => setCookModeOpen(false)}
+      />
     </div>
   );
 }
