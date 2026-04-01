@@ -36,7 +36,7 @@ func (r *CreateRequest) SetID(id string) error {
 
 type UpdateRequest struct {
 	Id        uuid.UUID `json:"-"`
-	Name      string    `json:"json,omitempty"`
+	Name      string    `json:"name,omitempty"`
 	SortOrder *int      `json:"sort_order,omitempty"`
 }
 
