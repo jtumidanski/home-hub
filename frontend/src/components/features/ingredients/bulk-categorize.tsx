@@ -44,7 +44,7 @@ export function BulkCategorize() {
   }, [allIngredients, filterCategory, search]);
 
   const totalIngredients = ingredientsData?.meta?.total ?? allIngredients.length;
-  const categorizedCount = categories.reduce((sum, c) => sum + c.attributes.ingredient_count, 0);
+  const categorizedCount = categories.reduce((sum, c) => sum + (c.attributes.ingredient_count ?? 0), 0);
   const uncategorizedCount = Math.max(0, totalIngredients - categorizedCount);
 
   const toggleSelect = (id: string) => {

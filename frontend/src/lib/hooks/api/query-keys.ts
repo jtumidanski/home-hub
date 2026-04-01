@@ -14,9 +14,18 @@ export const ingredientKeys = {
     [...ingredientKeys.detail(tenant, household, id), "recipes"] as const,
 };
 
+export const shoppingKeys = {
+  all: (tenant: Tenant | null, household: Household | null) =>
+    ["shopping", tenant?.id ?? "no-tenant", household?.id ?? "no-household"] as const,
+  lists: (tenant: Tenant | null, household: Household | null, status?: string) =>
+    [...shoppingKeys.all(tenant, household), "lists", status ?? "active"] as const,
+  detail: (tenant: Tenant | null, household: Household | null, id: string) =>
+    [...shoppingKeys.all(tenant, household), "detail", id] as const,
+};
+
 export const categoryKeys = {
   all: (tenant: Tenant | null, household: Household | null) =>
-    ["ingredient-categories", tenant?.id ?? "no-tenant", household?.id ?? "no-household"] as const,
+    ["categories", tenant?.id ?? "no-tenant", household?.id ?? "no-household"] as const,
   lists: (tenant: Tenant | null, household: Household | null) =>
     [...categoryKeys.all(tenant, household), "list"] as const,
 };

@@ -11,7 +11,7 @@ import (
 )
 
 var (
-	ErrNotFound      = errors.New("ingredient category not found")
+	ErrNotFound      = errors.New("category not found")
 	ErrDuplicateName = errors.New("category name already exists for this tenant")
 )
 
@@ -30,6 +30,10 @@ var defaultCategories = []struct {
 	{"Condiments & Sauces", 9},
 	{"Spices & Seasonings", 10},
 	{"Other", 11},
+	{"Household", 12},
+	{"Personal Care", 13},
+	{"Baby & Kids", 14},
+	{"Pet Supplies", 15},
 }
 
 type Processor struct {
@@ -48,7 +52,6 @@ func (p *Processor) List(tenantID uuid.UUID) ([]Model, error) {
 		return nil, err
 	}
 
-	// Auto-seed defaults if empty
 	if len(entities) == 0 {
 		if err := p.seedDefaults(tenantID); err != nil {
 			return nil, err
@@ -65,18 +68,14 @@ func (p *Processor) List(tenantID uuid.UUID) ([]Model, error) {
 		if err != nil {
 			return nil, err
 		}
-		count, _ := CountIngredientsByCategory(e.Id)(p.db.WithContext(p.ctx))
-		models[i] = m.WithIngredientCount(int(count))
+		models[i] = m
 	}
 	return models, nil
 }
 
 // seedDefaults inserts default categories for a new tenant within a transaction.
-// Direct entity construction is used here because seed data is static and the
-// transaction-based race-condition check requires operating within a single tx.
 func (p *Processor) seedDefaults(tenantID uuid.UUID) error {
 	return p.db.WithContext(p.ctx).Transaction(func(tx *gorm.DB) error {
-		// Re-check inside transaction to avoid race condition
 		count, err := countAll(tx)
 		if err != nil {
 			return err
@@ -105,7 +104,6 @@ func (p *Processor) Create(tenantID uuid.UUID, name string) (Model, error) {
 		return Model{}, err
 	}
 
-	// Check for duplicate name
 	if _, err := GetByName(name)(p.db.WithContext(p.ctx))(); err == nil {
 		return Model{}, ErrDuplicateName
 	}
@@ -140,7 +138,6 @@ func (p *Processor) Update(id uuid.UUID, name *string, sortOrder *int) (Model, e
 		if len(trimmed) > 100 {
 			return Model{}, ErrNameTooLong
 		}
-		// Check duplicate name (exclude self)
 		if existing, err := GetByName(trimmed)(p.db.WithContext(p.ctx))(); err == nil && existing.Id != id {
 			return Model{}, ErrDuplicateName
 		}
@@ -157,18 +154,12 @@ func (p *Processor) Update(id uuid.UUID, name *string, sortOrder *int) (Model, e
 		return Model{}, err
 	}
 
-	m, err := Make(e)
-	if err != nil {
-		return Model{}, err
-	}
-	count, _ := CountIngredientsByCategory(e.Id)(p.db.WithContext(p.ctx))
-	return m.WithIngredientCount(int(count)), nil
+	return Make(e)
 }
 
 func (p *Processor) Delete(id uuid.UUID) error {
 	if _, err := GetByID(id)(p.db.WithContext(p.ctx))(); err != nil {
 		return ErrNotFound
 	}
-	// FK ON DELETE SET NULL handles nullifying ingredient category_id
 	return deleteCategory(p.db.WithContext(p.ctx), id)
 }

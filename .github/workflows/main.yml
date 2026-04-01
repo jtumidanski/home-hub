@@ -35,6 +35,12 @@ jobs:
           - service: recipe-service
             context: .
             dockerfile: services/recipe-service/Dockerfile
+          - service: category-service
+            context: .
+            dockerfile: services/category-service/Dockerfile
+          - service: shopping-service
+            context: .
+            dockerfile: services/shopping-service/Dockerfile
           - service: package-service
             context: .
             dockerfile: services/package-service/Dockerfile

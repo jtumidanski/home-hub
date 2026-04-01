@@ -4,9 +4,11 @@ use (
 	./services/account-service
 	./services/auth-service
 	./services/calendar-service
+	./services/category-service
 	./services/package-service
 	./services/productivity-service
 	./services/recipe-service
+	./services/shopping-service
 	./services/weather-service
 	./shared/go/auth
 	./shared/go/database

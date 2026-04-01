@@ -9,14 +9,14 @@ import (
 
 type Entity struct {
 	Id        uuid.UUID `gorm:"type:uuid;primaryKey"`
-	TenantId  uuid.UUID `gorm:"type:uuid;not null;uniqueIndex:idx_ingredient_category_tenant_name"`
-	Name      string    `gorm:"type:varchar(100);not null;uniqueIndex:idx_ingredient_category_tenant_name"`
+	TenantId  uuid.UUID `gorm:"type:uuid;not null;uniqueIndex:idx_category_tenant_name"`
+	Name      string    `gorm:"type:varchar(100);not null;uniqueIndex:idx_category_tenant_name"`
 	SortOrder int       `gorm:"not null;default:0"`
 	CreatedAt time.Time `gorm:"not null"`
 	UpdatedAt time.Time `gorm:"not null"`
 }
 
-func (Entity) TableName() string { return "ingredient_categories" }
+func (Entity) TableName() string { return "categories" }
 
 func Migration(db *gorm.DB) error {
 	return db.AutoMigrate(&Entity{})

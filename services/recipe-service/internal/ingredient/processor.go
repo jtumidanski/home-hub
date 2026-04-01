@@ -7,7 +7,6 @@ import (
 	"time"
 
 	"github.com/google/uuid"
-	"github.com/jtumidanski/home-hub/services/recipe-service/internal/ingredient/category"
 	"github.com/jtumidanski/home-hub/shared/go/model"
 	"github.com/sirupsen/logrus"
 	"gorm.io/gorm"
@@ -222,15 +221,6 @@ func (p *Processor) SearchWithUsage(tenantID uuid.UUID, query string, categoryFi
 }
 
 func (p *Processor) BulkCategorize(tenantID uuid.UUID, ingredientIDs []uuid.UUID, categoryID uuid.UUID) error {
-	// Validate category exists and belongs to tenant
-	cat, err := category.GetByID(categoryID)(p.db.WithContext(p.ctx))()
-	if err != nil {
-		return errors.New("category not found")
-	}
-	if cat.TenantId != tenantID {
-		return errors.New("category not found")
-	}
-
 	return p.db.WithContext(p.ctx).Transaction(func(tx *gorm.DB) error {
 		return tx.Table("canonical_ingredients").
 			Where("id IN ? AND tenant_id = ?", ingredientIDs, tenantID).

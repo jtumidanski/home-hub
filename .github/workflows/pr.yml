@@ -14,6 +14,8 @@ jobs:
       productivity: ${{ steps.changes.outputs.productivity }}
       weather: ${{ steps.changes.outputs.weather }}
       recipe: ${{ steps.changes.outputs.recipe }}
+      category: ${{ steps.changes.outputs.category }}
+      shopping: ${{ steps.changes.outputs.shopping }}
       package: ${{ steps.changes.outputs.package }}
       frontend: ${{ steps.changes.outputs.frontend }}
       shared: ${{ steps.changes.outputs.shared }}
@@ -40,6 +42,12 @@ jobs:
               - 'shared/go/**'
             recipe:
               - 'services/recipe-service/**'
+              - 'shared/go/**'
+            category:
+              - 'services/category-service/**'
+              - 'shared/go/**'
+            shopping:
+              - 'services/shopping-service/**'
               - 'shared/go/**'
             package:
               - 'services/package-service/**'
@@ -145,6 +153,38 @@ jobs:
           cd services/recipe-service
           go test ./... -count=1
 
+  build-category:
+    needs: detect-changes
+    if: needs.detect-changes.outputs.category == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version: '1.26'
+      - name: Build
+        run: go build ./services/category-service/...
+      - name: Test
+        run: |
+          cd services/category-service
+          go test ./... -count=1
+
+  build-shopping:
+    needs: detect-changes
+    if: needs.detect-changes.outputs.shopping == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version: '1.26'
+      - name: Build
+        run: go build ./services/shopping-service/...
+      - name: Test
+        run: |
+          cd services/shopping-service
+          go test ./... -count=1
+
   build-package:
     needs: detect-changes
     if: needs.detect-changes.outputs.package == 'true'
@@ -233,6 +273,14 @@ jobs:
             context: .
             dockerfile: services/recipe-service/Dockerfile
             changed: recipe
+          - service: category-service
+            context: .
+            dockerfile: services/category-service/Dockerfile
+            changed: category
+          - service: shopping-service
+            context: .
+            dockerfile: services/shopping-service/Dockerfile
+            changed: shopping
           - service: package-service
             context: .
             dockerfile: services/package-service/Dockerfile

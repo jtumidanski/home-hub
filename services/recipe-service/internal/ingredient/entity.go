@@ -35,9 +35,10 @@ func Migration(db *gorm.DB) error {
 	if err := db.AutoMigrate(&Entity{}, &AliasEntity{}); err != nil {
 		return err
 	}
-	// Add FK with ON DELETE SET NULL for category_id -> ingredient_categories
-	if !db.Migrator().HasConstraint(&Entity{}, "fk_canonical_ingredients_category") {
-		return db.Exec("ALTER TABLE canonical_ingredients ADD CONSTRAINT fk_canonical_ingredients_category FOREIGN KEY (category_id) REFERENCES ingredient_categories(id) ON DELETE SET NULL").Error
+	// Drop the FK constraint to ingredient_categories since categories are now managed by category-service.
+	// category_id remains as an opaque UUID reference.
+	if db.Migrator().HasConstraint(&Entity{}, "fk_canonical_ingredients_category") {
+		_ = db.Exec("ALTER TABLE canonical_ingredients DROP CONSTRAINT fk_canonical_ingredients_category").Error
 	}
 	return nil
 }

@@ -15,6 +15,8 @@ services:
       - recipe-service
       - calendar-service
       - package-service
+      - category-service
+      - shopping-service
 
   frontend:
     container_name: hh-frontend
@@ -156,3 +158,38 @@ services:
       - DB_NAME=${DB_NAME:-home_hub}
       - PORT=8080
       - JWKS_URL=http://auth-service:8080/api/v1/auth/.well-known/jwks.json
+      - CATEGORY_SERVICE_URL=http://category-service:8080
+
+  category-service:
+    container_name: hh-category
+    build:
+      context: ../..
+      dockerfile: services/category-service/Dockerfile
+    expose:
+      - "8080"
+    environment:
+      - DB_HOST=${DB_HOST:-postgres.home}
+      - DB_PORT=${DB_PORT:-5432}
+      - DB_USER=${DB_USER:-home_hub}
+      - DB_PASSWORD=${DB_PASSWORD}
+      - DB_NAME=${DB_NAME:-home_hub}
+      - PORT=8080
+      - JWKS_URL=http://auth-service:8080/api/v1/auth/.well-known/jwks.json
+
+  shopping-service:
+    container_name: hh-shopping
+    build:
+      context: ../..
+      dockerfile: services/shopping-service/Dockerfile
+    expose:
+      - "8080"
+    environment:
+      - DB_HOST=${DB_HOST:-postgres.home}
+      - DB_PORT=${DB_PORT:-5432}
+      - DB_USER=${DB_USER:-home_hub}
+      - DB_PASSWORD=${DB_PASSWORD}
+      - DB_NAME=${DB_NAME:-home_hub}
+      - PORT=8080
+      - JWKS_URL=http://auth-service:8080/api/v1/auth/.well-known/jwks.json
+      - CATEGORY_SERVICE_URL=http://category-service:8080
+      - RECIPE_SERVICE_URL=http://recipe-service:8080

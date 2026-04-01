@@ -91,23 +91,23 @@ class IngredientService extends BaseService {
   }
 
   listCategories(tenant: Tenant) {
-    return this.getList<IngredientCategory>(tenant, "/ingredient-categories");
+    return this.getList<IngredientCategory>(tenant, "/categories");
   }
 
   createCategory(tenant: Tenant, attrs: IngredientCategoryCreateAttributes) {
-    return this.create<IngredientCategory>(tenant, "/ingredient-categories", {
-      data: { type: "ingredient-categories", attributes: attrs },
+    return this.create<IngredientCategory>(tenant, "/categories", {
+      data: { type: "categories", attributes: attrs },
     });
   }
 
   updateCategory(tenant: Tenant, id: string, attrs: IngredientCategoryUpdateAttributes) {
-    return this.update<IngredientCategory>(tenant, `/ingredient-categories/${id}`, {
-      data: { type: "ingredient-categories", id, attributes: attrs },
+    return this.update<IngredientCategory>(tenant, `/categories/${id}`, {
+      data: { type: "categories", id, attributes: attrs },
     });
   }
 
   deleteCategory(tenant: Tenant, id: string) {
-    return this.remove(tenant, `/ingredient-categories/${id}`);
+    return this.remove(tenant, `/categories/${id}`);
   }
 
   bulkCategorize(tenant: Tenant, ingredientIds: string[], categoryId: string) {

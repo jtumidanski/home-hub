@@ -11,6 +11,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/gorilla/mux"
 	"github.com/jtumidanski/api2go/jsonapi"
+	"github.com/jtumidanski/home-hub/services/recipe-service/internal/categoryclient"
 	"github.com/jtumidanski/home-hub/services/recipe-service/internal/export"
 	"github.com/jtumidanski/home-hub/services/recipe-service/internal/planitem"
 	"github.com/jtumidanski/home-hub/services/recipe-service/internal/planner"
@@ -38,7 +39,7 @@ func (pp *planProviderImpl) GetPlan(id uuid.UUID) (planitem.PlanInfo, error) {
 	}, nil
 }
 
-func InitializeRoutes(db *gorm.DB) func(l logrus.FieldLogger, si jsonapi.ServerInformation, api *mux.Router) {
+func InitializeRoutes(db *gorm.DB, catClient *categoryclient.Client) func(l logrus.FieldLogger, si jsonapi.ServerInformation, api *mux.Router) {
 	return func(l logrus.FieldLogger, si jsonapi.ServerInformation, api *mux.Router) {
 		rh := server.RegisterHandler(l)(si)
 		rihCreate := server.RegisterInputHandler[CreateRequest](l)(si)
@@ -63,8 +64,8 @@ func InitializeRoutes(db *gorm.DB) func(l logrus.FieldLogger, si jsonapi.ServerI
 		api.HandleFunc("/meals/plans/{planId}/items/{itemId}", rh("RemovePlanItem", planitem.RemoveItemHandler(db, pp))).Methods(http.MethodDelete)
 
 		// Export routes
-		api.HandleFunc("/meals/plans/{planId}/export/markdown", rh("ExportMarkdown", exportMarkdownHandler(db))).Methods(http.MethodGet)
-		api.HandleFunc("/meals/plans/{planId}/ingredients", rh("GetPlanIngredients", getIngredientsHandler(db))).Methods(http.MethodGet)
+		api.HandleFunc("/meals/plans/{planId}/export/markdown", rh("ExportMarkdown", exportMarkdownHandler(db, catClient))).Methods(http.MethodGet)
+		api.HandleFunc("/meals/plans/{planId}/ingredients", rh("GetPlanIngredients", getIngredientsHandler(db, catClient))).Methods(http.MethodGet)
 	}
 }
 
@@ -357,14 +358,14 @@ func buildItemsResponse(l logrus.FieldLogger, ctx context.Context, db *gorm.DB, 
 	return restItems
 }
 
-func exportMarkdownHandler(db *gorm.DB) server.GetHandler {
+func exportMarkdownHandler(db *gorm.DB, catClient *categoryclient.Client) server.GetHandler {
 	return func(d *server.HandlerDependency, c *server.HandlerContext) http.HandlerFunc {
 		return server.ParseID("planId", func(id uuid.UUID) http.HandlerFunc {
 			return func(w http.ResponseWriter, r *http.Request) {
 				proc := NewProcessor(d.Logger(), r.Context(), db)
-				exportProc := export.NewProcessor(d.Logger(), r.Context(), db)
+				exportProc := export.NewProcessor(d.Logger(), r.Context(), db, catClient)
 
-				markdown, err := proc.ExportMarkdown(id, exportProc)
+				markdown, err := proc.ExportMarkdown(id, r.Header.Get("Authorization"), exportProc)
 				if err != nil {
 					server.WriteError(w, http.StatusNotFound, "Not Found", "Plan not found")
 					return
@@ -378,7 +379,7 @@ func exportMarkdownHandler(db *gorm.DB) server.GetHandler {
 	}
 }
 
-func getIngredientsHandler(db *gorm.DB) server.GetHandler {
+func getIngredientsHandler(db *gorm.DB, catClient *categoryclient.Client) server.GetHandler {
 	return func(d *server.HandlerDependency, c *server.HandlerContext) http.HandlerFunc {
 		return server.ParseID("planId", func(id uuid.UUID) http.HandlerFunc {
 			return func(w http.ResponseWriter, r *http.Request) {
@@ -389,9 +390,10 @@ func getIngredientsHandler(db *gorm.DB) server.GetHandler {
 					return
 				}
 
-				exportProc := export.NewProcessor(d.Logger(), r.Context(), db)
+				exportProc := export.NewProcessor(d.Logger(), r.Context(), db, catClient)
 				consolidated := exportProc.ConsolidateIngredients(export.PlanData{
 					ID: m.Id(), TenantID: m.TenantID(), Name: m.Name(), StartsOn: m.StartsOn(),
+					AuthHeader: r.Header.Get("Authorization"),
 				})
 
 				rest := export.TransformIngredientSlice(consolidated)

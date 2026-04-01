@@ -103,7 +103,7 @@ export function CategoryManager() {
               <>
                 <span className="flex-1">{cat.attributes.name}</span>
                 <span className="text-xs text-muted-foreground">
-                  {cat.attributes.ingredient_count} ingredient{cat.attributes.ingredient_count !== 1 ? "s" : ""}
+                  {cat.attributes.ingredient_count ?? 0} ingredient{(cat.attributes.ingredient_count ?? 0) !== 1 ? "s" : ""}
                 </span>
                 <Button
                   size="sm"
@@ -117,7 +117,7 @@ export function CategoryManager() {
                   size="sm"
                   variant="ghost"
                   className="h-7 w-7 p-0 text-destructive hover:text-destructive"
-                  onClick={() => handleDelete(cat.id, cat.attributes.ingredient_count)}
+                  onClick={() => handleDelete(cat.id, cat.attributes.ingredient_count ?? 0)}
                 >
                   <X className="h-3.5 w-3.5" />
                 </Button>

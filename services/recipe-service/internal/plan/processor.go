@@ -191,7 +191,7 @@ func (p *Processor) Duplicate(sourceID uuid.UUID, tenantID, householdID, userID 
 	return newPlan, nil
 }
 
-func (p *Processor) ExportMarkdown(id uuid.UUID, exportProc interface{ GenerateMarkdown(export.PlanData) string }) (string, error) {
+func (p *Processor) ExportMarkdown(id uuid.UUID, authHeader string, exportProc interface{ GenerateMarkdown(export.PlanData) string }) (string, error) {
 	m, err := p.Get(id)
 	if err != nil {
 		return "", err
@@ -199,6 +199,7 @@ func (p *Processor) ExportMarkdown(id uuid.UUID, exportProc interface{ GenerateM
 
 	markdown := exportProc.GenerateMarkdown(export.PlanData{
 		ID: m.Id(), TenantID: m.TenantID(), Name: m.Name(), StartsOn: m.StartsOn(),
+		AuthHeader: authHeader,
 	})
 
 	p.emitAudit(m.Id(), "plan.exported", map[string]interface{}{

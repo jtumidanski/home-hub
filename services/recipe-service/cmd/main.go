@@ -5,9 +5,9 @@ import (
 
 	"github.com/gorilla/mux"
 	"github.com/jtumidanski/home-hub/services/recipe-service/internal/audit"
+	"github.com/jtumidanski/home-hub/services/recipe-service/internal/categoryclient"
 	"github.com/jtumidanski/home-hub/services/recipe-service/internal/config"
 	"github.com/jtumidanski/home-hub/services/recipe-service/internal/ingredient"
-	"github.com/jtumidanski/home-hub/services/recipe-service/internal/ingredient/category"
 	"github.com/jtumidanski/home-hub/services/recipe-service/internal/normalization"
 	"github.com/jtumidanski/home-hub/services/recipe-service/internal/plan"
 	"github.com/jtumidanski/home-hub/services/recipe-service/internal/planitem"
@@ -29,7 +29,6 @@ func main() {
 	db := database.Connect(l, cfg.DB,
 		database.SetMigrations(
 			recipe.Migration,
-			category.Migration,
 			ingredient.Migration,
 			normalization.Migration,
 			planner.Migration,
@@ -41,6 +40,7 @@ func main() {
 
 	authValidator := sharedauth.NewValidator(l, cfg.JWKSURL)
 	si := server.GetServerInformation()
+	catClient := categoryclient.New(cfg.CategoryServiceURL)
 
 	server.New(l).
 		WithAddr(":" + cfg.Port).
@@ -49,10 +49,9 @@ func main() {
 			api.Use(sharedauth.Middleware(l, authValidator))
 
 			recipe.InitializeRoutes(db)(l, si, api)
-			category.InitializeRoutes(db)(l, si, api)
 			ingredient.InitializeRoutes(db)(l, si, api)
 			normalization.InitializeRoutes(db)(l, si, api)
-			plan.InitializeRoutes(db)(l, si, api)
+			plan.InitializeRoutes(db, catClient)(l, si, api)
 		}).
 		Run()
 }

@@ -19,10 +19,10 @@ func InitializeRoutes(db *gorm.DB) func(l logrus.FieldLogger, si jsonapi.ServerI
 		rihCreate := server.RegisterInputHandler[CreateRequest](l)(si)
 		rihUpdate := server.RegisterInputHandler[UpdateRequest](l)(si)
 
-		api.HandleFunc("/ingredient-categories", rh("ListCategories", listHandler(db))).Methods(http.MethodGet)
-		api.HandleFunc("/ingredient-categories", rihCreate("CreateCategory", createHandler(db))).Methods(http.MethodPost)
-		api.HandleFunc("/ingredient-categories/{id}", rihUpdate("UpdateCategory", updateHandler(db))).Methods(http.MethodPatch)
-		api.HandleFunc("/ingredient-categories/{id}", rh("DeleteCategory", deleteHandler(db))).Methods(http.MethodDelete)
+		api.HandleFunc("/categories", rh("ListCategories", listHandler(db))).Methods(http.MethodGet)
+		api.HandleFunc("/categories", rihCreate("CreateCategory", createHandler(db))).Methods(http.MethodPost)
+		api.HandleFunc("/categories/{id}", rihUpdate("UpdateCategory", updateHandler(db))).Methods(http.MethodPatch)
+		api.HandleFunc("/categories/{id}", rh("DeleteCategory", deleteHandler(db))).Methods(http.MethodDelete)
 	}
 }
 
@@ -34,14 +34,14 @@ func listHandler(db *gorm.DB) server.GetHandler {
 
 			models, err := proc.List(t.Id())
 			if err != nil {
-				d.Logger().WithError(err).Error("Failed to list ingredient categories")
+				d.Logger().WithError(err).Error("Failed to list categories")
 				server.WriteError(w, http.StatusInternalServerError, "Error", "")
 				return
 			}
 
 			transformed, err := TransformSlice(models)
 			if err != nil {
-				d.Logger().WithError(err).Error("Failed to transform ingredient categories")
+				d.Logger().WithError(err).Error("Failed to transform categories")
 				server.WriteError(w, http.StatusInternalServerError, "Error", "")
 				return
 			}
@@ -71,14 +71,14 @@ func createHandler(db *gorm.DB) server.InputHandler[CreateRequest] {
 					server.WriteError(w, http.StatusConflict, "Conflict", err.Error())
 					return
 				}
-				d.Logger().WithError(err).Error("Failed to create ingredient category")
+				d.Logger().WithError(err).Error("Failed to create category")
 				server.WriteError(w, http.StatusInternalServerError, "Error", "")
 				return
 			}
 
 			rest, err := Transform(m)
 			if err != nil {
-				d.Logger().WithError(err).Error("Failed to transform ingredient category")
+				d.Logger().WithError(err).Error("Failed to transform category")
 				server.WriteError(w, http.StatusInternalServerError, "Error", "")
 				return
 			}
@@ -112,14 +112,14 @@ func updateHandler(db *gorm.DB) server.InputHandler[UpdateRequest] {
 						server.WriteError(w, http.StatusUnprocessableEntity, "Validation Failed", err.Error())
 						return
 					}
-					d.Logger().WithError(err).Error("Failed to update ingredient category")
+					d.Logger().WithError(err).Error("Failed to update category")
 					server.WriteError(w, http.StatusInternalServerError, "Error", "")
 					return
 				}
 
 				rest, err := Transform(m)
 				if err != nil {
-					d.Logger().WithError(err).Error("Failed to transform ingredient category")
+					d.Logger().WithError(err).Error("Failed to transform category")
 					server.WriteError(w, http.StatusInternalServerError, "Error", "")
 					return
 				}
@@ -140,7 +140,7 @@ func deleteHandler(db *gorm.DB) server.GetHandler {
 						server.WriteError(w, http.StatusNotFound, "Not Found", "Category not found")
 						return
 					}
-					d.Logger().WithError(err).Error("Failed to delete ingredient category")
+					d.Logger().WithError(err).Error("Failed to delete category")
 					server.WriteError(w, http.StatusInternalServerError, "Error", "")
 					return
 				}
