@@ -131,7 +131,7 @@ func (p *Processor) NormalizeIngredients(tenantID, householdID, recipeID uuid.UU
 }
 
 func (p *Processor) ReconcileIngredients(tenantID, householdID, recipeID uuid.UUID, newParsed []ParsedIngredient) ([]Model, error) {
-	existing, err := getByRecipeID(p.db.WithContext(p.ctx), recipeID)
+	existing, err := getByRecipeID(recipeID)(p.db.WithContext(p.ctx))()
 	if err != nil {
 		return nil, err
 	}
@@ -211,7 +211,7 @@ type ResolveResult struct {
 }
 
 func (p *Processor) ResolveIngredient(ingredientID, canonicalIngredientID uuid.UUID, saveAsAlias bool) (ResolveResult, error) {
-	e, err := getByID(p.db.WithContext(p.ctx), ingredientID)
+	e, err := getByID(ingredientID)(p.db.WithContext(p.ctx))()
 	if err != nil {
 		return ResolveResult{}, ErrNotFound
 	}
@@ -279,7 +279,7 @@ type RenormalizeSummary struct {
 }
 
 func (p *Processor) Renormalize(tenantID, recipeID uuid.UUID) ([]Model, RenormalizeSummary, error) {
-	existing, err := getByRecipeID(p.db.WithContext(p.ctx), recipeID)
+	existing, err := getByRecipeID(recipeID)(p.db.WithContext(p.ctx))()
 	if err != nil {
 		return nil, RenormalizeSummary{}, err
 	}
@@ -312,7 +312,7 @@ func (p *Processor) Renormalize(tenantID, recipeID uuid.UUID) ([]Model, Renormal
 		return nil, RenormalizeSummary{}, err
 	}
 
-	updated, err := getByRecipeID(p.db.WithContext(p.ctx), recipeID)
+	updated, err := getByRecipeID(recipeID)(p.db.WithContext(p.ctx))()
 	if err != nil {
 		return nil, RenormalizeSummary{}, err
 	}
@@ -332,7 +332,7 @@ func (p *Processor) Renormalize(tenantID, recipeID uuid.UUID) ([]Model, Renormal
 }
 
 func (p *Processor) GetByRecipeID(recipeID uuid.UUID) ([]Model, error) {
-	entities, err := getByRecipeID(p.db.WithContext(p.ctx), recipeID)
+	entities, err := getByRecipeID(recipeID)(p.db.WithContext(p.ctx))()
 	if err != nil {
 		return nil, err
 	}
