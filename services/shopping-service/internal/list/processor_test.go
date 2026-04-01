@@ -36,7 +36,7 @@ func testContext(tenantID uuid.UUID) context.Context {
 func newTestProcessor(t *testing.T, db *gorm.DB, ctx context.Context) *Processor {
 	t.Helper()
 	l, _ := test.NewNullLogger()
-	return NewProcessor(l, ctx, db)
+	return NewProcessor(l, ctx, db, nil, nil)
 }
 
 func createTestList(t *testing.T, p *Processor, tenantID, householdID, userID uuid.UUID, name string) Model {
@@ -276,8 +276,8 @@ func TestProcessor_GetWithItems(t *testing.T) {
 	p := newTestProcessor(t, db, ctx)
 
 	created := createTestList(t, p, tenantID, uuid.New(), uuid.New(), "With Items")
-	p.AddItem(created.Id(), item.AddInput{Name: "Milk"})
-	p.AddItem(created.Id(), item.AddInput{Name: "Bread"})
+	p.AddItem(created.Id(), item.AddInput{Name: "Milk"}, "")
+	p.AddItem(created.Id(), item.AddInput{Name: "Bread"}, "")
 
 	t.Run("returns list with items", func(t *testing.T) {
 		m, items, err := p.GetWithItems(created.Id())
@@ -329,7 +329,7 @@ func TestProcessor_AddItem(t *testing.T) {
 
 	for _, tc := range tests {
 		t.Run(tc.name, func(t *testing.T) {
-			m, err := p.AddItem(tc.listID, tc.input)
+			m, err := p.AddItem(tc.listID, tc.input, "")
 			if tc.wantErr != nil {
 				assert.ErrorIs(t, err, tc.wantErr)
 				return
@@ -347,7 +347,7 @@ func TestProcessor_RemoveItem(t *testing.T) {
 	p := newTestProcessor(t, db, ctx)
 
 	active := createTestList(t, p, tenantID, uuid.New(), uuid.New(), "Active")
-	added, _ := p.AddItem(active.Id(), item.AddInput{Name: "To Remove"})
+	added, _ := p.AddItem(active.Id(), item.AddInput{Name: "To Remove"}, "")
 
 	tests := []struct {
 		name    string
@@ -378,8 +378,8 @@ func TestProcessor_UncheckAllItems(t *testing.T) {
 	p := newTestProcessor(t, db, ctx)
 
 	active := createTestList(t, p, tenantID, uuid.New(), uuid.New(), "Active")
-	i1, _ := p.AddItem(active.Id(), item.AddInput{Name: "Item 1"})
-	i2, _ := p.AddItem(active.Id(), item.AddInput{Name: "Item 2"})
+	i1, _ := p.AddItem(active.Id(), item.AddInput{Name: "Item 1"}, "")
+	i2, _ := p.AddItem(active.Id(), item.AddInput{Name: "Item 2"}, "")
 	p.CheckItem(active.Id(), i1.Id(), true)
 	p.CheckItem(active.Id(), i2.Id(), true)
 
@@ -392,7 +392,7 @@ func TestProcessor_UncheckAllItems(t *testing.T) {
 	}
 }
 
-func TestProcessor_ImportItems(t *testing.T) {
+func TestProcessor_BulkAddItems(t *testing.T) {
 	tenantID := uuid.New()
 	db := setupTestDB(t)
 	ctx := testContext(tenantID)
@@ -400,13 +400,13 @@ func TestProcessor_ImportItems(t *testing.T) {
 
 	active := createTestList(t, p, tenantID, uuid.New(), uuid.New(), "Import Target")
 
-	inputs := []item.AddInput{
-		{Name: "Flour"},
-		{Name: "Sugar"},
-		{Name: "Butter"},
+	names := []string{"Flour", "Sugar", "Butter"}
+	for _, name := range names {
+		_, err := p.AddItem(active.Id(), item.AddInput{Name: name}, "")
+		require.NoError(t, err)
 	}
 
-	m, items, err := p.ImportItems(active.Id(), inputs)
+	m, items, err := p.GetWithItems(active.Id())
 	require.NoError(t, err)
 	assert.Equal(t, "Import Target", m.Name())
 	assert.Len(t, items, 3)

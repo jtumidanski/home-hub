@@ -32,29 +32,29 @@ func InitializeRoutes(db *gorm.DB, categoryServiceURL, recipeServiceURL string) 
 		rihUncheckAll := server.RegisterInputHandler[UncheckAllRequest](l)(si)
 		rihImport := server.RegisterInputHandler[ImportRequest](l)(si)
 
-		api.HandleFunc("/shopping/lists", rh("ListShoppingLists", listHandler(db))).Methods(http.MethodGet)
-		api.HandleFunc("/shopping/lists", rihCreate("CreateShoppingList", createHandler(db))).Methods(http.MethodPost)
-		api.HandleFunc("/shopping/lists/{id}", rh("GetShoppingList", getHandler(db))).Methods(http.MethodGet)
-		api.HandleFunc("/shopping/lists/{id}", rihUpdate("UpdateShoppingList", updateHandler(db))).Methods(http.MethodPatch)
-		api.HandleFunc("/shopping/lists/{id}", rh("DeleteShoppingList", deleteHandler(db))).Methods(http.MethodDelete)
-		api.HandleFunc("/shopping/lists/{id}/archive", rihArchive("ArchiveShoppingList", archiveHandler(db))).Methods(http.MethodPost)
-		api.HandleFunc("/shopping/lists/{id}/unarchive", rihUnarchive("UnarchiveShoppingList", unarchiveHandler(db))).Methods(http.MethodPost)
+		api.HandleFunc("/shopping/lists", rh("ListShoppingLists", listHandler(db, catClient, recipeClient))).Methods(http.MethodGet)
+		api.HandleFunc("/shopping/lists", rihCreate("CreateShoppingList", createHandler(db, catClient, recipeClient))).Methods(http.MethodPost)
+		api.HandleFunc("/shopping/lists/{id}", rh("GetShoppingList", getHandler(db, catClient, recipeClient))).Methods(http.MethodGet)
+		api.HandleFunc("/shopping/lists/{id}", rihUpdate("UpdateShoppingList", updateHandler(db, catClient, recipeClient))).Methods(http.MethodPatch)
+		api.HandleFunc("/shopping/lists/{id}", rh("DeleteShoppingList", deleteHandler(db, catClient, recipeClient))).Methods(http.MethodDelete)
+		api.HandleFunc("/shopping/lists/{id}/archive", rihArchive("ArchiveShoppingList", archiveHandler(db, catClient, recipeClient))).Methods(http.MethodPost)
+		api.HandleFunc("/shopping/lists/{id}/unarchive", rihUnarchive("UnarchiveShoppingList", unarchiveHandler(db, catClient, recipeClient))).Methods(http.MethodPost)
 
-		api.HandleFunc("/shopping/lists/{id}/items", rihItemCreate("AddShoppingItem", addItemHandler(db, catClient))).Methods(http.MethodPost)
-		api.HandleFunc("/shopping/lists/{id}/items/{itemId}", rihItemUpdate("UpdateShoppingItem", updateItemHandler(db, catClient))).Methods(http.MethodPatch)
-		api.HandleFunc("/shopping/lists/{id}/items/{itemId}", rh("RemoveShoppingItem", removeItemHandler(db))).Methods(http.MethodDelete)
-		api.HandleFunc("/shopping/lists/{id}/items/{itemId}/check", rihItemCheck("CheckShoppingItem", checkItemHandler(db))).Methods(http.MethodPatch)
-		api.HandleFunc("/shopping/lists/{id}/items/uncheck-all", rihUncheckAll("UncheckAllItems", uncheckAllHandler(db))).Methods(http.MethodPost)
+		api.HandleFunc("/shopping/lists/{id}/items", rihItemCreate("AddShoppingItem", addItemHandler(db, catClient, recipeClient))).Methods(http.MethodPost)
+		api.HandleFunc("/shopping/lists/{id}/items/{itemId}", rihItemUpdate("UpdateShoppingItem", updateItemHandler(db, catClient, recipeClient))).Methods(http.MethodPatch)
+		api.HandleFunc("/shopping/lists/{id}/items/{itemId}", rh("RemoveShoppingItem", removeItemHandler(db, catClient, recipeClient))).Methods(http.MethodDelete)
+		api.HandleFunc("/shopping/lists/{id}/items/{itemId}/check", rihItemCheck("CheckShoppingItem", checkItemHandler(db, catClient, recipeClient))).Methods(http.MethodPatch)
+		api.HandleFunc("/shopping/lists/{id}/items/uncheck-all", rihUncheckAll("UncheckAllItems", uncheckAllHandler(db, catClient, recipeClient))).Methods(http.MethodPost)
 
 		api.HandleFunc("/shopping/lists/{id}/import/meal-plan", rihImport("ImportMealPlan", importHandler(db, catClient, recipeClient))).Methods(http.MethodPost)
 	}
 }
 
-func listHandler(db *gorm.DB) server.GetHandler {
+func listHandler(db *gorm.DB, catClient *categoryclient.Client, recipeClient *recipeclient.Client) server.GetHandler {
 	return func(d *server.HandlerDependency, c *server.HandlerContext) http.HandlerFunc {
 		return func(w http.ResponseWriter, r *http.Request) {
 			status := r.URL.Query().Get("status")
-			proc := NewProcessor(d.Logger(), r.Context(), db)
+			proc := NewProcessor(d.Logger(), r.Context(), db, catClient, recipeClient)
 
 			models, err := proc.List(status)
 			if err != nil {
@@ -78,11 +78,11 @@ func listHandler(db *gorm.DB) server.GetHandler {
 	}
 }
 
-func createHandler(db *gorm.DB) server.InputHandler[CreateRequest] {
+func createHandler(db *gorm.DB, catClient *categoryclient.Client, recipeClient *recipeclient.Client) server.InputHandler[CreateRequest] {
 	return func(d *server.HandlerDependency, c *server.HandlerContext, input CreateRequest) http.HandlerFunc {
 		return func(w http.ResponseWriter, r *http.Request) {
 			t := tenantctx.MustFromContext(r.Context())
-			proc := NewProcessor(d.Logger(), r.Context(), db)
+			proc := NewProcessor(d.Logger(), r.Context(), db, catClient, recipeClient)
 
 			m, err := proc.Create(t.Id(), t.HouseholdId(), t.UserId(), input.Name)
 			if err != nil {
@@ -106,11 +106,11 @@ func createHandler(db *gorm.DB) server.InputHandler[CreateRequest] {
 	}
 }
 
-func getHandler(db *gorm.DB) server.GetHandler {
+func getHandler(db *gorm.DB, catClient *categoryclient.Client, recipeClient *recipeclient.Client) server.GetHandler {
 	return func(d *server.HandlerDependency, c *server.HandlerContext) http.HandlerFunc {
 		return server.ParseID("id", func(id uuid.UUID) http.HandlerFunc {
 			return func(w http.ResponseWriter, r *http.Request) {
-				proc := NewProcessor(d.Logger(), r.Context(), db)
+				proc := NewProcessor(d.Logger(), r.Context(), db, catClient, recipeClient)
 				m, items, err := proc.GetWithItems(id)
 				if err != nil {
 					if errors.Is(err, ErrNotFound) {
@@ -140,11 +140,11 @@ func getHandler(db *gorm.DB) server.GetHandler {
 	}
 }
 
-func updateHandler(db *gorm.DB) server.InputHandler[UpdateRequest] {
+func updateHandler(db *gorm.DB, catClient *categoryclient.Client, recipeClient *recipeclient.Client) server.InputHandler[UpdateRequest] {
 	return func(d *server.HandlerDependency, c *server.HandlerContext, input UpdateRequest) http.HandlerFunc {
 		return server.ParseID("id", func(id uuid.UUID) http.HandlerFunc {
 			return func(w http.ResponseWriter, r *http.Request) {
-				proc := NewProcessor(d.Logger(), r.Context(), db)
+				proc := NewProcessor(d.Logger(), r.Context(), db, catClient, recipeClient)
 
 				m, err := proc.Update(id, input.Name)
 				if err != nil {
@@ -177,11 +177,11 @@ func updateHandler(db *gorm.DB) server.InputHandler[UpdateRequest] {
 	}
 }
 
-func deleteHandler(db *gorm.DB) server.GetHandler {
+func deleteHandler(db *gorm.DB, catClient *categoryclient.Client, recipeClient *recipeclient.Client) server.GetHandler {
 	return func(d *server.HandlerDependency, c *server.HandlerContext) http.HandlerFunc {
 		return server.ParseID("id", func(id uuid.UUID) http.HandlerFunc {
 			return func(w http.ResponseWriter, r *http.Request) {
-				proc := NewProcessor(d.Logger(), r.Context(), db)
+				proc := NewProcessor(d.Logger(), r.Context(), db, catClient, recipeClient)
 				if err := proc.Delete(id); err != nil {
 					if errors.Is(err, ErrNotFound) {
 						server.WriteError(w, http.StatusNotFound, "Not Found", "Shopping list not found")
@@ -197,11 +197,11 @@ func deleteHandler(db *gorm.DB) server.GetHandler {
 	}
 }
 
-func archiveHandler(db *gorm.DB) server.InputHandler[ArchiveRequest] {
+func archiveHandler(db *gorm.DB, catClient *categoryclient.Client, recipeClient *recipeclient.Client) server.InputHandler[ArchiveRequest] {
 	return func(d *server.HandlerDependency, c *server.HandlerContext, _ ArchiveRequest) http.HandlerFunc {
 		return server.ParseID("id", func(id uuid.UUID) http.HandlerFunc {
 			return func(w http.ResponseWriter, r *http.Request) {
-				proc := NewProcessor(d.Logger(), r.Context(), db)
+				proc := NewProcessor(d.Logger(), r.Context(), db, catClient, recipeClient)
 				m, err := proc.Archive(id)
 				if err != nil {
 					if errors.Is(err, ErrNotFound) {
@@ -228,11 +228,11 @@ func archiveHandler(db *gorm.DB) server.InputHandler[ArchiveRequest] {
 	}
 }
 
-func unarchiveHandler(db *gorm.DB) server.InputHandler[UnarchiveRequest] {
+func unarchiveHandler(db *gorm.DB, catClient *categoryclient.Client, recipeClient *recipeclient.Client) server.InputHandler[UnarchiveRequest] {
 	return func(d *server.HandlerDependency, c *server.HandlerContext, _ UnarchiveRequest) http.HandlerFunc {
 		return server.ParseID("id", func(id uuid.UUID) http.HandlerFunc {
 			return func(w http.ResponseWriter, r *http.Request) {
-				proc := NewProcessor(d.Logger(), r.Context(), db)
+				proc := NewProcessor(d.Logger(), r.Context(), db, catClient, recipeClient)
 				m, err := proc.Unarchive(id)
 				if err != nil {
 					if errors.Is(err, ErrNotFound) {
@@ -259,28 +259,20 @@ func unarchiveHandler(db *gorm.DB) server.InputHandler[UnarchiveRequest] {
 	}
 }
 
-func addItemHandler(db *gorm.DB, catClient *categoryclient.Client) server.InputHandler[item.CreateRequest] {
+func addItemHandler(db *gorm.DB, catClient *categoryclient.Client, recipeClient *recipeclient.Client) server.InputHandler[item.CreateRequest] {
 	return func(d *server.HandlerDependency, c *server.HandlerContext, input item.CreateRequest) http.HandlerFunc {
 		return server.ParseID("id", func(listID uuid.UUID) http.HandlerFunc {
 			return func(w http.ResponseWriter, r *http.Request) {
 				addInput := item.AddInput{
-					ListID:   listID,
-					Name:     input.Name,
-					Quantity: input.Quantity,
-					Position: input.Position,
+					ListID:     listID,
+					Name:       input.Name,
+					Quantity:   input.Quantity,
+					CategoryID: input.CategoryId,
+					Position:   input.Position,
 				}
 
-				if input.CategoryId != nil {
-					addInput.CategoryID = input.CategoryId
-					cat, err := catClient.GetCategory(*input.CategoryId, r.Header.Get("Authorization"))
-					if err == nil {
-						addInput.CategoryName = &cat.Name
-						addInput.CategorySortOrder = &cat.SortOrder
-					}
-				}
-
-				proc := NewProcessor(d.Logger(), r.Context(), db)
-				m, err := proc.AddItem(listID, addInput)
+				proc := NewProcessor(d.Logger(), r.Context(), db, catClient, recipeClient)
+				m, err := proc.AddItem(listID, addInput, r.Header.Get("Authorization"))
 				if err != nil {
 					if errors.Is(err, ErrNotFound) {
 						server.WriteError(w, http.StatusNotFound, "Not Found", "Shopping list not found")
@@ -311,28 +303,20 @@ func addItemHandler(db *gorm.DB, catClient *categoryclient.Client) server.InputH
 	}
 }
 
-func updateItemHandler(db *gorm.DB, catClient *categoryclient.Client) server.InputHandler[item.UpdateRequest] {
+func updateItemHandler(db *gorm.DB, catClient *categoryclient.Client, recipeClient *recipeclient.Client) server.InputHandler[item.UpdateRequest] {
 	return func(d *server.HandlerDependency, c *server.HandlerContext, input item.UpdateRequest) http.HandlerFunc {
 		return server.ParseID("id", func(listID uuid.UUID) http.HandlerFunc {
 			return server.ParseID("itemId", func(itemID uuid.UUID) http.HandlerFunc {
 				return func(w http.ResponseWriter, r *http.Request) {
 					updateInput := item.UpdateInput{
-						Name:     input.Name,
-						Quantity: input.Quantity,
-						Position: input.Position,
+						Name:       input.Name,
+						Quantity:   input.Quantity,
+						CategoryID: input.CategoryId,
+						Position:   input.Position,
 					}
 
-					if input.CategoryId != nil {
-						updateInput.CategoryID = input.CategoryId
-						cat, err := catClient.GetCategory(*input.CategoryId, r.Header.Get("Authorization"))
-						if err == nil {
-							updateInput.CategoryName = &cat.Name
-							updateInput.CategorySortOrder = &cat.SortOrder
-						}
-					}
-
-					proc := NewProcessor(d.Logger(), r.Context(), db)
-					m, err := proc.UpdateItem(listID, itemID, updateInput)
+					proc := NewProcessor(d.Logger(), r.Context(), db, catClient, recipeClient)
+					m, err := proc.UpdateItem(listID, itemID, updateInput, r.Header.Get("Authorization"))
 					if err != nil {
 						if errors.Is(err, ErrNotFound) {
 							server.WriteError(w, http.StatusNotFound, "Not Found", "Shopping list not found")
@@ -368,12 +352,12 @@ func updateItemHandler(db *gorm.DB, catClient *categoryclient.Client) server.Inp
 	}
 }
 
-func removeItemHandler(db *gorm.DB) server.GetHandler {
+func removeItemHandler(db *gorm.DB, catClient *categoryclient.Client, recipeClient *recipeclient.Client) server.GetHandler {
 	return func(d *server.HandlerDependency, c *server.HandlerContext) http.HandlerFunc {
 		return server.ParseID("id", func(listID uuid.UUID) http.HandlerFunc {
 			return server.ParseID("itemId", func(itemID uuid.UUID) http.HandlerFunc {
 				return func(w http.ResponseWriter, r *http.Request) {
-					proc := NewProcessor(d.Logger(), r.Context(), db)
+					proc := NewProcessor(d.Logger(), r.Context(), db, catClient, recipeClient)
 					if err := proc.RemoveItem(listID, itemID); err != nil {
 						if errors.Is(err, ErrNotFound) {
 							server.WriteError(w, http.StatusNotFound, "Not Found", "Shopping list not found")
@@ -398,12 +382,12 @@ func removeItemHandler(db *gorm.DB) server.GetHandler {
 	}
 }
 
-func checkItemHandler(db *gorm.DB) server.InputHandler[item.CheckRequest] {
+func checkItemHandler(db *gorm.DB, catClient *categoryclient.Client, recipeClient *recipeclient.Client) server.InputHandler[item.CheckRequest] {
 	return func(d *server.HandlerDependency, c *server.HandlerContext, input item.CheckRequest) http.HandlerFunc {
 		return server.ParseID("id", func(listID uuid.UUID) http.HandlerFunc {
 			return server.ParseID("itemId", func(itemID uuid.UUID) http.HandlerFunc {
 				return func(w http.ResponseWriter, r *http.Request) {
-					proc := NewProcessor(d.Logger(), r.Context(), db)
+					proc := NewProcessor(d.Logger(), r.Context(), db, catClient, recipeClient)
 					m, err := proc.CheckItem(listID, itemID, input.Checked)
 					if err != nil {
 						if errors.Is(err, ErrNotFound) {
@@ -436,11 +420,11 @@ func checkItemHandler(db *gorm.DB) server.InputHandler[item.CheckRequest] {
 	}
 }
 
-func uncheckAllHandler(db *gorm.DB) server.InputHandler[UncheckAllRequest] {
+func uncheckAllHandler(db *gorm.DB, catClient *categoryclient.Client, recipeClient *recipeclient.Client) server.InputHandler[UncheckAllRequest] {
 	return func(d *server.HandlerDependency, c *server.HandlerContext, _ UncheckAllRequest) http.HandlerFunc {
 		return server.ParseID("id", func(listID uuid.UUID) http.HandlerFunc {
 			return func(w http.ResponseWriter, r *http.Request) {
-				proc := NewProcessor(d.Logger(), r.Context(), db)
+				proc := NewProcessor(d.Logger(), r.Context(), db, catClient, recipeClient)
 				m, items, err := proc.UncheckAllItems(listID)
 				if err != nil {
 					if errors.Is(err, ErrNotFound) {
@@ -483,65 +467,8 @@ func importHandler(db *gorm.DB, catClient *categoryclient.Client, recipeClient *
 					return
 				}
 
-				authHeader := r.Header.Get("Authorization")
-
-				// Fetch consolidated ingredients from recipe-service
-				ingredients, err := recipeClient.GetPlanIngredients(input.PlanId, authHeader)
-				if err != nil {
-					d.Logger().WithError(err).Error("Failed to fetch plan ingredients")
-					server.WriteError(w, http.StatusBadRequest, "Import Failed", "Could not fetch ingredients from meal plan")
-					return
-				}
-
-				// Build category lookup from category-service
-				categoryMap := make(map[string]categoryclient.Category)
-				if cats, err := catClient.ListCategories(authHeader); err == nil {
-					for _, cat := range cats {
-						categoryMap[cat.Name] = cat
-					}
-				}
-
-				// Build add inputs from ingredients
-				var inputs []item.AddInput
-				for _, ing := range ingredients {
-					qtyStr := recipeclient.FormatQuantityString(ing.Quantity, ing.Unit)
-
-					addInput := item.AddInput{
-						ListID: listID,
-						Name:   ing.Name,
-					}
-					if qtyStr != "" {
-						addInput.Quantity = &qtyStr
-					}
-
-					if ing.CategoryName != "" {
-						if cat, ok := categoryMap[ing.CategoryName]; ok {
-							addInput.CategoryID = &cat.ID
-							addInput.CategoryName = &cat.Name
-							addInput.CategorySortOrder = &cat.SortOrder
-						}
-					}
-
-					inputs = append(inputs, addInput)
-
-					for _, eq := range ing.ExtraQuantities {
-						eqStr := recipeclient.FormatQuantityString(eq.Quantity, eq.Unit)
-						eqInput := item.AddInput{
-							ListID:            listID,
-							Name:              ing.Name,
-							CategoryID:        addInput.CategoryID,
-							CategoryName:      addInput.CategoryName,
-							CategorySortOrder: addInput.CategorySortOrder,
-						}
-						if eqStr != "" {
-							eqInput.Quantity = &eqStr
-						}
-						inputs = append(inputs, eqInput)
-					}
-				}
-
-				proc := NewProcessor(d.Logger(), r.Context(), db)
-				m, items, err := proc.ImportItems(listID, inputs)
+				proc := NewProcessor(d.Logger(), r.Context(), db, catClient, recipeClient)
+				m, items, err := proc.ImportFromMealPlan(listID, input.PlanId, r.Header.Get("Authorization"))
 				if err != nil {
 					if errors.Is(err, ErrNotFound) {
 						server.WriteError(w, http.StatusNotFound, "Not Found", "Shopping list not found")
