@@ -6,7 +6,7 @@ ROOT_DIR="$(cd "$SCRIPT_DIR/.." && pwd)"
 
 echo "Linting all services..."
 
-for service in auth-service account-service productivity-service recipe-service; do
+for service in auth-service account-service productivity-service recipe-service calendar-service weather-service category-service shopping-service package-service; do
   echo "Linting $service..."
   cd "$ROOT_DIR/services/$service"
   golangci-lint run ./...

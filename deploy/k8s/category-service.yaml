@@ -2,21 +2,21 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: recipe-service
+  name: category-service
   namespace: home-hub
 spec:
   replicas: 1
   selector:
     matchLabels:
-      app: recipe-service
+      app: category-service
   template:
     metadata:
       labels:
-        app: recipe-service
+        app: category-service
     spec:
       containers:
-      - name: recipe-service
-        image: ghcr.io/jtumidanski/home-hub-recipe-service:main
+      - name: category-service
+        image: ghcr.io/jtumidanski/home-hub-category-service:main
         imagePullPolicy: Always
         ports:
         - containerPort: 8080
@@ -43,8 +43,6 @@ spec:
               key: DB_NAME
         - name: JWKS_URL
           value: "http://auth-service:8080/api/v1/auth/.well-known/jwks.json"
-        - name: CATEGORY_SERVICE_URL
-          value: "http://category-service:8080"
         livenessProbe:
           httpGet:
             path: /healthz
@@ -61,11 +59,11 @@ spec:
 apiVersion: v1
 kind: Service
 metadata:
-  name: recipe-service
+  name: category-service
   namespace: home-hub
 spec:
   selector:
-    app: recipe-service
+    app: category-service
   ports:
   - protocol: TCP
     port: 8080
