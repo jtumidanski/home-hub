@@ -106,6 +106,20 @@ spec:
                             name: recipe-service
                             port:
                                 number: 8080
+                  - path: /api/v1/categories
+                    pathType: Prefix
+                    backend:
+                        service:
+                            name: category-service
+                            port:
+                                number: 8080
+                  - path: /api/v1/shopping
+                    pathType: Prefix
+                    backend:
+                        service:
+                            name: shopping-service
+                            port:
+                                number: 8080
                   - path: /api/v1/weather
                     pathType: Prefix
                     backend:

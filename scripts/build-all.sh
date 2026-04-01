@@ -13,4 +13,11 @@ echo "Building all services..."
 "$SCRIPT_DIR/build-recipe.sh"
 "$SCRIPT_DIR/build-frontend.sh"
 
+for service in calendar-service package-service category-service shopping-service; do
+  echo "Building $service..."
+  cd "$ROOT_DIR/services/$service"
+  go build ./...
+  echo "$service built."
+done
+
 echo "All builds complete."
