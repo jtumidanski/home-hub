@@ -90,6 +90,14 @@ func TransformList(m Model, enrichment ListEnrichment) RestModel {
 	}
 }
 
+func TransformListSlice(models []Model, enrichments []ListEnrichment) []RestModel {
+	result := make([]RestModel, len(models))
+	for i, m := range models {
+		result[i] = TransformList(m, enrichments[i])
+	}
+	return result
+}
+
 type DetailEnrichment struct {
 	Ingredients []normalization.RestIngredientModel
 	PlannerConfig *RestPlannerConfigModel

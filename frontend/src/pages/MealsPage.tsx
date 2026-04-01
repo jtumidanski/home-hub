@@ -1,5 +1,6 @@
 import { useState, useCallback, useMemo } from "react";
-import { Lock, Unlock, Copy, FileDown, Plus } from "lucide-react";
+import { toast } from "sonner";
+import { Lock, Unlock, Copy, FileDown, Plus, ShoppingCart } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -22,6 +23,9 @@ import {
   useUpdatePlanItem,
   useRemovePlanItem,
 } from "@/lib/hooks/api/use-meals";
+import { useShoppingLists, useImportMealPlan, useCreateShoppingList } from "@/lib/hooks/api/use-shopping";
+import { shoppingService } from "@/services/api/shopping";
+import { useTenant } from "@/context/tenant-context";
 import type { Slot, PlanItemAttributes } from "@/types/models/meal-plan";
 import type { RecipeListItem } from "@/types/models/recipe";
 
@@ -86,6 +90,7 @@ export function MealsPage() {
   const [showExport, setShowExport] = useState(false);
   const [showDuplicate, setShowDuplicate] = useState(false);
   const [duplicateTarget, setDuplicateTarget] = useState("");
+  const [showAddToShopping, setShowAddToShopping] = useState(false);
 
   const weekDays = useMemo(() => getWeekDays(startsOn), [startsOn]);
 
@@ -201,6 +206,9 @@ export function MealsPage() {
           <Button variant="outline" size="sm" onClick={() => setShowExport(true)}>
             <FileDown className="h-4 w-4 mr-1" /> Export
           </Button>
+          <Button variant="outline" size="sm" onClick={() => setShowAddToShopping(true)}>
+            <ShoppingCart className="h-4 w-4 mr-1" /> Add to Shopping List
+          </Button>
         </div>
       )}
 
@@ -298,6 +306,13 @@ export function MealsPage() {
         />
       )}
 
+      {/* Add to Shopping List Dialog */}
+      <AddToShoppingDialog
+        open={showAddToShopping}
+        onClose={() => setShowAddToShopping(false)}
+        planId={existingPlanId}
+      />
+
       {/* Duplicate Dialog */}
       <Dialog open={showDuplicate} onOpenChange={(o) => !o && setShowDuplicate(false)}>
         <DialogContent className="sm:max-w-[350px]">
@@ -321,6 +336,124 @@ export function MealsPage() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+    </div>
+  );
+}
+
+function AddToShoppingDialog({
+  open,
+  onClose,
+  planId,
+}: {
+  open: boolean;
+  onClose: () => void;
+  planId: string | null;
+}) {
+  const [newListName, setNewListName] = useState("");
+  const { data: shoppingData } = useShoppingLists("active");
+  const lists = shoppingData?.data ?? [];
+
+  return (
+    <Dialog open={open} onOpenChange={(o) => !o && onClose()}>
+      <DialogContent className="sm:max-w-[400px]">
+        <DialogHeader>
+          <DialogTitle>Add to Shopping List</DialogTitle>
+        </DialogHeader>
+        <div className="space-y-3">
+          {lists.length > 0 && (
+            <div className="space-y-2">
+              <p className="text-sm font-medium">Add to existing list</p>
+              {lists.map((list) => (
+                <ImportToListButton
+                  key={list.id}
+                  listId={list.id}
+                  listName={list.attributes.name}
+                  planId={planId}
+                  onSuccess={onClose}
+                />
+              ))}
+            </div>
+          )}
+          <div className="space-y-2">
+            <p className="text-sm font-medium">Or create a new list</p>
+            <CreateAndImportButton
+              name={newListName}
+              onNameChange={setNewListName}
+              planId={planId}
+              onSuccess={onClose}
+            />
+          </div>
+        </div>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
+function ImportToListButton({
+  listId,
+  listName,
+  planId,
+  onSuccess,
+}: {
+  listId: string;
+  listName: string;
+  planId: string | null;
+  onSuccess: () => void;
+}) {
+  const importMealPlan = useImportMealPlan(listId);
+  return (
+    <Button
+      variant="outline"
+      className="w-full justify-start"
+      disabled={!planId || importMealPlan.isPending}
+      onClick={() => planId && importMealPlan.mutate(planId, { onSuccess })}
+    >
+      {importMealPlan.isPending ? "Importing..." : listName}
+    </Button>
+  );
+}
+
+function CreateAndImportButton({
+  name,
+  onNameChange,
+  planId,
+  onSuccess,
+}: {
+  name: string;
+  onNameChange: (v: string) => void;
+  planId: string | null;
+  onSuccess: () => void;
+}) {
+  const createList = useCreateShoppingList();
+  const [isPending, setIsPending] = useState(false);
+  const { tenant } = useTenant();
+
+  const handleClick = async () => {
+    if (!planId || !name.trim() || !tenant) return;
+    setIsPending(true);
+    try {
+      const result = await createList.mutateAsync(name.trim());
+      const newId = result.data.id;
+      await shoppingService.importMealPlan(tenant, newId, planId);
+      toast.success("List created and ingredients imported");
+      onSuccess();
+    } catch {
+      toast.error("Failed to create list and import");
+    } finally {
+      setIsPending(false);
+    }
+  };
+
+  return (
+    <div className="flex gap-2">
+      <Input
+        placeholder="New list name"
+        value={name}
+        onChange={(e) => onNameChange(e.target.value)}
+      />
+      <Button disabled={!name.trim() || !planId || isPending} onClick={handleClick}>
+        {isPending ? "Creating..." : "Create & Import"}
+      </Button>
     </div>
   );
 }

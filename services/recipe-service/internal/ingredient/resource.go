@@ -54,10 +54,7 @@ func listIngredientsHandler(db *gorm.DB) server.GetHandler {
 				return
 			}
 
-			rest := make([]RestModel, len(models))
-			for i, m := range models {
-				rest[i] = TransformList(m, m.UsageCount())
-			}
+			rest := TransformListSlice(models)
 
 			items := make([]jsonapi.MarshalIdentifier, len(rest))
 			for i := range rest {
@@ -71,7 +68,11 @@ func listIngredientsHandler(db *gorm.DB) server.GetHandler {
 			}
 
 			var resp map[string]interface{}
-			json.Unmarshal(result, &resp)
+			if err := json.Unmarshal(result, &resp); err != nil {
+				d.Logger().WithError(err).Error("Failed to unmarshal response")
+				server.WriteError(w, http.StatusInternalServerError, "Error", "")
+				return
+			}
 			resp["meta"] = map[string]interface{}{
 				"total":    total,
 				"page":     page,

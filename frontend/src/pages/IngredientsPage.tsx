@@ -63,7 +63,7 @@ export function IngredientsPage() {
 
   // When viewing "all", we can derive uncategorized count from total - sum(category counts)
   // When filtered, the uncategorized count from "uncategorized" filter's total is exact
-  const categorizedCount = categories.reduce((sum, c) => sum + c.attributes.ingredient_count, 0);
+  const categorizedCount = categories.reduce((sum, c) => sum + (c.attributes.ingredient_count ?? 0), 0);
   const uncategorizedCount = filterCategory === "uncategorized"
     ? total
     : filterCategory === "all"

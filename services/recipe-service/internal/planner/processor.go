@@ -28,7 +28,7 @@ type ConfigAttrs struct {
 }
 
 func (p *Processor) CreateOrUpdate(recipeID uuid.UUID, attrs ConfigAttrs) (Model, error) {
-	existing, err := getByRecipeID(p.db.WithContext(p.ctx), recipeID)
+	existing, err := getByRecipeID(recipeID)(p.db.WithContext(p.ctx))()
 	now := time.Now().UTC()
 
 	if err == gorm.ErrRecordNotFound {
@@ -64,7 +64,7 @@ func (p *Processor) CreateOrUpdate(recipeID uuid.UUID, attrs ConfigAttrs) (Model
 }
 
 func (p *Processor) GetByRecipeID(recipeID uuid.UUID) (Model, error) {
-	e, err := getByRecipeID(p.db.WithContext(p.ctx), recipeID)
+	e, err := getByRecipeID(recipeID)(p.db.WithContext(p.ctx))()
 	if err != nil {
 		return Model{}, err
 	}

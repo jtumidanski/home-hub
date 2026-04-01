@@ -60,14 +60,14 @@ export interface IngredientRecipeRef {
 export interface IngredientCategoryAttributes {
   name: string;
   sort_order: number;
-  ingredient_count: number;
+  ingredient_count?: number;
   created_at: string;
   updated_at: string;
 }
 
 export interface IngredientCategory {
   id: string;
-  type: "ingredient-categories";
+  type: "categories";
   attributes: IngredientCategoryAttributes;
 }
 

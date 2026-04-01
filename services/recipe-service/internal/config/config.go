@@ -7,9 +7,10 @@ import (
 )
 
 type Config struct {
-	DB      database.Config
-	Port    string
-	JWKSURL string
+	DB                 database.Config
+	Port               string
+	JWKSURL            string
+	CategoryServiceURL string
 }
 
 func Load() Config {
@@ -22,8 +23,9 @@ func Load() Config {
 			DBName:   envOrDefault("DB_NAME", "home_hub"),
 			Schema:   "recipe",
 		},
-		Port:    envOrDefault("PORT", "8080"),
-		JWKSURL: envOrDefault("JWKS_URL", "http://auth-service:8080/api/v1/auth/.well-known/jwks.json"),
+		Port:               envOrDefault("PORT", "8080"),
+		JWKSURL:            envOrDefault("JWKS_URL", "http://auth-service:8080/api/v1/auth/.well-known/jwks.json"),
+		CategoryServiceURL: envOrDefault("CATEGORY_SERVICE_URL", "http://category-service:8080"),
 	}
 }
 

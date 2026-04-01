@@ -11,8 +11,8 @@ import (
 	"github.com/google/uuid"
 	"math"
 
+	"github.com/jtumidanski/home-hub/services/recipe-service/internal/categoryclient"
 	"github.com/jtumidanski/home-hub/services/recipe-service/internal/ingredient"
-	"github.com/jtumidanski/home-hub/services/recipe-service/internal/ingredient/category"
 	"github.com/jtumidanski/home-hub/services/recipe-service/internal/normalization"
 	"github.com/jtumidanski/home-hub/services/recipe-service/internal/planitem"
 	"github.com/jtumidanski/home-hub/services/recipe-service/internal/planner"
@@ -23,10 +23,11 @@ import (
 
 // PlanData is a minimal representation of a plan, avoiding an import of the plan package.
 type PlanData struct {
-	ID       uuid.UUID
-	TenantID uuid.UUID
-	Name     string
-	StartsOn time.Time
+	ID         uuid.UUID
+	TenantID   uuid.UUID
+	Name       string
+	StartsOn   time.Time
+	AuthHeader string
 }
 
 // QuantityUnit is an additional quantity+unit pair for cross-family grouping.
@@ -50,13 +51,14 @@ type ConsolidatedIngredient struct {
 }
 
 type Processor struct {
-	l   logrus.FieldLogger
-	ctx context.Context
-	db  *gorm.DB
+	l         logrus.FieldLogger
+	ctx       context.Context
+	db        *gorm.DB
+	catClient *categoryclient.Client
 }
 
-func NewProcessor(l logrus.FieldLogger, ctx context.Context, db *gorm.DB) *Processor {
-	return &Processor{l: l, ctx: ctx, db: db}
+func NewProcessor(l logrus.FieldLogger, ctx context.Context, db *gorm.DB, catClient *categoryclient.Client) *Processor {
+	return &Processor{l: l, ctx: ctx, db: db, catClient: catClient}
 }
 
 // ConsolidateIngredients builds a merged ingredient list from all items in a plan.
@@ -96,11 +98,10 @@ func (p *Processor) ConsolidateIngredients(pd PlanData) []ConsolidatedIngredient
 		sortOrder int
 	}
 	categoryByID := make(map[uuid.UUID]catInfo)
-	if pd.TenantID != uuid.Nil {
-		categoryProc := category.NewProcessor(p.l, p.ctx, p.db)
-		if cats, err := categoryProc.List(pd.TenantID); err == nil {
+	if p.catClient != nil && pd.AuthHeader != "" {
+		if cats, err := p.catClient.ListCategories(pd.AuthHeader); err == nil {
 			for _, c := range cats {
-				categoryByID[c.Id()] = catInfo{name: c.Name(), sortOrder: c.SortOrder()}
+				categoryByID[c.ID] = catInfo{name: c.Name, sortOrder: c.SortOrder}
 			}
 		}
 	}

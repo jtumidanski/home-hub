@@ -6,7 +6,6 @@ import (
 	"time"
 
 	"github.com/google/uuid"
-	"github.com/jtumidanski/home-hub/services/recipe-service/internal/recipe"
 	"github.com/jtumidanski/home-hub/shared/go/server"
 	"gorm.io/gorm"
 )
@@ -49,14 +48,13 @@ func AddItemHandler(db *gorm.DB, pp PlanProvider) server.InputHandler[CreateItem
 					return
 				}
 
+				proc := NewProcessor(d.Logger(), r.Context(), db)
+
 				// Validate recipe exists and is active
-				recipeProc := recipe.NewProcessor(d.Logger(), r.Context(), db)
-				if _, _, err := recipeProc.Get(recipeID); err != nil {
+				if err := proc.ValidateRecipeExists(recipeID); err != nil {
 					server.WriteError(w, http.StatusNotFound, "Not Found", "Recipe not found or deleted")
 					return
 				}
-
-				proc := NewProcessor(d.Logger(), r.Context(), db)
 				m, err := proc.AddItem(planID, p.StartsOn, AddAttrs{
 					Day:               day,
 					Slot:              input.Slot,

@@ -7,7 +7,6 @@ import (
 	"time"
 
 	"github.com/google/uuid"
-	"github.com/jtumidanski/home-hub/services/recipe-service/internal/ingredient/category"
 	"github.com/jtumidanski/home-hub/shared/go/model"
 	"github.com/sirupsen/logrus"
 	"gorm.io/gorm"
@@ -55,7 +54,7 @@ func (p *Processor) Create(tenantID uuid.UUID, name, displayName, unitFamily str
 		CategoryId: categoryID,
 		CreatedAt:  now, UpdatedAt: now,
 	}
-	if err := p.db.WithContext(p.ctx).Create(&e).Error; err != nil {
+	if err := createEntity(p.db.WithContext(p.ctx), &e); err != nil {
 		return Model{}, err
 	}
 
@@ -126,8 +125,7 @@ func (p *Processor) Update(id uuid.UUID, name, displayName, unitFamily *string, 
 		e.CategoryId = categoryOpt.Value
 	}
 
-	e.UpdatedAt = time.Now().UTC()
-	if err := p.db.WithContext(p.ctx).Save(&e).Error; err != nil {
+	if err := saveEntity(p.db.WithContext(p.ctx), &e); err != nil {
 		return Model{}, err
 	}
 	return Make(e)
@@ -135,15 +133,10 @@ func (p *Processor) Update(id uuid.UUID, name, displayName, unitFamily *string, 
 
 func (p *Processor) Delete(id uuid.UUID) error {
 	// Nullify references in recipe_ingredients, setting them back to unresolved
-	p.db.WithContext(p.ctx).Table("recipe_ingredients").
-		Where("canonical_ingredient_id = ?", id).
-		Updates(map[string]interface{}{
-			"canonical_ingredient_id": nil,
-			"normalization_status":    "unresolved",
-			"updated_at":             time.Now().UTC(),
-		})
-
-	return p.db.WithContext(p.ctx).Where("id = ?", id).Delete(&Entity{}).Error
+	if err := nullifyReferences(p.db.WithContext(p.ctx), id); err != nil {
+		p.l.WithError(err).Error("Failed to nullify ingredient references")
+	}
+	return deleteEntity(p.db.WithContext(p.ctx), id)
 }
 
 func (p *Processor) AddAlias(tenantID, ingredientID uuid.UUID, aliasName string) (AliasEntity, error) {
@@ -165,14 +158,14 @@ func (p *Processor) AddAlias(tenantID, ingredientID uuid.UUID, aliasName string)
 		Name:                  normalized,
 		CreatedAt:             time.Now().UTC(),
 	}
-	if err := p.db.WithContext(p.ctx).Create(&alias).Error; err != nil {
+	if err := createAlias(p.db.WithContext(p.ctx), &alias); err != nil {
 		return AliasEntity{}, err
 	}
 	return alias, nil
 }
 
 func (p *Processor) RemoveAlias(aliasID uuid.UUID) error {
-	return p.db.WithContext(p.ctx).Where("id = ?", aliasID).Delete(&AliasEntity{}).Error
+	return deleteAlias(p.db.WithContext(p.ctx), aliasID)
 }
 
 func (p *Processor) GetUsageCount(id uuid.UUID) (int64, error) {
@@ -222,23 +215,7 @@ func (p *Processor) SearchWithUsage(tenantID uuid.UUID, query string, categoryFi
 }
 
 func (p *Processor) BulkCategorize(tenantID uuid.UUID, ingredientIDs []uuid.UUID, categoryID uuid.UUID) error {
-	// Validate category exists and belongs to tenant
-	cat, err := category.GetByID(categoryID)(p.db.WithContext(p.ctx))()
-	if err != nil {
-		return errors.New("category not found")
-	}
-	if cat.TenantId != tenantID {
-		return errors.New("category not found")
-	}
-
-	return p.db.WithContext(p.ctx).Transaction(func(tx *gorm.DB) error {
-		return tx.Table("canonical_ingredients").
-			Where("id IN ? AND tenant_id = ?", ingredientIDs, tenantID).
-			Updates(map[string]interface{}{
-				"category_id": categoryID,
-				"updated_at":  time.Now().UTC(),
-			}).Error
-	})
+	return bulkUpdateCategory(p.db.WithContext(p.ctx), ingredientIDs, tenantID, categoryID)
 }
 
 func (p *Processor) Suggest(tenantID uuid.UUID, prefix string, limit int) ([]Model, error) {

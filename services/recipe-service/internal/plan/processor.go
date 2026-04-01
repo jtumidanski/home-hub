@@ -9,6 +9,9 @@ import (
 	"github.com/google/uuid"
 	"github.com/jtumidanski/home-hub/services/recipe-service/internal/audit"
 	"github.com/jtumidanski/home-hub/services/recipe-service/internal/export"
+	"github.com/jtumidanski/home-hub/services/recipe-service/internal/planitem"
+	"github.com/jtumidanski/home-hub/services/recipe-service/internal/planner"
+	"github.com/jtumidanski/home-hub/services/recipe-service/internal/recipe"
 	"github.com/jtumidanski/home-hub/shared/go/model"
 	tenantctx "github.com/jtumidanski/home-hub/shared/go/tenant"
 	"github.com/sirupsen/logrus"
@@ -191,7 +194,7 @@ func (p *Processor) Duplicate(sourceID uuid.UUID, tenantID, householdID, userID 
 	return newPlan, nil
 }
 
-func (p *Processor) ExportMarkdown(id uuid.UUID, exportProc interface{ GenerateMarkdown(export.PlanData) string }) (string, error) {
+func (p *Processor) ExportMarkdown(id uuid.UUID, authHeader string, exportProc interface{ GenerateMarkdown(export.PlanData) string }) (string, error) {
 	m, err := p.Get(id)
 	if err != nil {
 		return "", err
@@ -199,6 +202,7 @@ func (p *Processor) ExportMarkdown(id uuid.UUID, exportProc interface{ GenerateM
 
 	markdown := exportProc.GenerateMarkdown(export.PlanData{
 		ID: m.Id(), TenantID: m.TenantID(), Name: m.Name(), StartsOn: m.StartsOn(),
+		AuthHeader: authHeader,
 	})
 
 	p.emitAudit(m.Id(), "plan.exported", map[string]interface{}{
@@ -213,6 +217,71 @@ func (p *Processor) Delete(id uuid.UUID) error {
 		return ErrNotFound
 	}
 	return deleteByID(p.db.WithContext(p.ctx), id)
+}
+
+func (p *Processor) GetItemCounts(planWeekIDs []uuid.UUID) []int64 {
+	itemProc := planitem.NewProcessor(p.l, p.ctx, p.db)
+	counts := make([]int64, len(planWeekIDs))
+	for i, id := range planWeekIDs {
+		count, err := itemProc.CountByPlanWeekID(id)
+		if err != nil {
+			p.l.WithError(err).WithField("plan_week_id", id).Error("Failed to count plan items")
+			continue
+		}
+		counts[i] = count
+	}
+	return counts
+}
+
+func (p *Processor) CopyItems(sourcePlanWeekID, targetPlanWeekID uuid.UUID, dayOffset int) error {
+	itemProc := planitem.NewProcessor(p.l, p.ctx, p.db)
+	return itemProc.CopyItems(sourcePlanWeekID, targetPlanWeekID, dayOffset)
+}
+
+func (p *Processor) BuildItemsResponse(m Model) []RestItemModel {
+	itemProc := planitem.NewProcessor(p.l, p.ctx, p.db)
+	items, err := itemProc.GetByPlanWeekID(m.Id())
+	if err != nil {
+		p.l.WithError(err).Error("Failed to get plan items")
+		return []RestItemModel{}
+	}
+
+	recipeProc := recipe.NewProcessor(p.l, p.ctx, p.db)
+	plannerProc := planner.NewProcessor(p.l, p.ctx, p.db)
+
+	restItems := make([]RestItemModel, len(items))
+	for i, item := range items {
+		ri := RestItemModel{
+			Id:                item.Id(),
+			Day:               item.Day().Format("2006-01-02"),
+			Slot:              item.Slot(),
+			RecipeID:          item.RecipeID(),
+			ServingMultiplier: item.ServingMultiplier(),
+			PlannedServings:   item.PlannedServings(),
+			Notes:             item.Notes(),
+			Position:          item.Position(),
+		}
+
+		rm, _, recipeErr := recipeProc.Get(item.RecipeID())
+		if recipeErr != nil {
+			ri.RecipeDeleted = true
+			ri.RecipeTitle = "(deleted recipe)"
+		} else {
+			ri.RecipeTitle = rm.Title()
+			ri.RecipeServings = rm.Servings()
+			ri.RecipeDeleted = false
+		}
+
+		if pc, err := plannerProc.GetByRecipeID(item.RecipeID()); err == nil {
+			ri.RecipeClassification = pc.Classification()
+			if ri.RecipeServings == nil && pc.ServingsYield() != nil {
+				ri.RecipeServings = pc.ServingsYield()
+			}
+		}
+
+		restItems[i] = ri
+	}
+	return restItems
 }
 
 func (p *Processor) emitAudit(entityID uuid.UUID, action string, metadata map[string]interface{}) {

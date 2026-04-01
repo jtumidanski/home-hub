@@ -29,6 +29,29 @@ func Migration(db *gorm.DB) error {
 	return db.AutoMigrate(&Entity{})
 }
 
+func (m Model) ToEntity() Entity {
+	var rawQty *string
+	if m.rawQuantity != "" {
+		rawQty = &m.rawQuantity
+	}
+	var rawUnit *string
+	if m.rawUnit != "" {
+		rawUnit = &m.rawUnit
+	}
+	var canonicalUnit *string
+	if m.canonicalUnit != "" {
+		canonicalUnit = &m.canonicalUnit
+	}
+	return Entity{
+		Id: m.id, TenantId: m.tenantID, HouseholdId: m.householdID,
+		RecipeId: m.recipeID, RawName: m.rawName,
+		RawQuantity: rawQty, RawUnit: rawUnit, Position: m.position,
+		CanonicalIngredientId: m.canonicalIngredientID, CanonicalUnit: canonicalUnit,
+		NormalizationStatus: string(m.normalizationStatus),
+		CreatedAt: m.createdAt, UpdatedAt: m.updatedAt,
+	}
+}
+
 func Make(e Entity) (Model, error) {
 	rawQuantity := ""
 	if e.RawQuantity != nil {

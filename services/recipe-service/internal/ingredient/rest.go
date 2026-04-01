@@ -112,6 +112,14 @@ func (r *BulkCategorizeRequest) SetID(id string) error {
 	return err
 }
 
+func TransformListSlice(models []Model) []RestModel {
+	result := make([]RestModel, len(models))
+	for i, m := range models {
+		result[i] = TransformList(m, m.UsageCount())
+	}
+	return result
+}
+
 func TransformList(m Model, usageCount int) RestModel {
 	return RestModel{
 		Id: m.Id(), Name: m.Name(), DisplayName: m.DisplayName(),

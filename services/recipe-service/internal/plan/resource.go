@@ -1,7 +1,6 @@
 package plan
 
 import (
-	"context"
 	"encoding/json"
 	"errors"
 	"net/http"
@@ -11,10 +10,9 @@ import (
 	"github.com/google/uuid"
 	"github.com/gorilla/mux"
 	"github.com/jtumidanski/api2go/jsonapi"
+	"github.com/jtumidanski/home-hub/services/recipe-service/internal/categoryclient"
 	"github.com/jtumidanski/home-hub/services/recipe-service/internal/export"
 	"github.com/jtumidanski/home-hub/services/recipe-service/internal/planitem"
-	"github.com/jtumidanski/home-hub/services/recipe-service/internal/planner"
-	"github.com/jtumidanski/home-hub/services/recipe-service/internal/recipe"
 	"github.com/jtumidanski/home-hub/shared/go/server"
 	tenantctx "github.com/jtumidanski/home-hub/shared/go/tenant"
 	"github.com/sirupsen/logrus"
@@ -38,7 +36,7 @@ func (pp *planProviderImpl) GetPlan(id uuid.UUID) (planitem.PlanInfo, error) {
 	}, nil
 }
 
-func InitializeRoutes(db *gorm.DB) func(l logrus.FieldLogger, si jsonapi.ServerInformation, api *mux.Router) {
+func InitializeRoutes(db *gorm.DB, catClient *categoryclient.Client) func(l logrus.FieldLogger, si jsonapi.ServerInformation, api *mux.Router) {
 	return func(l logrus.FieldLogger, si jsonapi.ServerInformation, api *mux.Router) {
 		rh := server.RegisterHandler(l)(si)
 		rihCreate := server.RegisterInputHandler[CreateRequest](l)(si)
@@ -63,8 +61,8 @@ func InitializeRoutes(db *gorm.DB) func(l logrus.FieldLogger, si jsonapi.ServerI
 		api.HandleFunc("/meals/plans/{planId}/items/{itemId}", rh("RemovePlanItem", planitem.RemoveItemHandler(db, pp))).Methods(http.MethodDelete)
 
 		// Export routes
-		api.HandleFunc("/meals/plans/{planId}/export/markdown", rh("ExportMarkdown", exportMarkdownHandler(db))).Methods(http.MethodGet)
-		api.HandleFunc("/meals/plans/{planId}/ingredients", rh("GetPlanIngredients", getIngredientsHandler(db))).Methods(http.MethodGet)
+		api.HandleFunc("/meals/plans/{planId}/export/markdown", rh("ExportMarkdown", exportMarkdownHandler(db, catClient))).Methods(http.MethodGet)
+		api.HandleFunc("/meals/plans/{planId}/ingredients", rh("GetPlanIngredients", getIngredientsHandler(db, catClient))).Methods(http.MethodGet)
 	}
 }
 
@@ -127,11 +125,11 @@ func listPlansHandler(db *gorm.DB) server.GetHandler {
 				return
 			}
 
-			itemProc := planitem.NewProcessor(d.Logger(), r.Context(), db)
-			itemCounts := make([]int64, len(models))
+			planWeekIDs := make([]uuid.UUID, len(models))
 			for i, m := range models {
-				itemCounts[i], _ = itemProc.CountByPlanWeekID(m.Id())
+				planWeekIDs[i] = m.Id()
 			}
+			itemCounts := proc.GetItemCounts(planWeekIDs)
 			rest := TransformListSlice(models, itemCounts)
 
 			items := make([]jsonapi.MarshalIdentifier, len(rest))
@@ -146,7 +144,11 @@ func listPlansHandler(db *gorm.DB) server.GetHandler {
 			}
 
 			var resp map[string]interface{}
-			json.Unmarshal(result, &resp)
+			if err := json.Unmarshal(result, &resp); err != nil {
+				d.Logger().WithError(err).Error("Failed to unmarshal response")
+				server.WriteError(w, http.StatusInternalServerError, "Error", "")
+				return
+			}
 			resp["meta"] = map[string]interface{}{
 				"total":    total,
 				"page":     filters.Page,
@@ -171,7 +173,7 @@ func getPlanHandler(db *gorm.DB) server.GetHandler {
 					return
 				}
 
-				items := buildItemsResponse(d.Logger(), r.Context(), db, m)
+				items := proc.BuildItemsResponse(m)
 				rest := TransformDetail(m, items)
 				server.MarshalResponse[RestDetailModel](d.Logger())(w)(c.ServerInformation())(map[string][]string{})(rest)
 			}
@@ -199,7 +201,7 @@ func updatePlanHandler(db *gorm.DB) server.InputHandler[UpdateRequest] {
 					return
 				}
 
-				items := buildItemsResponse(d.Logger(), r.Context(), db, m)
+				items := proc.BuildItemsResponse(m)
 				rest := TransformDetail(m, items)
 				server.MarshalResponse[RestDetailModel](d.Logger())(w)(c.ServerInformation())(map[string][]string{})(rest)
 			}
@@ -227,7 +229,7 @@ func lockPlanHandler(db *gorm.DB) server.GetHandler {
 					return
 				}
 
-				items := buildItemsResponse(d.Logger(), r.Context(), db, m)
+				items := proc.BuildItemsResponse(m)
 				rest := TransformDetail(m, items)
 				server.MarshalResponse[RestDetailModel](d.Logger())(w)(c.ServerInformation())(map[string][]string{})(rest)
 			}
@@ -255,7 +257,7 @@ func unlockPlanHandler(db *gorm.DB) server.GetHandler {
 					return
 				}
 
-				items := buildItemsResponse(d.Logger(), r.Context(), db, m)
+				items := proc.BuildItemsResponse(m)
 				rest := TransformDetail(m, items)
 				server.MarshalResponse[RestDetailModel](d.Logger())(w)(c.ServerInformation())(map[string][]string{})(rest)
 			}
@@ -295,12 +297,11 @@ func duplicatePlanHandler(db *gorm.DB) server.InputHandler[DuplicateRequest] {
 
 				// Copy items with day offset
 				dayOffset := int(targetStartsOn.Sub(source.StartsOn()).Hours() / 24)
-				itemProc := planitem.NewProcessor(d.Logger(), r.Context(), db)
-				if err := itemProc.CopyItems(source.Id(), newPlan.Id(), dayOffset); err != nil {
+				if err := proc.CopyItems(source.Id(), newPlan.Id(), dayOffset); err != nil {
 					d.Logger().WithError(err).Error("Failed to copy plan items")
 				}
 
-				items := buildItemsResponse(d.Logger(), r.Context(), db, newPlan)
+				items := proc.BuildItemsResponse(newPlan)
 				rest := TransformDetail(newPlan, items)
 				server.MarshalCreatedResponse[RestDetailModel](d.Logger())(w)(c.ServerInformation())(rest)
 			}
@@ -308,63 +309,14 @@ func duplicatePlanHandler(db *gorm.DB) server.InputHandler[DuplicateRequest] {
 	}
 }
 
-// buildItemsResponse enriches plan items with recipe metadata.
-func buildItemsResponse(l logrus.FieldLogger, ctx context.Context, db *gorm.DB, m Model) []RestItemModel {
-	itemProc := planitem.NewProcessor(l, ctx, db)
-	items, err := itemProc.GetByPlanWeekID(m.Id())
-	if err != nil {
-		l.WithError(err).Error("Failed to get plan items")
-		return []RestItemModel{}
-	}
-
-	recipeProc := recipe.NewProcessor(l, ctx, db)
-	plannerProc := planner.NewProcessor(l, ctx, db)
-
-	restItems := make([]RestItemModel, len(items))
-	for i, item := range items {
-		ri := RestItemModel{
-			Id:                item.Id(),
-			Day:               item.Day().Format("2006-01-02"),
-			Slot:              item.Slot(),
-			RecipeID:          item.RecipeID(),
-			ServingMultiplier: item.ServingMultiplier(),
-			PlannedServings:   item.PlannedServings(),
-			Notes:             item.Notes(),
-			Position:          item.Position(),
-		}
-
-		// Enrich with recipe metadata
-		rm, _, recipeErr := recipeProc.Get(item.RecipeID())
-		if recipeErr != nil {
-			ri.RecipeDeleted = true
-			ri.RecipeTitle = "(deleted recipe)"
-		} else {
-			ri.RecipeTitle = rm.Title()
-			ri.RecipeServings = rm.Servings()
-			ri.RecipeDeleted = false
-		}
-
-		// Get classification from planner config
-		if pc, err := plannerProc.GetByRecipeID(item.RecipeID()); err == nil {
-			ri.RecipeClassification = pc.Classification()
-			if ri.RecipeServings == nil && pc.ServingsYield() != nil {
-				ri.RecipeServings = pc.ServingsYield()
-			}
-		}
-
-		restItems[i] = ri
-	}
-	return restItems
-}
-
-func exportMarkdownHandler(db *gorm.DB) server.GetHandler {
+func exportMarkdownHandler(db *gorm.DB, catClient *categoryclient.Client) server.GetHandler {
 	return func(d *server.HandlerDependency, c *server.HandlerContext) http.HandlerFunc {
 		return server.ParseID("planId", func(id uuid.UUID) http.HandlerFunc {
 			return func(w http.ResponseWriter, r *http.Request) {
 				proc := NewProcessor(d.Logger(), r.Context(), db)
-				exportProc := export.NewProcessor(d.Logger(), r.Context(), db)
+				exportProc := export.NewProcessor(d.Logger(), r.Context(), db, catClient)
 
-				markdown, err := proc.ExportMarkdown(id, exportProc)
+				markdown, err := proc.ExportMarkdown(id, r.Header.Get("Authorization"), exportProc)
 				if err != nil {
 					server.WriteError(w, http.StatusNotFound, "Not Found", "Plan not found")
 					return
@@ -378,7 +330,7 @@ func exportMarkdownHandler(db *gorm.DB) server.GetHandler {
 	}
 }
 
-func getIngredientsHandler(db *gorm.DB) server.GetHandler {
+func getIngredientsHandler(db *gorm.DB, catClient *categoryclient.Client) server.GetHandler {
 	return func(d *server.HandlerDependency, c *server.HandlerContext) http.HandlerFunc {
 		return server.ParseID("planId", func(id uuid.UUID) http.HandlerFunc {
 			return func(w http.ResponseWriter, r *http.Request) {
@@ -389,9 +341,10 @@ func getIngredientsHandler(db *gorm.DB) server.GetHandler {
 					return
 				}
 
-				exportProc := export.NewProcessor(d.Logger(), r.Context(), db)
+				exportProc := export.NewProcessor(d.Logger(), r.Context(), db, catClient)
 				consolidated := exportProc.ConsolidateIngredients(export.PlanData{
 					ID: m.Id(), TenantID: m.TenantID(), Name: m.Name(), StartsOn: m.StartsOn(),
+					AuthHeader: r.Header.Get("Authorization"),
 				})
 
 				rest := export.TransformIngredientSlice(consolidated)

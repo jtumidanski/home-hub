@@ -59,15 +59,19 @@ func TestBuilder_Build(t *testing.T) {
 		}
 	})
 
-	t.Run("build always succeeds", func(t *testing.T) {
+	t.Run("build requires recipe ID", func(t *testing.T) {
 		_, err := NewBuilder().Build()
-		if err != nil {
-			t.Fatalf("expected no error from empty builder, got %v", err)
+		if err == nil {
+			t.Fatal("expected error from empty builder, got nil")
+		}
+		if err != ErrRecipeIDRequired {
+			t.Fatalf("expected ErrRecipeIDRequired, got %v", err)
 		}
 	})
 
 	t.Run("nil optional fields", func(t *testing.T) {
 		m, err := NewBuilder().
+			SetRecipeID(uuid.New()).
 			SetClassification("lunch").
 			Build()
 
