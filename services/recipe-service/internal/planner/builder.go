@@ -1,9 +1,14 @@
 package planner
 
 import (
+	"errors"
 	"time"
 
 	"github.com/google/uuid"
+)
+
+var (
+	ErrRecipeIDRequired = errors.New("recipe ID is required")
 )
 
 type Builder struct {
@@ -31,6 +36,9 @@ func (b *Builder) SetCreatedAt(t time.Time) *Builder           { b.createdAt = t
 func (b *Builder) SetUpdatedAt(t time.Time) *Builder           { b.updatedAt = t; return b }
 
 func (b *Builder) Build() (Model, error) {
+	if b.recipeID == uuid.Nil {
+		return Model{}, ErrRecipeIDRequired
+	}
 	return Model{
 		id:                 b.id,
 		recipeID:           b.recipeID,

@@ -1,531 +1,144 @@
 package list
 
 import (
-	"errors"
-	"net/http"
+	"time"
 
 	"github.com/google/uuid"
-	"github.com/gorilla/mux"
-	"github.com/jtumidanski/api2go/jsonapi"
-	"github.com/jtumidanski/home-hub/services/shopping-service/internal/categoryclient"
 	"github.com/jtumidanski/home-hub/services/shopping-service/internal/item"
-	"github.com/jtumidanski/home-hub/services/shopping-service/internal/recipeclient"
-	"github.com/jtumidanski/home-hub/shared/go/server"
-	tenantctx "github.com/jtumidanski/home-hub/shared/go/tenant"
-	"github.com/sirupsen/logrus"
-	"gorm.io/gorm"
 )
 
-func InitializeRoutes(db *gorm.DB, categoryServiceURL, recipeServiceURL string) func(l logrus.FieldLogger, si jsonapi.ServerInformation, api *mux.Router) {
-	catClient := categoryclient.New(categoryServiceURL)
-	recipeClient := recipeclient.New(recipeServiceURL)
-
-	return func(l logrus.FieldLogger, si jsonapi.ServerInformation, api *mux.Router) {
-		rh := server.RegisterHandler(l)(si)
-		rihCreate := server.RegisterInputHandler[CreateRequest](l)(si)
-		rihUpdate := server.RegisterInputHandler[UpdateRequest](l)(si)
-		rihItemCreate := server.RegisterInputHandler[item.CreateRequest](l)(si)
-		rihItemUpdate := server.RegisterInputHandler[item.UpdateRequest](l)(si)
-		rihItemCheck := server.RegisterInputHandler[item.CheckRequest](l)(si)
-		rihImport := server.RegisterInputHandler[ImportRequest](l)(si)
-
-		api.HandleFunc("/shopping/lists", rh("ListShoppingLists", listHandler(db))).Methods(http.MethodGet)
-		api.HandleFunc("/shopping/lists", rihCreate("CreateShoppingList", createHandler(db))).Methods(http.MethodPost)
-		api.HandleFunc("/shopping/lists/{id}", rh("GetShoppingList", getHandler(db))).Methods(http.MethodGet)
-		api.HandleFunc("/shopping/lists/{id}", rihUpdate("UpdateShoppingList", updateHandler(db))).Methods(http.MethodPatch)
-		api.HandleFunc("/shopping/lists/{id}", rh("DeleteShoppingList", deleteHandler(db))).Methods(http.MethodDelete)
-		api.HandleFunc("/shopping/lists/{id}/archive", rh("ArchiveShoppingList", archiveHandler(db))).Methods(http.MethodPost)
-		api.HandleFunc("/shopping/lists/{id}/unarchive", rh("UnarchiveShoppingList", unarchiveHandler(db))).Methods(http.MethodPost)
-
-		api.HandleFunc("/shopping/lists/{id}/items", rihItemCreate("AddShoppingItem", addItemHandler(db, catClient))).Methods(http.MethodPost)
-		api.HandleFunc("/shopping/lists/{id}/items/{itemId}", rihItemUpdate("UpdateShoppingItem", updateItemHandler(db, catClient))).Methods(http.MethodPatch)
-		api.HandleFunc("/shopping/lists/{id}/items/{itemId}", rh("RemoveShoppingItem", removeItemHandler(db))).Methods(http.MethodDelete)
-		api.HandleFunc("/shopping/lists/{id}/items/{itemId}/check", rihItemCheck("CheckShoppingItem", checkItemHandler(db))).Methods(http.MethodPatch)
-		api.HandleFunc("/shopping/lists/{id}/items/uncheck-all", rh("UncheckAllItems", uncheckAllHandler(db))).Methods(http.MethodPost)
-
-		api.HandleFunc("/shopping/lists/{id}/import/meal-plan", rihImport("ImportMealPlan", importHandler(db, catClient, recipeClient))).Methods(http.MethodPost)
-	}
+type RestModel struct {
+	Id           uuid.UUID       `json:"-"`
+	Name         string          `json:"name"`
+	Status       string          `json:"status"`
+	ItemCount    int             `json:"item_count"`
+	CheckedCount int             `json:"checked_count"`
+	ArchivedAt   *time.Time      `json:"archived_at"`
+	Items        []item.RestModel `json:"items,omitempty"`
+	CreatedAt    time.Time       `json:"created_at"`
+	UpdatedAt    time.Time       `json:"updated_at"`
 }
 
-func listHandler(db *gorm.DB) server.GetHandler {
-	return func(d *server.HandlerDependency, c *server.HandlerContext) http.HandlerFunc {
-		return func(w http.ResponseWriter, r *http.Request) {
-			status := r.URL.Query().Get("status")
-			proc := NewProcessor(d.Logger(), r.Context(), db)
+func (r RestModel) GetName() string       { return "shopping-lists" }
+func (r RestModel) GetID() string          { return r.Id.String() }
+func (r *RestModel) SetID(id string) error { var err error; r.Id, err = uuid.Parse(id); return err }
 
-			models, err := proc.List(status)
-			if err != nil {
-				d.Logger().WithError(err).Error("Failed to list shopping lists")
-				server.WriteError(w, http.StatusInternalServerError, "Error", "")
-				return
-			}
+type CreateRequest struct {
+	Id   uuid.UUID `json:"-"`
+	Name string    `json:"name"`
+}
 
-			transformed := TransformSlice(models)
-			rest := make([]*RestModel, len(transformed))
-			for i := range transformed {
-				rest[i] = &transformed[i]
-			}
-			server.MarshalSliceResponse[*RestModel](d.Logger())(w)(c.ServerInformation())(rest)
+func (r CreateRequest) GetName() string       { return "shopping-lists" }
+func (r CreateRequest) GetID() string          { return r.Id.String() }
+func (r *CreateRequest) SetID(id string) error {
+	if id == "" {
+		return nil
+	}
+	var err error
+	r.Id, err = uuid.Parse(id)
+	return err
+}
+
+type UpdateRequest struct {
+	Id   uuid.UUID `json:"-"`
+	Name string    `json:"name"`
+}
+
+func (r UpdateRequest) GetName() string       { return "shopping-lists" }
+func (r UpdateRequest) GetID() string          { return r.Id.String() }
+func (r *UpdateRequest) SetID(id string) error { var err error; r.Id, err = uuid.Parse(id); return err }
+
+type ImportRequest struct {
+	Id     uuid.UUID `json:"-"`
+	PlanId uuid.UUID `json:"plan_id"`
+}
+
+func (r ImportRequest) GetName() string       { return "shopping-list-imports" }
+func (r ImportRequest) GetID() string          { return r.Id.String() }
+func (r *ImportRequest) SetID(id string) error {
+	if id == "" {
+		return nil
+	}
+	var err error
+	r.Id, err = uuid.Parse(id)
+	return err
+}
+
+type ArchiveRequest struct {
+	Id uuid.UUID `json:"-"`
+}
+
+func (r ArchiveRequest) GetName() string { return "shopping-lists" }
+func (r ArchiveRequest) GetID() string   { return r.Id.String() }
+func (r *ArchiveRequest) SetID(id string) error {
+	if id == "" {
+		return nil
+	}
+	var err error
+	r.Id, err = uuid.Parse(id)
+	return err
+}
+
+type UnarchiveRequest struct {
+	Id uuid.UUID `json:"-"`
+}
+
+func (r UnarchiveRequest) GetName() string { return "shopping-lists" }
+func (r UnarchiveRequest) GetID() string   { return r.Id.String() }
+func (r *UnarchiveRequest) SetID(id string) error {
+	if id == "" {
+		return nil
+	}
+	var err error
+	r.Id, err = uuid.Parse(id)
+	return err
+}
+
+type UncheckAllRequest struct {
+	Id uuid.UUID `json:"-"`
+}
+
+func (r UncheckAllRequest) GetName() string { return "shopping-lists" }
+func (r UncheckAllRequest) GetID() string   { return r.Id.String() }
+func (r *UncheckAllRequest) SetID(id string) error {
+	if id == "" {
+		return nil
+	}
+	var err error
+	r.Id, err = uuid.Parse(id)
+	return err
+}
+
+func Transform(m Model) (RestModel, error) {
+	return RestModel{
+		Id:           m.Id(),
+		Name:         m.Name(),
+		Status:       m.Status(),
+		ItemCount:    m.ItemCount(),
+		CheckedCount: m.CheckedCount(),
+		ArchivedAt:   m.ArchivedAt(),
+		CreatedAt:    m.CreatedAt(),
+		UpdatedAt:    m.UpdatedAt(),
+	}, nil
+}
+
+func TransformWithItems(m Model, items []item.RestModel) (RestModel, error) {
+	r, err := Transform(m)
+	if err != nil {
+		return RestModel{}, err
+	}
+	r.Items = items
+	return r, nil
+}
+
+func TransformSlice(models []Model) ([]RestModel, error) {
+	result := make([]RestModel, len(models))
+	for i, m := range models {
+		r, err := Transform(m)
+		if err != nil {
+			return nil, err
 		}
+		result[i] = r
 	}
-}
-
-func createHandler(db *gorm.DB) server.InputHandler[CreateRequest] {
-	return func(d *server.HandlerDependency, c *server.HandlerContext, input CreateRequest) http.HandlerFunc {
-		return func(w http.ResponseWriter, r *http.Request) {
-			t := tenantctx.MustFromContext(r.Context())
-			proc := NewProcessor(d.Logger(), r.Context(), db)
-
-			m, err := proc.Create(t.Id(), t.HouseholdId(), t.UserId(), input.Name)
-			if err != nil {
-				if errors.Is(err, ErrNameRequired) || errors.Is(err, ErrNameTooLong) {
-					server.WriteError(w, http.StatusUnprocessableEntity, "Validation Failed", err.Error())
-					return
-				}
-				d.Logger().WithError(err).Error("Failed to create shopping list")
-				server.WriteError(w, http.StatusInternalServerError, "Error", "")
-				return
-			}
-
-			rest := Transform(m)
-			server.MarshalCreatedResponse[RestModel](d.Logger())(w)(c.ServerInformation())(rest)
-		}
-	}
-}
-
-func getHandler(db *gorm.DB) server.GetHandler {
-	return func(d *server.HandlerDependency, c *server.HandlerContext) http.HandlerFunc {
-		return server.ParseID("id", func(id uuid.UUID) http.HandlerFunc {
-			return func(w http.ResponseWriter, r *http.Request) {
-				proc := NewProcessor(d.Logger(), r.Context(), db)
-				m, err := proc.Get(id)
-				if err != nil {
-					if errors.Is(err, ErrNotFound) {
-						server.WriteError(w, http.StatusNotFound, "Not Found", "Shopping list not found")
-						return
-					}
-					d.Logger().WithError(err).Error("Failed to get shopping list")
-					server.WriteError(w, http.StatusInternalServerError, "Error", "")
-					return
-				}
-
-				itemProc := item.NewProcessor(d.Logger(), r.Context(), db)
-				items, err := itemProc.GetByListID(id)
-				if err != nil {
-					d.Logger().WithError(err).Error("Failed to get shopping items")
-					server.WriteError(w, http.StatusInternalServerError, "Error", "")
-					return
-				}
-
-				restItems := item.TransformSlice(items)
-				rest := TransformWithItems(m, restItems)
-				server.MarshalResponse[RestModel](d.Logger())(w)(c.ServerInformation())(map[string][]string{})(rest)
-			}
-		})
-	}
-}
-
-func updateHandler(db *gorm.DB) server.InputHandler[UpdateRequest] {
-	return func(d *server.HandlerDependency, c *server.HandlerContext, input UpdateRequest) http.HandlerFunc {
-		return server.ParseID("id", func(id uuid.UUID) http.HandlerFunc {
-			return func(w http.ResponseWriter, r *http.Request) {
-				proc := NewProcessor(d.Logger(), r.Context(), db)
-
-				m, err := proc.Update(id, input.Name)
-				if err != nil {
-					if errors.Is(err, ErrNotFound) {
-						server.WriteError(w, http.StatusNotFound, "Not Found", "Shopping list not found")
-						return
-					}
-					if errors.Is(err, ErrArchived) {
-						server.WriteError(w, http.StatusConflict, "Conflict", "Cannot modify archived list")
-						return
-					}
-					if errors.Is(err, ErrNameRequired) || errors.Is(err, ErrNameTooLong) {
-						server.WriteError(w, http.StatusUnprocessableEntity, "Validation Failed", err.Error())
-						return
-					}
-					d.Logger().WithError(err).Error("Failed to update shopping list")
-					server.WriteError(w, http.StatusInternalServerError, "Error", "")
-					return
-				}
-
-				rest := Transform(m)
-				server.MarshalResponse[RestModel](d.Logger())(w)(c.ServerInformation())(map[string][]string{})(rest)
-			}
-		})
-	}
-}
-
-func deleteHandler(db *gorm.DB) server.GetHandler {
-	return func(d *server.HandlerDependency, c *server.HandlerContext) http.HandlerFunc {
-		return server.ParseID("id", func(id uuid.UUID) http.HandlerFunc {
-			return func(w http.ResponseWriter, r *http.Request) {
-				proc := NewProcessor(d.Logger(), r.Context(), db)
-				if err := proc.Delete(id); err != nil {
-					if errors.Is(err, ErrNotFound) {
-						server.WriteError(w, http.StatusNotFound, "Not Found", "Shopping list not found")
-						return
-					}
-					d.Logger().WithError(err).Error("Failed to delete shopping list")
-					server.WriteError(w, http.StatusInternalServerError, "Error", "")
-					return
-				}
-				w.WriteHeader(http.StatusNoContent)
-			}
-		})
-	}
-}
-
-func archiveHandler(db *gorm.DB) server.GetHandler {
-	return func(d *server.HandlerDependency, c *server.HandlerContext) http.HandlerFunc {
-		return server.ParseID("id", func(id uuid.UUID) http.HandlerFunc {
-			return func(w http.ResponseWriter, r *http.Request) {
-				proc := NewProcessor(d.Logger(), r.Context(), db)
-				m, err := proc.Archive(id)
-				if err != nil {
-					if errors.Is(err, ErrNotFound) {
-						server.WriteError(w, http.StatusNotFound, "Not Found", "Shopping list not found")
-						return
-					}
-					if errors.Is(err, ErrAlreadyArchived) {
-						server.WriteError(w, http.StatusConflict, "Conflict", "List is already archived")
-						return
-					}
-					d.Logger().WithError(err).Error("Failed to archive shopping list")
-					server.WriteError(w, http.StatusInternalServerError, "Error", "")
-					return
-				}
-				rest := Transform(m)
-				server.MarshalResponse[RestModel](d.Logger())(w)(c.ServerInformation())(map[string][]string{})(rest)
-			}
-		})
-	}
-}
-
-func unarchiveHandler(db *gorm.DB) server.GetHandler {
-	return func(d *server.HandlerDependency, c *server.HandlerContext) http.HandlerFunc {
-		return server.ParseID("id", func(id uuid.UUID) http.HandlerFunc {
-			return func(w http.ResponseWriter, r *http.Request) {
-				proc := NewProcessor(d.Logger(), r.Context(), db)
-				m, err := proc.Unarchive(id)
-				if err != nil {
-					if errors.Is(err, ErrNotFound) {
-						server.WriteError(w, http.StatusNotFound, "Not Found", "Shopping list not found")
-						return
-					}
-					if errors.Is(err, ErrNotArchived) {
-						server.WriteError(w, http.StatusConflict, "Conflict", "List is not archived")
-						return
-					}
-					d.Logger().WithError(err).Error("Failed to unarchive shopping list")
-					server.WriteError(w, http.StatusInternalServerError, "Error", "")
-					return
-				}
-				rest := Transform(m)
-				server.MarshalResponse[RestModel](d.Logger())(w)(c.ServerInformation())(map[string][]string{})(rest)
-			}
-		})
-	}
-}
-
-func addItemHandler(db *gorm.DB, catClient *categoryclient.Client) server.InputHandler[item.CreateRequest] {
-	return func(d *server.HandlerDependency, c *server.HandlerContext, input item.CreateRequest) http.HandlerFunc {
-		return server.ParseID("id", func(listID uuid.UUID) http.HandlerFunc {
-			return func(w http.ResponseWriter, r *http.Request) {
-				listProc := NewProcessor(d.Logger(), r.Context(), db)
-				l, err := listProc.Get(listID)
-				if err != nil {
-					server.WriteError(w, http.StatusNotFound, "Not Found", "Shopping list not found")
-					return
-				}
-				if l.IsArchived() {
-					server.WriteError(w, http.StatusConflict, "Conflict", "Cannot modify archived list")
-					return
-				}
-
-				addInput := item.AddInput{
-					ListID:   listID,
-					Name:     input.Name,
-					Quantity: input.Quantity,
-					Position: input.Position,
-				}
-
-				if input.CategoryId != nil {
-					addInput.CategoryID = input.CategoryId
-					cat, err := catClient.GetCategory(*input.CategoryId, r.Header.Get("Authorization"))
-					if err == nil {
-						addInput.CategoryName = &cat.Name
-						addInput.CategorySortOrder = &cat.SortOrder
-					}
-				}
-
-				itemProc := item.NewProcessor(d.Logger(), r.Context(), db)
-				m, err := itemProc.Add(addInput)
-				if err != nil {
-					if errors.Is(err, item.ErrNameRequired) || errors.Is(err, item.ErrNameTooLong) {
-						server.WriteError(w, http.StatusUnprocessableEntity, "Validation Failed", err.Error())
-						return
-					}
-					d.Logger().WithError(err).Error("Failed to add shopping item")
-					server.WriteError(w, http.StatusInternalServerError, "Error", "")
-					return
-				}
-
-				rest := item.Transform(m)
-				server.MarshalCreatedResponse[item.RestModel](d.Logger())(w)(c.ServerInformation())(rest)
-			}
-		})
-	}
-}
-
-func updateItemHandler(db *gorm.DB, catClient *categoryclient.Client) server.InputHandler[item.UpdateRequest] {
-	return func(d *server.HandlerDependency, c *server.HandlerContext, input item.UpdateRequest) http.HandlerFunc {
-		return server.ParseID("id", func(listID uuid.UUID) http.HandlerFunc {
-			return server.ParseID("itemId", func(itemID uuid.UUID) http.HandlerFunc {
-				return func(w http.ResponseWriter, r *http.Request) {
-					listProc := NewProcessor(d.Logger(), r.Context(), db)
-					l, err := listProc.Get(listID)
-					if err != nil {
-						server.WriteError(w, http.StatusNotFound, "Not Found", "Shopping list not found")
-						return
-					}
-					if l.IsArchived() {
-						server.WriteError(w, http.StatusConflict, "Conflict", "Cannot modify archived list")
-						return
-					}
-
-					updateInput := item.UpdateInput{
-						Name:     input.Name,
-						Quantity: input.Quantity,
-						Position: input.Position,
-					}
-
-					if input.CategoryId != nil {
-						updateInput.CategoryID = input.CategoryId
-						cat, err := catClient.GetCategory(*input.CategoryId, r.Header.Get("Authorization"))
-						if err == nil {
-							updateInput.CategoryName = &cat.Name
-							updateInput.CategorySortOrder = &cat.SortOrder
-						}
-					}
-
-					itemProc := item.NewProcessor(d.Logger(), r.Context(), db)
-					m, err := itemProc.Update(itemID, updateInput)
-					if err != nil {
-						if errors.Is(err, item.ErrNotFound) {
-							server.WriteError(w, http.StatusNotFound, "Not Found", "Item not found")
-							return
-						}
-						if errors.Is(err, item.ErrNameRequired) || errors.Is(err, item.ErrNameTooLong) {
-							server.WriteError(w, http.StatusUnprocessableEntity, "Validation Failed", err.Error())
-							return
-						}
-						d.Logger().WithError(err).Error("Failed to update shopping item")
-						server.WriteError(w, http.StatusInternalServerError, "Error", "")
-						return
-					}
-
-					rest := item.Transform(m)
-					server.MarshalResponse[item.RestModel](d.Logger())(w)(c.ServerInformation())(map[string][]string{})(rest)
-				}
-			})
-		})
-	}
-}
-
-func removeItemHandler(db *gorm.DB) server.GetHandler {
-	return func(d *server.HandlerDependency, c *server.HandlerContext) http.HandlerFunc {
-		return server.ParseID("id", func(listID uuid.UUID) http.HandlerFunc {
-			return server.ParseID("itemId", func(itemID uuid.UUID) http.HandlerFunc {
-				return func(w http.ResponseWriter, r *http.Request) {
-					listProc := NewProcessor(d.Logger(), r.Context(), db)
-					l, err := listProc.Get(listID)
-					if err != nil {
-						server.WriteError(w, http.StatusNotFound, "Not Found", "Shopping list not found")
-						return
-					}
-					if l.IsArchived() {
-						server.WriteError(w, http.StatusConflict, "Conflict", "Cannot modify archived list")
-						return
-					}
-
-					itemProc := item.NewProcessor(d.Logger(), r.Context(), db)
-					if err := itemProc.Delete(itemID); err != nil {
-						if errors.Is(err, item.ErrNotFound) {
-							server.WriteError(w, http.StatusNotFound, "Not Found", "Item not found")
-							return
-						}
-						d.Logger().WithError(err).Error("Failed to remove shopping item")
-						server.WriteError(w, http.StatusInternalServerError, "Error", "")
-						return
-					}
-					w.WriteHeader(http.StatusNoContent)
-				}
-			})
-		})
-	}
-}
-
-func checkItemHandler(db *gorm.DB) server.InputHandler[item.CheckRequest] {
-	return func(d *server.HandlerDependency, c *server.HandlerContext, input item.CheckRequest) http.HandlerFunc {
-		return server.ParseID("id", func(listID uuid.UUID) http.HandlerFunc {
-			return server.ParseID("itemId", func(itemID uuid.UUID) http.HandlerFunc {
-				return func(w http.ResponseWriter, r *http.Request) {
-					listProc := NewProcessor(d.Logger(), r.Context(), db)
-					l, err := listProc.Get(listID)
-					if err != nil {
-						server.WriteError(w, http.StatusNotFound, "Not Found", "Shopping list not found")
-						return
-					}
-					if l.IsArchived() {
-						server.WriteError(w, http.StatusConflict, "Conflict", "Cannot modify archived list")
-						return
-					}
-
-					itemProc := item.NewProcessor(d.Logger(), r.Context(), db)
-					m, err := itemProc.Check(itemID, input.Checked)
-					if err != nil {
-						if errors.Is(err, item.ErrNotFound) {
-							server.WriteError(w, http.StatusNotFound, "Not Found", "Item not found")
-							return
-						}
-						d.Logger().WithError(err).Error("Failed to check shopping item")
-						server.WriteError(w, http.StatusInternalServerError, "Error", "")
-						return
-					}
-
-					rest := item.Transform(m)
-					server.MarshalResponse[item.RestModel](d.Logger())(w)(c.ServerInformation())(map[string][]string{})(rest)
-				}
-			})
-		})
-	}
-}
-
-func uncheckAllHandler(db *gorm.DB) server.GetHandler {
-	return func(d *server.HandlerDependency, c *server.HandlerContext) http.HandlerFunc {
-		return server.ParseID("id", func(listID uuid.UUID) http.HandlerFunc {
-			return func(w http.ResponseWriter, r *http.Request) {
-				listProc := NewProcessor(d.Logger(), r.Context(), db)
-				l, err := listProc.Get(listID)
-				if err != nil {
-					server.WriteError(w, http.StatusNotFound, "Not Found", "Shopping list not found")
-					return
-				}
-				if l.IsArchived() {
-					server.WriteError(w, http.StatusConflict, "Conflict", "Cannot modify archived list")
-					return
-				}
-
-				itemProc := item.NewProcessor(d.Logger(), r.Context(), db)
-				if err := itemProc.UncheckAll(listID); err != nil {
-					d.Logger().WithError(err).Error("Failed to uncheck all items")
-					server.WriteError(w, http.StatusInternalServerError, "Error", "")
-					return
-				}
-
-				// Return updated list with items
-				m, _ := listProc.Get(listID)
-				items, _ := itemProc.GetByListID(listID)
-				restItems := item.TransformSlice(items)
-				rest := TransformWithItems(m, restItems)
-				server.MarshalResponse[RestModel](d.Logger())(w)(c.ServerInformation())(map[string][]string{})(rest)
-			}
-		})
-	}
-}
-
-func importHandler(db *gorm.DB, catClient *categoryclient.Client, recipeClient *recipeclient.Client) server.InputHandler[ImportRequest] {
-	return func(d *server.HandlerDependency, c *server.HandlerContext, input ImportRequest) http.HandlerFunc {
-		return server.ParseID("id", func(listID uuid.UUID) http.HandlerFunc {
-			return func(w http.ResponseWriter, r *http.Request) {
-				if input.PlanId == uuid.Nil {
-					server.WriteError(w, http.StatusBadRequest, "Validation Failed", "plan_id is required")
-					return
-				}
-
-				listProc := NewProcessor(d.Logger(), r.Context(), db)
-				l, err := listProc.Get(listID)
-				if err != nil {
-					server.WriteError(w, http.StatusNotFound, "Not Found", "Shopping list not found")
-					return
-				}
-				if l.IsArchived() {
-					server.WriteError(w, http.StatusConflict, "Conflict", "Cannot modify archived list")
-					return
-				}
-
-				authHeader := r.Header.Get("Authorization")
-
-				// Fetch consolidated ingredients from recipe-service
-				ingredients, err := recipeClient.GetPlanIngredients(input.PlanId, authHeader)
-				if err != nil {
-					d.Logger().WithError(err).Error("Failed to fetch plan ingredients")
-					server.WriteError(w, http.StatusBadRequest, "Import Failed", "Could not fetch ingredients from meal plan")
-					return
-				}
-
-				// Build category lookup from category-service
-				categoryMap := make(map[string]categoryclient.Category)
-				if cats, err := catClient.ListCategories(authHeader); err == nil {
-					for _, cat := range cats {
-						categoryMap[cat.Name] = cat
-					}
-				}
-
-				// Transform and add items
-				itemProc := item.NewProcessor(d.Logger(), r.Context(), db)
-				for _, ing := range ingredients {
-					qtyStr := recipeclient.FormatQuantityString(ing.Quantity, ing.Unit)
-
-					addInput := item.AddInput{
-						ListID: listID,
-						Name:   ing.Name,
-					}
-					if qtyStr != "" {
-						addInput.Quantity = &qtyStr
-					}
-
-					// Resolve category by name
-					if ing.CategoryName != "" {
-						if cat, ok := categoryMap[ing.CategoryName]; ok {
-							addInput.CategoryID = &cat.ID
-							addInput.CategoryName = &cat.Name
-							addInput.CategorySortOrder = &cat.SortOrder
-						}
-					}
-
-					if _, err := itemProc.Add(addInput); err != nil {
-						d.Logger().WithError(err).Warn("Failed to add imported item")
-					}
-
-					// Add extra quantities as separate items
-					for _, eq := range ing.ExtraQuantities {
-						eqStr := recipeclient.FormatQuantityString(eq.Quantity, eq.Unit)
-						eqInput := item.AddInput{
-							ListID:            listID,
-							Name:              ing.Name,
-							CategoryID:        addInput.CategoryID,
-							CategoryName:      addInput.CategoryName,
-							CategorySortOrder: addInput.CategorySortOrder,
-						}
-						if eqStr != "" {
-							eqInput.Quantity = &eqStr
-						}
-						if _, err := itemProc.Add(eqInput); err != nil {
-							d.Logger().WithError(err).Warn("Failed to add extra quantity item")
-						}
-					}
-				}
-
-				// Return updated list with all items
-				m, _ := listProc.Get(listID)
-				items, _ := itemProc.GetByListID(listID)
-				restItems := item.TransformSlice(items)
-				rest := TransformWithItems(m, restItems)
-				server.MarshalResponse[RestModel](d.Logger())(w)(c.ServerInformation())(map[string][]string{})(rest)
-			}
-		})
-	}
+	return result, nil
 }

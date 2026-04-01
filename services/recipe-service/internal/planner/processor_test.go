@@ -2,12 +2,14 @@ package planner
 
 import (
 	"testing"
+
+	"github.com/google/uuid"
 )
 
 func ptrInt(v int) *int { return &v }
 
 func buildConfig(classification string, servingsYield *int) *Model {
-	b := NewBuilder().SetClassification(classification)
+	b := NewBuilder().SetRecipeID(uuid.New()).SetClassification(classification)
 	if servingsYield != nil {
 		b.SetServingsYield(servingsYield)
 	}

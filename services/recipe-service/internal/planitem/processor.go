@@ -7,6 +7,7 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/jtumidanski/home-hub/services/recipe-service/internal/audit"
+	"github.com/jtumidanski/home-hub/services/recipe-service/internal/recipe"
 	tenantctx "github.com/jtumidanski/home-hub/shared/go/tenant"
 	"github.com/sirupsen/logrus"
 	"gorm.io/gorm"
@@ -34,6 +35,14 @@ type AddAttrs struct {
 	PlannedServings   *int
 	Notes             *string
 	Position          *int
+}
+
+func (p *Processor) ValidateRecipeExists(recipeID uuid.UUID) error {
+	recipeProc := recipe.NewProcessor(p.l, p.ctx, p.db)
+	if _, _, err := recipeProc.Get(recipeID); err != nil {
+		return errors.New("recipe not found or deleted")
+	}
+	return nil
 }
 
 func (p *Processor) AddItem(planWeekID uuid.UUID, planStartsOn time.Time, attrs AddAttrs) (Model, error) {

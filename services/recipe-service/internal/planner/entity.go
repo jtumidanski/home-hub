@@ -25,6 +25,19 @@ func Migration(db *gorm.DB) error {
 	return db.AutoMigrate(&Entity{})
 }
 
+func (m Model) ToEntity() Entity {
+	var classification *string
+	if m.classification != "" {
+		classification = &m.classification
+	}
+	return Entity{
+		Id: m.id, RecipeId: m.recipeID, Classification: classification,
+		ServingsYield: m.servingsYield, EatWithinDays: m.eatWithinDays,
+		MinGapDays: m.minGapDays, MaxConsecutiveDays: m.maxConsecutiveDays,
+		CreatedAt: m.createdAt, UpdatedAt: m.updatedAt,
+	}
+}
+
 func Make(e Entity) (Model, error) {
 	classification := ""
 	if e.Classification != nil {

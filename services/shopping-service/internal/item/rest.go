@@ -63,7 +63,7 @@ func (r CheckRequest) GetName() string       { return "shopping-items" }
 func (r CheckRequest) GetID() string          { return r.Id.String() }
 func (r *CheckRequest) SetID(id string) error { var err error; r.Id, err = uuid.Parse(id); return err }
 
-func Transform(m Model) RestModel {
+func Transform(m Model) (RestModel, error) {
 	return RestModel{
 		Id:                m.Id(),
 		Name:              m.Name(),
@@ -75,13 +75,17 @@ func Transform(m Model) RestModel {
 		Position:          m.Position(),
 		CreatedAt:         m.CreatedAt(),
 		UpdatedAt:         m.UpdatedAt(),
-	}
+	}, nil
 }
 
-func TransformSlice(models []Model) []RestModel {
+func TransformSlice(models []Model) ([]RestModel, error) {
 	result := make([]RestModel, len(models))
 	for i, m := range models {
-		result[i] = Transform(m)
+		r, err := Transform(m)
+		if err != nil {
+			return nil, err
+		}
+		result[i] = r
 	}
-	return result
+	return result, nil
 }

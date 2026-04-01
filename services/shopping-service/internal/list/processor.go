@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/google/uuid"
+	"github.com/jtumidanski/home-hub/services/shopping-service/internal/item"
 	"github.com/sirupsen/logrus"
 	"gorm.io/gorm"
 )
@@ -150,6 +151,88 @@ func (p *Processor) Archive(id uuid.UUID) (Model, error) {
 	}
 	itemCount, checkedCount, _ := getItemCountsForList(p.db.WithContext(p.ctx), id)
 	return m.WithCounts(itemCount, checkedCount), nil
+}
+
+func (p *Processor) validateListModifiable(listID uuid.UUID) error {
+	m, err := p.Get(listID)
+	if err != nil {
+		return ErrNotFound
+	}
+	if m.IsArchived() {
+		return ErrArchived
+	}
+	return nil
+}
+
+func (p *Processor) GetWithItems(id uuid.UUID) (Model, []item.Model, error) {
+	m, err := p.Get(id)
+	if err != nil {
+		return Model{}, nil, err
+	}
+	itemProc := item.NewProcessor(p.l, p.ctx, p.db)
+	items, err := itemProc.GetByListID(id)
+	if err != nil {
+		return Model{}, nil, err
+	}
+	return m, items, nil
+}
+
+func (p *Processor) AddItem(listID uuid.UUID, input item.AddInput) (item.Model, error) {
+	if err := p.validateListModifiable(listID); err != nil {
+		return item.Model{}, err
+	}
+	input.ListID = listID
+	itemProc := item.NewProcessor(p.l, p.ctx, p.db)
+	return itemProc.Add(input)
+}
+
+func (p *Processor) UpdateItem(listID uuid.UUID, itemID uuid.UUID, input item.UpdateInput) (item.Model, error) {
+	if err := p.validateListModifiable(listID); err != nil {
+		return item.Model{}, err
+	}
+	itemProc := item.NewProcessor(p.l, p.ctx, p.db)
+	return itemProc.Update(itemID, input)
+}
+
+func (p *Processor) RemoveItem(listID uuid.UUID, itemID uuid.UUID) error {
+	if err := p.validateListModifiable(listID); err != nil {
+		return err
+	}
+	itemProc := item.NewProcessor(p.l, p.ctx, p.db)
+	return itemProc.Delete(itemID)
+}
+
+func (p *Processor) CheckItem(listID uuid.UUID, itemID uuid.UUID, checked bool) (item.Model, error) {
+	if err := p.validateListModifiable(listID); err != nil {
+		return item.Model{}, err
+	}
+	itemProc := item.NewProcessor(p.l, p.ctx, p.db)
+	return itemProc.Check(itemID, checked)
+}
+
+func (p *Processor) UncheckAllItems(listID uuid.UUID) (Model, []item.Model, error) {
+	if err := p.validateListModifiable(listID); err != nil {
+		return Model{}, nil, err
+	}
+	itemProc := item.NewProcessor(p.l, p.ctx, p.db)
+	if err := itemProc.UncheckAll(listID); err != nil {
+		return Model{}, nil, err
+	}
+	return p.GetWithItems(listID)
+}
+
+func (p *Processor) ImportItems(listID uuid.UUID, inputs []item.AddInput) (Model, []item.Model, error) {
+	if err := p.validateListModifiable(listID); err != nil {
+		return Model{}, nil, err
+	}
+	itemProc := item.NewProcessor(p.l, p.ctx, p.db)
+	for _, input := range inputs {
+		input.ListID = listID
+		if _, err := itemProc.Add(input); err != nil {
+			p.l.WithError(err).Warn("Failed to add imported item")
+		}
+	}
+	return p.GetWithItems(listID)
 }
 
 func (p *Processor) Unarchive(id uuid.UUID) (Model, error) {

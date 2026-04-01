@@ -43,6 +43,26 @@ func Migration(db *gorm.DB) error {
 	return nil
 }
 
+func (m Model) ToEntity() Entity {
+	var dn *string
+	if m.displayName != "" {
+		dn = &m.displayName
+	}
+	var uf *string
+	if m.unitFamily != "" {
+		uf = &m.unitFamily
+	}
+	aliases := make([]AliasEntity, len(m.aliases))
+	for i, a := range m.aliases {
+		aliases[i] = AliasEntity{Id: a.id, TenantId: m.tenantID, CanonicalIngredientId: m.id, Name: a.name}
+	}
+	return Entity{
+		Id: m.id, TenantId: m.tenantID, Name: m.name,
+		DisplayName: dn, UnitFamily: uf, CategoryId: m.categoryID,
+		Aliases: aliases, CreatedAt: m.createdAt, UpdatedAt: m.updatedAt,
+	}
+}
+
 func Make(e Entity) (Model, error) {
 	displayName := ""
 	if e.DisplayName != nil {

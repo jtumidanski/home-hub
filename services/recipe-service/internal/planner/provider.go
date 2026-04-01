@@ -1,23 +1,13 @@
 package planner
 
 import (
-	"time"
-
 	"github.com/google/uuid"
+	database "github.com/jtumidanski/home-hub/shared/go/database"
 	"gorm.io/gorm"
 )
 
-func getByRecipeID(db *gorm.DB, recipeID uuid.UUID) (Entity, error) {
-	var e Entity
-	err := db.Where("recipe_id = ?", recipeID).First(&e).Error
-	return e, err
-}
-
-func createConfig(db *gorm.DB, e *Entity) error {
-	return db.Create(e).Error
-}
-
-func updateConfig(db *gorm.DB, e *Entity) error {
-	e.UpdatedAt = time.Now().UTC()
-	return db.Save(e).Error
+func getByRecipeID(recipeID uuid.UUID) database.EntityProvider[Entity] {
+	return database.Query[Entity](func(db *gorm.DB) *gorm.DB {
+		return db.Where("recipe_id = ?", recipeID)
+	})
 }

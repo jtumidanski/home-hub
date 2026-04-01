@@ -8,6 +8,8 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/jtumidanski/home-hub/services/recipe-service/internal/audit"
+	"github.com/jtumidanski/home-hub/services/recipe-service/internal/normalization"
+	"github.com/jtumidanski/home-hub/services/recipe-service/internal/planner"
 	"github.com/jtumidanski/home-hub/services/recipe-service/internal/recipe/cooklang"
 	"github.com/jtumidanski/home-hub/shared/go/model"
 	tenantctx "github.com/jtumidanski/home-hub/shared/go/tenant"
@@ -297,4 +299,120 @@ func normalizeTags(tags []string) []string {
 		}
 	}
 	return result
+}
+
+// Cross-domain orchestration methods
+
+func (p *Processor) GetIngredients(recipeID uuid.UUID) ([]normalization.Model, error) {
+	normProc := normalization.NewProcessor(p.l, p.ctx, p.db)
+	return normProc.GetByRecipeID(recipeID)
+}
+
+func (p *Processor) NormalizeIngredients(tenantID, householdID, recipeID uuid.UUID, ingredients []cooklang.Ingredient) ([]normalization.Model, error) {
+	normProc := normalization.NewProcessor(p.l, p.ctx, p.db)
+	parsed := make([]normalization.ParsedIngredient, len(ingredients))
+	for i, ing := range ingredients {
+		parsed[i] = normalization.ParsedIngredient{Name: ing.Name, Quantity: ing.Quantity, Unit: ing.Unit}
+	}
+	return normProc.NormalizeIngredients(tenantID, householdID, recipeID, parsed)
+}
+
+func (p *Processor) ReconcileIngredients(tenantID, householdID, recipeID uuid.UUID, ingredients []cooklang.Ingredient) ([]normalization.Model, error) {
+	normProc := normalization.NewProcessor(p.l, p.ctx, p.db)
+	parsed := make([]normalization.ParsedIngredient, len(ingredients))
+	for i, ing := range ingredients {
+		parsed[i] = normalization.ParsedIngredient{Name: ing.Name, Quantity: ing.Quantity, Unit: ing.Unit}
+	}
+	return normProc.ReconcileIngredients(tenantID, householdID, recipeID, parsed)
+}
+
+func (p *Processor) PreviewNormalization(tenantID uuid.UUID, ingredients []cooklang.Ingredient) []normalization.PreviewResult {
+	normProc := normalization.NewProcessor(p.l, p.ctx, p.db)
+	parsed := make([]normalization.ParsedIngredient, len(ingredients))
+	for i, ing := range ingredients {
+		parsed[i] = normalization.ParsedIngredient{Name: ing.Name, Quantity: ing.Quantity, Unit: ing.Unit}
+	}
+	return normProc.PreviewNormalization(tenantID, parsed)
+}
+
+func (p *Processor) GetOrUpdatePlannerConfig(recipeID uuid.UUID, config *RestPlannerConfigModel) (*RestPlannerConfigModel, planner.Readiness, error) {
+	plannerProc := planner.NewProcessor(p.l, p.ctx, p.db)
+	if config != nil {
+		attrs := toPlannerAttrs(config)
+		pc, err := plannerProc.CreateOrUpdate(recipeID, attrs)
+		if err != nil {
+			return nil, planner.Readiness{}, err
+		}
+		restConfig := toPlannerRestModel(&pc)
+		// Need servings from the recipe for readiness computation
+		m, err := p.ByIDProvider(recipeID)()
+		if err != nil {
+			return restConfig, planner.ComputeReadiness(&pc, nil), nil
+		}
+		return restConfig, planner.ComputeReadiness(&pc, m.Servings()), nil
+	}
+	return nil, planner.Readiness{}, nil
+}
+
+func (p *Processor) BuildDetailEnrichment(m Model, ingredients []normalization.Model) DetailEnrichment {
+	enrichment := DetailEnrichment{
+		Ingredients: normalization.TransformIngredients(ingredients),
+	}
+	plannerProc := planner.NewProcessor(p.l, p.ctx, p.db)
+	if pc, err := plannerProc.GetByRecipeID(m.Id()); err == nil {
+		enrichment.PlannerConfig = toPlannerRestModel(&pc)
+		enrichment.Readiness = planner.ComputeReadiness(&pc, m.Servings())
+	} else {
+		enrichment.Readiness = planner.ComputeReadiness(nil, m.Servings())
+	}
+	return enrichment
+}
+
+func (p *Processor) BuildListEnrichment(m Model) ListEnrichment {
+	enrichment := ListEnrichment{}
+	normProc := normalization.NewProcessor(p.l, p.ctx, p.db)
+	ingredients, err := normProc.GetByRecipeID(m.Id())
+	if err == nil {
+		enrichment.TotalIngredients = len(ingredients)
+		for _, ing := range ingredients {
+			if ing.NormalizationStatus() != normalization.StatusUnresolved {
+				enrichment.ResolvedIngredients++
+			}
+		}
+	}
+	plannerProc := planner.NewProcessor(p.l, p.ctx, p.db)
+	if pc, err := plannerProc.GetByRecipeID(m.Id()); err == nil {
+		enrichment.PlannerReady = planner.ComputeReadiness(&pc, m.Servings()).Ready
+		enrichment.Classification = pc.Classification()
+	}
+	return enrichment
+}
+
+func (p *Processor) GetRecipeUsage(recipeIDs []uuid.UUID) map[uuid.UUID]recipeUsageResult {
+	return getRecipeUsageFromPlanItems(p.db.WithContext(p.ctx), recipeIDs)
+}
+
+// Helper functions for cross-domain type conversion
+
+func toPlannerAttrs(pc *RestPlannerConfigModel) planner.ConfigAttrs {
+	attrs := planner.ConfigAttrs{
+		ServingsYield:      pc.ServingsYield,
+		EatWithinDays:      pc.EatWithinDays,
+		MinGapDays:         pc.MinGapDays,
+		MaxConsecutiveDays: pc.MaxConsecutiveDays,
+	}
+	if pc.Classification != "" {
+		attrs.Classification = &pc.Classification
+	}
+	return attrs
+}
+
+func toPlannerRestModel(pc *planner.Model) *RestPlannerConfigModel {
+	return &RestPlannerConfigModel{
+		Classification:     pc.Classification(),
+		ServingsYield:      pc.ServingsYield(),
+		EatWithinDays:      pc.EatWithinDays(),
+		MinGapDays:         pc.MinGapDays(),
+		MaxConsecutiveDays: pc.MaxConsecutiveDays(),
+	}
 }

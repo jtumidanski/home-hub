@@ -8,67 +8,73 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func TestMake_Success(t *testing.T) {
+func TestMake(t *testing.T) {
 	id := uuid.New()
 	tenantID := uuid.New()
 	now := time.Now().Truncate(time.Second)
 
-	e := Entity{
-		Id:        id,
-		TenantId:  tenantID,
-		Name:      "Produce",
-		SortOrder: 1,
-		CreatedAt: now,
-		UpdatedAt: now,
+	tests := []struct {
+		name     string
+		entity   Entity
+		wantErr  error
+		validate func(t *testing.T, m Model)
+	}{
+		{
+			name: "success with all fields",
+			entity: Entity{
+				Id:        id,
+				TenantId:  tenantID,
+				Name:      "Produce",
+				SortOrder: 1,
+				CreatedAt: now,
+				UpdatedAt: now,
+			},
+			validate: func(t *testing.T, m Model) {
+				assert.Equal(t, id, m.Id())
+				assert.Equal(t, tenantID, m.TenantID())
+				assert.Equal(t, "Produce", m.Name())
+				assert.Equal(t, 1, m.SortOrder())
+				assert.Equal(t, now, m.CreatedAt())
+				assert.Equal(t, now, m.UpdatedAt())
+			},
+		},
+		{
+			name:   "zero sort order",
+			entity: Entity{Name: "Other", SortOrder: 0},
+			validate: func(t *testing.T, m Model) {
+				assert.Equal(t, 0, m.SortOrder())
+			},
+		},
+		{
+			name:    "empty name returns error",
+			entity:  Entity{Name: ""},
+			wantErr: ErrNameRequired,
+		},
+		{
+			name:    "name too long returns error",
+			entity:  Entity{Name: string(make([]byte, 101))},
+			wantErr: ErrNameTooLong,
+		},
+		{
+			name:    "negative sort order returns error",
+			entity:  Entity{Name: "Test", SortOrder: -1},
+			wantErr: ErrInvalidSortOrder,
+		},
 	}
 
-	m, err := Make(e)
-	assert.NoError(t, err)
-	assert.Equal(t, id, m.Id())
-	assert.Equal(t, tenantID, m.TenantID())
-	assert.Equal(t, "Produce", m.Name())
-	assert.Equal(t, 1, m.SortOrder())
-	assert.Equal(t, now, m.CreatedAt())
-	assert.Equal(t, now, m.UpdatedAt())
-}
-
-func TestMake_ZeroSortOrder(t *testing.T) {
-	e := Entity{
-		Name:      "Other",
-		SortOrder: 0,
+	for _, tc := range tests {
+		t.Run(tc.name, func(t *testing.T) {
+			m, err := Make(tc.entity)
+			if tc.wantErr != nil {
+				assert.ErrorIs(t, err, tc.wantErr)
+				return
+			}
+			assert.NoError(t, err)
+			if tc.validate != nil {
+				tc.validate(t, m)
+			}
+		})
 	}
-
-	m, err := Make(e)
-	assert.NoError(t, err)
-	assert.Equal(t, 0, m.SortOrder())
-}
-
-func TestMake_EmptyName_ReturnsError(t *testing.T) {
-	e := Entity{
-		Name: "",
-	}
-
-	_, err := Make(e)
-	assert.ErrorIs(t, err, ErrNameRequired)
-}
-
-func TestMake_NameTooLong_ReturnsError(t *testing.T) {
-	e := Entity{
-		Name: string(make([]byte, 101)),
-	}
-
-	_, err := Make(e)
-	assert.ErrorIs(t, err, ErrNameTooLong)
-}
-
-func TestMake_NegativeSortOrder_ReturnsError(t *testing.T) {
-	e := Entity{
-		Name:      "Test",
-		SortOrder: -1,
-	}
-
-	_, err := Make(e)
-	assert.ErrorIs(t, err, ErrInvalidSortOrder)
 }
 
 func TestModel_ToEntity_RoundTrip(t *testing.T) {
