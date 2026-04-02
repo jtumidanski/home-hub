@@ -52,7 +52,7 @@ func resolveHandler(db *gorm.DB) server.InputHandler[ResolveRequest] {
 					return
 				}
 
-				rest := TransformIngredient(result.Model)
+				rest := Transform(result.Model)
 				server.MarshalResponse[RestIngredientModel](d.Logger())(w)(c.ServerInformation())(map[string][]string{})(rest)
 			}
 		})
@@ -72,7 +72,7 @@ func renormalizeHandler(db *gorm.DB) server.InputHandler[RenormalizeRequest] {
 					return
 				}
 
-				rest := TransformIngredients(models)
+				rest := TransformSlice(models)
 				items := make([]jsonapi.MarshalIdentifier, len(rest))
 				for i := range rest {
 					items[i] = &rest[i]

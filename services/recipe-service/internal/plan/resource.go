@@ -130,7 +130,7 @@ func listPlansHandler(db *gorm.DB) server.GetHandler {
 				planWeekIDs[i] = m.Id()
 			}
 			itemCounts := proc.GetItemCounts(planWeekIDs)
-			rest := TransformListSlice(models, itemCounts)
+			rest := TransformSlice(models, itemCounts)
 
 			items := make([]jsonapi.MarshalIdentifier, len(rest))
 			for i := range rest {
@@ -314,9 +314,8 @@ func exportMarkdownHandler(db *gorm.DB, catClient *categoryclient.Client) server
 		return server.ParseID("planId", func(id uuid.UUID) http.HandlerFunc {
 			return func(w http.ResponseWriter, r *http.Request) {
 				proc := NewProcessor(d.Logger(), r.Context(), db)
-				exportProc := export.NewProcessor(d.Logger(), r.Context(), db, catClient)
 
-				markdown, err := proc.ExportMarkdown(id, r.Header.Get("Authorization"), exportProc)
+				markdown, err := proc.ExportMarkdown(id, r.Header.Get("Authorization"), catClient)
 				if err != nil {
 					server.WriteError(w, http.StatusNotFound, "Not Found", "Plan not found")
 					return
@@ -335,17 +334,12 @@ func getIngredientsHandler(db *gorm.DB, catClient *categoryclient.Client) server
 		return server.ParseID("planId", func(id uuid.UUID) http.HandlerFunc {
 			return func(w http.ResponseWriter, r *http.Request) {
 				proc := NewProcessor(d.Logger(), r.Context(), db)
-				m, err := proc.Get(id)
+
+				consolidated, err := proc.ConsolidateIngredients(id, r.Header.Get("Authorization"), catClient)
 				if err != nil {
 					server.WriteError(w, http.StatusNotFound, "Not Found", "Plan not found")
 					return
 				}
-
-				exportProc := export.NewProcessor(d.Logger(), r.Context(), db, catClient)
-				consolidated := exportProc.ConsolidateIngredients(export.PlanData{
-					ID: m.Id(), TenantID: m.TenantID(), Name: m.Name(), StartsOn: m.StartsOn(),
-					AuthHeader: r.Header.Get("Authorization"),
-				})
 
 				rest := export.TransformIngredientSlice(consolidated)
 

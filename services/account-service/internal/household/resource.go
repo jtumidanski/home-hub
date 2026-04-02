@@ -82,8 +82,13 @@ func getHandler(db *gorm.DB) server.GetHandler {
 				proc := NewProcessor(d.Logger(), r.Context(), db)
 				m, err := proc.ByIDProvider(id)()
 				if err != nil {
-					d.Logger().WithError(err).Error("Household not found")
-					server.WriteError(w, http.StatusNotFound, "Not Found", "")
+					if errors.Is(err, gorm.ErrRecordNotFound) {
+						d.Logger().WithError(err).Error("Household not found")
+						server.WriteError(w, http.StatusNotFound, "Not Found", "")
+						return
+					}
+					d.Logger().WithError(err).Error("Failed to get household")
+					server.WriteError(w, http.StatusInternalServerError, "Error", "")
 					return
 				}
 				rest, err := Transform(m)
@@ -102,7 +107,8 @@ func listMembersHandler(db *gorm.DB) server.GetHandler {
 	return func(d *server.HandlerDependency, c *server.HandlerContext) http.HandlerFunc {
 		return server.ParseID("id", func(id uuid.UUID) http.HandlerFunc {
 			return func(w http.ResponseWriter, r *http.Request) {
-				members, err := getMembersByHousehold(db.WithContext(r.Context()), id)
+				proc := NewProcessor(d.Logger(), r.Context(), db)
+				members, err := proc.MembersByHousehold(id)
 				if err != nil {
 					d.Logger().WithError(err).Error("Failed to list household members")
 					server.WriteError(w, http.StatusInternalServerError, "Error", "")

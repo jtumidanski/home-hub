@@ -7,7 +7,10 @@ import (
 	"time"
 
 	"github.com/google/uuid"
+	"github.com/jtumidanski/home-hub/services/calendar-service/internal/connection"
+	"github.com/jtumidanski/home-hub/services/calendar-service/internal/crypto"
 	"github.com/jtumidanski/home-hub/services/calendar-service/internal/googlecal"
+	"github.com/jtumidanski/home-hub/services/calendar-service/internal/source"
 	"github.com/jtumidanski/home-hub/shared/go/database"
 	"github.com/jtumidanski/home-hub/shared/go/model"
 	"github.com/sirupsen/logrus"
@@ -15,8 +18,19 @@ import (
 )
 
 var (
-	ErrRangeTooLarge = errors.New("query range exceeds 90 days")
+	ErrRangeTooLarge      = errors.New("query range exceeds 90 days")
+	ErrConnectionNotFound = errors.New("connection not found")
+	ErrNotOwner           = errors.New("not the connection owner")
+	ErrNoWriteAccess      = errors.New("connection does not have write access")
+	ErrSourceNotFound     = errors.New("source not found")
+	ErrSourceMismatch     = errors.New("source does not belong to connection")
+	ErrEventNotFound      = errors.New("event not found")
+	ErrEventMismatch      = errors.New("event does not belong to connection")
+	ErrGoogleWriteDenied  = errors.New("google calendar write denied")
+	ErrAuthFailed         = errors.New("failed to authenticate with Google")
 )
+
+type SyncConnectionFunc func(conn connection.Model)
 
 const maxQueryRange = 90 * 24 * time.Hour
 
@@ -132,6 +146,109 @@ func (p *Processor) UpdateOnGoogle(gcClient *googlecal.Client, accessToken strin
 
 	_, err := gcClient.UpdateEvent(p.ctx, accessToken, evt.GoogleCalendarID(), googleEventID, gcUpdate)
 	return err
+}
+
+func (p *Processor) validateConnectionForWrite(connID, userID uuid.UUID, gcClient *googlecal.Client, enc *crypto.Encryptor) (connection.Model, string, error) {
+	connProc := connection.NewProcessor(p.l, p.ctx, p.db)
+	conn, err := connProc.ByIDProvider(connID)()
+	if err != nil {
+		return connection.Model{}, "", ErrConnectionNotFound
+	}
+	if conn.UserID() != userID {
+		return connection.Model{}, "", ErrNotOwner
+	}
+	if !conn.WriteAccess() {
+		return connection.Model{}, "", ErrNoWriteAccess
+	}
+	accessToken, err := connProc.GetOrRefreshAccessToken(conn, gcClient, enc)
+	if err != nil {
+		return connection.Model{}, "", ErrAuthFailed
+	}
+	return conn, accessToken, nil
+}
+
+func (p *Processor) CreateEventOnGoogle(connID, calID, userID uuid.UUID, input CreateEventRequest, gcClient *googlecal.Client, enc *crypto.Encryptor, syncConn SyncConnectionFunc) error {
+	conn, accessToken, err := p.validateConnectionForWrite(connID, userID, gcClient, enc)
+	if err != nil {
+		return err
+	}
+
+	srcProc := source.NewProcessor(p.l, p.ctx, p.db)
+	src, err := srcProc.ByIDProvider(calID)()
+	if err != nil {
+		return ErrSourceNotFound
+	}
+	if src.ConnectionID() != connID {
+		return ErrSourceMismatch
+	}
+
+	err = p.CreateOnGoogle(gcClient, accessToken, src.ExternalID(), input)
+	if err != nil {
+		if strings.Contains(err.Error(), "403") {
+			return ErrGoogleWriteDenied
+		}
+		return err
+	}
+
+	if syncConn != nil {
+		go syncConn(conn)
+	}
+	return nil
+}
+
+func (p *Processor) UpdateEventOnGoogle(connID, eventID, userID uuid.UUID, input UpdateEventRequest, gcClient *googlecal.Client, enc *crypto.Encryptor, syncConn SyncConnectionFunc) (Model, error) {
+	conn, accessToken, err := p.validateConnectionForWrite(connID, userID, gcClient, enc)
+	if err != nil {
+		return Model{}, err
+	}
+
+	evt, err := p.ByID(eventID)
+	if err != nil {
+		return Model{}, ErrEventNotFound
+	}
+	if evt.ConnectionID() != connID {
+		return Model{}, ErrEventMismatch
+	}
+
+	err = p.UpdateOnGoogle(gcClient, accessToken, evt, input)
+	if err != nil {
+		return Model{}, err
+	}
+
+	if syncConn != nil {
+		go syncConn(conn)
+	}
+
+	updated, err := p.ByID(eventID)
+	if err != nil {
+		return Model{}, err
+	}
+	return updated, nil
+}
+
+func (p *Processor) DeleteEventOnGoogle(connID, eventID, userID uuid.UUID, scope string, gcClient *googlecal.Client, enc *crypto.Encryptor, syncConn SyncConnectionFunc) error {
+	conn, accessToken, err := p.validateConnectionForWrite(connID, userID, gcClient, enc)
+	if err != nil {
+		return err
+	}
+
+	evt, err := p.ByID(eventID)
+	if err != nil {
+		return ErrEventNotFound
+	}
+	if evt.ConnectionID() != connID {
+		return ErrEventMismatch
+	}
+
+	err = p.DeleteOnGoogle(gcClient, accessToken, evt, scope)
+	if err != nil {
+		return err
+	}
+
+	if syncConn != nil {
+		go syncConn(conn)
+	}
+	return nil
 }
 
 func (p *Processor) DeleteOnGoogle(gcClient *googlecal.Client, accessToken string, evt Model, scope string) error {

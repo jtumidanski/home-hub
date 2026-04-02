@@ -53,7 +53,7 @@ func (r RestDetailModel) GetName() string       { return "plans" }
 func (r RestDetailModel) GetID() string          { return r.Id.String() }
 func (r *RestDetailModel) SetID(id string) error { var err error; r.Id, err = uuid.Parse(id); return err }
 
-func TransformList(m Model, itemCount int64) RestListModel {
+func Transform(m Model, itemCount int64) RestListModel {
 	return RestListModel{
 		Id:        m.Id(),
 		StartsOn:  m.StartsOn().Format("2006-01-02"),
@@ -81,10 +81,10 @@ func TransformDetail(m Model, items []RestItemModel) RestDetailModel {
 	}
 }
 
-func TransformListSlice(models []Model, itemCounts []int64) []RestListModel {
+func TransformSlice(models []Model, itemCounts []int64) []RestListModel {
 	result := make([]RestListModel, len(models))
 	for i, m := range models {
-		result[i] = TransformList(m, itemCounts[i])
+		result[i] = Transform(m, itemCounts[i])
 	}
 	return result
 }

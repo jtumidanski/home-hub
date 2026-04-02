@@ -78,7 +78,7 @@ func AddItemHandler(db *gorm.DB, pp PlanProvider) server.InputHandler[CreateItem
 					return
 				}
 
-				rest := TransformItem(m)
+				rest := Transform(m)
 				server.MarshalCreatedResponse[RestModel](d.Logger())(w)(c.ServerInformation())(rest)
 			}
 		})
@@ -145,7 +145,7 @@ func UpdateItemHandler(db *gorm.DB, pp PlanProvider) server.InputHandler[UpdateI
 						return
 					}
 
-					rest := TransformItem(m)
+					rest := Transform(m)
 					server.MarshalResponse[RestModel](d.Logger())(w)(c.ServerInformation())(map[string][]string{})(rest)
 				}
 			})

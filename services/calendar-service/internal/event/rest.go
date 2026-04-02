@@ -78,6 +78,14 @@ func (r *RestModel) SetID(id string) error {
 	return err
 }
 
+func Transform(m Model) (RestModel, error) {
+	return TransformWithPrivacy(m, uuid.Nil)
+}
+
+func TransformSlice(models []Model) ([]RestModel, error) {
+	return TransformSliceWithPrivacy(models, uuid.Nil)
+}
+
 func TransformWithPrivacy(m Model, requesterUserID uuid.UUID) (RestModel, error) {
 	isOwner := m.UserID() == requesterUserID
 	rm := RestModel{

@@ -66,220 +66,318 @@ func createTestMembership(t *testing.T, db *gorm.DB, tenantID, householdID, user
 }
 
 func TestProcessorCreate(t *testing.T) {
-	db := setupTestDB(t)
-	tenantID := uuid.New()
-	ownerID := uuid.New()
-	hh := createTestHousehold(t, db, tenantID, "Test Home")
-	createTestMembership(t, db, tenantID, hh.Id(), ownerID, "owner")
+	tests := []struct {
+		name      string
+		email     string
+		role      string
+		inviterFn func(tenantID uuid.UUID, householdID uuid.UUID, db *gorm.DB, t *testing.T) uuid.UUID
+		setup     func(t *testing.T, db *gorm.DB, tenantID uuid.UUID, householdID uuid.UUID, ownerID uuid.UUID)
+		wantErr   error
+		wantEmail string
+		wantRole  string
+	}{
+		{
+			name:  "create invitation",
+			email: "invitee@example.com",
+			role:  "viewer",
+			inviterFn: func(tenantID uuid.UUID, householdID uuid.UUID, db *gorm.DB, t *testing.T) uuid.UUID {
+				ownerID := uuid.New()
+				createTestMembership(t, db, tenantID, householdID, ownerID, "owner")
+				return ownerID
+			},
+			wantEmail: "invitee@example.com",
+			wantRole:  "viewer",
+		},
+		{
+			name:  "duplicate invitation returns error",
+			email: "dup@example.com",
+			role:  "editor",
+			inviterFn: func(tenantID uuid.UUID, householdID uuid.UUID, db *gorm.DB, t *testing.T) uuid.UUID {
+				ownerID := uuid.New()
+				createTestMembership(t, db, tenantID, householdID, ownerID, "owner")
+				return ownerID
+			},
+			setup: func(t *testing.T, db *gorm.DB, tenantID uuid.UUID, householdID uuid.UUID, ownerID uuid.UUID) {
+				l, _ := test.NewNullLogger()
+				ctx := withTenantCtx(tenantID, ownerID)
+				proc := NewProcessor(l, ctx, db)
+				proc.Create(tenantID, householdID, "dup@example.com", "viewer", ownerID)
+			},
+			wantErr: ErrAlreadyInvited,
+		},
+		{
+			name:  "non-privileged user cannot create",
+			email: "another@example.com",
+			role:  "viewer",
+			inviterFn: func(tenantID uuid.UUID, householdID uuid.UUID, db *gorm.DB, t *testing.T) uuid.UUID {
+				ownerID := uuid.New()
+				createTestMembership(t, db, tenantID, householdID, ownerID, "owner")
+				viewerID := uuid.New()
+				createTestMembership(t, db, tenantID, householdID, viewerID, "viewer")
+				return viewerID
+			},
+			wantErr: ErrNotAuthorized,
+		},
+		{
+			name:  "default role to viewer",
+			email: "defaultrole@example.com",
+			role:  "",
+			inviterFn: func(tenantID uuid.UUID, householdID uuid.UUID, db *gorm.DB, t *testing.T) uuid.UUID {
+				ownerID := uuid.New()
+				createTestMembership(t, db, tenantID, householdID, ownerID, "owner")
+				return ownerID
+			},
+			wantEmail: "defaultrole@example.com",
+			wantRole:  "viewer",
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			db := setupTestDB(t)
+			tenantID := uuid.New()
+			hh := createTestHousehold(t, db, tenantID, "Test Home")
+			inviterID := tt.inviterFn(tenantID, hh.Id(), db, t)
 
-	l, _ := test.NewNullLogger()
+			if tt.setup != nil {
+				tt.setup(t, db, tenantID, hh.Id(), inviterID)
+			}
 
-	t.Run("create invitation", func(t *testing.T) {
-		ctx := withTenantCtx(tenantID, ownerID)
-		proc := NewProcessor(l, ctx, db)
-		m, err := proc.Create(tenantID, hh.Id(), "invitee@example.com", "viewer", ownerID)
-		if err != nil {
-			t.Fatalf("unexpected error: %v", err)
-		}
-		if m.Email() != "invitee@example.com" {
-			t.Errorf("expected email invitee@example.com, got %s", m.Email())
-		}
-		if m.Role() != "viewer" {
-			t.Errorf("expected role viewer, got %s", m.Role())
-		}
-		if m.Status() != "pending" {
-			t.Errorf("expected status pending, got %s", m.Status())
-		}
-	})
-
-	t.Run("duplicate invitation returns error", func(t *testing.T) {
-		ctx := withTenantCtx(tenantID, ownerID)
-		proc := NewProcessor(l, ctx, db)
-		_, err := proc.Create(tenantID, hh.Id(), "invitee@example.com", "editor", ownerID)
-		if err != ErrAlreadyInvited {
-			t.Errorf("expected ErrAlreadyInvited, got %v", err)
-		}
-	})
-
-	t.Run("non-privileged user cannot create", func(t *testing.T) {
-		viewerID := uuid.New()
-		createTestMembership(t, db, tenantID, hh.Id(), viewerID, "viewer")
-		ctx := withTenantCtx(tenantID, viewerID)
-		proc := NewProcessor(l, ctx, db)
-		_, err := proc.Create(tenantID, hh.Id(), "another@example.com", "viewer", viewerID)
-		if err != ErrNotAuthorized {
-			t.Errorf("expected ErrNotAuthorized, got %v", err)
-		}
-	})
-
-	t.Run("default role to viewer", func(t *testing.T) {
-		ctx := withTenantCtx(tenantID, ownerID)
-		proc := NewProcessor(l, ctx, db)
-		m, err := proc.Create(tenantID, hh.Id(), "defaultrole@example.com", "", ownerID)
-		if err != nil {
-			t.Fatalf("unexpected error: %v", err)
-		}
-		if m.Role() != "viewer" {
-			t.Errorf("expected default role viewer, got %s", m.Role())
-		}
-	})
+			l, _ := test.NewNullLogger()
+			ctx := withTenantCtx(tenantID, inviterID)
+			proc := NewProcessor(l, ctx, db)
+			m, err := proc.Create(tenantID, hh.Id(), tt.email, tt.role, inviterID)
+			if tt.wantErr != nil {
+				if err != tt.wantErr {
+					t.Errorf("expected %v, got %v", tt.wantErr, err)
+				}
+				return
+			}
+			if err != nil {
+				t.Fatalf("unexpected error: %v", err)
+			}
+			if m.Email() != tt.wantEmail {
+				t.Errorf("expected email %s, got %s", tt.wantEmail, m.Email())
+			}
+			if m.Role() != tt.wantRole {
+				t.Errorf("expected role %s, got %s", tt.wantRole, m.Role())
+			}
+			if m.Status() != "pending" {
+				t.Errorf("expected status pending, got %s", m.Status())
+			}
+		})
+	}
 }
 
 func TestProcessorRevoke(t *testing.T) {
-	db := setupTestDB(t)
-	tenantID := uuid.New()
-	ownerID := uuid.New()
-	hh := createTestHousehold(t, db, tenantID, "Test Home")
-	createTestMembership(t, db, tenantID, hh.Id(), ownerID, "owner")
+	tests := []struct {
+		name      string
+		revokerFn func(tenantID uuid.UUID, householdID uuid.UUID, db *gorm.DB, t *testing.T) uuid.UUID
+		wantErr   error
+	}{
+		{
+			name: "revoke pending invitation",
+			revokerFn: func(tenantID uuid.UUID, householdID uuid.UUID, db *gorm.DB, t *testing.T) uuid.UUID {
+				ownerID := uuid.New()
+				createTestMembership(t, db, tenantID, householdID, ownerID, "owner")
+				return ownerID
+			},
+		},
+		{
+			name: "non-privileged user cannot revoke",
+			revokerFn: func(tenantID uuid.UUID, householdID uuid.UUID, db *gorm.DB, t *testing.T) uuid.UUID {
+				ownerID := uuid.New()
+				createTestMembership(t, db, tenantID, householdID, ownerID, "owner")
+				viewerID := uuid.New()
+				createTestMembership(t, db, tenantID, householdID, viewerID, "viewer")
+				return viewerID
+			},
+			wantErr: ErrNotAuthorized,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			db := setupTestDB(t)
+			tenantID := uuid.New()
+			hh := createTestHousehold(t, db, tenantID, "Test Home")
 
-	l, _ := test.NewNullLogger()
+			// Create invitation as owner
+			ownerID := uuid.New()
+			createTestMembership(t, db, tenantID, hh.Id(), ownerID, "owner")
+			l, _ := test.NewNullLogger()
+			ctx := withTenantCtx(tenantID, ownerID)
+			proc := NewProcessor(l, ctx, db)
+			inv, _ := proc.Create(tenantID, hh.Id(), "revoke@example.com", "viewer", ownerID)
 
-	t.Run("revoke pending invitation", func(t *testing.T) {
-		ctx := withTenantCtx(tenantID, ownerID)
-		proc := NewProcessor(l, ctx, db)
-		inv, _ := proc.Create(tenantID, hh.Id(), "revoke@example.com", "viewer", ownerID)
+			// Attempt revoke as test subject
+			revokerID := tt.revokerFn(tenantID, hh.Id(), db, t)
+			ctx2 := withTenantCtx(tenantID, revokerID)
+			proc2 := NewProcessor(l, ctx2, db)
+			err := proc2.Revoke(inv.Id(), revokerID)
+			if tt.wantErr != nil {
+				if err != tt.wantErr {
+					t.Errorf("expected %v, got %v", tt.wantErr, err)
+				}
+				return
+			}
+			if err != nil {
+				t.Fatalf("unexpected error: %v", err)
+			}
 
-		err := proc.Revoke(inv.Id(), ownerID)
-		if err != nil {
-			t.Fatalf("unexpected error: %v", err)
-		}
-
-		updated, _ := proc.ByIDProvider(inv.Id())()
-		if updated.Status() != "revoked" {
-			t.Errorf("expected status revoked, got %s", updated.Status())
-		}
-	})
-
-	t.Run("non-privileged user cannot revoke", func(t *testing.T) {
-		viewerID := uuid.New()
-		createTestMembership(t, db, tenantID, hh.Id(), viewerID, "viewer")
-		ctx := withTenantCtx(tenantID, ownerID)
-		proc := NewProcessor(l, ctx, db)
-		inv, _ := proc.Create(tenantID, hh.Id(), "revokeauth@example.com", "viewer", ownerID)
-
-		ctx2 := withTenantCtx(tenantID, viewerID)
-		proc2 := NewProcessor(l, ctx2, db)
-		err := proc2.Revoke(inv.Id(), viewerID)
-		if err != ErrNotAuthorized {
-			t.Errorf("expected ErrNotAuthorized, got %v", err)
-		}
-	})
+			updated, _ := proc.ByIDProvider(inv.Id())()
+			if updated.Status() != "revoked" {
+				t.Errorf("expected status revoked, got %s", updated.Status())
+			}
+		})
+	}
 }
 
 func TestProcessorAccept(t *testing.T) {
-	db := setupTestDB(t)
-	tenantID := uuid.New()
-	ownerID := uuid.New()
-	hh := createTestHousehold(t, db, tenantID, "Test Home")
-	createTestMembership(t, db, tenantID, hh.Id(), ownerID, "owner")
+	tests := []struct {
+		name        string
+		email       string
+		acceptEmail string
+		tenantID    func(invTenantID uuid.UUID) uuid.UUID
+		timeOverride func()
+		timeRestore  func()
+		wantErr     error
+		wantStatus  string
+	}{
+		{
+			name:        "accept creates membership",
+			email:       "accept@example.com",
+			acceptEmail: "accept@example.com",
+			tenantID:    func(id uuid.UUID) uuid.UUID { return id },
+			wantStatus:  "accepted",
+		},
+		{
+			name:        "email mismatch rejected",
+			email:       "mismatch@example.com",
+			acceptEmail: "wrong@example.com",
+			tenantID:    func(id uuid.UUID) uuid.UUID { return id },
+			wantErr:     ErrEmailMismatch,
+		},
+		{
+			name:        "cross-tenant rejected",
+			email:       "crosstenant@example.com",
+			acceptEmail: "crosstenant@example.com",
+			tenantID:    func(_ uuid.UUID) uuid.UUID { return uuid.New() },
+			wantErr:     ErrCrossTenant,
+		},
+		{
+			name:        "expired invitation rejected",
+			email:       "expired@example.com",
+			acceptEmail: "expired@example.com",
+			tenantID:    func(id uuid.UUID) uuid.UUID { return id },
+			timeOverride: func() {
+				timeNow = func() time.Time { return time.Now().Add(8 * 24 * time.Hour) }
+			},
+			timeRestore: func() {
+				timeNow = func() time.Time { return time.Now().UTC() }
+			},
+			wantErr: ErrExpired,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			db := setupTestDB(t)
+			tenantID := uuid.New()
+			ownerID := uuid.New()
+			hh := createTestHousehold(t, db, tenantID, "Test Home")
+			createTestMembership(t, db, tenantID, hh.Id(), ownerID, "owner")
 
-	l, _ := test.NewNullLogger()
+			l, _ := test.NewNullLogger()
+			ctx := withTenantCtx(tenantID, ownerID)
+			proc := NewProcessor(l, ctx, db)
+			inv, _ := proc.Create(tenantID, hh.Id(), tt.email, "editor", ownerID)
 
-	t.Run("accept creates membership", func(t *testing.T) {
-		ctx := withTenantCtx(tenantID, ownerID)
-		proc := NewProcessor(l, ctx, db)
-		inv, _ := proc.Create(tenantID, hh.Id(), "accept@example.com", "editor", ownerID)
+			if tt.timeOverride != nil {
+				tt.timeOverride()
+				defer tt.timeRestore()
+			}
 
-		acceptorID := uuid.New()
-		result, err := proc.Accept(inv.Id(), acceptorID, "accept@example.com", tenantID)
-		if err != nil {
-			t.Fatalf("unexpected error: %v", err)
-		}
-		if result.Status() != "accepted" {
-			t.Errorf("expected status accepted, got %s", result.Status())
-		}
+			acceptorID := uuid.New()
+			result, err := proc.Accept(inv.Id(), acceptorID, tt.acceptEmail, tt.tenantID(tenantID))
+			if tt.wantErr != nil {
+				if err != tt.wantErr {
+					t.Errorf("expected %v, got %v", tt.wantErr, err)
+				}
+				return
+			}
+			if err != nil {
+				t.Fatalf("unexpected error: %v", err)
+			}
+			if result.Status() != tt.wantStatus {
+				t.Errorf("expected status %s, got %s", tt.wantStatus, result.Status())
+			}
 
-		// Verify membership was created
-		memProc := membership.NewProcessor(l, ctx, db)
-		_, memErr := memProc.ByHouseholdAndUserProvider(hh.Id(), acceptorID)()
-		if memErr != nil {
-			t.Error("expected membership to exist after accept")
-		}
-	})
-
-	t.Run("email mismatch rejected", func(t *testing.T) {
-		ctx := withTenantCtx(tenantID, ownerID)
-		proc := NewProcessor(l, ctx, db)
-		inv, _ := proc.Create(tenantID, hh.Id(), "mismatch@example.com", "viewer", ownerID)
-
-		_, err := proc.Accept(inv.Id(), uuid.New(), "wrong@example.com", tenantID)
-		if err != ErrEmailMismatch {
-			t.Errorf("expected ErrEmailMismatch, got %v", err)
-		}
-	})
-
-	t.Run("cross-tenant rejected", func(t *testing.T) {
-		ctx := withTenantCtx(tenantID, ownerID)
-		proc := NewProcessor(l, ctx, db)
-		inv, _ := proc.Create(tenantID, hh.Id(), "crosstenant@example.com", "viewer", ownerID)
-
-		differentTenantID := uuid.New()
-		_, err := proc.Accept(inv.Id(), uuid.New(), "crosstenant@example.com", differentTenantID)
-		if err != ErrCrossTenant {
-			t.Errorf("expected ErrCrossTenant, got %v", err)
-		}
-	})
-
-	t.Run("expired invitation rejected", func(t *testing.T) {
-		ctx := withTenantCtx(tenantID, ownerID)
-		proc := NewProcessor(l, ctx, db)
-		inv, _ := proc.Create(tenantID, hh.Id(), "expired@example.com", "viewer", ownerID)
-
-		// Override timeNow to simulate expiration
-		original := timeNow
-		timeNow = func() time.Time { return time.Now().Add(8 * 24 * time.Hour) }
-		defer func() { timeNow = original }()
-
-		_, err := proc.Accept(inv.Id(), uuid.New(), "expired@example.com", tenantID)
-		if err != ErrExpired {
-			t.Errorf("expected ErrExpired, got %v", err)
-		}
-	})
+			memProc := membership.NewProcessor(l, ctx, db)
+			_, memErr := memProc.ByHouseholdAndUserProvider(hh.Id(), acceptorID)()
+			if memErr != nil {
+				t.Error("expected membership to exist after accept")
+			}
+		})
+	}
 }
 
 func TestProcessorDecline(t *testing.T) {
-	db := setupTestDB(t)
-	tenantID := uuid.New()
-	ownerID := uuid.New()
-	hh := createTestHousehold(t, db, tenantID, "Test Home")
-	createTestMembership(t, db, tenantID, hh.Id(), ownerID, "owner")
+	tests := []struct {
+		name         string
+		email        string
+		declineEmail string
+		preDecline   bool
+		wantErr      error
+		wantStatus   string
+	}{
+		{
+			name:         "decline pending invitation",
+			email:        "decline@example.com",
+			declineEmail: "decline@example.com",
+			wantStatus:   "declined",
+		},
+		{
+			name:         "email mismatch rejected",
+			email:        "declinemismatch@example.com",
+			declineEmail: "wrong@example.com",
+			wantErr:      ErrEmailMismatch,
+		},
+		{
+			name:         "already declined invitation rejected",
+			email:        "doubledecline@example.com",
+			declineEmail: "doubledecline@example.com",
+			preDecline:   true,
+			wantErr:      ErrNotPending,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			db := setupTestDB(t)
+			tenantID := uuid.New()
+			ownerID := uuid.New()
+			hh := createTestHousehold(t, db, tenantID, "Test Home")
+			createTestMembership(t, db, tenantID, hh.Id(), ownerID, "owner")
 
-	l, _ := test.NewNullLogger()
+			l, _ := test.NewNullLogger()
+			ctx := withTenantCtx(tenantID, ownerID)
+			proc := NewProcessor(l, ctx, db)
+			inv, _ := proc.Create(tenantID, hh.Id(), tt.email, "viewer", ownerID)
 
-	t.Run("decline pending invitation", func(t *testing.T) {
-		ctx := withTenantCtx(tenantID, ownerID)
-		proc := NewProcessor(l, ctx, db)
-		inv, _ := proc.Create(tenantID, hh.Id(), "decline@example.com", "viewer", ownerID)
+			if tt.preDecline {
+				proc.Decline(inv.Id(), tt.email)
+			}
 
-		result, err := proc.Decline(inv.Id(), "decline@example.com")
-		if err != nil {
-			t.Fatalf("unexpected error: %v", err)
-		}
-		if result.Status() != "declined" {
-			t.Errorf("expected status declined, got %s", result.Status())
-		}
-	})
-
-	t.Run("email mismatch rejected", func(t *testing.T) {
-		ctx := withTenantCtx(tenantID, ownerID)
-		proc := NewProcessor(l, ctx, db)
-		inv, _ := proc.Create(tenantID, hh.Id(), "declinemismatch@example.com", "viewer", ownerID)
-
-		_, err := proc.Decline(inv.Id(), "wrong@example.com")
-		if err != ErrEmailMismatch {
-			t.Errorf("expected ErrEmailMismatch, got %v", err)
-		}
-	})
-
-	t.Run("already declined invitation rejected", func(t *testing.T) {
-		ctx := withTenantCtx(tenantID, ownerID)
-		proc := NewProcessor(l, ctx, db)
-		inv, _ := proc.Create(tenantID, hh.Id(), "doubledecline@example.com", "viewer", ownerID)
-
-		proc.Decline(inv.Id(), "doubledecline@example.com")
-		_, err := proc.Decline(inv.Id(), "doubledecline@example.com")
-		if err != ErrNotPending {
-			t.Errorf("expected ErrNotPending, got %v", err)
-		}
-	})
+			result, err := proc.Decline(inv.Id(), tt.declineEmail)
+			if tt.wantErr != nil {
+				if err != tt.wantErr {
+					t.Errorf("expected %v, got %v", tt.wantErr, err)
+				}
+				return
+			}
+			if err != nil {
+				t.Fatalf("unexpected error: %v", err)
+			}
+			if result.Status() != tt.wantStatus {
+				t.Errorf("expected status %s, got %s", tt.wantStatus, result.Status())
+			}
+		})
+	}
 }

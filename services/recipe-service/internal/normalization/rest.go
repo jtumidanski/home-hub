@@ -34,7 +34,7 @@ func (r *ResolveRequest) SetID(id string) error {
 	var err error; r.Id, err = uuid.Parse(id); return err
 }
 
-func TransformIngredient(m Model) RestIngredientModel {
+func Transform(m Model) RestIngredientModel {
 	rest := RestIngredientModel{
 		Id:                    m.Id(),
 		RawName:               m.RawName(),
@@ -64,13 +64,13 @@ func (r *RenormalizeRequest) SetID(id string) error {
 	var err error; r.Id, err = uuid.Parse(id); return err
 }
 
-func TransformIngredients(models []Model) []RestIngredientModel {
+func TransformSlice(models []Model) []RestIngredientModel {
 	if models == nil {
 		return []RestIngredientModel{}
 	}
 	result := make([]RestIngredientModel, len(models))
 	for i, m := range models {
-		result[i] = TransformIngredient(m)
+		result[i] = Transform(m)
 	}
 	return result
 }

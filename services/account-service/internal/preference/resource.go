@@ -1,6 +1,7 @@
 package preference
 
 import (
+	"errors"
 	"net/http"
 
 	"github.com/google/uuid"
@@ -60,6 +61,10 @@ func updateHandler(db *gorm.DB) server.InputHandler[UpdateRequest] {
 				if input.Theme != nil {
 					m, err = proc.UpdateTheme(id, *input.Theme)
 					if err != nil {
+						if errors.Is(err, gorm.ErrRecordNotFound) {
+							server.WriteError(w, http.StatusNotFound, "Not Found", "")
+							return
+						}
 						d.Logger().WithError(err).Error("Failed to update theme")
 						server.WriteError(w, http.StatusInternalServerError, "Update Failed", "")
 						return
@@ -69,6 +74,10 @@ func updateHandler(db *gorm.DB) server.InputHandler[UpdateRequest] {
 				if input.ActiveHouseholdId != nil {
 					m, err = proc.SetActiveHousehold(id, *input.ActiveHouseholdId)
 					if err != nil {
+						if errors.Is(err, gorm.ErrRecordNotFound) {
+							server.WriteError(w, http.StatusNotFound, "Not Found", "")
+							return
+						}
 						d.Logger().WithError(err).Error("Failed to set active household")
 						server.WriteError(w, http.StatusInternalServerError, "Update Failed", "")
 						return
