@@ -8,6 +8,7 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/jtumidanski/home-hub/services/recipe-service/internal/audit"
+	"github.com/jtumidanski/home-hub/services/recipe-service/internal/categoryclient"
 	"github.com/jtumidanski/home-hub/services/recipe-service/internal/export"
 	"github.com/jtumidanski/home-hub/services/recipe-service/internal/planitem"
 	"github.com/jtumidanski/home-hub/services/recipe-service/internal/planner"
@@ -194,12 +195,13 @@ func (p *Processor) Duplicate(sourceID uuid.UUID, tenantID, householdID, userID 
 	return newPlan, nil
 }
 
-func (p *Processor) ExportMarkdown(id uuid.UUID, authHeader string, exportProc interface{ GenerateMarkdown(export.PlanData) string }) (string, error) {
+func (p *Processor) ExportMarkdown(id uuid.UUID, authHeader string, catClient *categoryclient.Client) (string, error) {
 	m, err := p.Get(id)
 	if err != nil {
 		return "", err
 	}
 
+	exportProc := export.NewProcessor(p.l, p.ctx, p.db, catClient)
 	markdown := exportProc.GenerateMarkdown(export.PlanData{
 		ID: m.Id(), TenantID: m.TenantID(), Name: m.Name(), StartsOn: m.StartsOn(),
 		AuthHeader: authHeader,
@@ -209,6 +211,20 @@ func (p *Processor) ExportMarkdown(id uuid.UUID, authHeader string, exportProc i
 		"format": "markdown",
 	})
 	return markdown, nil
+}
+
+func (p *Processor) ConsolidateIngredients(id uuid.UUID, authHeader string, catClient *categoryclient.Client) ([]export.ConsolidatedIngredient, error) {
+	m, err := p.Get(id)
+	if err != nil {
+		return nil, err
+	}
+
+	exportProc := export.NewProcessor(p.l, p.ctx, p.db, catClient)
+	consolidated := exportProc.ConsolidateIngredients(export.PlanData{
+		ID: m.Id(), TenantID: m.TenantID(), Name: m.Name(), StartsOn: m.StartsOn(),
+		AuthHeader: authHeader,
+	})
+	return consolidated, nil
 }
 
 func (p *Processor) Delete(id uuid.UUID) error {

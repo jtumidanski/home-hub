@@ -7,7 +7,6 @@ import (
 	"github.com/google/uuid"
 	"github.com/gorilla/mux"
 	"github.com/jtumidanski/api2go/jsonapi"
-	"github.com/jtumidanski/home-hub/services/account-service/internal/preference"
 	"github.com/jtumidanski/home-hub/shared/go/server"
 	tenantctx "github.com/jtumidanski/home-hub/shared/go/tenant"
 	"github.com/sirupsen/logrus"
@@ -159,10 +158,7 @@ func deleteHandler(db *gorm.DB) server.GetHandler {
 				t := tenantctx.MustFromContext(r.Context())
 				proc := NewProcessor(d.Logger(), r.Context(), db)
 
-				// Look up the target membership before deletion for preference cleanup
-				target, lookupErr := proc.ByIDProvider(id)()
-
-				if err := proc.DeleteAuthorized(id, t.UserId()); err != nil {
+				if err := proc.DeleteAuthorizedWithCleanup(id, t.UserId()); err != nil {
 					if errors.Is(err, gorm.ErrRecordNotFound) {
 						server.WriteError(w, http.StatusNotFound, "Not Found", "")
 						return
@@ -178,17 +174,6 @@ func deleteHandler(db *gorm.DB) server.GetHandler {
 					d.Logger().WithError(err).Error("Failed to delete membership")
 					server.WriteError(w, http.StatusInternalServerError, "Delete Failed", "")
 					return
-				}
-
-				// If self-deletion, clear active household if it matches
-				if lookupErr == nil && target.UserID() == t.UserId() {
-					prefProc := preference.NewProcessor(d.Logger(), r.Context(), db)
-					pref, err := prefProc.ByUserProvider(t.UserId())()
-					if err == nil && pref.ActiveHouseholdID() != nil && *pref.ActiveHouseholdID() == target.HouseholdID() {
-						if _, err := prefProc.ClearActiveHousehold(pref.Id()); err != nil {
-							d.Logger().WithError(err).Warn("Failed to clear active household after leave")
-						}
-					}
 				}
 
 				w.WriteHeader(http.StatusNoContent)

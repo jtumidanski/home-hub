@@ -29,6 +29,8 @@ Core services:
 - weather-service
 - calendar-service
 - package-service
+- category-service
+- shopping-service
 
 Shared modules provide common functionality but do not contain business logic.
 
@@ -51,6 +53,7 @@ Routing:
 /api/v1/memberships -> account-service
 /api/v1/preferences -> account-service
 /api/v1/contexts -> account-service
+/api/v1/invitations -> account-service
 /api/v1/tasks -> productivity-service
 /api/v1/reminders -> productivity-service
 /api/v1/summary -> productivity-service
@@ -60,6 +63,8 @@ Routing:
 /api/v1/weather -> weather-service
 /api/v1/calendar -> calendar-service
 /api/v1/packages -> package-service
+/api/v1/categories -> category-service
+/api/v1/shopping -> shopping-service
 ```
 
 All services are stateless except for database persistence. Authentication is handled by auth-service. Authorization is enforced by each service using JWT claims.
@@ -111,8 +116,9 @@ Responsibilities:
 - membership roles
 - user preferences
 - active context
+- household invitations
 
-Schema: `account.tenants`, `account.households`, `account.memberships`, `account.preferences`
+Schema: `account.tenants`, `account.households`, `account.memberships`, `account.preferences`, `account.invitations`
 
 Rules:
 
@@ -153,8 +159,13 @@ Responsibilities:
 - Cooklang source parsing
 - tag management
 - soft delete with restore window
+- canonical ingredient management with alias-based normalization
+- weekly meal planning with per-item serving control
+- ingredient consolidation for shopping list export
+- recipe audit events
+- category lookup via category-service
 
-Schema: `recipe.recipes`, `recipe.recipe_tags`, `recipe.recipe_restorations`
+Schema: `recipe.recipes`, `recipe.recipe_tags`, `recipe.recipe_restorations`, `recipe.recipe_audit_events`, `recipe.canonical_ingredients`, `recipe.canonical_ingredient_aliases`, `recipe.recipe_ingredients`, `recipe.plan_weeks`, `recipe.plan_items`, `recipe.recipe_planner_configs`
 
 Rules:
 
@@ -213,7 +224,45 @@ Rules:
 - manual refresh rate-limited to once per 5 minutes
 - tenant scoped, household scoped
 
-### 3.8 weather-service
+### 3.8 category-service
+
+Responsibilities:
+
+- grocery/shopping category management
+- default category seeding per tenant
+- category ordering
+- tenant-scoped name uniqueness
+
+Schema: `category.categories`
+
+Rules:
+
+- default categories auto-seeded on first tenant access
+- name unique per tenant
+- name max 100 characters
+- sort order must be non-negative
+- tenant scoped (no household scope)
+
+### 3.9 shopping-service
+
+Responsibilities:
+
+- shopping list CRUD
+- item management within lists
+- list archival and unarchival
+- bulk import of ingredients from meal plans
+- category enrichment via category-service
+
+Schema: `shopping.shopping_lists`, `shopping.shopping_items`
+
+Rules:
+
+- archived lists reject modifications
+- items denormalize category name and sort order from category-service
+- meal plan import fetches ingredients from recipe-service, resolves categories from category-service
+- tenant scoped, household scoped
+
+### 3.10 weather-service
 
 Responsibilities:
 
@@ -314,7 +363,7 @@ Secrets provided externally. No config files required.
 
 ## 8. Persistence
 
-Each service owns its schema: `auth.*`, `account.*`, `productivity.*`, `recipe.*`, `weather.*`, `calendar.*`, `package.*`. No cross-service tables.
+Each service owns its schema: `auth.*`, `account.*`, `productivity.*`, `recipe.*`, `weather.*`, `calendar.*`, `package.*`, `category.*`, `shopping.*`. No cross-service tables.
 
 Migrations:
 
@@ -359,6 +408,8 @@ ghcr.io/<owner>/home-hub-recipe
 ghcr.io/<owner>/home-hub-weather
 ghcr.io/<owner>/home-hub-calendar
 ghcr.io/<owner>/home-hub-package
+ghcr.io/<owner>/home-hub-category
+ghcr.io/<owner>/home-hub-shopping
 ghcr.io/<owner>/home-hub-frontend
 ```
 

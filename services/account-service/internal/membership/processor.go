@@ -5,6 +5,7 @@ import (
 	"errors"
 
 	"github.com/google/uuid"
+	"github.com/jtumidanski/home-hub/services/account-service/internal/preference"
 	"github.com/jtumidanski/home-hub/shared/go/model"
 	"github.com/sirupsen/logrus"
 	"gorm.io/gorm"
@@ -128,6 +129,28 @@ func (p *Processor) DeleteAuthorized(id uuid.UUID, requesterID uuid.UUID) error 
 	}
 
 	return deleteByID(p.db.WithContext(p.ctx), id)
+}
+
+// DeleteAuthorizedWithCleanup performs authorized deletion and clears the user's active
+// household preference if they are leaving their currently active household.
+func (p *Processor) DeleteAuthorizedWithCleanup(id uuid.UUID, requesterID uuid.UUID) error {
+	target, lookupErr := p.ByIDProvider(id)()
+
+	if err := p.DeleteAuthorized(id, requesterID); err != nil {
+		return err
+	}
+
+	if lookupErr == nil && target.UserID() == requesterID {
+		prefProc := preference.NewProcessor(p.l, p.ctx, p.db)
+		pref, err := prefProc.ByUserProvider(requesterID)()
+		if err == nil && pref.ActiveHouseholdID() != nil && *pref.ActiveHouseholdID() == target.HouseholdID() {
+			if _, err := prefProc.ClearActiveHousehold(pref.Id()); err != nil {
+				p.l.WithError(err).Warn("Failed to clear active household after leave")
+			}
+		}
+	}
+
+	return nil
 }
 
 func (p *Processor) Delete(id uuid.UUID) error {

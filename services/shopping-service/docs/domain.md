@@ -54,6 +54,13 @@ The model is immutable. Fields are private with getter methods. `WithCounts` ret
 | Delete(id) | Hard-deletes a list |
 | Archive(id) | Transitions list from active to archived |
 | Unarchive(id) | Transitions list from archived to active |
+| GetWithItems(id) | Returns a list with all its items |
+| AddItem(listID, input, authHeader) | Validates list is not archived, enriches category from category service, creates item |
+| UpdateItem(listID, itemID, input, authHeader) | Validates list is not archived, enriches category from category service, updates item |
+| RemoveItem(listID, itemID) | Validates list is not archived, deletes item |
+| CheckItem(listID, itemID, checked) | Validates list is not archived, sets item checked state |
+| UncheckAllItems(listID) | Validates list is not archived, unchecks all items in list |
+| ImportFromMealPlan(listID, planID, authHeader) | Validates list is not archived, fetches ingredients from recipe service, resolves categories, creates items |
 
 ---
 

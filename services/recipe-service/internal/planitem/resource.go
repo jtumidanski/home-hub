@@ -24,7 +24,7 @@ func (r RestModel) GetName() string       { return "plan-items" }
 func (r RestModel) GetID() string          { return r.Id.String() }
 func (r *RestModel) SetID(id string) error { var err error; r.Id, err = uuid.Parse(id); return err }
 
-func TransformItem(m Model) RestModel {
+func Transform(m Model) RestModel {
 	return RestModel{
 		Id:                m.Id(),
 		Day:               m.Day().Format("2006-01-02"),
@@ -39,10 +39,10 @@ func TransformItem(m Model) RestModel {
 	}
 }
 
-func TransformItemSlice(models []Model) []RestModel {
+func TransformSlice(models []Model) []RestModel {
 	result := make([]RestModel, len(models))
 	for i, m := range models {
-		result[i] = TransformItem(m)
+		result[i] = Transform(m)
 	}
 	return result
 }

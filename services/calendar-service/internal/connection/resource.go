@@ -13,7 +13,6 @@ import (
 	"github.com/jtumidanski/home-hub/services/calendar-service/internal/config"
 	"github.com/jtumidanski/home-hub/services/calendar-service/internal/crypto"
 	"github.com/jtumidanski/home-hub/services/calendar-service/internal/googlecal"
-	"github.com/jtumidanski/home-hub/services/calendar-service/internal/oauthstate"
 	"github.com/jtumidanski/home-hub/shared/go/server"
 	tenantctx "github.com/jtumidanski/home-hub/shared/go/tenant"
 	"github.com/sirupsen/logrus"
@@ -27,11 +26,12 @@ func InitializeRoutes(db *gorm.DB, gcClient *googlecal.Client, enc *crypto.Encry
 	return func(l logrus.FieldLogger, si jsonapi.ServerInformation, api *mux.Router) {
 		rh := server.RegisterHandler(l)(si)
 		rih := server.RegisterInputHandler[AuthorizeRequest](l)(si)
+		rihSync := server.RegisterInputHandler[TriggerSyncRequest](l)(si)
 
 		api.HandleFunc("/calendar/connections", rh("ListConnections", listHandler(db))).Methods(http.MethodGet)
 		api.HandleFunc("/calendar/connections/google/authorize", rih("AuthorizeGoogle", authorizeHandler(db, gcClient, cfg))).Methods(http.MethodPost)
 		api.HandleFunc("/calendar/connections/{id}", rh("DeleteConnection", deleteHandler(db, gcClient, enc, cascadeDelete))).Methods(http.MethodDelete)
-		api.HandleFunc("/calendar/connections/{id}/sync", rh("TriggerSync", triggerSyncHandler(db, syncTrigger))).Methods(http.MethodPost)
+		api.HandleFunc("/calendar/connections/{id}/sync", rihSync("TriggerSync", triggerSyncHandler(db, syncTrigger))).Methods(http.MethodPost)
 	}
 }
 
@@ -72,8 +72,8 @@ func authorizeHandler(db *gorm.DB, gcClient *googlecal.Client, cfg config.Config
 
 			redirectURI := buildCallbackURI(r)
 
-			stateProc := oauthstate.NewProcessor(d.Logger(), r.Context(), db)
-			state, err := stateProc.Create(t.Id(), t.HouseholdId(), t.UserId(), input.RedirectUri, input.Reauthorize)
+			proc := NewProcessor(d.Logger(), r.Context(), db)
+			state, err := proc.CreateOAuthState(t.Id(), t.HouseholdId(), t.UserId(), input.RedirectUri, input.Reauthorize)
 			if err != nil {
 				d.Logger().WithError(err).Error("failed to create oauth state")
 				server.WriteError(w, http.StatusInternalServerError, "Internal Error", "")
@@ -110,8 +110,8 @@ func callbackHandler(db *gorm.DB, gcClient *googlecal.Client, enc *crypto.Encryp
 				return
 			}
 
-			stateProc := oauthstate.NewProcessor(d.Logger(), r.Context(), db)
-			state, err := stateProc.ValidateAndConsume(stateID)
+			proc := NewProcessor(d.Logger(), r.Context(), db)
+			state, err := proc.ValidateAndConsumeOAuthState(stateID)
 			if err != nil {
 				d.Logger().WithError(err).Warn("OAuth state validation failed")
 				http.Redirect(w, r, "/app/calendar?error=invalid_state", http.StatusFound)
@@ -148,8 +148,6 @@ func callbackHandler(db *gorm.DB, gcClient *googlecal.Client, enc *crypto.Encryp
 			displayName := email
 
 			tokenExpiry := time.Now().UTC().Add(time.Duration(tokenResp.ExpiresIn) * time.Second)
-
-			proc := NewProcessor(d.Logger(), r.Context(), db)
 
 			if state.Reauthorize() {
 				existing, findErr := proc.ByUserAndProvider(state.UserID(), "google")
@@ -231,8 +229,8 @@ func deleteHandler(db *gorm.DB, gcClient *googlecal.Client, enc *crypto.Encrypto
 	}
 }
 
-func triggerSyncHandler(db *gorm.DB, syncTrigger SyncTrigger) server.GetHandler {
-	return func(d *server.HandlerDependency, c *server.HandlerContext) http.HandlerFunc {
+func triggerSyncHandler(db *gorm.DB, syncTrigger SyncTrigger) server.InputHandler[TriggerSyncRequest] {
+	return func(d *server.HandlerDependency, c *server.HandlerContext, _ TriggerSyncRequest) http.HandlerFunc {
 		return server.ParseID("id", func(id uuid.UUID) http.HandlerFunc {
 			return func(w http.ResponseWriter, r *http.Request) {
 				t := tenantctx.MustFromContext(r.Context())

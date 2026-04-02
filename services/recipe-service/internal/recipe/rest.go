@@ -74,7 +74,7 @@ type ListEnrichment struct {
 	UsageCount          int64
 }
 
-func TransformList(m Model, enrichment ListEnrichment) RestModel {
+func Transform(m Model, enrichment ListEnrichment) RestModel {
 	tags := m.Tags()
 	if tags == nil {
 		tags = []string{}
@@ -90,10 +90,10 @@ func TransformList(m Model, enrichment ListEnrichment) RestModel {
 	}
 }
 
-func TransformListSlice(models []Model, enrichments []ListEnrichment) []RestModel {
+func TransformSlice(models []Model, enrichments []ListEnrichment) []RestModel {
 	result := make([]RestModel, len(models))
 	for i, m := range models {
-		result[i] = TransformList(m, enrichments[i])
+		result[i] = Transform(m, enrichments[i])
 	}
 	return result
 }

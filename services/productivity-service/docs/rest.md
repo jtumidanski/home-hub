@@ -19,6 +19,7 @@ Lists all non-deleted tasks.
 | status          | string  |
 | dueOn           | string  |
 | rolloverEnabled | boolean |
+| ownerUserId     | string  |
 | completedAt     | string  |
 | deletedAt       | string  |
 | createdAt       | string  |
@@ -36,7 +37,7 @@ Lists all non-deleted tasks.
 
 ### POST /api/v1/tasks
 
-Creates a new task with status "pending".
+Creates a new task with status "pending". If `ownerUserId` is not provided, defaults to the authenticated user.
 
 **Parameters:** None
 
@@ -48,6 +49,7 @@ Creates a new task with status "pending".
 | notes           | string  | no       |
 | dueOn           | string  | no       |
 | rolloverEnabled | boolean | no       |
+| ownerUserId     | string  | no       |
 
 `dueOn` is parsed as `YYYY-MM-DD`.
 
@@ -55,9 +57,10 @@ Creates a new task with status "pending".
 
 **Error Conditions:**
 
-| Status | Condition        |
-|--------|------------------|
-| 500    | Creation failed  |
+| Status | Condition             |
+|--------|-----------------------|
+| 400    | Title is required     |
+| 500    | Creation failed       |
 
 ---
 
@@ -101,6 +104,7 @@ Updates a task. Status transitions between "pending" and "completed" automatical
 | status          | string  | yes      |
 | dueOn           | string  | no       |
 | rolloverEnabled | boolean | no       |
+| ownerUserId     | string  | no       |
 
 **Response:** JSON:API `tasks` resource.
 
@@ -109,6 +113,7 @@ Updates a task. Status transitions between "pending" and "completed" automatical
 | Status | Condition      |
 |--------|----------------|
 | 400    | Invalid ID     |
+| 404    | Not found      |
 | 500    | Update failed  |
 
 ---
@@ -130,6 +135,7 @@ Soft-deletes a task.
 | Status | Condition      |
 |--------|----------------|
 | 400    | Invalid ID     |
+| 404    | Not found      |
 | 500    | Delete failed  |
 
 ---
@@ -140,11 +146,11 @@ Restores a soft-deleted task within the 3-day restoration window. Creates an aud
 
 **Parameters:** None
 
-**Relationships:**
+**Request Model:** JSON:API `task-restorations` resource.
 
-| Name | Type   | Required |
-|------|--------|----------|
-| task | to-one | yes      |
+| Attribute | Type   | Required |
+|-----------|--------|----------|
+| taskId    | string | yes      |
 
 **Response:** JSON:API `task-restorations` resource. Status 201.
 
@@ -156,7 +162,7 @@ Restores a soft-deleted task within the 3-day restoration window. Creates an aud
 
 | Status | Condition              |
 |--------|------------------------|
-| 400    | Missing relationship   |
+| 400    | Invalid taskId         |
 | 400    | Task is not deleted    |
 | 400    | Restore window expired |
 | 404    | Task not found         |
@@ -177,6 +183,7 @@ Lists all reminders.
 | title            | string  |
 | notes            | string  |
 | scheduledFor     | string  |
+| ownerUserId      | string  |
 | active           | boolean |
 | lastDismissedAt  | string  |
 | lastSnoozedUntil | string  |
@@ -193,7 +200,7 @@ Lists all reminders.
 
 ### POST /api/v1/reminders
 
-Creates a new reminder.
+Creates a new reminder. If `ownerUserId` is not provided, defaults to the authenticated user.
 
 **Parameters:** None
 
@@ -204,6 +211,7 @@ Creates a new reminder.
 | title        | string | yes      |
 | notes        | string | no       |
 | scheduledFor | string | yes      |
+| ownerUserId  | string | no       |
 
 `scheduledFor` is parsed as RFC3339.
 
@@ -214,6 +222,7 @@ Creates a new reminder.
 | Status | Condition        |
 |--------|------------------|
 | 400    | Invalid date     |
+| 400    | Validation failed |
 | 500    | Creation failed  |
 
 ---
@@ -256,6 +265,7 @@ Updates a reminder.
 | title        | string | yes      |
 | notes        | string | no       |
 | scheduledFor | string | yes      |
+| ownerUserId  | string | no       |
 
 **Response:** JSON:API `reminders` resource.
 
@@ -265,6 +275,7 @@ Updates a reminder.
 |--------|----------------|
 | 400    | Invalid ID     |
 | 400    | Invalid date   |
+| 404    | Not found      |
 | 500    | Update failed  |
 
 ---
@@ -286,6 +297,7 @@ Hard-deletes a reminder.
 | Status | Condition      |
 |--------|----------------|
 | 400    | Invalid ID     |
+| 404    | Not found      |
 | 500    | Delete failed  |
 
 ---
@@ -296,11 +308,11 @@ Dismisses a reminder and creates an audit record.
 
 **Parameters:** None
 
-**Relationships:**
+**Request Model:** JSON:API `reminder-dismissals` resource.
 
-| Name     | Type   | Required |
-|----------|--------|----------|
-| reminder | to-one | yes      |
+| Attribute  | Type   | Required |
+|------------|--------|----------|
+| reminderId | string | yes      |
 
 **Response:** JSON:API `reminder-dismissals` resource. Status 201.
 
@@ -312,7 +324,9 @@ Dismisses a reminder and creates an audit record.
 
 | Status | Condition            |
 |--------|----------------------|
-| 400    | Missing relationship |
+| 400    | Invalid reminderId   |
+| 400    | Validation failed    |
+| 404    | Reminder not found   |
 | 500    | Dismiss failed       |
 
 ---
@@ -323,19 +337,14 @@ Snoozes a reminder for a specified duration and creates an audit record.
 
 **Parameters:** None
 
-**Request Attributes:**
+**Request Model:** JSON:API `reminder-snoozes` resource.
 
-| Attribute       | Type | Required |
-|-----------------|------|----------|
-| durationMinutes | int  | yes      |
+| Attribute       | Type   | Required |
+|-----------------|--------|----------|
+| reminderId      | string | yes      |
+| durationMinutes | int    | yes      |
 
-Allowed values: 10, 30, 60.
-
-**Relationships:**
-
-| Name     | Type   | Required |
-|----------|--------|----------|
-| reminder | to-one | yes      |
+Allowed values for durationMinutes: 10, 30, 60.
 
 **Response:** JSON:API `reminder-snoozes` resource. Status 201.
 
@@ -347,10 +356,11 @@ Allowed values: 10, 30, 60.
 
 **Error Conditions:**
 
-| Status | Condition                |
-|--------|--------------------------|
-| 400    | Missing relationship     |
-| 400    | Invalid snooze duration  |
+| Status | Condition               |
+|--------|-------------------------|
+| 400    | Invalid reminderId      |
+| 400    | Invalid snooze parameters |
+| 500    | Snooze failed           |
 
 ---
 
@@ -368,7 +378,11 @@ Returns aggregated task counts.
 | completedTodayCount | int  |
 | overdueCount        | int  |
 
-**Error Conditions:** None
+**Error Conditions:**
+
+| Status | Condition    |
+|--------|--------------|
+| 500    | Query failed |
 
 ---
 
@@ -386,7 +400,11 @@ Returns aggregated reminder counts.
 | upcomingCount | int  |
 | snoozedCount  | int  |
 
-**Error Conditions:** None
+**Error Conditions:**
+
+| Status | Condition    |
+|--------|--------------|
+| 500    | Query failed |
 
 ---
 
@@ -400,10 +418,12 @@ Returns a combined dashboard summary.
 
 | Attribute        | Type   |
 |------------------|--------|
-| householdName    | string |
-| timezone         | string |
 | pendingTaskCount | int    |
 | dueReminderCount | int    |
 | generatedAt      | string |
 
-**Error Conditions:** None
+**Error Conditions:**
+
+| Status | Condition    |
+|--------|--------------|
+| 500    | Query failed |

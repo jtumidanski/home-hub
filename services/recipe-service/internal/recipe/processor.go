@@ -356,7 +356,7 @@ func (p *Processor) GetOrUpdatePlannerConfig(recipeID uuid.UUID, config *RestPla
 
 func (p *Processor) BuildDetailEnrichment(m Model, ingredients []normalization.Model) DetailEnrichment {
 	enrichment := DetailEnrichment{
-		Ingredients: normalization.TransformIngredients(ingredients),
+		Ingredients: normalization.TransformSlice(ingredients),
 	}
 	plannerProc := planner.NewProcessor(p.l, p.ctx, p.db)
 	if pc, err := plannerProc.GetByRecipeID(m.Id()); err == nil {

@@ -7,7 +7,6 @@ import (
 	"github.com/google/uuid"
 	"github.com/gorilla/mux"
 	"github.com/jtumidanski/api2go/jsonapi"
-	"github.com/jtumidanski/home-hub/services/account-service/internal/household"
 	sharedauth "github.com/jtumidanski/home-hub/shared/go/auth"
 	"github.com/jtumidanski/home-hub/shared/go/server"
 	tenantctx "github.com/jtumidanski/home-hub/shared/go/tenant"
@@ -87,18 +86,11 @@ func listMineHandler(db *gorm.DB) server.GetHandler {
 				return
 			}
 
-			// Build a lookup map for household REST models.
-			hhMap := make(map[string]*household.RestModel, len(households))
-			for _, hh := range households {
-				hhRest, err := household.Transform(hh)
-				if err == nil {
-					hhMap[hh.Id().String()] = &hhRest
-				}
-			}
-
-			mineRest := make([]MineRestModel, len(rest))
-			for i, rm := range rest {
-				mineRest[i] = MineRestModel{RestModel: rm, Household: hhMap[rm.HouseholdID.String()]}
+			mineRest, err := TransformMineSlice(rest, households)
+			if err != nil {
+				d.Logger().WithError(err).Error("Creating mine REST models")
+				w.WriteHeader(http.StatusInternalServerError)
+				return
 			}
 
 			server.MarshalSliceResponse[MineRestModel](d.Logger())(w)(c.ServerInformation())(mineRest)

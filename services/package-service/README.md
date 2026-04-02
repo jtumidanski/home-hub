@@ -7,7 +7,7 @@ Each household member can add packages with tracking numbers. The service polls 
 ## External Dependencies
 
 - **PostgreSQL** — persistent storage for packages and tracking events. Uses the `package` schema.
-- **USPS Tracking API v3** — OAuth 2.0 client credentials, package tracking.
+- **USPS Tracking API v3** — OAuth 2.0 client credentials, package tracking, 1000/day rate limit.
 - **UPS Tracking API v1** — OAuth 2.0 client credentials, package tracking, 250/day rate limit.
 - **FedEx Track API v1** — OAuth 2.0 client credentials, package tracking, 500/day rate limit.
 - **Auth Service** — provides JWKS endpoint for JWT validation on protected routes.

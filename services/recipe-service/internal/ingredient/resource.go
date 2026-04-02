@@ -54,7 +54,7 @@ func listIngredientsHandler(db *gorm.DB) server.GetHandler {
 				return
 			}
 
-			rest := TransformListSlice(models)
+			rest := TransformSlice(models)
 
 			items := make([]jsonapi.MarshalIdentifier, len(rest))
 			for i := range rest {

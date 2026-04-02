@@ -66,9 +66,9 @@ Creates a new category for the authenticated tenant.
 
 | Status | Condition                                        |
 |--------|--------------------------------------------------|
+| 400    | `ErrNameRequired` -- name is empty               |
+| 400    | `ErrNameTooLong` -- name exceeds 100 characters  |
 | 409    | `ErrDuplicateName` -- name already exists        |
-| 422    | `ErrNameRequired` -- name is empty               |
-| 422    | `ErrNameTooLong` -- name exceeds 100 characters  |
 | 500    | Internal failure                                 |
 
 ---
@@ -106,11 +106,11 @@ Both `name` and `sort_order` are optional (`omitempty`).
 
 | Status | Condition                                            |
 |--------|------------------------------------------------------|
+| 400    | `ErrNameRequired` -- name is empty after trim        |
+| 400    | `ErrNameTooLong` -- name exceeds 100 characters      |
+| 400    | `ErrInvalidSortOrder` -- sort order is negative      |
 | 404    | Category not found                                   |
 | 409    | `ErrDuplicateName` -- name taken by another category |
-| 422    | `ErrNameRequired` -- name is empty after trim        |
-| 422    | `ErrNameTooLong` -- name exceeds 100 characters      |
-| 422    | `ErrInvalidSortOrder` -- sort order is negative      |
 | 500    | Internal failure                                     |
 
 ---

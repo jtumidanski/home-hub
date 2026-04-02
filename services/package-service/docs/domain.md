@@ -118,7 +118,7 @@ Detects the carrier for a tracking number using regex pattern matching.
 
 - UPS: starts with `1Z` followed by 16 alphanumeric characters.
 - FedEx: 12, 15, or 20 digit numeric tracking numbers.
-- USPS: 20-22 digit numeric or 13-character alphanumeric tracking numbers.
+- USPS: 20-22 digit numeric or prefix patterns starting with 94, 92, 93, 70, or 23.
 - Confidence levels: `high` (single match), `medium` (multiple matches), `low` (no match).
 
 ---
@@ -142,7 +142,7 @@ Periodically polls carrier APIs for status updates on active packages.
 
 ### Responsibility
 
-Manages package lifecycle transitions on a daily schedule.
+Manages package lifecycle transitions on an hourly schedule.
 
 - Marks packages as `stale` after a configurable number of days (default 14) with no status change.
 - Auto-archives `delivered` packages after a configurable number of days (default 7).

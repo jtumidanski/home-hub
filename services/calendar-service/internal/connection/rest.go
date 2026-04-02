@@ -71,6 +71,21 @@ func (r *AuthorizeRequest) SetID(id string) error {
 	return err
 }
 
+type TriggerSyncRequest struct {
+	Id uuid.UUID `json:"-"`
+}
+
+func (r TriggerSyncRequest) GetName() string { return "calendar-sync-triggers" }
+func (r TriggerSyncRequest) GetID() string   { return r.Id.String() }
+func (r *TriggerSyncRequest) SetID(id string) error {
+	if id == "" {
+		return nil
+	}
+	var err error
+	r.Id, err = uuid.Parse(id)
+	return err
+}
+
 type AuthorizeResponse struct {
 	Id           uuid.UUID `json:"-"`
 	AuthorizeUrl string    `json:"authorizeUrl"`

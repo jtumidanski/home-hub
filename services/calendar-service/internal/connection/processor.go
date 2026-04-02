@@ -8,6 +8,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/jtumidanski/home-hub/services/calendar-service/internal/crypto"
 	"github.com/jtumidanski/home-hub/services/calendar-service/internal/googlecal"
+	"github.com/jtumidanski/home-hub/services/calendar-service/internal/oauthstate"
 	"github.com/jtumidanski/home-hub/shared/go/database"
 	"github.com/jtumidanski/home-hub/shared/go/model"
 	"github.com/sirupsen/logrus"
@@ -116,6 +117,14 @@ func (p *Processor) GetOrRefreshAccessToken(conn Model, gcClient *googlecal.Clie
 	_ = p.UpdateTokens(conn.Id(), encAccess, tokenExpiry)
 
 	return tokenResp.AccessToken, nil
+}
+
+func (p *Processor) CreateOAuthState(tenantID, householdID, userID uuid.UUID, redirectURI string, reauthorize bool) (oauthstate.Model, error) {
+	return oauthstate.NewProcessor(p.l, p.ctx, p.db).Create(tenantID, householdID, userID, redirectURI, reauthorize)
+}
+
+func (p *Processor) ValidateAndConsumeOAuthState(stateID uuid.UUID) (oauthstate.Model, error) {
+	return oauthstate.NewProcessor(p.l, p.ctx, p.db).ValidateAndConsume(stateID)
 }
 
 func (p *Processor) CheckManualSyncAllowed(conn Model) error {

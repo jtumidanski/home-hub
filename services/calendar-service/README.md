@@ -7,7 +7,7 @@ Each household member can connect their own Google account. The service merges a
 ## External Dependencies
 
 - **PostgreSQL** — persistent storage for connections, sources, events, and OAuth state. Uses the `calendar` schema.
-- **Google Calendar API** — reads calendar lists and events via OAuth 2.0 with `calendar.readonly` and `email` scopes.
+- **Google Calendar API** — reads and writes calendar lists and events via OAuth 2.0 with `calendar` and `email` scopes.
 - **Auth Service** — provides JWKS endpoint for JWT validation on protected routes.
 
 ## Runtime Configuration

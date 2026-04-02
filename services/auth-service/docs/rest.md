@@ -14,6 +14,7 @@ Returns the list of enabled OIDC providers.
 
 | Attribute   | Type   |
 |-------------|--------|
+| slug        | string |
 | displayName | string |
 
 Provider list is currently derived from the `OIDC_CLIENT_ID` environment variable. If set, a Google provider entry is returned.

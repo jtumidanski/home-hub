@@ -123,7 +123,7 @@ func listHandler(db *gorm.DB) server.GetHandler {
 				}
 			}
 
-			rest := TransformListSlice(models, enrichments)
+			rest := TransformSlice(models, enrichments)
 
 			items := make([]jsonapi.MarshalIdentifier, len(rest))
 			for i := range rest {

@@ -26,7 +26,7 @@ func (r *CurrentRestModel) SetID(id string) error {
 	return err
 }
 
-func TransformCurrent(m Model) CurrentRestModel {
+func TransformCurrent(m Model) (CurrentRestModel, error) {
 	tempUnit := m.TemperatureUnit()
 	current := m.CurrentData()
 
@@ -47,7 +47,19 @@ func TransformCurrent(m Model) CurrentRestModel {
 		HighTemperature: highTemp,
 		LowTemperature:  lowTemp,
 		FetchedAt:       m.FetchedAt(),
+	}, nil
+}
+
+func TransformCurrentSlice(models []Model) ([]CurrentRestModel, error) {
+	result := make([]CurrentRestModel, len(models))
+	for i, m := range models {
+		rm, err := TransformCurrent(m)
+		if err != nil {
+			return nil, err
+		}
+		result[i] = rm
 	}
+	return result, nil
 }
 
 type HourlyRestModel struct {
@@ -78,7 +90,7 @@ func (r *DailyRestModel) SetID(id string) error {
 	return nil
 }
 
-func TransformForecast(m Model) []DailyRestModel {
+func TransformForecast(m Model) ([]DailyRestModel, error) {
 	tempUnit := m.TemperatureUnit()
 	result := make([]DailyRestModel, len(m.ForecastData()))
 	for i, d := range m.ForecastData() {
@@ -105,5 +117,5 @@ func TransformForecast(m Model) []DailyRestModel {
 			HourlyForecast:  hourly,
 		}
 	}
-	return result
+	return result, nil
 }

@@ -107,6 +107,25 @@ func (r MineRestModel) GetReferencedStructs() []jsonapi.MarshalIdentifier {
 	return nil
 }
 
+// TransformMineSlice converts invitation REST models and household models into MineRestModels
+// with embedded household REST representations.
+func TransformMineSlice(rest []RestModel, households []household.Model) ([]MineRestModel, error) {
+	hhMap := make(map[string]*household.RestModel, len(households))
+	for _, hh := range households {
+		hhRest, err := household.Transform(hh)
+		if err != nil {
+			return nil, err
+		}
+		hhMap[hh.Id().String()] = &hhRest
+	}
+
+	result := make([]MineRestModel, len(rest))
+	for i, rm := range rest {
+		result[i] = MineRestModel{RestModel: rm, Household: hhMap[rm.HouseholdID.String()]}
+	}
+	return result, nil
+}
+
 func (r *CreateRequest) SetToOneReferenceID(name, ID string) error {
 	if name == "household" {
 		id, err := uuid.Parse(ID)
