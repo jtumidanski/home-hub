@@ -59,7 +59,7 @@ Links an external OIDC provider identity (provider name + subject) to an interna
 
 ### Core Models
 
-**Entity** (`externalidentity.Entity`)
+**Model** (`externalidentity.Model`)
 
 | Field           | Type      |
 |-----------------|-----------|
@@ -94,7 +94,7 @@ Manages long-lived refresh tokens for session continuity. Tokens are stored as S
 
 ### Core Models
 
-**Entity** (`refreshtoken.Entity`)
+**Model** (`refreshtoken.Model`)
 
 | Field     | Type      |
 |-----------|-----------|
@@ -147,6 +147,56 @@ Represents a configured external OIDC identity provider.
 
 All fields are immutable after construction. Access is through getter methods.
 
+### Invariants
+
+- Name is required.
+- Provider list is currently derived from configuration, not from the database.
+- A Google provider entry is returned when `OIDC_CLIENT_ID` is configured.
+- Google provider uses a fixed UUID (`00000000-0000-0000-0000-000000000001`).
+
+### Processors
+
+**Processor** (`oidcprovider.Processor`)
+
+| Method          | Description                                     |
+|-----------------|-------------------------------------------------|
+| `ListEnabled()` | Returns all enabled OIDC providers from config  |
+
+---
+
+## Auth Flow
+
+### Responsibility
+
+Orchestrates the full authentication lifecycle: OIDC callback handling, token refresh, and logout. Coordinates across the user, external identity, refresh token, and JWT domains.
+
+### Core Models
+
+**CallbackResult** (`authflow.CallbackResult`)
+
+| Field        | Type   |
+|--------------|--------|
+| AccessToken  | string |
+| RefreshToken | string |
+
+**RefreshResult** (`authflow.RefreshResult`)
+
+| Field        | Type   |
+|--------------|--------|
+| AccessToken  | string |
+| RefreshToken | string |
+
+### Processors
+
+**Processor** (`authflow.Processor`)
+
+| Method                              | Description                                                                                          |
+|-------------------------------------|------------------------------------------------------------------------------------------------------|
+| `HandleCallback(oidcCfg, code)`     | Exchanges authorization code, fetches user info, finds or creates user, links identity, issues tokens |
+| `HandleCallbackWithUserInfo(info)`  | Performs user/identity/token steps given resolved user info                                           |
+| `HandleRefresh(oldRefreshToken)`    | Rotates refresh token and issues a new access token                                                  |
+| `HandleLogout(userID)`              | Revokes all refresh tokens for the user                                                              |
+
 ---
 
 ## JWT
@@ -163,8 +213,11 @@ Issues RS256-signed JWT access tokens and exposes the public key via JWKS.
 |-------------|-----------|
 | (standard)  | jwtgo.RegisteredClaims |
 | UserID      | uuid.UUID |
+| Email       | string    |
 | TenantID    | uuid.UUID |
 | HouseholdID | uuid.UUID |
+
+All fields are immutable after construction. Access is through getter methods.
 
 ### Invariants
 
@@ -182,7 +235,7 @@ Issues RS256-signed JWT access tokens and exposes the public key via JWKS.
 | Method                              | Description                              |
 |-------------------------------------|------------------------------------------|
 | `NewIssuer(pemKey, kid)`            | Creates issuer from PEM private key      |
-| `Issue(userID, tenantID, hhID)`     | Signs and returns a JWT string           |
+| `Issue(userID, email, tenantID, hhID)` | Signs and returns a JWT string        |
 | `PublicKey()`                       | Returns the RSA public key               |
 | `Kid()`                             | Returns the key ID                       |
 

@@ -22,7 +22,6 @@ The auth service handles authentication for the Home Hub platform. It implements
 | `OIDC_ISSUER_URL`  | `https://accounts.google.com`                                 | OIDC provider issuer URL           |
 | `OIDC_CLIENT_ID`   | (required)                                                    | OAuth client ID                    |
 | `OIDC_CLIENT_SECRET` | (required)                                                  | OAuth client secret                |
-| `OIDC_REDIRECT_URI` | (required)                                                   | OAuth callback redirect URI        |
 
 ## Documentation
 

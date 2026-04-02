@@ -63,7 +63,7 @@ All tables are created in the PostgreSQL `auth` schema. Schema management is han
 | Table               | Index Name            | Columns                      | Type   |
 |---------------------|-----------------------|------------------------------|--------|
 | users               | (auto)                | email                        | UNIQUE |
-| external_identities | idx_provider_subject  | provider_subject             | UNIQUE |
+| external_identities | idx_provider_subject  | provider, provider_subject   | UNIQUE |
 | refresh_tokens      | (auto)                | user_id                      | INDEX  |
 
 ## Migration Rules
