@@ -59,7 +59,12 @@ func currentHandler(db *gorm.DB, client *openmeteo.Client, cacheTTL time.Duratio
 				return
 			}
 
-			rest := TransformCurrent(m)
+			rest, err := TransformCurrent(m)
+			if err != nil {
+				d.Logger().WithError(err).Error("Creating REST model.")
+				w.WriteHeader(http.StatusInternalServerError)
+				return
+			}
 			server.MarshalResponse[CurrentRestModel](d.Logger())(w)(c.ServerInformation())(map[string][]string{})(rest)
 		}
 	}
@@ -101,7 +106,12 @@ func forecastHandler(db *gorm.DB, client *openmeteo.Client, cacheTTL time.Durati
 				return
 			}
 
-			rest := TransformForecast(m)
+			rest, err := TransformForecast(m)
+			if err != nil {
+				d.Logger().WithError(err).Error("Creating REST model.")
+				w.WriteHeader(http.StatusInternalServerError)
+				return
+			}
 			server.MarshalSliceResponse[DailyRestModel](d.Logger())(w)(c.ServerInformation())(rest)
 		}
 	}

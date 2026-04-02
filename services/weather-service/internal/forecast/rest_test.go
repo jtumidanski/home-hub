@@ -24,7 +24,10 @@ func TestTransformCurrent(t *testing.T) {
 		fetchedAt: time.Now(),
 	}
 
-	rest := TransformCurrent(m)
+	rest, err := TransformCurrent(m)
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
 
 	if rest.Temperature != 72.5 {
 		t.Errorf("expected temperature 72.5, got %f", rest.Temperature)
@@ -60,7 +63,10 @@ func TestTransformCurrentMetric(t *testing.T) {
 		},
 	}
 
-	rest := TransformCurrent(m)
+	rest, err := TransformCurrent(m)
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
 	if rest.TemperatureUnit != "°C" {
 		t.Errorf("expected °C, got %s", rest.TemperatureUnit)
 	}
@@ -81,7 +87,10 @@ func TestTransformForecast(t *testing.T) {
 		},
 	}
 
-	rest := TransformForecast(m)
+	rest, err := TransformForecast(m)
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
 
 	if len(rest) != 2 {
 		t.Fatalf("expected 2 days, got %d", len(rest))
@@ -130,7 +139,10 @@ func TestTransformCurrentNoForecastData(t *testing.T) {
 		forecastData: []DailyForecast{},
 	}
 
-	rest := TransformCurrent(m)
+	rest, err := TransformCurrent(m)
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
 	if rest.HighTemperature != 0 {
 		t.Errorf("expected 0 high when no forecast data, got %f", rest.HighTemperature)
 	}
