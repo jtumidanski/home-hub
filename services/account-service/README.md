@@ -1,11 +1,12 @@
 # Account Service
 
-The account service manages multi-tenant identity and access for the Home Hub platform. It owns tenants, households, memberships, and user preferences, and provides a resolved application context that combines these into a single response for the frontend.
+The account service manages multi-tenant identity and access for the Home Hub platform. It owns tenants, households, memberships, user preferences, and invitations, and provides a resolved application context that combines these into a single response for the frontend.
 
 ## External Dependencies
 
 - **PostgreSQL** — primary data store, schema `account`
 - **Auth Service** — JWKS endpoint for JWT validation
+- **Auth Database** — `auth.users` table, joined for member display names
 
 ## Runtime Configuration
 
