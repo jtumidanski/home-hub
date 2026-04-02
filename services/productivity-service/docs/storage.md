@@ -16,6 +16,7 @@ All tables are created in the PostgreSQL `productivity` schema. Schema managemen
 | status              | TEXT      | NOT NULL, DEFAULT 'pending' |
 | due_on              | DATE      | NULLABLE                 |
 | rollover_enabled    | BOOLEAN   | NOT NULL, DEFAULT false  |
+| owner_user_id       | UUID      | NULLABLE                 |
 | completed_at        | TIMESTAMP | NULLABLE                 |
 | completed_by_user_id | UUID     | NULLABLE                 |
 | deleted_at          | TIMESTAMP | NULLABLE                 |
@@ -32,6 +33,7 @@ All tables are created in the PostgreSQL `productivity` schema. Schema managemen
 | title              | TEXT      | NOT NULL    |
 | notes              | TEXT      |             |
 | scheduled_for      | TIMESTAMP | NOT NULL    |
+| owner_user_id      | UUID      | NULLABLE    |
 | last_dismissed_at  | TIMESTAMP | NULLABLE    |
 | last_snoozed_until | TIMESTAMP | NULLABLE    |
 | created_at         | TIMESTAMP | NOT NULL    |
@@ -76,9 +78,11 @@ All tables are created in the PostgreSQL `productivity` schema. Schema managemen
 
 - `tasks.tenant_id` references a tenant (external).
 - `tasks.household_id` references a household (external).
+- `tasks.owner_user_id` references a user (external, nullable).
 - `tasks.completed_by_user_id` references a user (external, nullable).
 - `reminders.tenant_id` references a tenant (external).
 - `reminders.household_id` references a household (external).
+- `reminders.owner_user_id` references a user (external, nullable).
 - `reminder_dismissals.reminder_id` references a reminder.
 - `reminder_dismissals.created_by_user_id` references a user (external).
 - `reminder_snoozes.reminder_id` references a reminder.

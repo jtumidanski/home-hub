@@ -1,6 +1,6 @@
 # Productivity Service
 
-The productivity service manages tasks and reminders for households in the Home Hub platform. It supports task lifecycle management with soft deletes and restoration, reminder scheduling with snooze and dismissal, and provides aggregated summary endpoints for dashboards.
+The productivity service manages tasks and reminders for households in the Home Hub platform. It supports task lifecycle management with soft deletes and restoration, reminder scheduling with snooze and dismissal, optional owner assignment for tasks and reminders, and provides aggregated summary endpoints for dashboards.
 
 ## External Dependencies
 
