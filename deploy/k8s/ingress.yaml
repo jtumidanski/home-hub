@@ -64,6 +64,13 @@ spec:
                             name: account-service
                             port:
                                 number: 8080
+                  - path: /api/v1/invitations
+                    pathType: Prefix
+                    backend:
+                        service:
+                            name: account-service
+                            port:
+                                number: 8080
                   - path: /api/v1/tasks
                     pathType: Prefix
                     backend:
@@ -100,6 +107,20 @@ spec:
                             port:
                                 number: 8080
                   - path: /api/v1/recipes
+                    pathType: Prefix
+                    backend:
+                        service:
+                            name: recipe-service
+                            port:
+                                number: 8080
+                  - path: /api/v1/meals
+                    pathType: Prefix
+                    backend:
+                        service:
+                            name: recipe-service
+                            port:
+                                number: 8080
+                  - path: /api/v1/ingredients
                     pathType: Prefix
                     backend:
                         service:
