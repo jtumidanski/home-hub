@@ -161,6 +161,46 @@ func (r UpdateRequest) GetName() string       { return "packages" }
 func (r UpdateRequest) GetID() string          { return r.Id.String() }
 func (r *UpdateRequest) SetID(id string) error { var err error; r.Id, err = uuid.Parse(id); return err }
 
+func Transform(m Model) (RestModel, error) {
+	tn := m.TrackingNumber()
+	s := m.Status()
+
+	rm := RestModel{
+		Id:             m.Id(),
+		TrackingNumber: &tn,
+		Carrier:        m.Carrier(),
+		Label:          m.Label(),
+		Notes:          m.Notes(),
+		Status:         &s,
+		Private:        m.Private(),
+		ActualDelivery: m.ActualDelivery(),
+		LastPolledAt:   m.LastPolledAt(),
+		ArchivedAt:     m.ArchivedAt(),
+		UserID:         m.UserID(),
+		CreatedAt:      m.CreatedAt(),
+		UpdatedAt:      m.UpdatedAt(),
+	}
+
+	if m.EstimatedDelivery() != nil {
+		ed := m.EstimatedDelivery().Format("2006-01-02")
+		rm.EstimatedDelivery = &ed
+	}
+
+	return rm, nil
+}
+
+func TransformSlice(models []Model) ([]RestModel, error) {
+	result := make([]RestModel, len(models))
+	for i, m := range models {
+		rm, err := Transform(m)
+		if err != nil {
+			return nil, err
+		}
+		result[i] = rm
+	}
+	return result, nil
+}
+
 func TransformWithPrivacy(m Model, requesterUserID uuid.UUID) (RestModel, error) {
 	isOwner := m.UserID() == requesterUserID
 
