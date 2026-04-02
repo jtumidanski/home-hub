@@ -20,6 +20,7 @@ All tables are created in the PostgreSQL `calendar` schema. Schema management is
 | token_expiry        | TIMESTAMPTZ  | NOT NULL                                 |
 | user_display_name   | VARCHAR(255) | NOT NULL                                 |
 | user_color          | VARCHAR(7)   | NOT NULL                                 |
+| write_access        | BOOLEAN      | NOT NULL, DEFAULT false                  |
 | last_sync_at        | TIMESTAMPTZ  |                                          |
 | last_sync_event_count | INT        | DEFAULT 0                                |
 | created_at          | TIMESTAMPTZ  | NOT NULL                                 |
@@ -53,6 +54,7 @@ All tables are created in the PostgreSQL `calendar` schema. Schema management is
 | source_id         | UUID         | NOT NULL                                 |
 | user_id           | UUID         | NOT NULL, INDEX                          |
 | external_id       | VARCHAR(255) | NOT NULL                                 |
+| google_calendar_id | VARCHAR(255) |                                         |
 | title             | VARCHAR(500) | NOT NULL                                 |
 | description       | TEXT         |                                          |
 | start_time        | TIMESTAMPTZ  | NOT NULL, INDEX                          |
@@ -74,6 +76,7 @@ All tables are created in the PostgreSQL `calendar` schema. Schema management is
 | household_id | UUID         | NOT NULL                                 |
 | user_id      | UUID         | NOT NULL                                 |
 | redirect_uri | VARCHAR(500) | NOT NULL                                 |
+| reauthorize  | BOOLEAN      | NOT NULL, DEFAULT false                  |
 | expires_at   | TIMESTAMPTZ  | NOT NULL                                 |
 | created_at   | TIMESTAMPTZ  | NOT NULL                                 |
 
