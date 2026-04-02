@@ -12,10 +12,15 @@ go.work
 frontend/
 
 services/
-  auth-service/
   account-service/
+  auth-service/
   calendar-service/
+  category-service/
+  package-service/
   productivity-service/
+  recipe-service/
+  shopping-service/
+  weather-service/
 
 shared/go/
   auth/
@@ -80,6 +85,18 @@ All services use environment variables. See `.env.example` for the full list wit
 | `GOOGLE_CALENDAR_CLIENT_SECRET` | calendar-service | yes |
 | `CALENDAR_TOKEN_ENCRYPTION_KEY` | calendar-service | yes (32-byte base64) |
 | `SYNC_INTERVAL_MINUTES` | calendar-service | no (default: `15`) |
+| `USPS_CLIENT_ID` | package-service | yes |
+| `USPS_CLIENT_SECRET` | package-service | yes |
+| `UPS_CLIENT_ID` | package-service | yes |
+| `UPS_CLIENT_SECRET` | package-service | yes |
+| `FEDEX_API_KEY` | package-service | yes |
+| `FEDEX_SECRET_KEY` | package-service | yes |
+| `FEDEX_SANDBOX` | package-service | no (default: `false`) |
+| `PACKAGE_TOKEN_ENCRYPTION_KEY` | package-service | yes (32-byte base64) |
+| `PACKAGE_POLL_INTERVAL_MINUTES` | package-service | no (default: `30`) |
+| `PACKAGE_MAX_ACTIVE_PER_HOUSEHOLD` | package-service | no (default: `25`) |
+| `CATEGORY_SERVICE_URL` | recipe-service, shopping-service | no (default: `http://category-service:8080`) |
+| `RECIPE_SERVICE_URL` | shopping-service | no (default: `http://recipe-service:8080`) |
 
 Local development uses `.env`. Do not commit real secrets.
 
@@ -91,7 +108,7 @@ Local development uses `.env`. Do not commit real secrets.
 ./scripts/local-down.sh  # stop compose
 ```
 
-Compose runs: nginx, frontend, auth-service, account-service, calendar-service, productivity-service, weather-service, recipe-service. Database is external.
+Compose runs: nginx, frontend, auth-service, account-service, calendar-service, category-service, package-service, productivity-service, recipe-service, shopping-service, weather-service. Database is external.
 
 ## 6. Frontend Development
 
@@ -111,7 +128,10 @@ Uses React, Vite, ShadCN. No server-side rendering.
 ./scripts/build-all.sh          # build all
 ./scripts/build-auth.sh         # build auth-service
 ./scripts/build-account.sh      # build account-service
+./scripts/build-frontend.sh     # build frontend
 ./scripts/build-productivity.sh # build productivity-service
+./scripts/build-recipe.sh       # build recipe-service
+./scripts/build-weather.sh      # build weather-service
 ```
 
 Each service must compile independently.
@@ -182,7 +202,7 @@ Rules:
 
 ## 14. Endpoint Testing
 
-Bruno collections live in `bruno/` with collections for `auth`, `account`, `productivity` and environment files for `local` and `prod`.
+Bruno collections live in `bruno/` with collections for `auth`, `account`, `packages`, `productivity`, `recipe` and environment files for `local` and `prod`.
 
 Run Bruno to test endpoints. Do not commit secrets.
 
@@ -203,6 +223,9 @@ ghcr.io/<owner>/home-hub-productivity
 ghcr.io/<owner>/home-hub-recipe
 ghcr.io/<owner>/home-hub-weather
 ghcr.io/<owner>/home-hub-calendar
+ghcr.io/<owner>/home-hub-package
+ghcr.io/<owner>/home-hub-category
+ghcr.io/<owner>/home-hub-shopping
 ghcr.io/<owner>/home-hub-frontend
 ```
 
@@ -224,10 +247,11 @@ kubectl apply -f deploy/k8s/
 
 Copy `deploy/k8s/secrets.example.yaml` to `deploy/k8s/secrets.yaml` and fill in real values. The example uses `stringData` so values are plain text (K8s base64-encodes them internally). Do not commit `secrets.yaml`.
 
-Three Secret objects are required:
+Four Secret objects are required:
 - `db-credentials` — database connection details
 - `auth-secrets` — JWT key, OIDC client credentials, redirect URI
 - `calendar-secrets` — Google Calendar OAuth credentials, token encryption key
+- `package-secrets` — carrier API credentials (USPS, UPS, FedEx), token encryption key
 
 ### TLS setup (self-signed for development)
 
