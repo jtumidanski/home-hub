@@ -44,6 +44,9 @@ jobs:
           - service: package-service
             context: .
             dockerfile: services/package-service/Dockerfile
+          - service: tracker-service
+            context: .
+            dockerfile: services/tracker-service/Dockerfile
           - service: frontend
             context: frontend
             dockerfile: frontend/Dockerfile
