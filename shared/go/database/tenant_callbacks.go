@@ -3,11 +3,16 @@ package database
 import (
 	"context"
 	"reflect"
+	"sync"
 
 	"github.com/jtumidanski/home-hub/shared/go/tenant"
 	"github.com/sirupsen/logrus"
 	"gorm.io/gorm"
 )
+
+// hasTenantIDCache memoizes the result of struct introspection so the tenant
+// callback does not walk reflect fields on every query. Keyed by reflect.Type.
+var hasTenantIDCache sync.Map
 
 type skipTenantFilterKey struct{}
 
@@ -70,14 +75,21 @@ func hasTenantIDField(db *gorm.DB) bool {
 		return false
 	}
 
+	if cached, ok := hasTenantIDCache.Load(t); ok {
+		return cached.(bool)
+	}
+
+	result := false
 	for i := 0; i < t.NumField(); i++ {
 		field := t.Field(i)
 		tag := field.Tag.Get("gorm")
 		if field.Name == "TenantId" || contains(tag, "tenant_id") {
-			return true
+			result = true
+			break
 		}
 	}
-	return false
+	hasTenantIDCache.Store(t, result)
+	return result
 }
 
 func contains(tag, substr string) bool {

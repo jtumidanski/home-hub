@@ -4,10 +4,22 @@ package database
 
 import (
 	"fmt"
+	"time"
 
 	"github.com/sirupsen/logrus"
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
+)
+
+// Default connection pool settings. Tuned for a small Postgres deployment with
+// max_connections ~100. The math: total services × MaxOpenConns must stay
+// comfortably under Postgres max_connections, leaving headroom for psql/admin
+// sessions. With ~3 services × 25 = 75 max sockets, we still have ~25 for ops.
+const (
+	defaultMaxOpenConns    = 25
+	defaultMaxIdleConns    = 25
+	defaultConnMaxLifetime = 30 * time.Minute
+	defaultConnMaxIdleTime = 5 * time.Minute
 )
 
 // Config holds database connection configuration.
@@ -18,6 +30,12 @@ type Config struct {
 	Password string
 	DBName   string
 	Schema   string
+
+	// Connection pool tuning. Zero values fall back to package defaults.
+	MaxOpenConns    int
+	MaxIdleConns    int
+	ConnMaxLifetime time.Duration
+	ConnMaxIdleTime time.Duration
 }
 
 // Option configures the database connection.
@@ -50,6 +68,31 @@ func Connect(l *logrus.Logger, cfg Config, opts ...Option) *gorm.DB {
 	db, err := gorm.Open(postgres.Open(dsn), &gorm.Config{})
 	if err != nil {
 		l.WithError(err).Fatal("failed to connect to database")
+	}
+
+	if sqlDB, err := db.DB(); err != nil {
+		l.WithError(err).Warn("failed to access underlying *sql.DB; pool not tuned")
+	} else {
+		maxOpen := cfg.MaxOpenConns
+		if maxOpen == 0 {
+			maxOpen = defaultMaxOpenConns
+		}
+		maxIdle := cfg.MaxIdleConns
+		if maxIdle == 0 {
+			maxIdle = defaultMaxIdleConns
+		}
+		connLifetime := cfg.ConnMaxLifetime
+		if connLifetime == 0 {
+			connLifetime = defaultConnMaxLifetime
+		}
+		connIdleTime := cfg.ConnMaxIdleTime
+		if connIdleTime == 0 {
+			connIdleTime = defaultConnMaxIdleTime
+		}
+		sqlDB.SetMaxOpenConns(maxOpen)
+		sqlDB.SetMaxIdleConns(maxIdle)
+		sqlDB.SetConnMaxLifetime(connLifetime)
+		sqlDB.SetConnMaxIdleTime(connIdleTime)
 	}
 
 	l.WithField("schema", cfg.Schema).Info("database connected")

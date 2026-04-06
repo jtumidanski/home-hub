@@ -75,6 +75,35 @@ func (p *Processor) ConsolidateIngredients(pd PlanData) []ConsolidatedIngredient
 	plannerProc := planner.NewProcessor(p.l, p.ctx, p.db)
 	ingredientProc := ingredient.NewProcessor(p.l, p.ctx, p.db)
 
+	// Batch-fetch all per-recipe data referenced by the plan items in a fixed
+	// number of queries (one per source) instead of N per item.
+	recipeIDs := make([]uuid.UUID, 0, len(items))
+	seenRecipe := make(map[uuid.UUID]struct{}, len(items))
+	for _, item := range items {
+		rid := item.RecipeID()
+		if _, ok := seenRecipe[rid]; ok {
+			continue
+		}
+		seenRecipe[rid] = struct{}{}
+		recipeIDs = append(recipeIDs, rid)
+	}
+
+	normByRecipe, err := normProc.GetByRecipeIDs(recipeIDs)
+	if err != nil {
+		p.l.WithError(err).Error("Failed to batch-fetch normalized ingredients")
+		normByRecipe = map[uuid.UUID][]normalization.Model{}
+	}
+	plannerByRecipe, err := plannerProc.GetByRecipeIDs(recipeIDs)
+	if err != nil {
+		p.l.WithError(err).Error("Failed to batch-fetch planner configs")
+		plannerByRecipe = map[uuid.UUID]planner.Model{}
+	}
+	recipesByID, err := recipeProc.GetByIDs(recipeIDs)
+	if err != nil {
+		p.l.WithError(err).Error("Failed to batch-fetch recipes")
+		recipesByID = map[uuid.UUID]recipe.Model{}
+	}
+
 	// Accumulator per canonical ingredient, keyed by base unit.
 	type baseUnitAccum struct {
 		baseUnit string
@@ -106,14 +135,34 @@ func (p *Processor) ConsolidateIngredients(pd PlanData) []ConsolidatedIngredient
 		}
 	}
 
-	for _, item := range items {
-		multiplier := effectiveMultiplier(item, recipeProc, plannerProc)
+	// effectiveMultiplierFromMaps computes the serving multiplier for an item
+	// using only the pre-fetched maps, no DB calls.
+	effectiveMultiplierFromMaps := func(item planitem.Model) float64 {
+		if item.PlannedServings() != nil {
+			yield := 0
+			if pc, ok := plannerByRecipe[item.RecipeID()]; ok && pc.ServingsYield() != nil {
+				yield = *pc.ServingsYield()
+			} else if rm, ok := recipesByID[item.RecipeID()]; ok && rm.Servings() != nil {
+				yield = *rm.Servings()
+			}
+			if yield > 0 {
+				return float64(*item.PlannedServings()) / float64(yield)
+			}
+		}
+		if item.ServingMultiplier() != nil {
+			return *item.ServingMultiplier()
+		}
+		return 1.0
+	}
 
-		ingredients, err := normProc.GetByRecipeID(item.RecipeID())
-		if err != nil || len(ingredients) == 0 {
+	for _, item := range items {
+		multiplier := effectiveMultiplierFromMaps(item)
+
+		ingredients := normByRecipe[item.RecipeID()]
+		if len(ingredients) == 0 {
 			// Fall back to raw parsed Cooklang
-			rm, _, recipeErr := recipeProc.Get(item.RecipeID())
-			if recipeErr != nil {
+			rm, ok := recipesByID[item.RecipeID()]
+			if !ok {
 				continue
 			}
 			parsed := recipeProc.ParseSource(rm.Source())
@@ -155,17 +204,6 @@ func (p *Processor) ConsolidateIngredients(pd PlanData) []ConsolidatedIngredient
 						name:  ing.RawName(),
 						units: make(map[string]*baseUnitAccum),
 					}
-					if canonical, err := ingredientProc.Get(canonID); err == nil {
-						acc.displayName = canonical.DisplayName()
-						acc.name = canonical.Name()
-						acc.unitFamily = canonical.UnitFamily()
-						if canonical.CategoryID() != nil {
-							if ci, ok := categoryByID[*canonical.CategoryID()]; ok {
-								acc.categoryName = ci.name
-								acc.categorySortOrder = ci.sortOrder
-							}
-						}
-					}
 					resolved[canonID] = acc
 				}
 
@@ -182,6 +220,33 @@ func (p *Processor) ConsolidateIngredients(pd PlanData) []ConsolidatedIngredient
 					Unit:     ing.RawUnit(),
 					Resolved: false,
 				})
+			}
+		}
+	}
+
+	// Second pass: fetch all canonical ingredients (with aliases) at once and
+	// fill in displayName / canonical name / unit family / category info.
+	canonIDs := make([]uuid.UUID, 0, len(resolved))
+	for id := range resolved {
+		canonIDs = append(canonIDs, id)
+	}
+	canonicalsByID, err := ingredientProc.GetByIDs(canonIDs)
+	if err != nil {
+		p.l.WithError(err).Error("Failed to batch-fetch canonical ingredients")
+		canonicalsByID = map[uuid.UUID]ingredient.Model{}
+	}
+	for canonID, acc := range resolved {
+		canonical, ok := canonicalsByID[canonID]
+		if !ok {
+			continue
+		}
+		acc.displayName = canonical.DisplayName()
+		acc.name = canonical.Name()
+		acc.unitFamily = canonical.UnitFamily()
+		if canonical.CategoryID() != nil {
+			if ci, ok := categoryByID[*canonical.CategoryID()]; ok {
+				acc.categoryName = ci.name
+				acc.categorySortOrder = ci.sortOrder
 			}
 		}
 	}
@@ -239,20 +304,6 @@ func (p *Processor) ConsolidateIngredients(pd PlanData) []ConsolidatedIngredient
 	}
 	result = append(result, unresolved...)
 	return result
-}
-
-// effectiveMultiplier computes the serving scaling for a plan item.
-func effectiveMultiplier(item planitem.Model, recipeProc *recipe.Processor, plannerProc *planner.Processor) float64 {
-	if item.PlannedServings() != nil {
-		servingsYield := getServingsYield(item.RecipeID(), recipeProc, plannerProc)
-		if servingsYield > 0 {
-			return float64(*item.PlannedServings()) / float64(servingsYield)
-		}
-	}
-	if item.ServingMultiplier() != nil {
-		return *item.ServingMultiplier()
-	}
-	return 1.0
 }
 
 func getServingsYield(recipeID uuid.UUID, recipeProc *recipe.Processor, plannerProc *planner.Processor) int {

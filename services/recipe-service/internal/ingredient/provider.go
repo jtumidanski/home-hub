@@ -15,6 +15,21 @@ func GetByID(id uuid.UUID) database.EntityProvider[Entity] {
 	})
 }
 
+// GetByIDs fetches canonical ingredients (with their aliases) for a list of
+// ids in a single query. GORM 2.x batches the Aliases preload into a single
+// follow-up `IN` query, so this issues exactly two SQL statements regardless
+// of the number of ids. Empty input short-circuits without hitting the DB.
+func GetByIDs(ids []uuid.UUID) func(db *gorm.DB) ([]Entity, error) {
+	return func(db *gorm.DB) ([]Entity, error) {
+		if len(ids) == 0 {
+			return []Entity{}, nil
+		}
+		var entities []Entity
+		err := db.Preload("Aliases").Where("id IN (?)", ids).Find(&entities).Error
+		return entities, err
+	}
+}
+
 func GetByName(tenantID uuid.UUID, name string) database.EntityProvider[Entity] {
 	return database.Query[Entity](func(db *gorm.DB) *gorm.DB {
 		return db.Preload("Aliases").Where("tenant_id = ? AND name = ?", tenantID, strings.ToLower(strings.TrimSpace(name)))

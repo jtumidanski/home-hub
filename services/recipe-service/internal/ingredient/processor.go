@@ -70,6 +70,28 @@ func (p *Processor) Get(id uuid.UUID) (Model, error) {
 	return m, nil
 }
 
+// GetByIDs fetches canonical ingredients (with aliases) for many ids and
+// returns them keyed by ingredient id. Empty input returns an empty map
+// without hitting the database.
+func (p *Processor) GetByIDs(ids []uuid.UUID) (map[uuid.UUID]Model, error) {
+	result := make(map[uuid.UUID]Model)
+	if len(ids) == 0 {
+		return result, nil
+	}
+	entities, err := GetByIDs(ids)(p.db.WithContext(p.ctx))
+	if err != nil {
+		return nil, err
+	}
+	for _, e := range entities {
+		m, err := Make(e)
+		if err != nil {
+			return nil, err
+		}
+		result[e.Id] = m
+	}
+	return result, nil
+}
+
 func (p *Processor) Search(tenantID uuid.UUID, query string, page, pageSize int) ([]Model, int64, error) {
 	if page < 1 {
 		page = 1

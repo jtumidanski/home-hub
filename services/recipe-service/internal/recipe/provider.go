@@ -14,6 +14,17 @@ func getByID(id uuid.UUID) database.EntityProvider[Entity] {
 	})
 }
 
+func getByIDs(ids []uuid.UUID) func(db *gorm.DB) ([]Entity, error) {
+	return func(db *gorm.DB) ([]Entity, error) {
+		if len(ids) == 0 {
+			return []Entity{}, nil
+		}
+		var entities []Entity
+		err := db.Preload("Tags").Where("id IN (?) AND deleted_at IS NULL", ids).Find(&entities).Error
+		return entities, err
+	}
+}
+
 func getDeletedByID(id uuid.UUID) database.EntityProvider[Entity] {
 	return database.Query[Entity](func(db *gorm.DB) *gorm.DB {
 		return db.Preload("Tags").Where("id = ? AND deleted_at IS NOT NULL", id)
