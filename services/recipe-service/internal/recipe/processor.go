@@ -120,6 +120,28 @@ func (p *Processor) Create(tenantID, householdID uuid.UUID, attrs CreateAttrs) (
 	return m, parsed, nil
 }
 
+// GetByIDs fetches recipes (with tags) for many ids and returns them keyed by
+// recipe id. Soft-deleted recipes are excluded. Empty input returns an empty
+// map without hitting the database.
+func (p *Processor) GetByIDs(ids []uuid.UUID) (map[uuid.UUID]Model, error) {
+	result := make(map[uuid.UUID]Model)
+	if len(ids) == 0 {
+		return result, nil
+	}
+	entities, err := getByIDs(ids)(p.db.WithContext(p.ctx))
+	if err != nil {
+		return nil, err
+	}
+	for _, e := range entities {
+		m, err := Make(e)
+		if err != nil {
+			return nil, err
+		}
+		result[e.Id] = m
+	}
+	return result, nil
+}
+
 func (p *Processor) Get(id uuid.UUID) (Model, cooklang.ParseResult, error) {
 	m, err := p.ByIDProvider(id)()
 	if err != nil {
@@ -368,24 +390,52 @@ func (p *Processor) BuildDetailEnrichment(m Model, ingredients []normalization.M
 	return enrichment
 }
 
-func (p *Processor) BuildListEnrichment(m Model) ListEnrichment {
-	enrichment := ListEnrichment{}
+// BuildListEnrichments computes ListEnrichment values for many recipes using
+// batched fetches for normalized ingredients and planner configs. The result
+// preserves the input ordering. Compared with calling BuildListEnrichment per
+// model, this issues exactly two extra queries regardless of page size.
+func (p *Processor) BuildListEnrichments(models []Model) []ListEnrichment {
+	enrichments := make([]ListEnrichment, len(models))
+	if len(models) == 0 {
+		return enrichments
+	}
+
+	recipeIDs := make([]uuid.UUID, len(models))
+	for i, m := range models {
+		recipeIDs[i] = m.Id()
+	}
+
 	normProc := normalization.NewProcessor(p.l, p.ctx, p.db)
-	ingredients, err := normProc.GetByRecipeID(m.Id())
-	if err == nil {
-		enrichment.TotalIngredients = len(ingredients)
-		for _, ing := range ingredients {
-			if ing.NormalizationStatus() != normalization.StatusUnresolved {
-				enrichment.ResolvedIngredients++
+	plannerProc := planner.NewProcessor(p.l, p.ctx, p.db)
+
+	normByRecipe, err := normProc.GetByRecipeIDs(recipeIDs)
+	if err != nil {
+		p.l.WithError(err).Error("Failed to batch-fetch normalized ingredients for list enrichment")
+		normByRecipe = map[uuid.UUID][]normalization.Model{}
+	}
+	plannerByRecipe, err := plannerProc.GetByRecipeIDs(recipeIDs)
+	if err != nil {
+		p.l.WithError(err).Error("Failed to batch-fetch planner configs for list enrichment")
+		plannerByRecipe = map[uuid.UUID]planner.Model{}
+	}
+
+	for i, m := range models {
+		e := ListEnrichment{}
+		if ingredients, ok := normByRecipe[m.Id()]; ok {
+			e.TotalIngredients = len(ingredients)
+			for _, ing := range ingredients {
+				if ing.NormalizationStatus() != normalization.StatusUnresolved {
+					e.ResolvedIngredients++
+				}
 			}
 		}
+		if pc, ok := plannerByRecipe[m.Id()]; ok {
+			e.PlannerReady = planner.ComputeReadiness(&pc, m.Servings()).Ready
+			e.Classification = pc.Classification()
+		}
+		enrichments[i] = e
 	}
-	plannerProc := planner.NewProcessor(p.l, p.ctx, p.db)
-	if pc, err := plannerProc.GetByRecipeID(m.Id()); err == nil {
-		enrichment.PlannerReady = planner.ComputeReadiness(&pc, m.Servings()).Ready
-		enrichment.Classification = pc.Classification()
-	}
-	return enrichment
+	return enrichments
 }
 
 func (p *Processor) GetRecipeUsage(recipeIDs []uuid.UUID) map[uuid.UUID]recipeUsageResult {

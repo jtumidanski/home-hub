@@ -110,12 +110,9 @@ func listHandler(db *gorm.DB) server.GetHandler {
 				usageMap = proc.GetRecipeUsage(recipeIDs)
 			}
 
-			enrichments := make([]ListEnrichment, len(models))
-			for i, m := range models {
-				enrichments[i] = proc.BuildListEnrichment(m)
-
-				// Add usage data if requested
-				if includeUsage && usageMap != nil {
+			enrichments := proc.BuildListEnrichments(models)
+			if includeUsage && usageMap != nil {
+				for i, m := range models {
 					if usage, ok := usageMap[m.Id()]; ok {
 						enrichments[i].LastUsedDate = usage.lastUsedDay
 						enrichments[i].UsageCount = usage.usageCount

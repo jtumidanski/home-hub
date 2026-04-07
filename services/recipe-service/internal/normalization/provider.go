@@ -12,6 +12,17 @@ func getByRecipeID(recipeID uuid.UUID) database.EntityProvider[[]Entity] {
 	})
 }
 
+func getByRecipeIDs(recipeIDs []uuid.UUID) func(db *gorm.DB) ([]Entity, error) {
+	return func(db *gorm.DB) ([]Entity, error) {
+		if len(recipeIDs) == 0 {
+			return []Entity{}, nil
+		}
+		var entities []Entity
+		err := db.Where("recipe_id IN (?)", recipeIDs).Order("position ASC").Find(&entities).Error
+		return entities, err
+	}
+}
+
 func getByID(id uuid.UUID) database.EntityProvider[Entity] {
 	return database.Query[Entity](func(db *gorm.DB) *gorm.DB {
 		return db.Where("id = ?", id)
