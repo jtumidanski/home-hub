@@ -3,13 +3,11 @@ package export
 import (
 	"context"
 	"regexp"
-	"sort"
 	"strconv"
 	"strings"
 	"time"
 
 	"github.com/google/uuid"
-	"math"
 
 	"github.com/jtumidanski/home-hub/services/recipe-service/internal/categoryclient"
 	"github.com/jtumidanski/home-hub/services/recipe-service/internal/ingredient"
@@ -121,19 +119,10 @@ func (p *Processor) ConsolidateIngredients(pd PlanData) []ConsolidatedIngredient
 	resolved := make(map[uuid.UUID]*ingredientAccum)
 	var unresolved []ConsolidatedIngredient
 
-	// Build category lookup map for sort order
-	type catInfo struct {
-		name      string
-		sortOrder int
-	}
-	categoryByID := make(map[uuid.UUID]catInfo)
-	if p.catClient != nil && pd.AccessToken != "" {
-		if cats, err := p.catClient.ListCategories(pd.AccessToken); err == nil {
-			for _, c := range cats {
-				categoryByID[c.ID] = catInfo{name: c.Name, sortOrder: c.SortOrder}
-			}
-		}
-	}
+	// Build category lookup map for sort order. On any categoryclient
+	// failure we log and fall back to an empty map so the endpoint stays
+	// 200 OK with everything in "Uncategorized".
+	categoryByID := loadCategoryLookup(p.l, p.catClient, pd.AccessToken, pd.ID)
 
 	// effectiveMultiplierFromMaps computes the serving multiplier for an item
 	// using only the pre-fetched maps, no DB calls.
@@ -235,6 +224,14 @@ func (p *Processor) ConsolidateIngredients(pd PlanData) []ConsolidatedIngredient
 		p.l.WithError(err).Error("Failed to batch-fetch canonical ingredients")
 		canonicalsByID = map[uuid.UUID]ingredient.Model{}
 	}
+	if len(canonicalsByID) < len(canonIDs) {
+		p.l.WithFields(logrus.Fields{
+			"plan_id":       pd.ID,
+			"requested":     len(canonIDs),
+			"received":      len(canonicalsByID),
+			"missing_count": len(canonIDs) - len(canonicalsByID),
+		}).Warn("Canonical ingredient batch fetch returned fewer rows than requested")
+	}
 	for canonID, acc := range resolved {
 		canonical, ok := canonicalsByID[canonID]
 		if !ok {
@@ -247,45 +244,26 @@ func (p *Processor) ConsolidateIngredients(pd PlanData) []ConsolidatedIngredient
 			if ci, ok := categoryByID[*canonical.CategoryID()]; ok {
 				acc.categoryName = ci.name
 				acc.categorySortOrder = ci.sortOrder
+			} else {
+				p.l.WithFields(logrus.Fields{
+					"plan_id":                 pd.ID,
+					"canonical_ingredient_id": canonID,
+					"category_id":             *canonical.CategoryID(),
+				}).Warn("Canonical ingredient references unknown category")
 			}
 		}
 	}
 
-	result := make([]ConsolidatedIngredient, 0, len(resolved)+len(unresolved))
-	// Sort resolved ingredients by category sort order, then alphabetically by display name.
-	sortedAccums := make([]*ingredientAccum, 0, len(resolved))
+	// Materialize each accumulator into a ConsolidatedIngredient. Order is
+	// finalized below by GroupByCategory so that the JSON:API response and
+	// the markdown shopping list export share a single ordering rule.
+	flat := make([]ConsolidatedIngredient, 0, len(resolved)+len(unresolved))
 	for _, acc := range resolved {
-		sortedAccums = append(sortedAccums, acc)
-	}
-	sort.Slice(sortedAccums, func(i, j int) bool {
-		// Uncategorized (sortOrder 0, no category) sorts last
-		oi, oj := sortedAccums[i].categorySortOrder, sortedAccums[j].categorySortOrder
-		if sortedAccums[i].categoryName == "" {
-			oi = math.MaxInt32
-		}
-		if sortedAccums[j].categoryName == "" {
-			oj = math.MaxInt32
-		}
-		if oi != oj {
-			return oi < oj
-		}
-		ni, nj := sortedAccums[i].displayName, sortedAccums[j].displayName
-		if ni == "" {
-			ni = sortedAccums[i].name
-		}
-		if nj == "" {
-			nj = sortedAccums[j].name
-		}
-		return ni < nj
-	})
-	for _, acc := range sortedAccums {
-		// Collect all base-unit entries, convert to display units
 		var pairs []QuantityUnit
 		for _, bu := range acc.units {
 			displayUnit, displayQty := fromBaseUnit(bu.baseUnit, bu.qty)
 			pairs = append(pairs, QuantityUnit{Quantity: displayQty, Unit: displayUnit})
 		}
-		// First pair is primary, rest are extras
 		ci := ConsolidatedIngredient{
 			ID:                acc.id,
 			Name:              acc.name,
@@ -300,9 +278,15 @@ func (p *Processor) ConsolidateIngredients(pd PlanData) []ConsolidatedIngredient
 		if len(pairs) > 1 {
 			ci.ExtraQuantities = pairs[1:]
 		}
-		result = append(result, ci)
+		flat = append(flat, ci)
 	}
-	result = append(result, unresolved...)
+	flat = append(flat, unresolved...)
+
+	groups := GroupByCategory(flat)
+	result := make([]ConsolidatedIngredient, 0, len(flat))
+	for _, g := range groups {
+		result = append(result, g.Ingredients...)
+	}
 	return result
 }
 
