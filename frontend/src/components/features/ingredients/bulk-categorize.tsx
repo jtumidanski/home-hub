@@ -148,11 +148,16 @@ export function BulkCategorize() {
                 className="rounded"
               />
               <span className="flex-1">{ing.attributes.name}</span>
-              {ing.attributes.categoryName ? (
-                <span className="text-xs text-muted-foreground">{ing.attributes.categoryName}</span>
-              ) : (
-                <span className="text-xs text-yellow-600">uncategorized</span>
-              )}
+              {(() => {
+                const categoryName = ing.attributes.categoryId
+                  ? categories.find((c) => c.id === ing.attributes.categoryId)?.attributes.name
+                  : undefined;
+                return categoryName ? (
+                  <span className="text-xs text-muted-foreground">{categoryName}</span>
+                ) : (
+                  <span className="text-xs text-yellow-600">uncategorized</span>
+                );
+              })()}
             </label>
           ))}
           {filteredIngredients.length === 0 && (

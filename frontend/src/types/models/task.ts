@@ -47,7 +47,15 @@ export function isTaskOverdue(task: Task): boolean {
   if (status !== "pending" || !dueOn) {
     return false;
   }
-  return new Date(dueOn) < new Date();
+  const match = /^(\d{4})-(\d{2})-(\d{2})$/.exec(dueOn);
+  if (!match) {
+    return false;
+  }
+  const [, yearStr, monthStr, dayStr] = match;
+  const dueDate = new Date(Number(yearStr), Number(monthStr) - 1, Number(dayStr));
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  return dueDate < today;
 }
 
 export function isTaskCompleted(task: Task): boolean {

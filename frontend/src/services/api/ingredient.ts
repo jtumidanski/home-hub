@@ -7,6 +7,7 @@ import type {
   IngredientCategory,
   IngredientCategoryCreateAttributes,
   IngredientCategoryUpdateAttributes,
+  IngredientRecipeRef,
 } from "@/types/models/ingredient";
 import type { Tenant } from "@/types/models/tenant";
 import type { ApiListResponse } from "@/types/api/responses";
@@ -79,7 +80,7 @@ class IngredientService extends BaseService {
     if (params?.page) query.set("page[number]", String(params.page));
     if (params?.pageSize) query.set("page[size]", String(params.pageSize));
     const qs = query.toString();
-    return api.get<{ data: Array<{ recipeId: string; rawName: string }>; meta?: { total: number } }>(
+    return api.get<{ data: IngredientRecipeRef[]; meta?: { total: number } }>(
       `/ingredients/${ingredientId}/recipes${qs ? `?${qs}` : ""}`,
     );
   }
