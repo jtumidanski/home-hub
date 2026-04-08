@@ -45,7 +45,12 @@ class CalendarService extends BaseService {
   }
 
   triggerSync(tenant: { id: string }, connectionId: string) {
-    return this.create<CalendarConnection>(tenant, `/calendar/connections/${connectionId}/sync`, {});
+    // Backend uses InputHandler[TriggerSyncRequest] (resource type
+    // "calendar-sync-triggers"); a bare {} is rejected as "Could not
+    // parse request body".
+    return this.create<CalendarConnection>(tenant, `/calendar/connections/${connectionId}/sync`, {
+      data: { type: "calendar-sync-triggers", id: connectionId, attributes: {} },
+    });
   }
 
   getEvents(tenant: { id: string }, start: string, end: string) {

@@ -82,7 +82,9 @@ class ShoppingService extends BaseService {
 
   uncheckAll(tenant: Tenant, listId: string): Promise<ApiResponse<ShoppingList>> {
     this.setTenant(tenant);
-    return api.post<ApiResponse<ShoppingList>>(`/shopping/lists/${listId}/items/uncheck-all`, {});
+    return api.post<ApiResponse<ShoppingList>>(`/shopping/lists/${listId}/items/uncheck-all`, {
+      data: { type: "shopping-lists", id: listId, attributes: {} },
+    });
   }
 
   importMealPlan(tenant: Tenant, listId: string, planId: string): Promise<ApiResponse<ShoppingList>> {
