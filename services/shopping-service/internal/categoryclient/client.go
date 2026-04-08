@@ -38,8 +38,8 @@ func New(baseURL string) *Client {
 	}
 }
 
-func (c *Client) GetCategory(categoryID uuid.UUID, accessToken string) (*Category, error) {
-	categories, err := c.ListCategories(accessToken)
+func (c *Client) GetCategory(categoryID uuid.UUID, accessToken string, tenantID, householdID uuid.UUID) (*Category, error) {
+	categories, err := c.ListCategories(accessToken, tenantID, householdID)
 	if err != nil {
 		return nil, err
 	}
@@ -51,12 +51,22 @@ func (c *Client) GetCategory(categoryID uuid.UUID, accessToken string) (*Categor
 	return nil, fmt.Errorf("category %s not found", categoryID)
 }
 
-func (c *Client) ListCategories(accessToken string) ([]Category, error) {
+func (c *Client) ListCategories(accessToken string, tenantID, householdID uuid.UUID) ([]Category, error) {
 	req, err := http.NewRequest(http.MethodGet, c.baseURL+"/api/v1/categories", nil)
 	if err != nil {
 		return nil, err
 	}
 	req.AddCookie(&http.Cookie{Name: "access_token", Value: accessToken})
+	// Forward tenant context. The auth-service issues JWTs with nil
+	// tenant/household claims and the auth middleware falls back to these
+	// headers — without them, category-service resolves the request as
+	// the nil tenant.
+	if tenantID != uuid.Nil {
+		req.Header.Set("X-Tenant-ID", tenantID.String())
+	}
+	if householdID != uuid.Nil {
+		req.Header.Set("X-Household-ID", householdID.String())
+	}
 
 	resp, err := c.httpClient.Do(req)
 	if err != nil {

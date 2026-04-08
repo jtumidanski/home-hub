@@ -10,6 +10,7 @@ import (
 	"github.com/jtumidanski/home-hub/services/shopping-service/internal/categoryclient"
 	"github.com/jtumidanski/home-hub/services/shopping-service/internal/item"
 	"github.com/jtumidanski/home-hub/services/shopping-service/internal/recipeclient"
+	tenantctx "github.com/jtumidanski/home-hub/shared/go/tenant"
 	"github.com/sirupsen/logrus"
 	"gorm.io/gorm"
 )
@@ -31,6 +32,19 @@ type Processor struct {
 
 func NewProcessor(l logrus.FieldLogger, ctx context.Context, db *gorm.DB, catClient *categoryclient.Client, recipeClient *recipeclient.Client) *Processor {
 	return &Processor{l: l, ctx: ctx, db: db, catClient: catClient, recipeClient: recipeClient}
+}
+
+// tenantHeaders returns the (tenantID, householdID) pair from the request
+// context for forwarding to downstream services. The auth-service issues
+// JWTs with nil tenant/household claims and the shared auth middleware
+// falls back to X-Tenant-ID / X-Household-ID headers — outbound calls to
+// category-service and recipe-service must therefore pass these explicitly
+// or those services will resolve the request as the nil tenant.
+func (p *Processor) tenantHeaders() (uuid.UUID, uuid.UUID) {
+	if t, ok := tenantctx.FromContext(p.ctx); ok {
+		return t.Id(), t.HouseholdId()
+	}
+	return uuid.Nil, uuid.Nil
 }
 
 func (p *Processor) List(status string) ([]Model, error) {
@@ -238,14 +252,16 @@ func (p *Processor) ImportFromMealPlan(listID uuid.UUID, planID uuid.UUID, acces
 		return Model{}, nil, err
 	}
 
-	ingredients, err := p.recipeClient.GetPlanIngredients(planID, accessToken)
+	tenantID, householdID := p.tenantHeaders()
+
+	ingredients, err := p.recipeClient.GetPlanIngredients(planID, accessToken, tenantID, householdID)
 	if err != nil {
 		return Model{}, nil, err
 	}
 
 	categoryMap := make(map[string]categoryclient.Category)
 	if p.catClient != nil {
-		cats, catErr := p.catClient.ListCategories(accessToken)
+		cats, catErr := p.catClient.ListCategories(accessToken, tenantID, householdID)
 		if catErr != nil {
 			p.l.WithError(catErr).WithFields(logrus.Fields{
 				"plan_id": planID,
@@ -329,7 +345,8 @@ func (p *Processor) enrichCategory(input *item.AddInput, accessToken string) {
 	if input.CategoryID == nil || p.catClient == nil {
 		return
 	}
-	cat, err := p.catClient.GetCategory(*input.CategoryID, accessToken)
+	tenantID, householdID := p.tenantHeaders()
+	cat, err := p.catClient.GetCategory(*input.CategoryID, accessToken, tenantID, householdID)
 	if err != nil {
 		p.l.WithError(err).WithFields(logrus.Fields{
 			"category_id": *input.CategoryID,
@@ -345,7 +362,8 @@ func (p *Processor) enrichUpdateCategory(input *item.UpdateInput, accessToken st
 	if input.CategoryID == nil || p.catClient == nil {
 		return
 	}
-	cat, err := p.catClient.GetCategory(*input.CategoryID, accessToken)
+	tenantID, householdID := p.tenantHeaders()
+	cat, err := p.catClient.GetCategory(*input.CategoryID, accessToken, tenantID, householdID)
 	if err != nil {
 		fields := logrus.Fields{"category_id": *input.CategoryID}
 		if input.Name != nil {
@@ -368,7 +386,8 @@ func (p *Processor) autoCategorize(input *item.AddInput, accessToken string) {
 	if p.recipeClient == nil || input.Name == "" {
 		return
 	}
-	lookup, matched, err := p.recipeClient.LookupIngredient(input.Name, accessToken)
+	tenantID, householdID := p.tenantHeaders()
+	lookup, matched, err := p.recipeClient.LookupIngredient(input.Name, accessToken, tenantID, householdID)
 	if err != nil {
 		p.l.WithError(err).WithField("item_name", input.Name).
 			Warn("Recipe ingredient lookup failed; shopping item will be uncategorized")
@@ -384,7 +403,8 @@ func (p *Processor) autoCategorizeUpdate(input *item.UpdateInput, accessToken st
 	if p.recipeClient == nil || input.Name == nil || *input.Name == "" {
 		return
 	}
-	lookup, matched, err := p.recipeClient.LookupIngredient(*input.Name, accessToken)
+	tenantID, householdID := p.tenantHeaders()
+	lookup, matched, err := p.recipeClient.LookupIngredient(*input.Name, accessToken, tenantID, householdID)
 	if err != nil {
 		p.l.WithError(err).WithField("item_name", *input.Name).
 			Warn("Recipe ingredient lookup failed on update; shopping item will be uncategorized")

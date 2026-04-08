@@ -176,13 +176,13 @@ func TestGroupByCategory_TableDriven(t *testing.T) {
 
 func TestLoadCategoryLookup_NilClientReturnsEmpty(t *testing.T) {
 	l, _ := test.NewNullLogger()
-	got := loadCategoryLookup(l, nil, "anything", uuid.New())
+	got := loadCategoryLookup(l, nil, "anything", uuid.New(), uuid.New(), uuid.New())
 	assert.Empty(t, got)
 }
 
 func TestLoadCategoryLookup_EmptyTokenReturnsEmpty(t *testing.T) {
 	l, _ := test.NewNullLogger()
-	got := loadCategoryLookup(l, categoryclient.New("http://example.invalid"), "", uuid.New())
+	got := loadCategoryLookup(l, categoryclient.New("http://example.invalid"), "", uuid.New(), uuid.New(), uuid.New())
 	assert.Empty(t, got)
 }
 
@@ -198,16 +198,23 @@ func TestLoadCategoryLookup_ServerErrorLogsAndReturnsEmpty(t *testing.T) {
 	l, hook := test.NewNullLogger()
 	planID := uuid.New()
 
-	got := loadCategoryLookup(l, categoryclient.New(srv.URL), "fake-token", planID)
+	got := loadCategoryLookup(l, categoryclient.New(srv.URL), "fake-token", planID, uuid.New(), uuid.New())
 
 	assert.Empty(t, got, "category map must be empty so caller falls back to Uncategorized")
 
-	require.Len(t, hook.Entries, 1)
-	entry := hook.Entries[0]
-	assert.Equal(t, logrus.ErrorLevel, entry.Level)
-	assert.Equal(t, "Failed to fetch categories for plan ingredient consolidation", entry.Message)
-	assert.Equal(t, planID, entry.Data["plan_id"])
-	assert.NotNil(t, entry.Data["error"])
+	// Find the error entry — the success-branch info log will not fire
+	// here, so the only entry is the error log.
+	var errorEntry *logrus.Entry
+	for i := range hook.Entries {
+		if hook.Entries[i].Level == logrus.ErrorLevel {
+			errorEntry = &hook.Entries[i]
+			break
+		}
+	}
+	require.NotNil(t, errorEntry)
+	assert.Equal(t, "Failed to fetch categories for plan ingredient consolidation", errorEntry.Message)
+	assert.Equal(t, planID, errorEntry.Data["plan_id"])
+	assert.NotNil(t, errorEntry.Data["error"])
 }
 
 func TestLoadCategoryLookup_PopulatesMapOnSuccess(t *testing.T) {
@@ -219,9 +226,36 @@ func TestLoadCategoryLookup_PopulatesMapOnSuccess(t *testing.T) {
 	defer srv.Close()
 
 	l, _ := test.NewNullLogger()
-	got := loadCategoryLookup(l, categoryclient.New(srv.URL), "fake-token", uuid.New())
+	got := loadCategoryLookup(l, categoryclient.New(srv.URL), "fake-token", uuid.New(), uuid.New(), uuid.New())
 
 	require.Len(t, got, 1)
 	assert.Equal(t, "Produce", got[categoryID].name)
 	assert.Equal(t, 1, got[categoryID].sortOrder)
+}
+
+// TestLoadCategoryLookup_ForwardsTenantHeaders is the regression test for
+// the auth-header omission that broke meal-plan ingredient categorization
+// in deployed env. The auth-service issues JWTs with nil tenant/household
+// claims and the auth middleware on category-service falls back to the
+// X-Tenant-ID / X-Household-ID headers — without them, category-service
+// resolves the request as the nil tenant and returns an unrelated set of
+// auto-seeded categories.
+func TestLoadCategoryLookup_ForwardsTenantHeaders(t *testing.T) {
+	tenantID := uuid.New()
+	householdID := uuid.New()
+
+	var gotTenantHeader, gotHouseholdHeader string
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		gotTenantHeader = r.Header.Get("X-Tenant-ID")
+		gotHouseholdHeader = r.Header.Get("X-Household-ID")
+		w.Header().Set("Content-Type", "application/vnd.api+json")
+		_, _ = w.Write([]byte(`{"data":[]}`))
+	}))
+	defer srv.Close()
+
+	l, _ := test.NewNullLogger()
+	_ = loadCategoryLookup(l, categoryclient.New(srv.URL), "fake-token", uuid.New(), tenantID, householdID)
+
+	assert.Equal(t, tenantID.String(), gotTenantHeader, "X-Tenant-ID must be forwarded so category-service resolves the right tenant")
+	assert.Equal(t, householdID.String(), gotHouseholdHeader, "X-Household-ID must be forwarded so category-service resolves the right household")
 }
