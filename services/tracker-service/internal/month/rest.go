@@ -5,10 +5,13 @@ import (
 	"time"
 
 	"github.com/google/uuid"
-	"github.com/jtumidanski/home-hub/services/tracker-service/internal/entry"
-	"github.com/jtumidanski/home-hub/services/tracker-service/internal/schedule"
-	"github.com/jtumidanski/home-hub/services/tracker-service/internal/trackingitem"
 )
+
+// The month summary endpoint returns a composite document — a single resource
+// with two heterogeneous relationship arrays (items + entries). api2go cannot
+// represent this exact shape natively, so the rest layer assembles a typed
+// JSON:API document. The handler stays free of envelope construction; it only
+// invokes Marshal* and forwards bytes (or surfaces a marshal error).
 
 type MonthSummaryRest struct {
 	Id         string          `json:"-"`
@@ -32,11 +35,52 @@ func (r ReportRest) GetName() string       { return "tracker-reports" }
 func (r ReportRest) GetID() string          { return r.Id }
 func (r *ReportRest) SetID(id string) error { r.Id = id; return nil }
 
-func TransformMonthSummary(summary MonthSummary, items []trackingitem.Model, entries []entry.Model, snapshotsByItem map[uuid.UUID][]schedule.Model) json.RawMessage {
-	monthStart, _ := time.Parse("2006-01", summary.Month)
+// EntryView mirrors the wire shape used by the calendar grid for each entry
+// embedded in a month summary.
+type EntryView struct {
+	Id             uuid.UUID       `json:"id"`
+	Type           string          `json:"type"`
+	TrackingItemId uuid.UUID       `json:"tracking_item_id"`
+	Date           string          `json:"date"`
+	Value          json.RawMessage `json:"value"`
+	Skipped        bool            `json:"skipped"`
+	Note           *string         `json:"note,omitempty"`
+	Scheduled      bool            `json:"scheduled"`
+}
 
-	var itemInfos []MonthItemInfo
-	for _, item := range items {
+type monthSummaryDoc struct {
+	Data monthSummaryData `json:"data"`
+}
+
+type monthSummaryData struct {
+	Type          string                    `json:"type"`
+	Attributes    MonthSummary              `json:"attributes"`
+	Relationships monthSummaryRelationships `json:"relationships"`
+}
+
+type monthSummaryRelationships struct {
+	Items   monthItemsRel   `json:"items"`
+	Entries monthEntriesRel `json:"entries"`
+}
+
+type monthItemsRel struct {
+	Data []MonthItemInfo `json:"data"`
+}
+
+type monthEntriesRel struct {
+	Data []EntryView `json:"data"`
+}
+
+// MarshalMonthSummary converts a SummaryDetail into the wire-format JSON:API
+// document used by the calendar grid.
+func MarshalMonthSummary(detail SummaryDetail) ([]byte, error) {
+	monthStart, err := time.Parse("2006-01", detail.Summary.Month)
+	if err != nil {
+		return nil, err
+	}
+
+	itemInfos := make([]MonthItemInfo, 0, len(detail.Items))
+	for _, item := range detail.Items {
 		activeFrom := item.CreatedAt().Truncate(24 * time.Hour)
 		if activeFrom.Before(monthStart) {
 			activeFrom = monthStart
@@ -48,7 +92,7 @@ func TransformMonthSummary(summary MonthSummary, items []trackingitem.Model, ent
 		}
 
 		var snapInfos []ScheduleSnapshotInfo
-		for _, snap := range snapshotsByItem[item.Id()] {
+		for _, snap := range detail.SnapshotsByItem[item.Id()] {
 			snapInfos = append(snapInfos, ScheduleSnapshotInfo{
 				Schedule:      snap.Schedule(),
 				EffectiveDate: snap.EffectiveDate().Format("2006-01-02"),
@@ -68,20 +112,9 @@ func TransformMonthSummary(summary MonthSummary, items []trackingitem.Model, ent
 		})
 	}
 
-	type entryRest struct {
-		Id             uuid.UUID       `json:"id"`
-		Type           string          `json:"type"`
-		TrackingItemId uuid.UUID       `json:"tracking_item_id"`
-		Date           string          `json:"date"`
-		Value          json.RawMessage `json:"value"`
-		Skipped        bool            `json:"skipped"`
-		Note           *string         `json:"note,omitempty"`
-		Scheduled      bool            `json:"scheduled"`
-	}
-
-	var entryRests []entryRest
-	for _, e := range entries {
-		entryRests = append(entryRests, entryRest{
+	entryViews := make([]EntryView, 0, len(detail.Entries))
+	for _, e := range detail.Entries {
+		entryViews = append(entryViews, EntryView{
 			Id:             e.Id(),
 			Type:           "tracker-entries",
 			TrackingItemId: e.TrackingItemID(),
@@ -93,30 +126,36 @@ func TransformMonthSummary(summary MonthSummary, items []trackingitem.Model, ent
 		})
 	}
 
-	result := struct {
-		Data struct {
-			Type       string          `json:"type"`
-			Attributes MonthSummary    `json:"attributes"`
-			Relationships struct {
-				Items struct {
-					Data []MonthItemInfo `json:"data"`
-				} `json:"items"`
-				Entries struct {
-					Data interface{} `json:"data"`
-				} `json:"entries"`
-			} `json:"relationships"`
-		} `json:"data"`
-	}{}
-
-	result.Data.Type = "tracker-months"
-	result.Data.Attributes = summary
-	result.Data.Relationships.Items.Data = itemInfos
-	if len(entryRests) > 0 {
-		result.Data.Relationships.Entries.Data = entryRests
-	} else {
-		result.Data.Relationships.Entries.Data = []entryRest{}
+	doc := monthSummaryDoc{
+		Data: monthSummaryData{
+			Type:       "tracker-months",
+			Attributes: detail.Summary,
+			Relationships: monthSummaryRelationships{
+				Items:   monthItemsRel{Data: itemInfos},
+				Entries: monthEntriesRel{Data: entryViews},
+			},
+		},
 	}
-
-	b, _ := json.Marshal(result)
-	return b
+	return json.Marshal(doc)
 }
+
+type reportDoc struct {
+	Data reportData `json:"data"`
+}
+
+type reportData struct {
+	Type       string `json:"type"`
+	Attributes Report `json:"attributes"`
+}
+
+// MarshalReport wraps a Report in a single-resource JSON:API document.
+func MarshalReport(report Report) ([]byte, error) {
+	doc := reportDoc{
+		Data: reportData{
+			Type:       "tracker-reports",
+			Attributes: report,
+		},
+	}
+	return json.Marshal(doc)
+}
+

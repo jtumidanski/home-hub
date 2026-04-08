@@ -30,17 +30,49 @@ func NewProcessor(l logrus.FieldLogger, ctx context.Context, db *gorm.DB) *Proce
 	return &Processor{l: l, ctx: ctx, db: db}
 }
 
+// SummaryDetail bundles the month summary together with the active items, the
+// entries that fall within the month, and the schedule snapshots that govern
+// expected days. The REST layer needs all four to render its document, so the
+// processor returns them as a single value rather than forcing the handler to
+// re-query providers.
+type SummaryDetail struct {
+	Summary         MonthSummary
+	Items           []trackingitem.Model
+	Entries         []entry.Model
+	SnapshotsByItem map[uuid.UUID][]schedule.Model
+}
+
+func (p *Processor) ComputeMonthSummaryDetail(userID uuid.UUID, monthStr string) (SummaryDetail, error) {
+	summary, items, entries, snapshots, err := p.computeMonthSummary(userID, monthStr)
+	if err != nil {
+		return SummaryDetail{}, err
+	}
+	return SummaryDetail{
+		Summary:         summary,
+		Items:           items,
+		Entries:         entries,
+		SnapshotsByItem: snapshots,
+	}, nil
+}
+
+// ComputeMonthSummary preserves the original 4-tuple return for tests and
+// internal callers that don't need the snapshot map.
 func (p *Processor) ComputeMonthSummary(userID uuid.UUID, monthStr string) (MonthSummary, []trackingitem.Model, []entry.Model, error) {
+	summary, items, entries, _, err := p.computeMonthSummary(userID, monthStr)
+	return summary, items, entries, err
+}
+
+func (p *Processor) computeMonthSummary(userID uuid.UUID, monthStr string) (MonthSummary, []trackingitem.Model, []entry.Model, map[uuid.UUID][]schedule.Model, error) {
 	monthStart, err := time.Parse("2006-01", monthStr)
 	if err != nil {
-		return MonthSummary{}, nil, nil, ErrInvalidMonth
+		return MonthSummary{}, nil, nil, nil, ErrInvalidMonth
 	}
 	monthEnd := monthStart.AddDate(0, 1, -1)
 	today := time.Now().UTC().Truncate(24 * time.Hour)
 
 	items, err := trackingitem.GetAllByUserIncludeDeleted(userID)(p.db.WithContext(p.ctx))()
 	if err != nil {
-		return MonthSummary{}, nil, nil, err
+		return MonthSummary{}, nil, nil, nil, err
 	}
 
 	var activeItems []trackingitem.Model
@@ -83,7 +115,7 @@ func (p *Processor) ComputeMonthSummary(userID uuid.UUID, monthStr string) (Mont
 
 	entries, err := entry.GetByUserAndMonth(userID, monthStart, monthEnd)(p.db.WithContext(p.ctx))()
 	if err != nil {
-		return MonthSummary{}, nil, nil, err
+		return MonthSummary{}, nil, nil, nil, err
 	}
 
 	var entryModels []entry.Model
@@ -149,11 +181,11 @@ func (p *Processor) ComputeMonthSummary(userID uuid.UUID, monthStr string) (Mont
 			Skipped:   totalSkipped,
 			Remaining: remaining,
 		},
-	}, activeItems, entryModels, nil
+	}, activeItems, entryModels, snapshotsByItem, nil
 }
 
 func (p *Processor) ComputeReport(userID uuid.UUID, monthStr string) (Report, error) {
-	summary, activeItems, entryModels, err := p.ComputeMonthSummary(userID, monthStr)
+	summary, activeItems, entryModels, snapshotsByItem, err := p.computeMonthSummary(userID, monthStr)
 	if err != nil {
 		return Report{}, err
 	}
@@ -163,21 +195,6 @@ func (p *Processor) ComputeReport(userID uuid.UUID, monthStr string) (Report, er
 
 	monthStart, _ := time.Parse("2006-01", monthStr)
 	monthEnd := monthStart.AddDate(0, 1, -1)
-
-	itemIDs := make([]uuid.UUID, len(activeItems))
-	for i, m := range activeItems {
-		itemIDs[i] = m.Id()
-	}
-
-	var allSnapshots []schedule.Entity
-	if len(itemIDs) > 0 {
-		allSnapshots, _ = schedule.GetByTrackingItemIDs(itemIDs)(p.db.WithContext(p.ctx))()
-	}
-	snapshotsByItem := make(map[uuid.UUID][]schedule.Model)
-	for _, se := range allSnapshots {
-		sm, _ := schedule.Make(se)
-		snapshotsByItem[sm.TrackingItemID()] = append(snapshotsByItem[sm.TrackingItemID()], sm)
-	}
 
 	entriesByItem := make(map[uuid.UUID][]entry.Model)
 	for _, e := range entryModels {

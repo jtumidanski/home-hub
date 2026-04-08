@@ -74,7 +74,7 @@ Last Updated: 2026-04-08
 - [x] 4.2 Create today REST model and transform
 - [x] 4.3 Create today resource handler (GET /api/v1/trackers/today)
 - [x] 4.4 Wire today route in `cmd/main.go`
-- [ ] 4.5 Unit test: correct items returned for day of week, entries paired correctly
+- [x] 4.5 Unit test: correct items returned for day of week, entries paired correctly *(see today/processor_test.go)*
 
 **Acceptance:** Returns only items scheduled for today. Includes existing entries for today. Empty array for items with no entry yet.
 

@@ -3,13 +3,10 @@ package entry
 import (
 	"errors"
 	"net/http"
-	"time"
 
 	"github.com/google/uuid"
 	"github.com/gorilla/mux"
 	"github.com/jtumidanski/api2go/jsonapi"
-	"github.com/jtumidanski/home-hub/services/tracker-service/internal/schedule"
-	"github.com/jtumidanski/home-hub/services/tracker-service/internal/trackingitem"
 	"github.com/jtumidanski/home-hub/shared/go/server"
 	tenantctx "github.com/jtumidanski/home-hub/shared/go/tenant"
 	"github.com/sirupsen/logrus"
@@ -29,24 +26,21 @@ func InitializeRoutes(db *gorm.DB) func(l logrus.FieldLogger, si jsonapi.ServerI
 	}
 }
 
-func isScheduledForDate(db *gorm.DB, ctx interface{ Done() <-chan struct{} }, itemID uuid.UUID, date time.Time) bool {
-	snap, err := schedule.GetEffectiveSchedule(itemID, date)(db)()
-	if err != nil {
+func writeValidationError(w http.ResponseWriter, err error) bool {
+	switch {
+	case errors.Is(err, ErrFutureDate),
+		errors.Is(err, ErrDateRequired),
+		errors.Is(err, ErrInvalidSentiment),
+		errors.Is(err, ErrInvalidNumeric),
+		errors.Is(err, ErrInvalidRange),
+		errors.Is(err, ErrValueRequired),
+		errors.Is(err, ErrNoteTooLong),
+		errors.Is(err, ErrNotScheduled):
+		server.WriteError(w, http.StatusBadRequest, "Validation Failed", err.Error())
 		return true
-	}
-	m, err := schedule.Make(snap)
-	if err != nil {
+	case errors.Is(err, ErrItemNotFound):
+		server.WriteError(w, http.StatusNotFound, "Not Found", err.Error())
 		return true
-	}
-	sched := m.Schedule()
-	if len(sched) == 0 {
-		return true
-	}
-	dow := int(date.Weekday())
-	for _, d := range sched {
-		if d == dow {
-			return true
-		}
 	}
 	return false
 }
@@ -58,20 +52,10 @@ func createOrUpdateHandler(db *gorm.DB) server.InputHandler[EntryRequest] {
 				t := tenantctx.MustFromContext(r.Context())
 				dateStr := mux.Vars(r)["date"]
 
-				item, err := trackingitem.GetByID(itemID)(db.WithContext(r.Context()))()
-				if err != nil {
-					server.WriteError(w, http.StatusNotFound, "Not Found", "Tracking item not found")
-					return
-				}
-
 				proc := NewProcessor(d.Logger(), r.Context(), db)
-				m, created, err := proc.CreateOrUpdate(t.Id(), t.UserId(), itemID, dateStr, input.Value, input.Note, item.ScaleType, item.ScaleConfig)
+				m, created, scheduled, err := proc.CreateOrUpdate(t.Id(), t.UserId(), itemID, dateStr, input.Value, input.Note)
 				if err != nil {
-					if errors.Is(err, ErrFutureDate) || errors.Is(err, ErrDateRequired) ||
-						errors.Is(err, ErrInvalidSentiment) || errors.Is(err, ErrInvalidNumeric) ||
-						errors.Is(err, ErrInvalidRange) || errors.Is(err, ErrValueRequired) ||
-						errors.Is(err, ErrNoteTooLong) {
-						server.WriteError(w, http.StatusBadRequest, "Validation Failed", err.Error())
+					if writeValidationError(w, err) {
 						return
 					}
 					d.Logger().WithError(err).Error("Failed to create/update entry")
@@ -79,9 +63,7 @@ func createOrUpdateHandler(db *gorm.DB) server.InputHandler[EntryRequest] {
 					return
 				}
 
-				scheduled := isScheduledForDate(db.WithContext(r.Context()), r.Context(), itemID, m.Date())
 				rest := Transform(m, scheduled)
-
 				if created {
 					server.MarshalCreatedResponse[RestModel](d.Logger())(w)(c.ServerInformation())(rest)
 				} else {
@@ -117,25 +99,10 @@ func skipHandler(db *gorm.DB) server.GetHandler {
 				t := tenantctx.MustFromContext(r.Context())
 				dateStr := mux.Vars(r)["date"]
 
-				_, err := trackingitem.GetByID(itemID)(db.WithContext(r.Context()))()
-				if err != nil {
-					server.WriteError(w, http.StatusNotFound, "Not Found", "Tracking item not found")
-					return
-				}
-
-				date, err := time.Parse("2006-01-02", dateStr)
-				if err != nil {
-					server.WriteError(w, http.StatusBadRequest, "Validation Failed", "invalid date format")
-					return
-				}
-
-				scheduled := isScheduledForDate(db.WithContext(r.Context()), r.Context(), itemID, date)
-
 				proc := NewProcessor(d.Logger(), r.Context(), db)
-				m, err := proc.Skip(t.Id(), t.UserId(), itemID, dateStr, scheduled)
+				m, err := proc.Skip(t.Id(), t.UserId(), itemID, dateStr)
 				if err != nil {
-					if errors.Is(err, ErrNotScheduled) || errors.Is(err, ErrFutureDate) {
-						server.WriteError(w, http.StatusBadRequest, "Validation Failed", err.Error())
+					if writeValidationError(w, err) {
 						return
 					}
 					d.Logger().WithError(err).Error("Failed to skip entry")
@@ -179,16 +146,15 @@ func listByMonthHandler(db *gorm.DB) server.GetHandler {
 			}
 
 			proc := NewProcessor(d.Logger(), r.Context(), db)
-			models, err := proc.ListByMonth(t.UserId(), monthStr)
+			results, err := proc.ListByMonthWithScheduled(t.UserId(), monthStr)
 			if err != nil {
 				server.WriteError(w, http.StatusBadRequest, "Validation Failed", err.Error())
 				return
 			}
 
-			rest := make([]*RestModel, len(models))
-			for i, m := range models {
-				scheduled := isScheduledForDate(db.WithContext(r.Context()), r.Context(), m.TrackingItemID(), m.Date())
-				rm := Transform(m, scheduled)
+			rest := make([]*RestModel, len(results))
+			for i, r := range results {
+				rm := Transform(r.Entry, r.Scheduled)
 				rest[i] = &rm
 			}
 
