@@ -156,7 +156,19 @@ func (p *Processor) ConsolidateIngredients(pd PlanData) []ConsolidatedIngredient
 	// Build category lookup map for sort order. On any categoryclient
 	// failure we log and fall back to an empty map so the endpoint stays
 	// 200 OK with everything in "Uncategorized".
-	categoryByID := loadCategoryLookup(p.l, p.catClient, pd.AccessToken, pd.ID)
+	//
+	// Pull tenant/household from the request context so categoryclient
+	// can forward them as X-Tenant-ID / X-Household-ID headers. The
+	// auth-service issues JWTs with nil tenant/household claims and the
+	// auth middleware falls back to these headers — without them,
+	// category-service resolves the call as the nil tenant and returns
+	// an unrelated auto-seeded set of defaults.
+	var reqTenantID, reqHouseholdID uuid.UUID
+	if t, ok := tenantctx.FromContext(p.ctx); ok {
+		reqTenantID = t.Id()
+		reqHouseholdID = t.HouseholdId()
+	}
+	categoryByID := loadCategoryLookup(p.l, p.catClient, pd.AccessToken, pd.ID, reqTenantID, reqHouseholdID)
 
 	// effectiveMultiplierFromMaps computes the serving multiplier for an item
 	// using only the pre-fetched maps, no DB calls.

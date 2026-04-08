@@ -22,7 +22,7 @@ type catInfo struct {
 // stable, greppable message and the plan ID. Callers must treat the
 // returned map as authoritative for their tenant — every category lookup
 // miss after this call indicates either an unknown ID or a degraded fetch.
-func loadCategoryLookup(l logrus.FieldLogger, client *categoryclient.Client, accessToken string, planID uuid.UUID) map[uuid.UUID]catInfo {
+func loadCategoryLookup(l logrus.FieldLogger, client *categoryclient.Client, accessToken string, planID, tenantID, householdID uuid.UUID) map[uuid.UUID]catInfo {
 	out := make(map[uuid.UUID]catInfo)
 	if client == nil || accessToken == "" {
 		// Diagnostic: this branch produces an empty categoryByID with no
@@ -37,7 +37,7 @@ func loadCategoryLookup(l logrus.FieldLogger, client *categoryclient.Client, acc
 		}).Warn("Skipping category lookup; categoryclient unavailable or access token missing")
 		return out
 	}
-	cats, err := client.ListCategories(accessToken)
+	cats, err := client.ListCategories(accessToken, tenantID, householdID)
 	if err != nil {
 		l.WithError(err).WithField("plan_id", planID).
 			Error("Failed to fetch categories for plan ingredient consolidation")

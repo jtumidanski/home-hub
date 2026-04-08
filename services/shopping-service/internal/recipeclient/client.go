@@ -62,13 +62,23 @@ func New(baseURL string) *Client {
 	}
 }
 
-func (c *Client) GetPlanIngredients(planID uuid.UUID, accessToken string) ([]PlanIngredient, error) {
+func (c *Client) GetPlanIngredients(planID uuid.UUID, accessToken string, tenantID, householdID uuid.UUID) ([]PlanIngredient, error) {
 	url := fmt.Sprintf("%s/api/v1/meals/plans/%s/ingredients", c.baseURL, planID)
 	req, err := http.NewRequest(http.MethodGet, url, nil)
 	if err != nil {
 		return nil, err
 	}
 	req.AddCookie(&http.Cookie{Name: "access_token", Value: accessToken})
+	// Forward tenant context. The auth-service issues JWTs with nil
+	// tenant/household claims and the auth middleware on recipe-service
+	// falls back to these headers — without them, recipe-service resolves
+	// the request as the nil tenant.
+	if tenantID != uuid.Nil {
+		req.Header.Set("X-Tenant-ID", tenantID.String())
+	}
+	if householdID != uuid.Nil {
+		req.Header.Set("X-Household-ID", householdID.String())
+	}
 
 	resp, err := c.httpClient.Do(req)
 	if err != nil {
@@ -144,7 +154,7 @@ type ingredientLookupResponse struct {
 // to a canonical ingredient (matching by name, alias, or normalized variants).
 // Returns (lookup, true, nil) on match, (nil, false, nil) on a clean miss
 // (HTTP 404), and (nil, false, err) for any other error.
-func (c *Client) LookupIngredient(name, accessToken string) (*IngredientLookup, bool, error) {
+func (c *Client) LookupIngredient(name, accessToken string, tenantID, householdID uuid.UUID) (*IngredientLookup, bool, error) {
 	if strings.TrimSpace(name) == "" {
 		return nil, false, nil
 	}
@@ -154,6 +164,12 @@ func (c *Client) LookupIngredient(name, accessToken string) (*IngredientLookup, 
 		return nil, false, err
 	}
 	req.AddCookie(&http.Cookie{Name: "access_token", Value: accessToken})
+	if tenantID != uuid.Nil {
+		req.Header.Set("X-Tenant-ID", tenantID.String())
+	}
+	if householdID != uuid.Nil {
+		req.Header.Set("X-Household-ID", householdID.String())
+	}
 
 	resp, err := c.httpClient.Do(req)
 	if err != nil {
