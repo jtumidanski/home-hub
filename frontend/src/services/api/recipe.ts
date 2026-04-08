@@ -106,7 +106,12 @@ class RecipeService extends BaseService {
 
   renormalize(tenant: Tenant, recipeId: string) {
     this.setTenant(tenant);
-    return api.post(`/recipes/${recipeId}/renormalize`, {});
+    // Backend uses InputHandler[RenormalizeRequest] (resource type
+    // "recipe-renormalize"); a bare {} is rejected as "Could not parse
+    // request body".
+    return api.post(`/recipes/${recipeId}/renormalize`, {
+      data: { type: "recipe-renormalize", id: recipeId, attributes: {} },
+    });
   }
 }
 

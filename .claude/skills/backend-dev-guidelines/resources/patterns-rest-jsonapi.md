@@ -51,6 +51,29 @@ func InitializeRoutes(si jsonapi.ServerInformation) func(db *gorm.DB) server.Rou
 
 ---
 
+## Handler Choice Is a Frontend API Contract
+
+**Switching a handler from `server.RegisterHandler` to `server.RegisterInputHandler[T]` (or vice versa) is a breaking change for every caller of that endpoint, even if the URL and HTTP method are unchanged.** `RegisterInputHandler[T]` parses the request body as a JSON:API resource envelope matching `T.GetName()` *before* the handler runs. A request without that envelope — including a bare `{}` — is rejected with `400 "Could not parse request body"` and the handler is never invoked.
+
+This trips up "action" endpoints that don't have any real attributes (archive, unarchive, sync, renormalize, uncheck-all, etc.). It is tempting to introduce a typed `XxxRequest` for them just to satisfy a "every POST has a typed request" guideline — and that's fine — but doing so means callers must also change.
+
+**When you wire a new handler with `RegisterInputHandler[T]`, or convert an existing one:**
+
+1. Define the request type in `rest.go` with `GetName()` / `GetID()` / `SetID()`. For action endpoints with no attributes, the type can be a single `Id uuid.UUID` field.
+2. Update **every** frontend service wrapper that calls the endpoint, in the **same commit**, to send the JSON:API envelope:
+   ```json
+   { "data": { "type": "<T.GetName()>", "id": "<resource id>", "attributes": {} } }
+   ```
+3. Run the frontend type-check and any service-layer tests as part of the same change.
+
+**Conversely**, if you're keeping a handler body-less, use `server.RegisterHandler` (not `RegisterInputHandler`). It's the right choice for:
+- Pure action endpoints with no parameters beyond the URL path (`/lock`, `/unlock`, `/refresh`, `/accept`, `/decline`).
+- Endpoints whose only input comes from path or query parameters.
+
+A backend-only audit pattern that flips handlers to `RegisterInputHandler[T]` without a frontend update is the single most likely source of `400 "Could not parse request body"` regressions in production. Backend tests will not catch it because they invoke the handler directly without exercising the framework's body-parsing layer. Make the frontend change part of the same commit.
+
+---
+
 ## Handler Patterns
 
 

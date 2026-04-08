@@ -134,6 +134,22 @@ All write operations use JSON:API envelope:
 }
 ```
 
+### Action endpoints (no real attributes)
+
+This applies even to "action" endpoints whose body has no attributes — archive, unarchive, sync, renormalize, uncheck-all, vote, and similar. If the backend route is wired through `server.RegisterInputHandler[T]` (the common case for any non-GET endpoint that has a typed `XxxRequest` in the corresponding `rest.go`), it parses the body as a JSON:API envelope *before* the handler runs. A bare `{}` body returns `400 "Could not parse request body"` and the action never executes.
+
+For these endpoints, send the envelope with empty attributes:
+
+```typescript
+return api.post<ApiResponse<ShoppingList>>(`/shopping/lists/${id}/archive`, {
+  data: { type: "shopping-lists", id, attributes: {} },
+});
+```
+
+Match the `type` to the backend `XxxRequest`'s `GetName()` value (which is sometimes the parent resource type like `"shopping-lists"` and sometimes a dedicated action type like `"calendar-sync-triggers"` — check the corresponding service's `rest.go`).
+
+A small number of backend action endpoints use `server.RegisterHandler` instead of `RegisterInputHandler[T]` and ignore the body entirely (e.g. plan lock/unlock, package archive/unarchive, invitation accept/decline). Sending a bare `{}` to those is harmless. When in doubt, default to the JSON:API envelope — the `RegisterHandler`-based endpoints will accept it too.
+
 ## Update Pattern (Immutable)
 
 Merge existing attributes with updates, return new object:
