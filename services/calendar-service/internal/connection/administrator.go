@@ -58,12 +58,77 @@ func updateSyncInfo(db *gorm.DB, id uuid.UUID, eventCount int) error {
 
 func updateTokensAndWriteAccess(db *gorm.DB, id uuid.UUID, accessToken, refreshToken string, tokenExpiry time.Time, writeAccess bool) error {
 	return db.Model(&Entity{}).Where("id = ?", id).Updates(map[string]interface{}{
-		"access_token":  accessToken,
-		"refresh_token": refreshToken,
-		"token_expiry":  tokenExpiry,
-		"write_access":  writeAccess,
-		"status":        "connected",
-		"updated_at":    time.Now().UTC(),
+		"access_token":         accessToken,
+		"refresh_token":        refreshToken,
+		"token_expiry":         tokenExpiry,
+		"write_access":         writeAccess,
+		"status":               "connected",
+		"error_code":           gorm.Expr("NULL"),
+		"error_message":        gorm.Expr("NULL"),
+		"last_error_at":        gorm.Expr("NULL"),
+		"consecutive_failures": 0,
+		"updated_at":           time.Now().UTC(),
+	}).Error
+}
+
+func updateSyncAttempt(db *gorm.DB, id uuid.UUID, at time.Time) error {
+	return db.Model(&Entity{}).Where("id = ?", id).Updates(map[string]interface{}{
+		"last_sync_attempt_at": at,
+		"updated_at":           at,
+	}).Error
+}
+
+func updateSyncSuccess(db *gorm.DB, id uuid.UUID, eventCount int, at time.Time) error {
+	return db.Model(&Entity{}).Where("id = ?", id).Updates(map[string]interface{}{
+		"status":                "connected",
+		"last_sync_at":          at,
+		"last_sync_attempt_at":  at,
+		"last_sync_event_count": eventCount,
+		"error_code":            gorm.Expr("NULL"),
+		"error_message":         gorm.Expr("NULL"),
+		"last_error_at":         gorm.Expr("NULL"),
+		"consecutive_failures":  0,
+		"updated_at":            at,
+	}).Error
+}
+
+// updateSyncFailure performs the entire failure state transition in a single
+// atomic UPDATE so the counter increment, threshold check, and status
+// transition cannot race with a concurrent writer.
+func updateSyncFailure(db *gorm.DB, id uuid.UUID, code, message string, at time.Time, hard bool) error {
+	updates := map[string]interface{}{
+		"error_code":           code,
+		"error_message":        message,
+		"last_error_at":        at,
+		"last_sync_attempt_at": at,
+		"updated_at":           at,
+	}
+	if hard {
+		updates["status"] = "disconnected"
+		// Equivalent to GREATEST(consecutive_failures + 1, threshold) but
+		// dialect-agnostic so tests on sqlite behave the same as Postgres prod.
+		updates["consecutive_failures"] = gorm.Expr(
+			"CASE WHEN consecutive_failures + 1 < ? THEN ? ELSE consecutive_failures + 1 END",
+			FailureEscalationThreshold, FailureEscalationThreshold,
+		)
+	} else {
+		updates["status"] = gorm.Expr(
+			"CASE WHEN consecutive_failures + 1 >= ? THEN 'error' ELSE status END",
+			FailureEscalationThreshold,
+		)
+		updates["consecutive_failures"] = gorm.Expr("consecutive_failures + 1")
+	}
+	return db.Model(&Entity{}).Where("id = ?", id).Updates(updates).Error
+}
+
+func clearErrorState(db *gorm.DB, id uuid.UUID) error {
+	return db.Model(&Entity{}).Where("id = ?", id).Updates(map[string]interface{}{
+		"status":               "connected",
+		"error_code":           gorm.Expr("NULL"),
+		"error_message":        gorm.Expr("NULL"),
+		"last_error_at":        gorm.Expr("NULL"),
+		"consecutive_failures": 0,
+		"updated_at":           time.Now().UTC(),
 	}).Error
 }
 

@@ -29,10 +29,15 @@ type Builder struct {
 	userDisplayName    string
 	userColor          string
 	writeAccess        bool
-	lastSyncAt         *time.Time
-	lastSyncEventCount int
-	createdAt          time.Time
-	updatedAt          time.Time
+	lastSyncAt          *time.Time
+	lastSyncAttemptAt   *time.Time
+	lastSyncEventCount  int
+	errorCode           *string
+	errorMessage        *string
+	lastErrorAt         *time.Time
+	consecutiveFailures int
+	createdAt           time.Time
+	updatedAt           time.Time
 }
 
 func NewBuilder() *Builder { return &Builder{} }
@@ -51,7 +56,12 @@ func (b *Builder) SetUserDisplayName(n string) *Builder      { b.userDisplayName
 func (b *Builder) SetUserColor(c string) *Builder            { b.userColor = c; return b }
 func (b *Builder) SetWriteAccess(w bool) *Builder            { b.writeAccess = w; return b }
 func (b *Builder) SetLastSyncAt(t *time.Time) *Builder       { b.lastSyncAt = t; return b }
+func (b *Builder) SetLastSyncAttemptAt(t *time.Time) *Builder { b.lastSyncAttemptAt = t; return b }
 func (b *Builder) SetLastSyncEventCount(c int) *Builder      { b.lastSyncEventCount = c; return b }
+func (b *Builder) SetErrorCode(c *string) *Builder           { b.errorCode = c; return b }
+func (b *Builder) SetErrorMessage(m *string) *Builder        { b.errorMessage = m; return b }
+func (b *Builder) SetLastErrorAt(t *time.Time) *Builder      { b.lastErrorAt = t; return b }
+func (b *Builder) SetConsecutiveFailures(n int) *Builder     { b.consecutiveFailures = n; return b }
 func (b *Builder) SetCreatedAt(t time.Time) *Builder         { b.createdAt = t; return b }
 func (b *Builder) SetUpdatedAt(t time.Time) *Builder         { b.updatedAt = t; return b }
 
@@ -84,10 +94,15 @@ func (b *Builder) Build() (Model, error) {
 		tokenExpiry:        b.tokenExpiry,
 		userDisplayName:    b.userDisplayName,
 		userColor:          b.userColor,
-		writeAccess:        b.writeAccess,
-		lastSyncAt:         b.lastSyncAt,
-		lastSyncEventCount: b.lastSyncEventCount,
-		createdAt:          b.createdAt,
-		updatedAt:          b.updatedAt,
+		writeAccess:         b.writeAccess,
+		lastSyncAt:          b.lastSyncAt,
+		lastSyncAttemptAt:   b.lastSyncAttemptAt,
+		lastSyncEventCount:  b.lastSyncEventCount,
+		errorCode:           b.errorCode,
+		errorMessage:        b.errorMessage,
+		lastErrorAt:         b.lastErrorAt,
+		consecutiveFailures: b.consecutiveFailures,
+		createdAt:           b.createdAt,
+		updatedAt:           b.updatedAt,
 	}, nil
 }

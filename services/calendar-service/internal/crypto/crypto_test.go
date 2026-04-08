@@ -3,6 +3,7 @@ package crypto
 import (
 	"crypto/rand"
 	"encoding/base64"
+	"errors"
 	"testing"
 )
 
@@ -95,5 +96,19 @@ func TestDecryptTooShort(t *testing.T) {
 	_, err := enc.Decrypt(short)
 	if err == nil {
 		t.Fatal("should fail on ciphertext shorter than nonce")
+	}
+	if !errors.Is(err, ErrDecryptFailed) {
+		t.Fatalf("expected ErrDecryptFailed sentinel, got %v", err)
+	}
+}
+
+func TestDecryptCorruptedCiphertextWrapsErrDecryptFailed(t *testing.T) {
+	enc, _ := NewEncryptor(testKey(t))
+	_, err := enc.Decrypt("AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA")
+	if err == nil {
+		t.Fatal("expected decrypt failure")
+	}
+	if !errors.Is(err, ErrDecryptFailed) {
+		t.Fatalf("expected ErrDecryptFailed sentinel, got %v", err)
 	}
 }

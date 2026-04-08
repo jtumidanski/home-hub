@@ -20,11 +20,16 @@ type Entity struct {
 	TokenExpiry        time.Time  `gorm:"not null"`
 	UserDisplayName    string     `gorm:"type:varchar(255);not null"`
 	UserColor          string     `gorm:"type:varchar(7);not null"`
-	WriteAccess        bool       `gorm:"not null;default:false"`
-	LastSyncAt         *time.Time `gorm:""`
-	LastSyncEventCount int        `gorm:"default:0"`
-	CreatedAt          time.Time  `gorm:"not null"`
-	UpdatedAt          time.Time  `gorm:"not null"`
+	WriteAccess         bool       `gorm:"not null;default:false"`
+	LastSyncAt          *time.Time `gorm:""`
+	LastSyncAttemptAt   *time.Time `gorm:""`
+	LastSyncEventCount  int        `gorm:"default:0"`
+	ErrorCode           *string    `gorm:"type:varchar(40)"`
+	ErrorMessage        *string    `gorm:"type:text"`
+	LastErrorAt         *time.Time `gorm:""`
+	ConsecutiveFailures int        `gorm:"not null;default:0"`
+	CreatedAt           time.Time  `gorm:"not null"`
+	UpdatedAt           time.Time  `gorm:"not null"`
 }
 
 func (Entity) TableName() string { return "calendar_connections" }
@@ -50,11 +55,16 @@ func (m Model) ToEntity() Entity {
 		TokenExpiry:        m.tokenExpiry,
 		UserDisplayName:    m.userDisplayName,
 		UserColor:          m.userColor,
-		WriteAccess:        m.writeAccess,
-		LastSyncAt:         m.lastSyncAt,
-		LastSyncEventCount: m.lastSyncEventCount,
-		CreatedAt:          m.createdAt,
-		UpdatedAt:          m.updatedAt,
+		WriteAccess:         m.writeAccess,
+		LastSyncAt:          m.lastSyncAt,
+		LastSyncAttemptAt:   m.lastSyncAttemptAt,
+		LastSyncEventCount:  m.lastSyncEventCount,
+		ErrorCode:           m.errorCode,
+		ErrorMessage:        m.errorMessage,
+		LastErrorAt:         m.lastErrorAt,
+		ConsecutiveFailures: m.consecutiveFailures,
+		CreatedAt:           m.createdAt,
+		UpdatedAt:           m.updatedAt,
 	}
 }
 
@@ -74,7 +84,12 @@ func Make(e Entity) (Model, error) {
 		SetUserColor(e.UserColor).
 		SetWriteAccess(e.WriteAccess).
 		SetLastSyncAt(e.LastSyncAt).
+		SetLastSyncAttemptAt(e.LastSyncAttemptAt).
 		SetLastSyncEventCount(e.LastSyncEventCount).
+		SetErrorCode(e.ErrorCode).
+		SetErrorMessage(e.ErrorMessage).
+		SetLastErrorAt(e.LastErrorAt).
+		SetConsecutiveFailures(e.ConsecutiveFailures).
 		SetCreatedAt(e.CreatedAt).
 		SetUpdatedAt(e.UpdatedAt).
 		Build()
