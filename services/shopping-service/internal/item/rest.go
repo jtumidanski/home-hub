@@ -23,6 +23,24 @@ func (r RestModel) GetName() string       { return "shopping-items" }
 func (r RestModel) GetID() string          { return r.Id.String() }
 func (r *RestModel) SetID(id string) error { var err error; r.Id, err = uuid.Parse(id); return err }
 
+// NestedRestModel mirrors RestModel for embedding inside parent resources
+// (e.g. shopping list detail). It serializes Id as a normal JSON field so the
+// frontend can read item.id from the embedded array. RestModel keeps json:"-"
+// because api2go places the id at the resource root for top-level item
+// responses.
+type NestedRestModel struct {
+	Id                uuid.UUID  `json:"id"`
+	Name              string     `json:"name"`
+	Quantity          *string    `json:"quantity"`
+	CategoryId        *uuid.UUID `json:"category_id"`
+	CategoryName      *string    `json:"category_name"`
+	CategorySortOrder *int       `json:"category_sort_order"`
+	Checked           bool       `json:"checked"`
+	Position          int        `json:"position"`
+	CreatedAt         time.Time  `json:"created_at"`
+	UpdatedAt         time.Time  `json:"updated_at"`
+}
+
 type CreateRequest struct {
 	Id         uuid.UUID  `json:"-"`
 	Name       string     `json:"name"`
@@ -76,6 +94,29 @@ func Transform(m Model) (RestModel, error) {
 		CreatedAt:         m.CreatedAt(),
 		UpdatedAt:         m.UpdatedAt(),
 	}, nil
+}
+
+func TransformNested(m Model) NestedRestModel {
+	return NestedRestModel{
+		Id:                m.Id(),
+		Name:              m.Name(),
+		Quantity:          m.Quantity(),
+		CategoryId:        m.CategoryID(),
+		CategoryName:      m.CategoryName(),
+		CategorySortOrder: m.CategorySortOrder(),
+		Checked:           m.Checked(),
+		Position:          m.Position(),
+		CreatedAt:         m.CreatedAt(),
+		UpdatedAt:         m.UpdatedAt(),
+	}
+}
+
+func TransformNestedSlice(models []Model) []NestedRestModel {
+	result := make([]NestedRestModel, len(models))
+	for i, m := range models {
+		result[i] = TransformNested(m)
+	}
+	return result
 }
 
 func TransformSlice(models []Model) ([]RestModel, error) {

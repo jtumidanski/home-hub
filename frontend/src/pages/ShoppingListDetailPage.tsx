@@ -35,15 +35,15 @@ import {
   useImportMealPlan,
 } from "@/lib/hooks/api/use-shopping";
 import { usePlans } from "@/lib/hooks/api/use-meals";
-import type { ShoppingItemAttributes } from "@/types/models/shopping";
+import type { NestedShoppingItem } from "@/types/models/shopping";
 
 interface GroupedItems {
   categoryName: string;
   sortOrder: number;
-  items: (ShoppingItemAttributes & { id: string })[];
+  items: NestedShoppingItem[];
 }
 
-function groupItemsByCategory(items: (ShoppingItemAttributes & { id: string })[]): GroupedItems[] {
+function groupItemsByCategory(items: NestedShoppingItem[]): GroupedItems[] {
   const groups = new Map<string, GroupedItems>();
 
   for (const item of items) {
@@ -84,15 +84,10 @@ export function ShoppingListDetailPage() {
   const deleteList = useDeleteShoppingList();
   const importMealPlan = useImportMealPlan(id ?? "");
 
-  // Parse items from the raw list data - items have their own id in the response
-  const items: (ShoppingItemAttributes & { id: string })[] = useMemo(() => {
-    if (!listData?.data?.attributes?.items) return [];
-    // The items come from the JSON:API response as nested objects with id fields
-    const raw = listData.data.attributes.items as unknown as Array<
-      ShoppingItemAttributes & { id: string }
-    >;
-    return raw;
-  }, [listData]);
+  const items: NestedShoppingItem[] = useMemo(
+    () => listData?.data?.attributes?.items ?? [],
+    [listData],
+  );
 
   const grouped = useMemo(() => groupItemsByCategory(items), [items]);
 

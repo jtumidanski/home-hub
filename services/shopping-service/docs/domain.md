@@ -55,12 +55,14 @@ The model is immutable. Fields are private with getter methods. `WithCounts` ret
 | Archive(id) | Transitions list from active to archived |
 | Unarchive(id) | Transitions list from archived to active |
 | GetWithItems(id) | Returns a list with all its items |
-| AddItem(listID, input, authHeader) | Validates list is not archived, enriches category from category service, creates item |
-| UpdateItem(listID, itemID, input, authHeader) | Validates list is not archived, enriches category from category service, updates item |
+| AddItem(listID, input, accessToken) | Validates list is not archived; if no category was supplied, asks recipe-service to resolve the item name to a canonical ingredient and adopts its category; enriches category name/sort order via category-service; creates item |
+| UpdateItem(listID, itemID, input, accessToken) | Validates list is not archived; on a name change with no explicit category, applies the same auto-categorize lookup; enriches category from category-service; updates item |
 | RemoveItem(listID, itemID) | Validates list is not archived, deletes item |
 | CheckItem(listID, itemID, checked) | Validates list is not archived, sets item checked state |
 | UncheckAllItems(listID) | Validates list is not archived, unchecks all items in list |
-| ImportFromMealPlan(listID, planID, authHeader) | Validates list is not archived, fetches ingredients from recipe service, resolves categories, creates items |
+| ImportFromMealPlan(listID, planID, accessToken) | Validates list is not archived, fetches ingredients from recipe service, resolves categories, creates items |
+
+> Cross-service calls forward the caller's `access_token` cookie rather than an `Authorization` header — recipe-service and category-service both authenticate via the cookie set by auth-service.
 
 ---
 

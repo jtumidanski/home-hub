@@ -8,15 +8,15 @@ import (
 )
 
 type RestModel struct {
-	Id           uuid.UUID       `json:"-"`
-	Name         string          `json:"name"`
-	Status       string          `json:"status"`
-	ItemCount    int             `json:"item_count"`
-	CheckedCount int             `json:"checked_count"`
-	ArchivedAt   *time.Time      `json:"archived_at"`
-	Items        []item.RestModel `json:"items,omitempty"`
-	CreatedAt    time.Time       `json:"created_at"`
-	UpdatedAt    time.Time       `json:"updated_at"`
+	Id           uuid.UUID             `json:"-"`
+	Name         string                `json:"name"`
+	Status       string                `json:"status"`
+	ItemCount    int                   `json:"item_count"`
+	CheckedCount int                   `json:"checked_count"`
+	ArchivedAt   *time.Time            `json:"archived_at"`
+	Items        []item.NestedRestModel `json:"items,omitempty"`
+	CreatedAt    time.Time             `json:"created_at"`
+	UpdatedAt    time.Time             `json:"updated_at"`
 }
 
 func (r RestModel) GetName() string       { return "shopping-lists" }
@@ -122,7 +122,7 @@ func Transform(m Model) (RestModel, error) {
 	}, nil
 }
 
-func TransformWithItems(m Model, items []item.RestModel) (RestModel, error) {
+func TransformWithItems(m Model, items []item.NestedRestModel) (RestModel, error) {
 	r, err := Transform(m)
 	if err != nil {
 		return RestModel{}, err

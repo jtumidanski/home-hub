@@ -315,7 +315,7 @@ func exportMarkdownHandler(db *gorm.DB, catClient *categoryclient.Client) server
 			return func(w http.ResponseWriter, r *http.Request) {
 				proc := NewProcessor(d.Logger(), r.Context(), db)
 
-				markdown, err := proc.ExportMarkdown(id, r.Header.Get("Authorization"), catClient)
+				markdown, err := proc.ExportMarkdown(id, accessTokenCookie(r), catClient)
 				if err != nil {
 					server.WriteError(w, http.StatusNotFound, "Not Found", "Plan not found")
 					return
@@ -335,7 +335,7 @@ func getIngredientsHandler(db *gorm.DB, catClient *categoryclient.Client) server
 			return func(w http.ResponseWriter, r *http.Request) {
 				proc := NewProcessor(d.Logger(), r.Context(), db)
 
-				consolidated, err := proc.ConsolidateIngredients(id, r.Header.Get("Authorization"), catClient)
+				consolidated, err := proc.ConsolidateIngredients(id, accessTokenCookie(r), catClient)
 				if err != nil {
 					server.WriteError(w, http.StatusNotFound, "Not Found", "Plan not found")
 					return
@@ -347,6 +347,16 @@ func getIngredientsHandler(db *gorm.DB, catClient *categoryclient.Client) server
 			}
 		})
 	}
+}
+
+// accessTokenCookie extracts the access_token cookie value for forwarding to
+// downstream services that share the same auth middleware. Returns "" when the
+// cookie is missing.
+func accessTokenCookie(r *http.Request) string {
+	if c, err := r.Cookie("access_token"); err == nil {
+		return c.Value
+	}
+	return ""
 }
 
 func queryInt(r *http.Request, key string, defaultVal int) int {

@@ -38,8 +38,8 @@ func New(baseURL string) *Client {
 	}
 }
 
-func (c *Client) GetCategory(categoryID uuid.UUID, authHeader string) (*Category, error) {
-	categories, err := c.ListCategories(authHeader)
+func (c *Client) GetCategory(categoryID uuid.UUID, accessToken string) (*Category, error) {
+	categories, err := c.ListCategories(accessToken)
 	if err != nil {
 		return nil, err
 	}
@@ -51,12 +51,12 @@ func (c *Client) GetCategory(categoryID uuid.UUID, authHeader string) (*Category
 	return nil, fmt.Errorf("category %s not found", categoryID)
 }
 
-func (c *Client) ListCategories(authHeader string) ([]Category, error) {
+func (c *Client) ListCategories(accessToken string) ([]Category, error) {
 	req, err := http.NewRequest(http.MethodGet, c.baseURL+"/api/v1/categories", nil)
 	if err != nil {
 		return nil, err
 	}
-	req.Header.Set("Authorization", authHeader)
+	req.AddCookie(&http.Cookie{Name: "access_token", Value: accessToken})
 
 	resp, err := c.httpClient.Do(req)
 	if err != nil {
