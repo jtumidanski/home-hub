@@ -86,6 +86,50 @@ func TestProcessorIntegration(t *testing.T) {
 	}
 }
 
+func TestProcessor_LookupByName(t *testing.T) {
+	db := setupTestDB(t)
+	l, _ := test.NewNullLogger()
+	proc := NewProcessor(l, context.Background(), db)
+
+	tenantID := uuid.New()
+	created, err := proc.Create(tenantID, "egg", "Egg", "count", nil)
+	if err != nil {
+		t.Fatalf("create failed: %v", err)
+	}
+	if _, err := proc.AddAlias(tenantID, created.Id(), "huevo"); err != nil {
+		t.Fatalf("add alias failed: %v", err)
+	}
+
+	tests := []struct {
+		name      string
+		query     string
+		wantMatch bool
+	}{
+		{name: "exact name match", query: "egg", wantMatch: true},
+		{name: "case insensitive name match", query: "EGG", wantMatch: true},
+		{name: "alias match", query: "huevo", wantMatch: true},
+		{name: "plural normalized to singular", query: "eggs", wantMatch: true},
+		{name: "leading article stripped", query: "the egg", wantMatch: true},
+		{name: "miss returns false", query: "tofu", wantMatch: false},
+		{name: "blank returns false", query: "   ", wantMatch: false},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			m, matched, err := proc.LookupByName(tenantID, tt.query)
+			if err != nil {
+				t.Fatalf("LookupByName error: %v", err)
+			}
+			if matched != tt.wantMatch {
+				t.Errorf("matched = %v, want %v", matched, tt.wantMatch)
+			}
+			if matched && m.Id() != created.Id() {
+				t.Errorf("matched id = %s, want %s", m.Id(), created.Id())
+			}
+		})
+	}
+}
+
 func TestGetIngredientRecipesIncludesRecipeName(t *testing.T) {
 	db := setupTestDB(t)
 	if err := db.Exec(`CREATE TABLE recipes (

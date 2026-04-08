@@ -23,11 +23,11 @@ import (
 
 // PlanData is a minimal representation of a plan, avoiding an import of the plan package.
 type PlanData struct {
-	ID         uuid.UUID
-	TenantID   uuid.UUID
-	Name       string
-	StartsOn   time.Time
-	AuthHeader string
+	ID          uuid.UUID
+	TenantID    uuid.UUID
+	Name        string
+	StartsOn    time.Time
+	AccessToken string
 }
 
 // QuantityUnit is an additional quantity+unit pair for cross-family grouping.
@@ -127,8 +127,8 @@ func (p *Processor) ConsolidateIngredients(pd PlanData) []ConsolidatedIngredient
 		sortOrder int
 	}
 	categoryByID := make(map[uuid.UUID]catInfo)
-	if p.catClient != nil && pd.AuthHeader != "" {
-		if cats, err := p.catClient.ListCategories(pd.AuthHeader); err == nil {
+	if p.catClient != nil && pd.AccessToken != "" {
+		if cats, err := p.catClient.ListCategories(pd.AccessToken); err == nil {
 			for _, c := range cats {
 				categoryByID[c.ID] = catInfo{name: c.Name, sortOrder: c.SortOrder}
 			}

@@ -1,10 +1,17 @@
+// NestedShoppingItem is the embedded shape inside a list detail response.
+// Each item carries its own id (unlike the api2go top-level form where the
+// id sits at the resource root).
+export interface NestedShoppingItem extends ShoppingItemAttributes {
+  id: string;
+}
+
 export interface ShoppingListAttributes {
   name: string;
   status: "active" | "archived";
   item_count: number;
   checked_count: number;
   archived_at: string | null;
-  items?: ShoppingItemAttributes[];
+  items?: NestedShoppingItem[];
   created_at: string;
   updated_at: string;
 }

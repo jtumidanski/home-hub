@@ -50,6 +50,16 @@ func InitializeRoutes(db *gorm.DB, categoryServiceURL, recipeServiceURL string) 
 	}
 }
 
+// accessTokenCookie extracts the access_token cookie value for forwarding to
+// downstream services that share the same auth middleware. Returns "" when the
+// cookie is missing.
+func accessTokenCookie(r *http.Request) string {
+	if c, err := r.Cookie("access_token"); err == nil {
+		return c.Value
+	}
+	return ""
+}
+
 func listHandler(db *gorm.DB, catClient *categoryclient.Client, recipeClient *recipeclient.Client) server.GetHandler {
 	return func(d *server.HandlerDependency, c *server.HandlerContext) http.HandlerFunc {
 		return func(w http.ResponseWriter, r *http.Request) {
@@ -122,12 +132,7 @@ func getHandler(db *gorm.DB, catClient *categoryclient.Client, recipeClient *rec
 					return
 				}
 
-				restItems, err := item.TransformSlice(items)
-				if err != nil {
-					d.Logger().WithError(err).Error("Creating REST models.")
-					server.WriteError(w, http.StatusInternalServerError, "Error", "")
-					return
-				}
+				restItems := item.TransformNestedSlice(items)
 				rest, err := TransformWithItems(m, restItems)
 				if err != nil {
 					d.Logger().WithError(err).Error("Creating REST model.")
@@ -272,7 +277,7 @@ func addItemHandler(db *gorm.DB, catClient *categoryclient.Client, recipeClient 
 				}
 
 				proc := NewProcessor(d.Logger(), r.Context(), db, catClient, recipeClient)
-				m, err := proc.AddItem(listID, addInput, r.Header.Get("Authorization"))
+				m, err := proc.AddItem(listID, addInput, accessTokenCookie(r))
 				if err != nil {
 					if errors.Is(err, ErrNotFound) {
 						server.WriteError(w, http.StatusNotFound, "Not Found", "Shopping list not found")
@@ -316,7 +321,7 @@ func updateItemHandler(db *gorm.DB, catClient *categoryclient.Client, recipeClie
 					}
 
 					proc := NewProcessor(d.Logger(), r.Context(), db, catClient, recipeClient)
-					m, err := proc.UpdateItem(listID, itemID, updateInput, r.Header.Get("Authorization"))
+					m, err := proc.UpdateItem(listID, itemID, updateInput, accessTokenCookie(r))
 					if err != nil {
 						if errors.Is(err, ErrNotFound) {
 							server.WriteError(w, http.StatusNotFound, "Not Found", "Shopping list not found")
@@ -440,12 +445,7 @@ func uncheckAllHandler(db *gorm.DB, catClient *categoryclient.Client, recipeClie
 					return
 				}
 
-				restItems, err := item.TransformSlice(items)
-				if err != nil {
-					d.Logger().WithError(err).Error("Creating REST models.")
-					server.WriteError(w, http.StatusInternalServerError, "Error", "")
-					return
-				}
+				restItems := item.TransformNestedSlice(items)
 				rest, err := TransformWithItems(m, restItems)
 				if err != nil {
 					d.Logger().WithError(err).Error("Creating REST model.")
@@ -468,7 +468,7 @@ func importHandler(db *gorm.DB, catClient *categoryclient.Client, recipeClient *
 				}
 
 				proc := NewProcessor(d.Logger(), r.Context(), db, catClient, recipeClient)
-				m, items, err := proc.ImportFromMealPlan(listID, input.PlanId, r.Header.Get("Authorization"))
+				m, items, err := proc.ImportFromMealPlan(listID, input.PlanId, accessTokenCookie(r))
 				if err != nil {
 					if errors.Is(err, ErrNotFound) {
 						server.WriteError(w, http.StatusNotFound, "Not Found", "Shopping list not found")
@@ -483,12 +483,7 @@ func importHandler(db *gorm.DB, catClient *categoryclient.Client, recipeClient *
 					return
 				}
 
-				restItems, err := item.TransformSlice(items)
-				if err != nil {
-					d.Logger().WithError(err).Error("Creating REST models.")
-					server.WriteError(w, http.StatusInternalServerError, "Error", "")
-					return
-				}
+				restItems := item.TransformNestedSlice(items)
 				rest, err := TransformWithItems(m, restItems)
 				if err != nil {
 					d.Logger().WithError(err).Error("Creating REST model.")

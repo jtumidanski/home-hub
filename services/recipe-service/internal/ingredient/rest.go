@@ -42,6 +42,29 @@ type RestAliasModel struct {
 	Name string    `json:"name"`
 }
 
+// RestLookupModel is returned by the name-lookup endpoint. Only the fields
+// other services actually need are exposed here, keeping the cross-service
+// surface narrow.
+type RestLookupModel struct {
+	Id          uuid.UUID  `json:"-"`
+	Name        string     `json:"name"`
+	DisplayName string     `json:"display_name"`
+	CategoryId  *uuid.UUID `json:"category_id"`
+}
+
+func (r RestLookupModel) GetName() string       { return "ingredient-lookups" }
+func (r RestLookupModel) GetID() string          { return r.Id.String() }
+func (r *RestLookupModel) SetID(id string) error { var err error; r.Id, err = uuid.Parse(id); return err }
+
+func TransformLookup(m Model) RestLookupModel {
+	return RestLookupModel{
+		Id:          m.Id(),
+		Name:        m.Name(),
+		DisplayName: m.DisplayName(),
+		CategoryId:  m.CategoryID(),
+	}
+}
+
 type CreateRequest struct {
 	Id          uuid.UUID `json:"-"`
 	Name        string    `json:"name"`

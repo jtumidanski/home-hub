@@ -181,21 +181,27 @@ func (p *Processor) GetWithItems(id uuid.UUID) (Model, []item.Model, error) {
 	return m, items, nil
 }
 
-func (p *Processor) AddItem(listID uuid.UUID, input item.AddInput, authHeader string) (item.Model, error) {
+func (p *Processor) AddItem(listID uuid.UUID, input item.AddInput, accessToken string) (item.Model, error) {
 	if err := p.validateListModifiable(listID); err != nil {
 		return item.Model{}, err
 	}
 	input.ListID = listID
-	p.enrichCategory(&input, authHeader)
+	if input.CategoryID == nil {
+		p.autoCategorize(&input, accessToken)
+	}
+	p.enrichCategory(&input, accessToken)
 	itemProc := item.NewProcessor(p.l, p.ctx, p.db)
 	return itemProc.Add(input)
 }
 
-func (p *Processor) UpdateItem(listID uuid.UUID, itemID uuid.UUID, input item.UpdateInput, authHeader string) (item.Model, error) {
+func (p *Processor) UpdateItem(listID uuid.UUID, itemID uuid.UUID, input item.UpdateInput, accessToken string) (item.Model, error) {
 	if err := p.validateListModifiable(listID); err != nil {
 		return item.Model{}, err
 	}
-	p.enrichUpdateCategory(&input, authHeader)
+	if input.CategoryID == nil && !input.ClearCategory && input.Name != nil {
+		p.autoCategorizeUpdate(&input, accessToken)
+	}
+	p.enrichUpdateCategory(&input, accessToken)
 	itemProc := item.NewProcessor(p.l, p.ctx, p.db)
 	return itemProc.Update(itemID, input)
 }
@@ -227,19 +233,19 @@ func (p *Processor) UncheckAllItems(listID uuid.UUID) (Model, []item.Model, erro
 	return p.GetWithItems(listID)
 }
 
-func (p *Processor) ImportFromMealPlan(listID uuid.UUID, planID uuid.UUID, authHeader string) (Model, []item.Model, error) {
+func (p *Processor) ImportFromMealPlan(listID uuid.UUID, planID uuid.UUID, accessToken string) (Model, []item.Model, error) {
 	if err := p.validateListModifiable(listID); err != nil {
 		return Model{}, nil, err
 	}
 
-	ingredients, err := p.recipeClient.GetPlanIngredients(planID, authHeader)
+	ingredients, err := p.recipeClient.GetPlanIngredients(planID, accessToken)
 	if err != nil {
 		return Model{}, nil, err
 	}
 
 	categoryMap := make(map[string]categoryclient.Category)
 	if p.catClient != nil {
-		if cats, err := p.catClient.ListCategories(authHeader); err == nil {
+		if cats, err := p.catClient.ListCategories(accessToken); err == nil {
 			for _, cat := range cats {
 				categoryMap[cat.Name] = cat
 			}
@@ -313,11 +319,11 @@ func (p *Processor) Unarchive(id uuid.UUID) (Model, error) {
 	return m.WithCounts(itemCount, checkedCount), nil
 }
 
-func (p *Processor) enrichCategory(input *item.AddInput, authHeader string) {
+func (p *Processor) enrichCategory(input *item.AddInput, accessToken string) {
 	if input.CategoryID == nil || p.catClient == nil {
 		return
 	}
-	cat, err := p.catClient.GetCategory(*input.CategoryID, authHeader)
+	cat, err := p.catClient.GetCategory(*input.CategoryID, accessToken)
 	if err != nil {
 		return
 	}
@@ -325,14 +331,49 @@ func (p *Processor) enrichCategory(input *item.AddInput, authHeader string) {
 	input.CategorySortOrder = &cat.SortOrder
 }
 
-func (p *Processor) enrichUpdateCategory(input *item.UpdateInput, authHeader string) {
+func (p *Processor) enrichUpdateCategory(input *item.UpdateInput, accessToken string) {
 	if input.CategoryID == nil || p.catClient == nil {
 		return
 	}
-	cat, err := p.catClient.GetCategory(*input.CategoryID, authHeader)
+	cat, err := p.catClient.GetCategory(*input.CategoryID, accessToken)
 	if err != nil {
 		return
 	}
 	input.CategoryName = &cat.Name
 	input.CategorySortOrder = &cat.SortOrder
+}
+
+// autoCategorize asks recipe-service to resolve the item name to a canonical
+// ingredient and copies its category id onto the input. Failures and misses
+// are logged at debug level and leave the input untouched (the caller falls
+// back to "uncategorized"). enrichCategory then populates the name/sort order
+// from category-service.
+func (p *Processor) autoCategorize(input *item.AddInput, accessToken string) {
+	if p.recipeClient == nil || input.Name == "" {
+		return
+	}
+	lookup, matched, err := p.recipeClient.LookupIngredient(input.Name, accessToken)
+	if err != nil {
+		p.l.WithError(err).WithField("name", input.Name).Debug("Ingredient lookup failed; leaving uncategorized")
+		return
+	}
+	if !matched || lookup.CategoryID == nil {
+		return
+	}
+	input.CategoryID = lookup.CategoryID
+}
+
+func (p *Processor) autoCategorizeUpdate(input *item.UpdateInput, accessToken string) {
+	if p.recipeClient == nil || input.Name == nil || *input.Name == "" {
+		return
+	}
+	lookup, matched, err := p.recipeClient.LookupIngredient(*input.Name, accessToken)
+	if err != nil {
+		p.l.WithError(err).WithField("name", *input.Name).Debug("Ingredient lookup failed; leaving uncategorized")
+		return
+	}
+	if !matched || lookup.CategoryID == nil {
+		return
+	}
+	input.CategoryID = lookup.CategoryID
 }
