@@ -15,9 +15,21 @@ import (
 	"github.com/jtumidanski/home-hub/services/recipe-service/internal/planitem"
 	"github.com/jtumidanski/home-hub/services/recipe-service/internal/planner"
 	"github.com/jtumidanski/home-hub/services/recipe-service/internal/recipe"
+	tenantctx "github.com/jtumidanski/home-hub/shared/go/tenant"
 	"github.com/sirupsen/logrus"
 	"gorm.io/gorm"
 )
+
+// tokenPrefix returns the first 12 characters of an access token (the JWT
+// header — never the body or signature) so diagnostic logs can correlate a
+// recipe-service outbound call with the cookie value the browser is sending,
+// without writing any sensitive claim or signature material to logs.
+func tokenPrefix(token string) string {
+	if len(token) <= 12 {
+		return ""
+	}
+	return token[:12]
+}
 
 // PlanData is a minimal representation of a plan, avoiding an import of the plan package.
 type PlanData struct {
@@ -118,6 +130,28 @@ func (p *Processor) ConsolidateIngredients(pd PlanData) []ConsolidatedIngredient
 	}
 	resolved := make(map[uuid.UUID]*ingredientAccum)
 	var unresolved []ConsolidatedIngredient
+
+	// Diagnostic: log the request tenant context alongside the plan's
+	// own tenant_id and a fingerprint of the access token. This is the
+	// next step in tracking down why categoryclient is returning a
+	// different set of categories than the user's browser sees from
+	// /api/v1/categories — comparing the request tenant to the browser
+	// tenant tells us whether the inbound auth is misrouted vs. the
+	// outbound categoryclient call hitting a different tenant.
+	diagFields := logrus.Fields{
+		"plan_id":          pd.ID,
+		"plan_tenant_id":   pd.TenantID,
+		"token_len":        len(pd.AccessToken),
+		"token_prefix":     tokenPrefix(pd.AccessToken),
+	}
+	if t, ok := tenantctx.FromContext(p.ctx); ok {
+		diagFields["request_tenant_id"] = t.Id()
+		diagFields["request_household_id"] = t.HouseholdId()
+		diagFields["request_user_id"] = t.UserId()
+	} else {
+		diagFields["request_tenant_id"] = "<missing from context>"
+	}
+	p.l.WithFields(diagFields).Info("ConsolidateIngredients tenant context snapshot")
 
 	// Build category lookup map for sort order. On any categoryclient
 	// failure we log and fall back to an empty map so the endpoint stays
