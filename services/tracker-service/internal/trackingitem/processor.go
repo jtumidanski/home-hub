@@ -46,6 +46,23 @@ func (p *Processor) List(userID uuid.UUID) ([]Model, error) {
 	return models, nil
 }
 
+// ListWithSchedules returns the user's tracking items paired with their
+// current effective schedule. The list handler uses this so the per-item
+// schedule lookup happens inside the processor instead of being threaded
+// through the REST layer one Model at a time.
+func (p *Processor) ListWithSchedules(userID uuid.UUID) ([]ItemWithSchedule, error) {
+	models, err := p.List(userID)
+	if err != nil {
+		return nil, err
+	}
+	results := make([]ItemWithSchedule, len(models))
+	for i, m := range models {
+		sched, _ := p.GetCurrentSchedule(m.Id())
+		results[i] = ItemWithSchedule{Item: m, Schedule: sched}
+	}
+	return results, nil
+}
+
 func (p *Processor) Get(id uuid.UUID) (Model, error) {
 	e, err := GetByID(id)(p.db.WithContext(p.ctx))()
 	if err != nil {
@@ -99,7 +116,7 @@ func (p *Processor) Create(tenantID, userID uuid.UUID, name, scaleType, color st
 		}
 
 		today := time.Now().UTC().Truncate(24 * time.Hour)
-		if _, err := schedule.CreateSnapshot(tx, e.Id, sched, today); err != nil {
+		if _, err := schedule.NewProcessor(p.l, p.ctx, tx).CreateSnapshot(e.Id, sched, today); err != nil {
 			return err
 		}
 
@@ -168,7 +185,7 @@ func (p *Processor) Update(id uuid.UUID, name *string, color *string, sched *[]i
 				return err
 			}
 			today := time.Now().UTC().Truncate(24 * time.Hour)
-			if _, err := schedule.CreateSnapshot(tx, e.Id, *sched, today); err != nil {
+			if _, err := schedule.NewProcessor(p.l, p.ctx, tx).CreateSnapshot(e.Id, *sched, today); err != nil {
 				return err
 			}
 		}
@@ -192,30 +209,14 @@ func (p *Processor) Delete(id uuid.UUID) error {
 }
 
 func (p *Processor) GetScheduleHistory(itemID uuid.UUID) ([]schedule.Model, error) {
-	entities, err := schedule.GetByTrackingItemID(itemID)(p.db.WithContext(p.ctx))()
-	if err != nil {
-		return nil, err
-	}
-	models := make([]schedule.Model, len(entities))
-	for i, e := range entities {
-		m, err := schedule.Make(e)
-		if err != nil {
-			return nil, err
-		}
-		models[i] = m
-	}
-	return models, nil
+	return schedule.NewProcessor(p.l, p.ctx, p.db).GetHistory(itemID)
 }
 
 func (p *Processor) GetCurrentSchedule(itemID uuid.UUID) ([]int, error) {
 	now := time.Now().UTC().Truncate(24 * time.Hour)
-	e, err := schedule.GetEffectiveSchedule(itemID, now)(p.db.WithContext(p.ctx))()
+	m, err := schedule.NewProcessor(p.l, p.ctx, p.db).GetEffective(itemID, now)
 	if err != nil {
 		return []int{}, nil
-	}
-	m, err := schedule.Make(e)
-	if err != nil {
-		return nil, err
 	}
 	return m.Schedule(), nil
 }

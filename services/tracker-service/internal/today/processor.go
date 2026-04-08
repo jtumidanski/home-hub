@@ -45,6 +45,8 @@ func (p *Processor) Today(userID uuid.UUID, date time.Time) (Result, error) {
 		return Result{}, err
 	}
 
+	schedProc := schedule.NewProcessor(p.l, p.ctx, p.db)
+
 	var scheduledItems []trackingitem.Model
 	for _, e := range itemEntities {
 		m, err := trackingitem.Make(e)
@@ -53,14 +55,9 @@ func (p *Processor) Today(userID uuid.UUID, date time.Time) (Result, error) {
 			continue
 		}
 
-		snap, err := schedule.GetEffectiveSchedule(m.Id(), day)(p.db.WithContext(p.ctx))()
+		sm, err := schedProc.GetEffective(m.Id(), day)
 		if err != nil {
 			// No effective snapshot — item has not started or schedule is missing.
-			continue
-		}
-		sm, err := schedule.Make(snap)
-		if err != nil {
-			p.l.WithError(err).WithField("item_id", m.Id()).Warn("Skipping unreadable schedule snapshot")
 			continue
 		}
 		if !scheduleMatches(sm.Schedule(), dow) {

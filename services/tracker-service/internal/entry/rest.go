@@ -53,3 +53,15 @@ func Transform(m Model, scheduled bool) RestModel {
 		UpdatedAt:      m.UpdatedAt(),
 	}
 }
+
+// TransformSlice projects a list of WithScheduled rows into REST models. List
+// handlers must use this rather than inlining a transform loop so the slice
+// shape stays consistent across endpoints.
+func TransformSlice(rows []WithScheduled) []*RestModel {
+	rest := make([]*RestModel, len(rows))
+	for i, r := range rows {
+		rm := Transform(r.Entry, r.Scheduled)
+		rest[i] = &rm
+	}
+	return rest
+}

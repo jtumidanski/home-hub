@@ -13,6 +13,14 @@ type ScheduleHistoryEntry struct {
 	EffectiveDate string `json:"effective_date"`
 }
 
+// ItemWithSchedule pairs a tracking item with its current effective schedule.
+// The list handler uses this paired view so TransformSlice can produce a
+// REST projection without per-row processor calls in the resource layer.
+type ItemWithSchedule struct {
+	Item     Model
+	Schedule []int
+}
+
 type RestModel struct {
 	Id              uuid.UUID              `json:"-"`
 	Name            string                 `json:"name"`
@@ -86,6 +94,17 @@ func Transform(m Model, currentSchedule []int, history []schedule.Model) RestMod
 		CreatedAt:       m.CreatedAt(),
 		UpdatedAt:       m.UpdatedAt(),
 	}
+}
+
+// TransformSlice projects a slice of items + their current schedules into REST
+// models. List handlers must use this rather than inlining a transform loop.
+func TransformSlice(rows []ItemWithSchedule) []*RestModel {
+	rest := make([]*RestModel, len(rows))
+	for i, r := range rows {
+		rm := TransformList(r.Item, r.Schedule)
+		rest[i] = &rm
+	}
+	return rest
 }
 
 func TransformList(m Model, currentSchedule []int) RestModel {

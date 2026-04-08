@@ -10,6 +10,7 @@ import (
 	"github.com/jtumidanski/home-hub/services/tracker-service/internal/entry"
 	"github.com/jtumidanski/home-hub/services/tracker-service/internal/schedule"
 	"github.com/jtumidanski/home-hub/services/tracker-service/internal/trackingitem"
+	"github.com/jtumidanski/home-hub/shared/go/database"
 	"github.com/sirupsen/logrus/hooks/test"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -21,6 +22,8 @@ func setupTestDB(t *testing.T) *gorm.DB {
 	t.Helper()
 	db, err := gorm.Open(sqlite.Open(":memory:"), &gorm.Config{})
 	require.NoError(t, err)
+	l, _ := test.NewNullLogger()
+	database.RegisterTenantCallbacks(l, db)
 	require.NoError(t, db.AutoMigrate(&trackingitem.Entity{}, &schedule.Entity{}, &entry.Entity{}))
 	return db
 }

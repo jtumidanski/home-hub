@@ -152,12 +152,7 @@ func listByMonthHandler(db *gorm.DB) server.GetHandler {
 				return
 			}
 
-			rest := make([]*RestModel, len(results))
-			for i, r := range results {
-				rm := Transform(r.Entry, r.Scheduled)
-				rest[i] = &rm
-			}
-
+			rest := TransformSlice(results)
 			server.MarshalSliceResponse[*RestModel](d.Logger())(w)(c.ServerInformation())(rest)
 		}
 	}

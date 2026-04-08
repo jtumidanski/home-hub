@@ -33,20 +33,14 @@ func listHandler(db *gorm.DB) server.GetHandler {
 			t := tenantctx.MustFromContext(r.Context())
 			proc := NewProcessor(d.Logger(), r.Context(), db)
 
-			models, err := proc.List(t.UserId())
+			rows, err := proc.ListWithSchedules(t.UserId())
 			if err != nil {
 				d.Logger().WithError(err).Error("Failed to list trackers")
 				server.WriteError(w, http.StatusInternalServerError, "Error", "")
 				return
 			}
 
-			rest := make([]*RestModel, len(models))
-			for i, m := range models {
-				sched, _ := proc.GetCurrentSchedule(m.Id())
-				rm := TransformList(m, sched)
-				rest[i] = &rm
-			}
-
+			rest := TransformSlice(rows)
 			server.MarshalSliceResponse[*RestModel](d.Logger())(w)(c.ServerInformation())(rest)
 		}
 	}

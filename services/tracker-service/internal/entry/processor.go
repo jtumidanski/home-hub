@@ -229,11 +229,7 @@ func (p *Processor) isScheduledForDate(itemID uuid.UUID, date time.Time) bool {
 }
 
 func (p *Processor) scheduleForItem(itemID uuid.UUID, date time.Time) []int {
-	snap, err := schedule.GetEffectiveSchedule(itemID, date)(p.db.WithContext(p.ctx))()
-	if err != nil {
-		return nil
-	}
-	m, err := schedule.Make(snap)
+	m, err := schedule.NewProcessor(p.l, p.ctx, p.db).GetEffective(itemID, date)
 	if err != nil {
 		return nil
 	}

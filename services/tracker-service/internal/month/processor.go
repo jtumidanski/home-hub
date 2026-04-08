@@ -99,18 +99,9 @@ func (p *Processor) computeMonthSummary(userID uuid.UUID, monthStr string) (Mont
 		itemIDs[i] = m.Id()
 	}
 
-	var allSnapshots []schedule.Entity
-	if len(itemIDs) > 0 {
-		allSnapshots, _ = schedule.GetByTrackingItemIDs(itemIDs)(p.db.WithContext(p.ctx))()
-	}
-
-	snapshotsByItem := make(map[uuid.UUID][]schedule.Model)
-	for _, se := range allSnapshots {
-		sm, err := schedule.Make(se)
-		if err != nil {
-			continue
-		}
-		snapshotsByItem[sm.TrackingItemID()] = append(snapshotsByItem[sm.TrackingItemID()], sm)
+	snapshotsByItem, err := schedule.NewProcessor(p.l, p.ctx, p.db).GetHistoriesByItems(itemIDs)
+	if err != nil {
+		return MonthSummary{}, nil, nil, nil, err
 	}
 
 	entries, err := entry.GetByUserAndMonth(userID, monthStart, monthEnd)(p.db.WithContext(p.ctx))()
