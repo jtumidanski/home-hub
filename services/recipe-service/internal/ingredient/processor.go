@@ -231,7 +231,7 @@ func (p *Processor) SearchWithUsage(tenantID uuid.UUID, query string, categoryFi
 		if err != nil {
 			return nil, 0, err
 		}
-		models[i] = m.WithUsageCount(int(e.UsageCount)).WithCategoryName(e.CategoryName)
+		models[i] = m.WithUsageCount(int(e.UsageCount))
 	}
 	return models, total, nil
 }

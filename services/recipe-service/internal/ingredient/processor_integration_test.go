@@ -3,6 +3,7 @@ package ingredient
 import (
 	"context"
 	"testing"
+	"time"
 
 	"github.com/google/uuid"
 	database "github.com/jtumidanski/home-hub/shared/go/database"
@@ -82,5 +83,77 @@ func TestProcessorIntegration(t *testing.T) {
 				t.Errorf("Name() = %q, want %q", got.Name(), tt.createName)
 			}
 		})
+	}
+}
+
+func TestGetIngredientRecipesIncludesRecipeName(t *testing.T) {
+	db := setupTestDB(t)
+	if err := db.Exec(`CREATE TABLE recipes (
+		id text primary key,
+		title text not null,
+		deleted_at datetime,
+		created_at datetime not null,
+		updated_at datetime not null
+	)`).Error; err != nil {
+		t.Fatalf("failed to create recipes table: %v", err)
+	}
+	if err := db.Exec(`CREATE TABLE recipe_ingredients (
+		id text primary key,
+		recipe_id text not null,
+		canonical_ingredient_id text,
+		raw_name text not null,
+		created_at datetime not null,
+		updated_at datetime not null
+	)`).Error; err != nil {
+		t.Fatalf("failed to create recipe_ingredients table: %v", err)
+	}
+
+	canonID := uuid.New()
+	now := time.Now().UTC()
+	recipe1ID := uuid.New()
+	recipe2ID := uuid.New()
+	if err := db.Exec(
+		`INSERT INTO recipes (id, title, created_at, updated_at) VALUES (?, ?, ?, ?), (?, ?, ?, ?)`,
+		recipe1ID.String(), "Pancakes", now, now,
+		recipe2ID.String(), "Waffles", now, now,
+	).Error; err != nil {
+		t.Fatalf("failed to insert recipes: %v", err)
+	}
+	if err := db.Exec(
+		`INSERT INTO recipe_ingredients (id, recipe_id, canonical_ingredient_id, raw_name, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?), (?, ?, ?, ?, ?, ?)`,
+		uuid.New().String(), recipe1ID.String(), canonID.String(), "1 cup flour", now, now,
+		uuid.New().String(), recipe2ID.String(), canonID.String(), "2 cups flour", now, now.Add(time.Second),
+	).Error; err != nil {
+		t.Fatalf("failed to insert recipe_ingredients: %v", err)
+	}
+
+	refs, total, err := getIngredientRecipes(db, canonID, 1, 10)
+	if err != nil {
+		t.Fatalf("getIngredientRecipes error: %v", err)
+	}
+	if total != 2 {
+		t.Errorf("expected 2 results, got %d", total)
+	}
+	if len(refs) != 2 {
+		t.Fatalf("expected 2 refs, got %d", len(refs))
+	}
+	names := map[string]bool{refs[0].RecipeName: true, refs[1].RecipeName: true}
+	if !names["Pancakes"] || !names["Waffles"] {
+		t.Errorf("expected recipe names Pancakes and Waffles, got %+v", names)
+	}
+
+	// Soft-deleted recipe should be excluded.
+	if err := db.Exec(`UPDATE recipes SET deleted_at = ? WHERE id = ?`, now, recipe2ID.String()).Error; err != nil {
+		t.Fatalf("failed to soft-delete recipe: %v", err)
+	}
+	refs, total, err = getIngredientRecipes(db, canonID, 1, 10)
+	if err != nil {
+		t.Fatalf("getIngredientRecipes error: %v", err)
+	}
+	if total != 1 {
+		t.Errorf("expected 1 result after soft-delete, got %d", total)
+	}
+	if len(refs) != 1 || refs[0].RecipeName != "Pancakes" {
+		t.Errorf("expected only Pancakes, got %+v", refs)
 	}
 }

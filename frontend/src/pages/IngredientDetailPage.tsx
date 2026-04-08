@@ -250,7 +250,7 @@ export function IngredientDetailPage() {
                   className="text-sm text-primary hover:underline"
                   onClick={() => navigate(`/app/recipes/${ref.recipeId}`)}
                 >
-                  {ref.rawName} (recipe)
+                  {ref.recipeName || "(unknown recipe)"}
                 </button>
               </li>
             ))}

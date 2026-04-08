@@ -40,6 +40,10 @@ func Migration(db *gorm.DB) error {
 	if db.Migrator().HasConstraint(&Entity{}, "fk_canonical_ingredients_category") {
 		_ = db.Exec("ALTER TABLE canonical_ingredients DROP CONSTRAINT fk_canonical_ingredients_category").Error
 	}
+	// Drop the orphaned local ingredient_categories table — categories are owned by category-service.
+	if err := db.Exec("DROP TABLE IF EXISTS ingredient_categories").Error; err != nil {
+		return err
+	}
 	return nil
 }
 

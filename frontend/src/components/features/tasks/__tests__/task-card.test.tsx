@@ -29,34 +29,34 @@ describe("TaskCard", () => {
     expect(screen.getByText("2026-04-01")).toBeInTheDocument();
   });
 
-  it('renders "Complete" action for pending task', async () => {
+  it('renders "Mark complete" action for pending task', async () => {
     const user = userEvent.setup();
     const task = makeTask({ status: "pending" });
     render(<TaskCard task={task} onToggleComplete={vi.fn()} onDelete={vi.fn()} />);
 
     await user.click(screen.getByRole("button", { name: "Actions" }));
 
-    expect(screen.getByText("Complete")).toBeInTheDocument();
+    expect(screen.getByText("Mark complete")).toBeInTheDocument();
   });
 
-  it('renders "Reopen" action for completed task', async () => {
+  it('renders "Mark incomplete" action for completed task', async () => {
     const user = userEvent.setup();
     const task = makeTask({ status: "completed" });
     render(<TaskCard task={task} onToggleComplete={vi.fn()} onDelete={vi.fn()} />);
 
     await user.click(screen.getByRole("button", { name: "Actions" }));
 
-    expect(screen.getByText("Reopen")).toBeInTheDocument();
+    expect(screen.getByText("Mark incomplete")).toBeInTheDocument();
   });
 
-  it("calls onToggleComplete with task id and status when Complete is clicked", async () => {
+  it("calls onToggleComplete with task id and status when Mark complete is clicked", async () => {
     const user = userEvent.setup();
     const onToggleComplete = vi.fn();
     const task = makeTask({ status: "pending" });
     render(<TaskCard task={task} onToggleComplete={onToggleComplete} onDelete={vi.fn()} />);
 
     await user.click(screen.getByRole("button", { name: "Actions" }));
-    await user.click(screen.getByText("Complete"));
+    await user.click(screen.getByText("Mark complete"));
 
     expect(onToggleComplete).toHaveBeenCalledWith("task-1", "pending");
   });

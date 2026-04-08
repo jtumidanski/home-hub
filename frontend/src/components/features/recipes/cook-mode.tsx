@@ -190,23 +190,25 @@ function SingleStepView({
 
   return (
     <>
-      <div className="flex-1 flex flex-col items-center justify-center px-6 md:px-12 overflow-y-auto">
-        {showSection && (
-          <h3
-            className="font-semibold text-muted-foreground mb-4"
-            style={{ fontSize: "clamp(1.25rem, 3vw, 2.5rem)" }}
+      <div className="flex-1 overflow-y-auto px-6 md:px-12">
+        <div className="min-h-full flex flex-col items-center justify-center py-6">
+          {showSection && (
+            <h3
+              className="font-semibold text-muted-foreground mb-4"
+              style={{ fontSize: "clamp(1.25rem, 3vw, 2.5rem)" }}
+            >
+              {step.section}
+            </h3>
+          )}
+          <p
+            className="leading-relaxed text-center max-w-4xl"
+            style={{ fontSize: "clamp(1.5rem, 5vw, 5rem)" }}
           >
-            {step.section}
-          </h3>
-        )}
-        <p
-          className="leading-relaxed text-center max-w-4xl"
-          style={{ fontSize: "clamp(1.5rem, 5vw, 5rem)" }}
-        >
-          {step.segments.map((seg, i) => (
-            <StepSegment key={i} segment={seg} size="large" />
-          ))}
-        </p>
+            {step.segments.map((seg, i) => (
+              <StepSegment key={i} segment={seg} size="large" />
+            ))}
+          </p>
+        </div>
       </div>
 
       {/* Navigation bar */}
