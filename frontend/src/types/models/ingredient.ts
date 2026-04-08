@@ -8,7 +8,6 @@ export interface CanonicalIngredientListAttributes {
   displayName?: string;
   unitFamily?: string;
   categoryId?: string;
-  categoryName?: string;
   aliasCount: number;
   usageCount: number;
   createdAt: string;
@@ -20,7 +19,6 @@ export interface CanonicalIngredientDetailAttributes {
   displayName?: string;
   unitFamily?: string;
   categoryId?: string;
-  categoryName?: string;
   aliases: CanonicalIngredientAlias[];
   createdAt: string;
   updatedAt: string;
@@ -55,6 +53,7 @@ export interface CanonicalIngredientUpdateAttributes {
 export interface IngredientRecipeRef {
   recipeId: string;
   rawName: string;
+  recipeName: string;
 }
 
 export interface IngredientCategoryAttributes {

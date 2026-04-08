@@ -7,16 +7,15 @@ import (
 )
 
 type RestModel struct {
-	Id           uuid.UUID  `json:"-"`
-	Name         string     `json:"name"`
-	DisplayName  string     `json:"displayName,omitempty"`
-	UnitFamily   string     `json:"unitFamily,omitempty"`
-	CategoryId   *uuid.UUID `json:"categoryId,omitempty"`
-	CategoryName string     `json:"categoryName,omitempty"`
-	AliasCount   int        `json:"aliasCount"`
-	UsageCount   int        `json:"usageCount"`
-	CreatedAt    time.Time  `json:"createdAt"`
-	UpdatedAt    time.Time  `json:"updatedAt"`
+	Id          uuid.UUID  `json:"-"`
+	Name        string     `json:"name"`
+	DisplayName string     `json:"displayName,omitempty"`
+	UnitFamily  string     `json:"unitFamily,omitempty"`
+	CategoryId  *uuid.UUID `json:"categoryId,omitempty"`
+	AliasCount  int        `json:"aliasCount"`
+	UsageCount  int        `json:"usageCount"`
+	CreatedAt   time.Time  `json:"createdAt"`
+	UpdatedAt   time.Time  `json:"updatedAt"`
 }
 
 func (r RestModel) GetName() string       { return "ingredients" }
@@ -24,15 +23,14 @@ func (r RestModel) GetID() string          { return r.Id.String() }
 func (r *RestModel) SetID(id string) error { var err error; r.Id, err = uuid.Parse(id); return err }
 
 type RestDetailModel struct {
-	Id           uuid.UUID        `json:"-"`
-	Name         string           `json:"name"`
-	DisplayName  string           `json:"displayName,omitempty"`
-	UnitFamily   string           `json:"unitFamily,omitempty"`
-	CategoryId   *uuid.UUID       `json:"categoryId,omitempty"`
-	CategoryName string           `json:"categoryName,omitempty"`
-	Aliases      []RestAliasModel `json:"aliases"`
-	CreatedAt    time.Time        `json:"createdAt"`
-	UpdatedAt    time.Time        `json:"updatedAt"`
+	Id          uuid.UUID        `json:"-"`
+	Name        string           `json:"name"`
+	DisplayName string           `json:"displayName,omitempty"`
+	UnitFamily  string           `json:"unitFamily,omitempty"`
+	CategoryId  *uuid.UUID       `json:"categoryId,omitempty"`
+	Aliases     []RestAliasModel `json:"aliases"`
+	CreatedAt   time.Time        `json:"createdAt"`
+	UpdatedAt   time.Time        `json:"updatedAt"`
 }
 
 func (r RestDetailModel) GetName() string       { return "ingredients" }
@@ -123,7 +121,7 @@ func TransformSlice(models []Model) []RestModel {
 func Transform(m Model, usageCount int) RestModel {
 	return RestModel{
 		Id: m.Id(), Name: m.Name(), DisplayName: m.DisplayName(),
-		UnitFamily: m.UnitFamily(), CategoryId: m.CategoryID(), CategoryName: m.CategoryName(),
+		UnitFamily: m.UnitFamily(), CategoryId: m.CategoryID(),
 		AliasCount: m.AliasCount(), UsageCount: usageCount,
 		CreatedAt: m.CreatedAt(), UpdatedAt: m.UpdatedAt(),
 	}
@@ -136,7 +134,7 @@ func TransformDetail(m Model) RestDetailModel {
 	}
 	return RestDetailModel{
 		Id: m.Id(), Name: m.Name(), DisplayName: m.DisplayName(),
-		UnitFamily: m.UnitFamily(), CategoryId: m.CategoryID(), CategoryName: m.CategoryName(),
+		UnitFamily: m.UnitFamily(), CategoryId: m.CategoryID(),
 		Aliases: aliases,
 		CreatedAt: m.CreatedAt(), UpdatedAt: m.UpdatedAt(),
 	}

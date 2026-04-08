@@ -186,7 +186,7 @@ export function IngredientsPage() {
             <button
               type="button"
               onClick={() => setSearch("")}
-              className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+              className="absolute right-3 top-1/2 -translate-y-1/2 cursor-pointer text-muted-foreground hover:text-foreground"
             >
               <X className="h-4 w-4" />
             </button>
@@ -246,11 +246,16 @@ export function IngredientsPage() {
                     {ingredient.attributes.displayName && (
                       <span className="text-sm text-muted-foreground">{ingredient.attributes.displayName}</span>
                     )}
-                    {ingredient.attributes.categoryName ? (
-                      <Badge variant="outline" className="text-xs">{ingredient.attributes.categoryName}</Badge>
-                    ) : (
-                      <Badge variant="outline" className="text-xs text-yellow-600 border-yellow-300">uncategorized</Badge>
-                    )}
+                    {(() => {
+                      const categoryName = ingredient.attributes.categoryId
+                        ? categories.find((c) => c.id === ingredient.attributes.categoryId)?.attributes.name
+                        : undefined;
+                      return categoryName ? (
+                        <Badge variant="outline" className="text-xs">{categoryName}</Badge>
+                      ) : (
+                        <Badge variant="outline" className="text-xs text-yellow-600 border-yellow-300">uncategorized</Badge>
+                      );
+                    })()}
                     {ingredient.attributes.unitFamily && (
                       <Badge variant="secondary" className="text-xs">{ingredient.attributes.unitFamily}</Badge>
                     )}

@@ -1,4 +1,4 @@
-import { Check, Trash2, Calendar } from "lucide-react";
+import { Circle, CheckCircle2, Trash2, Calendar } from "lucide-react";
 import { type Task } from "@/types/models/task";
 import { Card, CardHeader, CardTitle, CardAction, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -28,8 +28,12 @@ export function TaskCard({ task, ownerName, onToggleComplete, onDelete }: TaskCa
           <CardActionMenu
             actions={[
               {
-                icon: <Check className="h-4 w-4" />,
-                label: isCompleted ? "Reopen" : "Complete",
+                icon: isCompleted ? (
+                  <CheckCircle2 className="h-4 w-4" />
+                ) : (
+                  <Circle className="h-4 w-4" />
+                ),
+                label: isCompleted ? "Mark incomplete" : "Mark complete",
                 onClick: () => onToggleComplete(id, attributes.status),
               },
               {
