@@ -31,6 +31,7 @@ Core services:
 - package-service
 - category-service
 - shopping-service
+- tracker-service
 
 Shared modules provide common functionality but do not contain business logic.
 
@@ -65,6 +66,7 @@ Routing:
 /api/v1/packages -> package-service
 /api/v1/categories -> category-service
 /api/v1/shopping -> shopping-service
+/api/v1/trackers -> tracker-service
 ```
 
 All services are stateless except for database persistence. Authentication is handled by auth-service. Authorization is enforced by each service using JWT claims.
@@ -282,6 +284,30 @@ Rules:
 - cache self-heals on coordinate/unit mismatch
 - tenant scoped, household scoped
 
+### 3.11 tracker-service
+
+Responsibilities:
+
+- per-user tracking item management (name, scale type, color, schedule, sort order)
+- daily entry logging with scale-typed values, optional notes, and skip support
+- versioned schedule snapshots so historical month math stays accurate after schedule changes
+- on-demand monthly summary computation with completion status
+- on-demand monthly dashboard report (sentiment / numeric / range stats)
+- today quick-entry view of items scheduled for the current day
+
+Schema: `tracker.tracking_items`, `tracker.schedule_snapshots`, `tracker.tracking_entries`
+
+Rules:
+
+- scoped by tenant and user only — no household scope
+- soft delete on tracking items; entries and historical reports continue to reference soft-deleted items
+- scale type immutable after creation
+- entries cannot be created for future dates
+- skip is only valid on dates that match the item's effective schedule
+- a month is `complete` when expected = filled + skipped and no future scheduled days remain
+- report endpoint refuses incomplete months (400)
+- schedule changes write a new snapshot effective today; previous snapshots are preserved
+
 ## 4. API Design
 
 ### 4.1 Versioning
@@ -344,7 +370,7 @@ Hierarchy:
 User → Tenant → Household → Membership
 ```
 
-All data must include `tenant_id` and `household_id`. No global data.
+All data must include `tenant_id`. Most data is also household-scoped via `household_id`. Personal-only domains (e.g., tracker-service) are scoped by `tenant_id` and `user_id` instead. No global data.
 
 ## 7. Configuration Model
 
@@ -363,7 +389,7 @@ Secrets provided externally. No config files required.
 
 ## 8. Persistence
 
-Each service owns its schema: `auth.*`, `account.*`, `productivity.*`, `recipe.*`, `weather.*`, `calendar.*`, `package.*`, `category.*`, `shopping.*`. No cross-service tables.
+Each service owns its schema: `auth.*`, `account.*`, `productivity.*`, `recipe.*`, `weather.*`, `calendar.*`, `package.*`, `category.*`, `shopping.*`, `tracker.*`. No cross-service tables.
 
 Migrations:
 
@@ -410,6 +436,7 @@ ghcr.io/<owner>/home-hub-calendar
 ghcr.io/<owner>/home-hub-package
 ghcr.io/<owner>/home-hub-category
 ghcr.io/<owner>/home-hub-shopping
+ghcr.io/<owner>/home-hub-tracker
 ghcr.io/<owner>/home-hub-frontend
 ```
 

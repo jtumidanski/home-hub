@@ -22,7 +22,7 @@ type Entity struct {
 	DeletedAt   *time.Time      `gorm:"index"`
 }
 
-func (Entity) TableName() string { return "tracker.tracking_items" }
+func (Entity) TableName() string { return "tracking_items" }
 
 func Migration(db *gorm.DB) error {
 	return db.AutoMigrate(&Entity{})

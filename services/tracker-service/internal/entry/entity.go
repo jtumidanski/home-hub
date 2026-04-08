@@ -21,7 +21,7 @@ type Entity struct {
 	UpdatedAt      time.Time       `gorm:"not null"`
 }
 
-func (Entity) TableName() string { return "tracker.tracking_entries" }
+func (Entity) TableName() string { return "tracking_entries" }
 
 func Migration(db *gorm.DB) error {
 	return db.AutoMigrate(&Entity{})

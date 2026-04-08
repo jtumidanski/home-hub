@@ -16,7 +16,7 @@ type Entity struct {
 	CreatedAt      time.Time       `gorm:"not null"`
 }
 
-func (Entity) TableName() string { return "tracker.schedule_snapshots" }
+func (Entity) TableName() string { return "schedule_snapshots" }
 
 func Migration(db *gorm.DB) error {
 	return db.AutoMigrate(&Entity{})

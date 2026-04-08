@@ -25,7 +25,7 @@ Last Updated: 2026-04-08
 - [x] 1.17 Create `trackingitem/rest.go` — RestModel, RestDetailModel (with schedule_history), CreateRequest, UpdateRequest, transform functions
 - [x] 1.18 Create `trackingitem/resource.go` — InitializeRoutes, POST/GET/GET{id}/PATCH/DELETE handlers
 - [x] 1.19 Wire trackingitem routes in `cmd/main.go`
-- [x] 1.20 Unit tests for builder validation, processor logic *(builder only; processor tests deferred)*
+- [x] 1.20 Unit tests for builder validation, processor logic
 - [x] 1.21 Verify service compiles and tracking item CRUD works end-to-end
 
 **Acceptance:** POST creates item + initial schedule snapshot. GET returns items with current schedule. PATCH updates fields; schedule changes create new snapshot. DELETE soft-deletes. 409 on duplicate name. Scale type immutable after creation.
@@ -61,8 +61,8 @@ Last Updated: 2026-04-08
 - [x] 3.8 Create `month/rest.go` — MonthSummaryRest, ReportRest, transform functions
 - [x] 3.9 Create `month/resource.go` — InitializeRoutes, GET month summary, GET month report
 - [x] 3.10 Wire month routes in `cmd/main.go`
-- [ ] 3.11 Unit tests: completion calculation with mid-month create/delete, schedule changes, all-filled, partial-fill, all-skipped, mixed scenarios
-- [ ] 3.12 Unit tests: report statistics accuracy with known inputs
+- [x] 3.11 Unit tests: completion calculation with mid-month create/delete, schedule changes, all-filled, partial-fill, all-skipped, mixed scenarios *(see month/processor_test.go)*
+- [x] 3.12 Unit tests: report statistics accuracy with known inputs *(see month/processor_test.go)*
 
 **Acceptance:** Month summary returns correct completion stats. Items created/deleted mid-month only count active range. Schedule snapshots correctly determine expected days. Report returns accurate per-item stats. Report returns 400 for incomplete months.
 
@@ -162,16 +162,16 @@ Last Updated: 2026-04-08
 
 ## Phase 10: Testing, Documentation & Polish [M]
 
-- [ ] 10.1 Integration tests for tracking item CRUD (including uniqueness, soft delete)
-- [ ] 10.2 Integration tests for entry CRUD (including value validation, skip, date constraints)
-- [ ] 10.3 Integration tests for month summary completion calculation
-- [ ] 10.4 Integration tests for report generation with known data
-- [ ] 10.5 Write `services/tracker-service/docs/domain.md`
-- [ ] 10.6 Write `services/tracker-service/docs/rest.md`
-- [ ] 10.7 Write `services/tracker-service/docs/storage.md`
-- [ ] 10.8 Write `services/tracker-service/README.md`
-- [ ] 10.9 Update `docs/architecture.md` with tracker-service entry
-- [ ] 10.10 Verify all 20 PRD acceptance criteria pass
-- [ ] 10.11 Verify month summary endpoint < 200ms with 20 tracking items
+- [x] 10.1 Integration tests for tracking item CRUD (including uniqueness, soft delete)
+- [x] 10.2 Integration tests for entry CRUD (including value validation, skip, date constraints)
+- [x] 10.3 Integration tests for month summary completion calculation
+- [x] 10.4 Integration tests for report generation with known data
+- [x] 10.5 Write `services/tracker-service/docs/domain.md`
+- [x] 10.6 Write `services/tracker-service/docs/rest.md`
+- [x] 10.7 Write `services/tracker-service/docs/storage.md`
+- [x] 10.8 Write `services/tracker-service/README.md`
+- [x] 10.9 Update `docs/architecture.md` with tracker-service entry
+- [x] 10.10 Verify all 20 PRD acceptance criteria pass *(walked PRD §10; see commit message)*
+- [ ] 10.11 Verify month summary endpoint < 200ms with 20 tracking items *(not measured against live data; pending pre-launch perf pass)*
 
 **Acceptance:** All tests pass. Service documentation complete per DOCS.md contract. Architecture docs updated. All PRD acceptance criteria verified.
