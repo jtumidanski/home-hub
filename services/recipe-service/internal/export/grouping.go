@@ -25,6 +25,16 @@ type catInfo struct {
 func loadCategoryLookup(l logrus.FieldLogger, client *categoryclient.Client, accessToken string, planID uuid.UUID) map[uuid.UUID]catInfo {
 	out := make(map[uuid.UUID]catInfo)
 	if client == nil || accessToken == "" {
+		// Diagnostic: this branch produces an empty categoryByID with no
+		// HTTP call, which manifests downstream as a flood of "Canonical
+		// ingredient references unknown category" warns and no error log.
+		// Make the early-return loud so it's distinguishable from a real
+		// fetch failure or a successful but mismatched fetch.
+		l.WithFields(logrus.Fields{
+			"plan_id":     planID,
+			"client_nil":  client == nil,
+			"token_empty": accessToken == "",
+		}).Warn("Skipping category lookup; categoryclient unavailable or access token missing")
 		return out
 	}
 	cats, err := client.ListCategories(accessToken)
