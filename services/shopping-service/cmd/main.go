@@ -7,6 +7,7 @@ import (
 	"github.com/jtumidanski/home-hub/services/shopping-service/internal/config"
 	"github.com/jtumidanski/home-hub/services/shopping-service/internal/item"
 	"github.com/jtumidanski/home-hub/services/shopping-service/internal/list"
+	"github.com/jtumidanski/home-hub/services/shopping-service/internal/wishlist"
 	sharedauth "github.com/jtumidanski/home-hub/shared/go/auth"
 	"github.com/jtumidanski/home-hub/shared/go/database"
 	"github.com/jtumidanski/home-hub/shared/go/logging"
@@ -24,6 +25,7 @@ func main() {
 		database.SetMigrations(
 			list.Migration,
 			item.Migration,
+			wishlist.Migration,
 		),
 	)
 
@@ -37,6 +39,7 @@ func main() {
 			api.Use(sharedauth.Middleware(l, authValidator))
 
 			list.InitializeRoutes(db, cfg.CategoryServiceURL, cfg.RecipeServiceURL)(l, si, api)
+			wishlist.InitializeRoutes(db)(l, si, api)
 		}).
 		Run()
 }

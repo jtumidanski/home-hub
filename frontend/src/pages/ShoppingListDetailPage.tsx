@@ -105,7 +105,7 @@ export function ShoppingListDetailPage() {
     archiveList.mutate(id, {
       onSuccess: () => {
         setShowFinishConfirm(false);
-        navigate("/app/shopping");
+        navigate("/app/shopping/grocery");
       },
     });
   };
@@ -130,7 +130,7 @@ export function ShoppingListDetailPage() {
     return (
       <div className="p-4 md:p-6">
         <p className="text-muted-foreground">Shopping list not found.</p>
-        <Button variant="link" onClick={() => navigate("/app/shopping")}>
+        <Button variant="link" onClick={() => navigate("/app/shopping/grocery")}>
           Back to lists
         </Button>
       </div>
@@ -141,7 +141,7 @@ export function ShoppingListDetailPage() {
     <div className="p-4 md:p-6 space-y-4">
       {/* Header */}
       <div className="flex items-center gap-3">
-        <Button variant="ghost" size="icon" onClick={() => navigate("/app/shopping")}>
+        <Button variant="ghost" size="icon" onClick={() => navigate("/app/shopping/grocery")}>
           <ArrowLeft className="h-4 w-4" />
         </Button>
         <div className="flex-1">
@@ -203,7 +203,7 @@ export function ShoppingListDetailPage() {
             variant="outline"
             size="sm"
             onClick={() =>
-              id && deleteList.mutate(id, { onSuccess: () => navigate("/app/shopping") })
+              id && deleteList.mutate(id, { onSuccess: () => navigate("/app/shopping/grocery") })
             }
           >
             <Trash2 className="h-4 w-4 mr-1" /> Delete

@@ -57,7 +57,7 @@ export function ShoppingListsPage() {
         setShowCreate(false);
         setNewName("");
         setCreateError(null);
-        navigate(`/app/shopping/${data.data.id}`);
+        navigate(`/app/shopping/grocery/${data.data.id}`);
       },
     });
   };
@@ -143,7 +143,7 @@ export function ShoppingListsPage() {
             <Card
               key={list.id}
               className="cursor-pointer hover:bg-accent/50 transition-colors"
-              onClick={() => navigate(`/app/shopping/${list.id}`)}
+              onClick={() => navigate(`/app/shopping/grocery/${list.id}`)}
             >
               <CardContent className="py-3 px-4 flex items-center justify-between">
                 <div>
