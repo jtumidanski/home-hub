@@ -245,7 +245,13 @@ func (p *Processor) ImportFromMealPlan(listID uuid.UUID, planID uuid.UUID, acces
 
 	categoryMap := make(map[string]categoryclient.Category)
 	if p.catClient != nil {
-		if cats, err := p.catClient.ListCategories(accessToken); err == nil {
+		cats, catErr := p.catClient.ListCategories(accessToken)
+		if catErr != nil {
+			p.l.WithError(catErr).WithFields(logrus.Fields{
+				"plan_id": planID,
+				"list_id": listID,
+			}).Error("Failed to fetch categories for meal plan import; imported items will be uncategorized")
+		} else {
 			for _, cat := range cats {
 				categoryMap[cat.Name] = cat
 			}
@@ -325,6 +331,10 @@ func (p *Processor) enrichCategory(input *item.AddInput, accessToken string) {
 	}
 	cat, err := p.catClient.GetCategory(*input.CategoryID, accessToken)
 	if err != nil {
+		p.l.WithError(err).WithFields(logrus.Fields{
+			"category_id": *input.CategoryID,
+			"item_name":   input.Name,
+		}).Warn("Failed to enrich shopping item category; item will store category_id without name/sort order")
 		return
 	}
 	input.CategoryName = &cat.Name
@@ -337,6 +347,12 @@ func (p *Processor) enrichUpdateCategory(input *item.UpdateInput, accessToken st
 	}
 	cat, err := p.catClient.GetCategory(*input.CategoryID, accessToken)
 	if err != nil {
+		fields := logrus.Fields{"category_id": *input.CategoryID}
+		if input.Name != nil {
+			fields["item_name"] = *input.Name
+		}
+		p.l.WithError(err).WithFields(fields).
+			Warn("Failed to enrich shopping item category on update; item will store category_id without name/sort order")
 		return
 	}
 	input.CategoryName = &cat.Name
@@ -354,7 +370,8 @@ func (p *Processor) autoCategorize(input *item.AddInput, accessToken string) {
 	}
 	lookup, matched, err := p.recipeClient.LookupIngredient(input.Name, accessToken)
 	if err != nil {
-		p.l.WithError(err).WithField("name", input.Name).Debug("Ingredient lookup failed; leaving uncategorized")
+		p.l.WithError(err).WithField("item_name", input.Name).
+			Warn("Recipe ingredient lookup failed; shopping item will be uncategorized")
 		return
 	}
 	if !matched || lookup.CategoryID == nil {
@@ -369,7 +386,8 @@ func (p *Processor) autoCategorizeUpdate(input *item.UpdateInput, accessToken st
 	}
 	lookup, matched, err := p.recipeClient.LookupIngredient(*input.Name, accessToken)
 	if err != nil {
-		p.l.WithError(err).WithField("name", *input.Name).Debug("Ingredient lookup failed; leaving uncategorized")
+		p.l.WithError(err).WithField("item_name", *input.Name).
+			Warn("Recipe ingredient lookup failed on update; shopping item will be uncategorized")
 		return
 	}
 	if !matched || lookup.CategoryID == nil {

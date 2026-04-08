@@ -36,6 +36,28 @@ func loadCategoryLookup(l logrus.FieldLogger, client *categoryclient.Client, acc
 	for _, c := range cats {
 		out[c.ID] = catInfo{name: c.Name, sortOrder: c.SortOrder}
 	}
+	// Diagnostic: temporary info-level log so we can see, in deployed env,
+	// exactly what categoryclient handed back. Compared against the user's
+	// /api/v1/categories response, this tells us whether recipe-service is
+	// (a) seeing zero categories, (b) seeing the user's real tenant, or
+	// (c) seeing a different tenant entirely. Remove once the root cause
+	// of the "Canonical ingredient references unknown category" floods
+	// is identified.
+	sampleIDs := make([]string, 0, 3)
+	sampleNames := make([]string, 0, 3)
+	for _, c := range cats {
+		if len(sampleIDs) >= 3 {
+			break
+		}
+		sampleIDs = append(sampleIDs, c.ID.String())
+		sampleNames = append(sampleNames, c.Name)
+	}
+	l.WithFields(logrus.Fields{
+		"plan_id":      planID,
+		"count":        len(cats),
+		"sample_ids":   sampleIDs,
+		"sample_names": sampleNames,
+	}).Info("categoryclient ListCategories returned")
 	return out
 }
 
