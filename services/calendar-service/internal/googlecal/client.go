@@ -1,9 +1,10 @@
 package googlecal
 
 import (
-	"context"
 	"bytes"
+	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
 	"math"
@@ -101,7 +102,16 @@ func (c *Client) RefreshToken(ctx context.Context, refreshToken string) (*TokenR
 
 	if resp.StatusCode != http.StatusOK {
 		body, _ := io.ReadAll(resp.Body)
-		return nil, fmt.Errorf("token refresh returned %d: %s", resp.StatusCode, string(body))
+		var parsed struct {
+			Error            string `json:"error"`
+			ErrorDescription string `json:"error_description"`
+		}
+		_ = json.Unmarshal(body, &parsed)
+		return nil, &TokenRefreshError{
+			StatusCode: resp.StatusCode,
+			OAuthError: parsed.Error,
+			Body:       string(body),
+		}
 	}
 
 	var tokenResp TokenResponse
@@ -350,4 +360,28 @@ func IsSyncTokenInvalid(err error) bool {
 		return false
 	}
 	return strings.Contains(err.Error(), "sync token invalid")
+}
+
+// TokenRefreshError indicates a non-200 response from the OAuth refresh endpoint.
+// OAuthError carries the parsed `error` field from Google's JSON body (e.g. "invalid_grant"),
+// or "" if the body could not be parsed as JSON.
+type TokenRefreshError struct {
+	StatusCode int
+	OAuthError string
+	Body       string
+}
+
+func (e *TokenRefreshError) Error() string {
+	return fmt.Sprintf("token refresh failed (HTTP %d, oauth_error=%q): %s", e.StatusCode, e.OAuthError, e.Body)
+}
+
+// IsInvalidGrant returns true when err is (or wraps) a *TokenRefreshError whose
+// OAuth error code is "invalid_grant" — i.e. the refresh token has been revoked
+// or expired and the user must reauthorize.
+func IsInvalidGrant(err error) bool {
+	var tre *TokenRefreshError
+	if errors.As(err, &tre) {
+		return tre.OAuthError == "invalid_grant"
+	}
+	return false
 }

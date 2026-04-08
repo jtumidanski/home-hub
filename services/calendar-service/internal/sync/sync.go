@@ -2,7 +2,9 @@ package sync
 
 import (
 	"context"
+	"errors"
 	"math/rand"
+	"net/http"
 	"time"
 
 	"github.com/google/uuid"
@@ -88,11 +90,15 @@ func (e *Engine) syncOne(ctx context.Context, conn connection.Model) {
 
 	l.Info("syncing calendar connection")
 
+	now := time.Now().UTC()
+	connProc := connection.NewProcessor(l, ctx, e.db)
+	_ = connProc.RecordSyncAttempt(conn.Id(), now)
+
 	accessToken, err := e.getValidAccessToken(ctx, conn)
 	if err != nil {
-		l.WithError(err).Warn("failed to get valid access token, marking disconnected")
-		connProc := connection.NewProcessor(l, ctx, e.db)
-		_ = connProc.UpdateStatus(conn.Id(), "disconnected")
+		code, _ := e.classifyTokenError(err)
+		l.WithError(err).WithField("error_code", code).Warn("token refresh failed during sync")
+		_ = connProc.RecordSyncFailure(conn.Id(), code, err.Error(), now)
 		return
 	}
 
@@ -111,9 +117,31 @@ func (e *Engine) syncOne(ctx context.Context, conn connection.Model) {
 		totalEvents += count
 	}
 
-	connProc := connection.NewProcessor(l, ctx, e.db)
-	_ = connProc.UpdateSyncInfo(conn.Id(), totalEvents)
+	_ = connProc.RecordSyncSuccess(conn.Id(), totalEvents, now)
 	l.WithField("total_events", totalEvents).Info("calendar sync completed")
+}
+
+// classifyTokenError maps a token-acquisition error to one of the error codes
+// documented in PRD §4.6 plus a hard/transient flag. Hard codes immediately
+// transition the connection to "disconnected"; transient codes only escalate
+// after FailureEscalationThreshold consecutive failures.
+func (e *Engine) classifyTokenError(err error) (code string, hard bool) {
+	if errors.Is(err, crypto.ErrDecryptFailed) {
+		return "token_decrypt_failed", true
+	}
+	if googlecal.IsInvalidGrant(err) {
+		return "token_revoked", true
+	}
+	var tre *googlecal.TokenRefreshError
+	if errors.As(err, &tre) {
+		if tre.StatusCode == http.StatusUnauthorized {
+			return "refresh_unauthorized", true
+		}
+		if tre.StatusCode >= 500 || tre.StatusCode == http.StatusTooManyRequests {
+			return "refresh_http_error", false
+		}
+	}
+	return "unknown", false
 }
 
 func (e *Engine) getValidAccessToken(ctx context.Context, conn connection.Model) (string, error) {

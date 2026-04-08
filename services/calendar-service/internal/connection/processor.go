@@ -24,6 +24,15 @@ var (
 
 const manualSyncCooldown = 5 * time.Minute
 
+// FailureEscalationThreshold is the number of consecutive transient failures
+// after which a connection's status flips from "connected" to "error". Hard
+// failures bypass the counter and force "disconnected" immediately, while still
+// guaranteeing the counter is at least this value (so any failed row can be
+// treated uniformly as "first-class failed" by the UI).
+const FailureEscalationThreshold = 3
+
+const errorMessageMaxLen = 500
+
 type Processor struct {
 	l   logrus.FieldLogger
 	ctx context.Context
@@ -74,6 +83,33 @@ func (p *Processor) UpdateTokens(id uuid.UUID, encAccessToken string, tokenExpir
 
 func (p *Processor) UpdateSyncInfo(id uuid.UUID, eventCount int) error {
 	return updateSyncInfo(p.noTenantDB(), id, eventCount)
+}
+
+func (p *Processor) RecordSyncAttempt(id uuid.UUID, at time.Time) error {
+	return updateSyncAttempt(p.noTenantDB(), id, at)
+}
+
+func (p *Processor) RecordSyncSuccess(id uuid.UUID, eventCount int, at time.Time) error {
+	return updateSyncSuccess(p.noTenantDB(), id, eventCount, at)
+}
+
+func (p *Processor) RecordSyncFailure(id uuid.UUID, code, message string, at time.Time) error {
+	if len(message) > errorMessageMaxLen {
+		message = message[:errorMessageMaxLen]
+	}
+	return updateSyncFailure(p.noTenantDB(), id, code, message, at, isHardErrorCode(code))
+}
+
+func (p *Processor) ClearErrorState(id uuid.UUID) error {
+	return clearErrorState(p.noTenantDB(), id)
+}
+
+func isHardErrorCode(code string) bool {
+	switch code {
+	case "token_revoked", "refresh_unauthorized", "token_decrypt_failed":
+		return true
+	}
+	return false
 }
 
 func (p *Processor) Delete(id uuid.UUID) error {

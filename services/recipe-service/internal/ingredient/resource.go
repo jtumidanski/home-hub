@@ -25,6 +25,7 @@ func InitializeRoutes(db *gorm.DB) func(l logrus.FieldLogger, si jsonapi.ServerI
 		rihBulk := server.RegisterInputHandler[BulkCategorizeRequest](l)(si)
 
 		api.HandleFunc("/ingredients", rh("ListIngredients", listIngredientsHandler(db))).Methods(http.MethodGet)
+		api.HandleFunc("/ingredients/lookup", rh("LookupIngredient", lookupIngredientHandler(db))).Methods(http.MethodGet)
 		api.HandleFunc("/ingredients/bulk-categorize", rihBulk("BulkCategorize", bulkCategorizeHandler(db))).Methods(http.MethodPost)
 		api.HandleFunc("/ingredients", rihCreate("CreateIngredient", createIngredientHandler(db))).Methods(http.MethodPost)
 		api.HandleFunc("/ingredients/{id}", rh("GetIngredient", getIngredientHandler(db))).Methods(http.MethodGet)
@@ -328,6 +329,34 @@ func reassignHandler(db *gorm.DB) server.InputHandler[ReassignRequest] {
 				})
 			}
 		})
+	}
+}
+
+func lookupIngredientHandler(db *gorm.DB) server.GetHandler {
+	return func(d *server.HandlerDependency, c *server.HandlerContext) http.HandlerFunc {
+		return func(w http.ResponseWriter, r *http.Request) {
+			t := tenantctx.MustFromContext(r.Context())
+			name := r.URL.Query().Get("name")
+			if name == "" {
+				server.WriteError(w, http.StatusBadRequest, "Invalid Request", "name query parameter is required")
+				return
+			}
+
+			proc := NewProcessor(d.Logger(), r.Context(), db)
+			m, matched, err := proc.LookupByName(t.Id(), name)
+			if err != nil {
+				d.Logger().WithError(err).Error("Failed to look up ingredient")
+				server.WriteError(w, http.StatusInternalServerError, "Error", "")
+				return
+			}
+			if !matched {
+				server.WriteError(w, http.StatusNotFound, "Not Found", "Ingredient not found")
+				return
+			}
+
+			rest := TransformLookup(m)
+			server.MarshalResponse[RestLookupModel](d.Logger())(w)(c.ServerInformation())(map[string][]string{})(rest)
+		}
 	}
 }
 

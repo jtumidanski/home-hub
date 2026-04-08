@@ -42,12 +42,20 @@ class ShoppingService extends BaseService {
 
   archiveList(tenant: Tenant, id: string): Promise<ApiResponse<ShoppingList>> {
     this.setTenant(tenant);
-    return api.post<ApiResponse<ShoppingList>>(`/shopping/lists/${id}/archive`, {});
+    // Body must be a JSON:API resource — the backend handler is wired
+    // through server.RegisterInputHandler[ArchiveRequest] which expects a
+    // typed envelope. A bare {} will be rejected with "Could not parse
+    // request body".
+    return api.post<ApiResponse<ShoppingList>>(`/shopping/lists/${id}/archive`, {
+      data: { type: "shopping-lists", id, attributes: {} },
+    });
   }
 
   unarchiveList(tenant: Tenant, id: string): Promise<ApiResponse<ShoppingList>> {
     this.setTenant(tenant);
-    return api.post<ApiResponse<ShoppingList>>(`/shopping/lists/${id}/unarchive`, {});
+    return api.post<ApiResponse<ShoppingList>>(`/shopping/lists/${id}/unarchive`, {
+      data: { type: "shopping-lists", id, attributes: {} },
+    });
   }
 
   addItem(tenant: Tenant, listId: string, attrs: ShoppingItemCreateAttributes): Promise<ApiResponse<ShoppingItem>> {
@@ -74,7 +82,9 @@ class ShoppingService extends BaseService {
 
   uncheckAll(tenant: Tenant, listId: string): Promise<ApiResponse<ShoppingList>> {
     this.setTenant(tenant);
-    return api.post<ApiResponse<ShoppingList>>(`/shopping/lists/${listId}/items/uncheck-all`, {});
+    return api.post<ApiResponse<ShoppingList>>(`/shopping/lists/${listId}/items/uncheck-all`, {
+      data: { type: "shopping-lists", id: listId, attributes: {} },
+    });
   }
 
   importMealPlan(tenant: Tenant, listId: string, planId: string): Promise<ApiResponse<ShoppingList>> {

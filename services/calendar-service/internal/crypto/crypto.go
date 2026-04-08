@@ -13,7 +13,7 @@ import (
 var (
 	ErrKeyRequired   = errors.New("encryption key is required")
 	ErrInvalidKey    = errors.New("encryption key must be 32 bytes for AES-256")
-	ErrDecryptFailed = errors.New("decryption failed: ciphertext too short")
+	ErrDecryptFailed = errors.New("decryption failed")
 )
 
 type Encryptor struct {
@@ -60,18 +60,18 @@ func (e *Encryptor) Encrypt(plaintext string) (string, error) {
 func (e *Encryptor) Decrypt(encoded string) (string, error) {
 	ciphertext, err := base64.StdEncoding.DecodeString(encoded)
 	if err != nil {
-		return "", fmt.Errorf("failed to decode ciphertext: %w", err)
+		return "", fmt.Errorf("%w: failed to decode ciphertext: %v", ErrDecryptFailed, err)
 	}
 
 	nonceSize := e.gcm.NonceSize()
 	if len(ciphertext) < nonceSize {
-		return "", ErrDecryptFailed
+		return "", fmt.Errorf("%w: ciphertext too short", ErrDecryptFailed)
 	}
 
 	nonce, ciphertext := ciphertext[:nonceSize], ciphertext[nonceSize:]
 	plaintext, err := e.gcm.Open(nil, nonce, ciphertext, nil)
 	if err != nil {
-		return "", fmt.Errorf("decryption failed: %w", err)
+		return "", fmt.Errorf("%w: %v", ErrDecryptFailed, err)
 	}
 
 	return string(plaintext), nil

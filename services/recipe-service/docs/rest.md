@@ -349,6 +349,34 @@ List canonical ingredients with usage counts and category names.
 
 ---
 
+### GET `/ingredients/lookup`
+
+Resolve a free-form ingredient name to a canonical ingredient for the calling tenant. Used by shopping-service to auto-categorize manually added items, but available to any caller. Tries exact name match, then alias match, then a normalized variant (strips leading articles `the`/`a`/`an` and a trailing plural `s`) against both names and aliases.
+
+**Parameters:**
+
+| Parameter | Type | Required | Description |
+|-----------|------|----------|-------------|
+| `name` | string | yes | Ingredient name to resolve |
+
+**Response model** (`ingredient-lookups`):
+
+| Field | Type | Description |
+|-------|------|-------------|
+| name | string | Canonical name |
+| display_name | string | Display name |
+| category_id | *UUID | Category ID, or null if uncategorized |
+
+**Error conditions:**
+
+| Status | Condition |
+|--------|-----------|
+| 400 | `name` query parameter is missing |
+| 404 | No canonical ingredient (or alias / normalized variant) matches |
+| 500 | Internal error |
+
+---
+
 ### POST `/ingredients`
 
 Create a canonical ingredient.

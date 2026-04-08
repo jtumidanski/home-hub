@@ -71,6 +71,28 @@ func (p *Processor) GetByRecipeID(recipeID uuid.UUID) (Model, error) {
 	return Make(e)
 }
 
+// GetByRecipeIDs fetches planner configs for many recipes in a single query and
+// returns them keyed by recipe_id. Empty input returns an empty map without
+// hitting the database.
+func (p *Processor) GetByRecipeIDs(recipeIDs []uuid.UUID) (map[uuid.UUID]Model, error) {
+	result := make(map[uuid.UUID]Model)
+	if len(recipeIDs) == 0 {
+		return result, nil
+	}
+	entities, err := getByRecipeIDs(recipeIDs)(p.db.WithContext(p.ctx))
+	if err != nil {
+		return nil, err
+	}
+	for _, e := range entities {
+		m, err := Make(e)
+		if err != nil {
+			return nil, err
+		}
+		result[e.RecipeId] = m
+	}
+	return result, nil
+}
+
 type Readiness struct {
 	Ready  bool     `json:"plannerReady"`
 	Issues []string `json:"plannerIssues"`

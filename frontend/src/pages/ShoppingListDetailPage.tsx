@@ -35,15 +35,15 @@ import {
   useImportMealPlan,
 } from "@/lib/hooks/api/use-shopping";
 import { usePlans } from "@/lib/hooks/api/use-meals";
-import type { ShoppingItemAttributes } from "@/types/models/shopping";
+import type { NestedShoppingItem } from "@/types/models/shopping";
 
 interface GroupedItems {
   categoryName: string;
   sortOrder: number;
-  items: (ShoppingItemAttributes & { id: string })[];
+  items: NestedShoppingItem[];
 }
 
-function groupItemsByCategory(items: (ShoppingItemAttributes & { id: string })[]): GroupedItems[] {
+function groupItemsByCategory(items: NestedShoppingItem[]): GroupedItems[] {
   const groups = new Map<string, GroupedItems>();
 
   for (const item of items) {
@@ -84,15 +84,10 @@ export function ShoppingListDetailPage() {
   const deleteList = useDeleteShoppingList();
   const importMealPlan = useImportMealPlan(id ?? "");
 
-  // Parse items from the raw list data - items have their own id in the response
-  const items: (ShoppingItemAttributes & { id: string })[] = useMemo(() => {
-    if (!listData?.data?.attributes?.items) return [];
-    // The items come from the JSON:API response as nested objects with id fields
-    const raw = listData.data.attributes.items as unknown as Array<
-      ShoppingItemAttributes & { id: string }
-    >;
-    return raw;
-  }, [listData]);
+  const items: NestedShoppingItem[] = useMemo(
+    () => listData?.data?.attributes?.items ?? [],
+    [listData],
+  );
 
   const grouped = useMemo(() => groupItemsByCategory(items), [items]);
 
@@ -110,7 +105,7 @@ export function ShoppingListDetailPage() {
     archiveList.mutate(id, {
       onSuccess: () => {
         setShowFinishConfirm(false);
-        navigate("/app/shopping");
+        navigate("/app/shopping/grocery");
       },
     });
   };
@@ -135,7 +130,7 @@ export function ShoppingListDetailPage() {
     return (
       <div className="p-4 md:p-6">
         <p className="text-muted-foreground">Shopping list not found.</p>
-        <Button variant="link" onClick={() => navigate("/app/shopping")}>
+        <Button variant="link" onClick={() => navigate("/app/shopping/grocery")}>
           Back to lists
         </Button>
       </div>
@@ -146,7 +141,7 @@ export function ShoppingListDetailPage() {
     <div className="p-4 md:p-6 space-y-4">
       {/* Header */}
       <div className="flex items-center gap-3">
-        <Button variant="ghost" size="icon" onClick={() => navigate("/app/shopping")}>
+        <Button variant="ghost" size="icon" onClick={() => navigate("/app/shopping/grocery")}>
           <ArrowLeft className="h-4 w-4" />
         </Button>
         <div className="flex-1">
@@ -208,7 +203,7 @@ export function ShoppingListDetailPage() {
             variant="outline"
             size="sm"
             onClick={() =>
-              id && deleteList.mutate(id, { onSuccess: () => navigate("/app/shopping") })
+              id && deleteList.mutate(id, { onSuccess: () => navigate("/app/shopping/grocery") })
             }
           >
             <Trash2 className="h-4 w-4 mr-1" /> Delete

@@ -93,56 +93,20 @@ func (p *Processor) GenerateMarkdown(pd PlanData) string {
 		}
 	}
 
-	// Consolidated ingredients grouped by category
+	// Consolidated ingredients grouped by category. Both this markdown
+	// export and the JSON:API meal-plan ingredients endpoint flow through
+	// GroupByCategory so the two views cannot drift apart.
 	consolidated := p.ConsolidateIngredients(pd)
 	if len(consolidated) > 0 {
 		sb.WriteString("\n## Shopping List\n")
 
-		// Group by category
-		type categoryGroup struct {
-			name        string
-			sortOrder   int
-			ingredients []ConsolidatedIngredient
-		}
-		groupMap := make(map[string]*categoryGroup)
-		var uncategorized []ConsolidatedIngredient
-
-		for _, ci := range consolidated {
-			if ci.CategoryName == "" {
-				uncategorized = append(uncategorized, ci)
-			} else {
-				g, ok := groupMap[ci.CategoryName]
-				if !ok {
-					g = &categoryGroup{name: ci.CategoryName, sortOrder: ci.CategorySortOrder}
-					groupMap[ci.CategoryName] = g
-				}
-				g.ingredients = append(g.ingredients, ci)
+		for _, g := range GroupByCategory(consolidated) {
+			heading := g.Name
+			if heading == "" {
+				heading = "Uncategorized"
 			}
-		}
-
-		// Sort groups by sort order
-		groups := make([]*categoryGroup, 0, len(groupMap))
-		for _, g := range groupMap {
-			groups = append(groups, g)
-		}
-		sort.Slice(groups, func(i, j int) bool {
-			return groups[i].sortOrder < groups[j].sortOrder
-		})
-
-		for _, g := range groups {
-			sb.WriteString(fmt.Sprintf("\n### %s\n", g.name))
-			for _, ci := range g.ingredients {
-				name := ci.DisplayName
-				if name == "" {
-					name = ci.Name
-				}
-				sb.WriteString(fmt.Sprintf("- %s %s %s\n", formatQuantity(ci.Quantity), ci.Unit, name))
-			}
-		}
-
-		if len(uncategorized) > 0 {
-			sb.WriteString("\n### Uncategorized\n")
-			for _, ci := range uncategorized {
+			sb.WriteString(fmt.Sprintf("\n### %s\n", heading))
+			for _, ci := range g.Ingredients {
 				name := ci.DisplayName
 				if name == "" {
 					name = ci.Name

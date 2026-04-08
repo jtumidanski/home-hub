@@ -10,6 +10,7 @@ import (
 	"github.com/jtumidanski/home-hub/services/shopping-service/internal/categoryclient"
 	"github.com/jtumidanski/home-hub/services/shopping-service/internal/item"
 	"github.com/jtumidanski/home-hub/services/shopping-service/internal/recipeclient"
+	tenantctx "github.com/jtumidanski/home-hub/shared/go/tenant"
 	"github.com/sirupsen/logrus"
 	"gorm.io/gorm"
 )
@@ -31,6 +32,19 @@ type Processor struct {
 
 func NewProcessor(l logrus.FieldLogger, ctx context.Context, db *gorm.DB, catClient *categoryclient.Client, recipeClient *recipeclient.Client) *Processor {
 	return &Processor{l: l, ctx: ctx, db: db, catClient: catClient, recipeClient: recipeClient}
+}
+
+// tenantHeaders returns the (tenantID, householdID) pair from the request
+// context for forwarding to downstream services. The auth-service issues
+// JWTs with nil tenant/household claims and the shared auth middleware
+// falls back to X-Tenant-ID / X-Household-ID headers — outbound calls to
+// category-service and recipe-service must therefore pass these explicitly
+// or those services will resolve the request as the nil tenant.
+func (p *Processor) tenantHeaders() (uuid.UUID, uuid.UUID) {
+	if t, ok := tenantctx.FromContext(p.ctx); ok {
+		return t.Id(), t.HouseholdId()
+	}
+	return uuid.Nil, uuid.Nil
 }
 
 func (p *Processor) List(status string) ([]Model, error) {
@@ -181,21 +195,27 @@ func (p *Processor) GetWithItems(id uuid.UUID) (Model, []item.Model, error) {
 	return m, items, nil
 }
 
-func (p *Processor) AddItem(listID uuid.UUID, input item.AddInput, authHeader string) (item.Model, error) {
+func (p *Processor) AddItem(listID uuid.UUID, input item.AddInput, accessToken string) (item.Model, error) {
 	if err := p.validateListModifiable(listID); err != nil {
 		return item.Model{}, err
 	}
 	input.ListID = listID
-	p.enrichCategory(&input, authHeader)
+	if input.CategoryID == nil {
+		p.autoCategorize(&input, accessToken)
+	}
+	p.enrichCategory(&input, accessToken)
 	itemProc := item.NewProcessor(p.l, p.ctx, p.db)
 	return itemProc.Add(input)
 }
 
-func (p *Processor) UpdateItem(listID uuid.UUID, itemID uuid.UUID, input item.UpdateInput, authHeader string) (item.Model, error) {
+func (p *Processor) UpdateItem(listID uuid.UUID, itemID uuid.UUID, input item.UpdateInput, accessToken string) (item.Model, error) {
 	if err := p.validateListModifiable(listID); err != nil {
 		return item.Model{}, err
 	}
-	p.enrichUpdateCategory(&input, authHeader)
+	if input.CategoryID == nil && !input.ClearCategory && input.Name != nil {
+		p.autoCategorizeUpdate(&input, accessToken)
+	}
+	p.enrichUpdateCategory(&input, accessToken)
 	itemProc := item.NewProcessor(p.l, p.ctx, p.db)
 	return itemProc.Update(itemID, input)
 }
@@ -227,19 +247,27 @@ func (p *Processor) UncheckAllItems(listID uuid.UUID) (Model, []item.Model, erro
 	return p.GetWithItems(listID)
 }
 
-func (p *Processor) ImportFromMealPlan(listID uuid.UUID, planID uuid.UUID, authHeader string) (Model, []item.Model, error) {
+func (p *Processor) ImportFromMealPlan(listID uuid.UUID, planID uuid.UUID, accessToken string) (Model, []item.Model, error) {
 	if err := p.validateListModifiable(listID); err != nil {
 		return Model{}, nil, err
 	}
 
-	ingredients, err := p.recipeClient.GetPlanIngredients(planID, authHeader)
+	tenantID, householdID := p.tenantHeaders()
+
+	ingredients, err := p.recipeClient.GetPlanIngredients(planID, accessToken, tenantID, householdID)
 	if err != nil {
 		return Model{}, nil, err
 	}
 
 	categoryMap := make(map[string]categoryclient.Category)
 	if p.catClient != nil {
-		if cats, err := p.catClient.ListCategories(authHeader); err == nil {
+		cats, catErr := p.catClient.ListCategories(accessToken, tenantID, householdID)
+		if catErr != nil {
+			p.l.WithError(catErr).WithFields(logrus.Fields{
+				"plan_id": planID,
+				"list_id": listID,
+			}).Error("Failed to fetch categories for meal plan import; imported items will be uncategorized")
+		} else {
 			for _, cat := range cats {
 				categoryMap[cat.Name] = cat
 			}
@@ -313,26 +341,77 @@ func (p *Processor) Unarchive(id uuid.UUID) (Model, error) {
 	return m.WithCounts(itemCount, checkedCount), nil
 }
 
-func (p *Processor) enrichCategory(input *item.AddInput, authHeader string) {
+func (p *Processor) enrichCategory(input *item.AddInput, accessToken string) {
 	if input.CategoryID == nil || p.catClient == nil {
 		return
 	}
-	cat, err := p.catClient.GetCategory(*input.CategoryID, authHeader)
+	tenantID, householdID := p.tenantHeaders()
+	cat, err := p.catClient.GetCategory(*input.CategoryID, accessToken, tenantID, householdID)
 	if err != nil {
+		p.l.WithError(err).WithFields(logrus.Fields{
+			"category_id": *input.CategoryID,
+			"item_name":   input.Name,
+		}).Warn("Failed to enrich shopping item category; item will store category_id without name/sort order")
 		return
 	}
 	input.CategoryName = &cat.Name
 	input.CategorySortOrder = &cat.SortOrder
 }
 
-func (p *Processor) enrichUpdateCategory(input *item.UpdateInput, authHeader string) {
+func (p *Processor) enrichUpdateCategory(input *item.UpdateInput, accessToken string) {
 	if input.CategoryID == nil || p.catClient == nil {
 		return
 	}
-	cat, err := p.catClient.GetCategory(*input.CategoryID, authHeader)
+	tenantID, householdID := p.tenantHeaders()
+	cat, err := p.catClient.GetCategory(*input.CategoryID, accessToken, tenantID, householdID)
 	if err != nil {
+		fields := logrus.Fields{"category_id": *input.CategoryID}
+		if input.Name != nil {
+			fields["item_name"] = *input.Name
+		}
+		p.l.WithError(err).WithFields(fields).
+			Warn("Failed to enrich shopping item category on update; item will store category_id without name/sort order")
 		return
 	}
 	input.CategoryName = &cat.Name
 	input.CategorySortOrder = &cat.SortOrder
+}
+
+// autoCategorize asks recipe-service to resolve the item name to a canonical
+// ingredient and copies its category id onto the input. Failures and misses
+// are logged at debug level and leave the input untouched (the caller falls
+// back to "uncategorized"). enrichCategory then populates the name/sort order
+// from category-service.
+func (p *Processor) autoCategorize(input *item.AddInput, accessToken string) {
+	if p.recipeClient == nil || input.Name == "" {
+		return
+	}
+	tenantID, householdID := p.tenantHeaders()
+	lookup, matched, err := p.recipeClient.LookupIngredient(input.Name, accessToken, tenantID, householdID)
+	if err != nil {
+		p.l.WithError(err).WithField("item_name", input.Name).
+			Warn("Recipe ingredient lookup failed; shopping item will be uncategorized")
+		return
+	}
+	if !matched || lookup.CategoryID == nil {
+		return
+	}
+	input.CategoryID = lookup.CategoryID
+}
+
+func (p *Processor) autoCategorizeUpdate(input *item.UpdateInput, accessToken string) {
+	if p.recipeClient == nil || input.Name == nil || *input.Name == "" {
+		return
+	}
+	tenantID, householdID := p.tenantHeaders()
+	lookup, matched, err := p.recipeClient.LookupIngredient(*input.Name, accessToken, tenantID, householdID)
+	if err != nil {
+		p.l.WithError(err).WithField("item_name", *input.Name).
+			Warn("Recipe ingredient lookup failed on update; shopping item will be uncategorized")
+		return
+	}
+	if !matched || lookup.CategoryID == nil {
+		return
+	}
+	input.CategoryID = lookup.CategoryID
 }

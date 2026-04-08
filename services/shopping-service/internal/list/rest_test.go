@@ -126,12 +126,12 @@ func TestRestModel_SetID(t *testing.T) {
 func TestTransformWithItems(t *testing.T) {
 	tests := []struct {
 		name      string
-		items     []item.RestModel
+		items     []item.NestedRestModel
 		wantCount int
 	}{
 		{
 			name: "with items",
-			items: []item.RestModel{
+			items: []item.NestedRestModel{
 				{Id: uuid.New(), Name: "Milk"},
 				{Id: uuid.New(), Name: "Bread"},
 			},
@@ -139,7 +139,7 @@ func TestTransformWithItems(t *testing.T) {
 		},
 		{
 			name:      "empty items",
-			items:     []item.RestModel{},
+			items:     []item.NestedRestModel{},
 			wantCount: 0,
 		},
 	}

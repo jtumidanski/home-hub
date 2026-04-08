@@ -1,4 +1,4 @@
-import { Home, CheckSquare, Bell, Calendar, Package, CloudSun, UtensilsCrossed, Carrot, CalendarDays, ShoppingCart, Settings, Target, type LucideIcon } from "lucide-react";
+import { Home, CheckSquare, Bell, Calendar, Package, CloudSun, UtensilsCrossed, Carrot, CalendarDays, ShoppingCart, Heart, Settings, Target, type LucideIcon } from "lucide-react";
 
 export interface NavItem {
   to: string;
@@ -38,7 +38,6 @@ export const navGroups: NavGroup[] = [
     items: [
       { to: "/app/recipes", icon: UtensilsCrossed, label: "Recipes" },
       { to: "/app/meals", icon: CalendarDays, label: "Meal Planner" },
-      { to: "/app/shopping", icon: ShoppingCart, label: "Shopping" },
       { to: "/app/ingredients", icon: Carrot, label: "Ingredients" },
       { to: "/app/weather", icon: CloudSun, label: "Weather" },
     ],
@@ -48,6 +47,14 @@ export const navGroups: NavGroup[] = [
     label: "Personal",
     items: [
       { to: "/app/tracker", icon: Target, label: "Tracker" },
+    ],
+  },
+  {
+    key: "shopping",
+    label: "Shopping",
+    items: [
+      { to: "/app/shopping/grocery", icon: ShoppingCart, label: "Grocery Lists" },
+      { to: "/app/shopping/wish-list", icon: Heart, label: "Wish List" },
     ],
   },
   {

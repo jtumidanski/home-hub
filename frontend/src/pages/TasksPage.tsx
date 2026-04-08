@@ -17,7 +17,7 @@ import { DataTable } from "@/components/common/data-table";
 import { ErrorCard } from "@/components/common/error-card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Plus, Check, Trash2 } from "lucide-react";
+import { Plus, Circle, CheckCircle2, Trash2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 const TASK_STATUS_OPTIONS = [
@@ -103,18 +103,23 @@ export function TasksPage() {
       id: "complete",
       header: "",
       size: 40,
-      cell: ({ row }) => (
-        <Button
-          variant="ghost"
-          size="sm"
-          onClick={(e) => {
-            e.stopPropagation();
-            toggleComplete(row.original.id, row.original.attributes.status);
-          }}
-        >
-          <Check className={cn("h-4 w-4", row.original.attributes.status === "completed" ? "text-primary" : "text-muted-foreground")} />
-        </Button>
-      ),
+      cell: ({ row }) => {
+        const isCompleted = row.original.attributes.status === "completed";
+        const Icon = isCompleted ? CheckCircle2 : Circle;
+        return (
+          <Button
+            variant="ghost"
+            size="sm"
+            aria-label={isCompleted ? "Mark incomplete" : "Mark complete"}
+            onClick={(e) => {
+              e.stopPropagation();
+              toggleComplete(row.original.id, row.original.attributes.status);
+            }}
+          >
+            <Icon className={cn("h-4 w-4", isCompleted ? "text-primary" : "text-muted-foreground")} />
+          </Button>
+        );
+      },
     },
     {
       accessorKey: "attributes.title",

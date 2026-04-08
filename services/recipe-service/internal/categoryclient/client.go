@@ -38,12 +38,22 @@ func New(baseURL string) *Client {
 	}
 }
 
-func (c *Client) ListCategories(authHeader string) ([]Category, error) {
+func (c *Client) ListCategories(accessToken string, tenantID, householdID uuid.UUID) ([]Category, error) {
 	req, err := http.NewRequest(http.MethodGet, c.baseURL+"/api/v1/categories", nil)
 	if err != nil {
 		return nil, err
 	}
-	req.Header.Set("Authorization", authHeader)
+	req.AddCookie(&http.Cookie{Name: "access_token", Value: accessToken})
+	// Forward tenant context. The auth-service issues JWTs with nil
+	// tenant/household claims and the auth middleware falls back to these
+	// headers — without them, category-service resolves the request as
+	// the nil tenant and serves an unrelated auto-seeded set of defaults.
+	if tenantID != uuid.Nil {
+		req.Header.Set("X-Tenant-ID", tenantID.String())
+	}
+	if householdID != uuid.Nil {
+		req.Header.Set("X-Household-ID", householdID.String())
+	}
 
 	resp, err := c.httpClient.Do(req)
 	if err != nil {
@@ -73,8 +83,8 @@ func (c *Client) ListCategories(authHeader string) ([]Category, error) {
 	return categories, nil
 }
 
-func (c *Client) GetCategoryByID(id uuid.UUID, authHeader string) (*Category, error) {
-	cats, err := c.ListCategories(authHeader)
+func (c *Client) GetCategoryByID(id uuid.UUID, accessToken string, tenantID, householdID uuid.UUID) (*Category, error) {
+	cats, err := c.ListCategories(accessToken, tenantID, householdID)
 	if err != nil {
 		return nil, err
 	}

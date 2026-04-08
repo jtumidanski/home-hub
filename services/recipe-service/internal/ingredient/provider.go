@@ -15,6 +15,21 @@ func GetByID(id uuid.UUID) database.EntityProvider[Entity] {
 	})
 }
 
+// GetByIDs fetches canonical ingredients (with their aliases) for a list of
+// ids in a single query. GORM 2.x batches the Aliases preload into a single
+// follow-up `IN` query, so this issues exactly two SQL statements regardless
+// of the number of ids. Empty input short-circuits without hitting the DB.
+func GetByIDs(ids []uuid.UUID) func(db *gorm.DB) ([]Entity, error) {
+	return func(db *gorm.DB) ([]Entity, error) {
+		if len(ids) == 0 {
+			return []Entity{}, nil
+		}
+		var entities []Entity
+		err := db.Preload("Aliases").Where("id IN (?)", ids).Find(&entities).Error
+		return entities, err
+	}
+}
+
 func GetByName(tenantID uuid.UUID, name string) database.EntityProvider[Entity] {
 	return database.Query[Entity](func(db *gorm.DB) *gorm.DB {
 		return db.Preload("Aliases").Where("tenant_id = ? AND name = ?", tenantID, strings.ToLower(strings.TrimSpace(name)))
@@ -71,19 +86,28 @@ func getUsageCount(db *gorm.DB, canonicalIngredientID uuid.UUID) (int64, error) 
 }
 
 type RecipeRef struct {
-	RecipeId uuid.UUID `json:"recipeId"`
-	RawName  string    `json:"rawName"`
+	RecipeId   uuid.UUID `json:"recipeId"`
+	RawName    string    `json:"rawName"`
+	RecipeName string    `json:"recipeName"`
 }
 
 func getIngredientRecipes(db *gorm.DB, canonicalIngredientID uuid.UUID, page, pageSize int) ([]RecipeRef, int64, error) {
-	query := db.Table("recipe_ingredients").Where("canonical_ingredient_id = ?", canonicalIngredientID)
+	query := db.Table("recipe_ingredients").
+		Joins("JOIN recipes ON recipes.id = recipe_ingredients.recipe_id").
+		Where("recipe_ingredients.canonical_ingredient_id = ?", canonicalIngredientID).
+		Where("recipes.deleted_at IS NULL")
 	var total int64
 	if err := query.Count(&total).Error; err != nil {
 		return nil, 0, err
 	}
 	offset := (page - 1) * pageSize
 	var refs []RecipeRef
-	err := query.Select("recipe_id, raw_name").Order("created_at DESC").Offset(offset).Limit(pageSize).Find(&refs).Error
+	err := query.
+		Select("recipe_ingredients.recipe_id, recipe_ingredients.raw_name, recipes.title AS recipe_name").
+		Order("recipe_ingredients.created_at DESC").
+		Offset(offset).
+		Limit(pageSize).
+		Find(&refs).Error
 	return refs, total, err
 }
 
@@ -97,15 +121,9 @@ func reassignCanonical(db *gorm.DB, fromID, toID uuid.UUID) (int64, error) {
 	return result.RowsAffected, result.Error
 }
 
-type entityWithCategory struct {
-	Entity
-	CategoryName string
-}
-
 type entityWithUsage struct {
 	Entity
-	UsageCount   int64
-	CategoryName string
+	UsageCount int64
 }
 
 func searchWithUsage(tenantID uuid.UUID, query string, categoryFilter string, page, pageSize int) func(db *gorm.DB) ([]entityWithUsage, int64, error) {
@@ -130,8 +148,7 @@ func searchWithUsage(tenantID uuid.UUID, query string, categoryFilter string, pa
 		offset := (page - 1) * pageSize
 		var results []entityWithUsage
 		dataQ := db.Table("canonical_ingredients").
-			Select("canonical_ingredients.*, COALESCE((SELECT COUNT(*) FROM recipe_ingredients WHERE recipe_ingredients.canonical_ingredient_id = canonical_ingredients.id), 0) as usage_count, COALESCE(ingredient_categories.name, '') as category_name").
-			Joins("LEFT JOIN ingredient_categories ON ingredient_categories.id = canonical_ingredients.category_id").
+			Select("canonical_ingredients.*, COALESCE((SELECT COUNT(*) FROM recipe_ingredients WHERE recipe_ingredients.canonical_ingredient_id = canonical_ingredients.id), 0) as usage_count").
 			Where("canonical_ingredients.tenant_id = ?", tenantID).
 			Scopes(func(tx *gorm.DB) *gorm.DB {
 				if query != "" {

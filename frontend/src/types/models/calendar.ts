@@ -6,7 +6,12 @@ export interface CalendarConnectionAttributes {
   userColor: string;
   writeAccess: boolean;
   lastSyncAt: string | null;
+  lastSyncAttemptAt: string | null;
   lastSyncEventCount: number;
+  errorCode: string | null;
+  errorMessage: string | null;
+  lastErrorAt: string | null;
+  consecutiveFailures: number;
   createdAt: string;
 }
 

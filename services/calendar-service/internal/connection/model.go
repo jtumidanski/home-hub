@@ -25,10 +25,15 @@ type Model struct {
 	userDisplayName    string
 	userColor          string
 	writeAccess        bool
-	lastSyncAt         *time.Time
-	lastSyncEventCount int
-	createdAt          time.Time
-	updatedAt          time.Time
+	lastSyncAt          *time.Time
+	lastSyncAttemptAt   *time.Time
+	lastSyncEventCount  int
+	errorCode           *string
+	errorMessage        *string
+	lastErrorAt         *time.Time
+	consecutiveFailures int
+	createdAt           time.Time
+	updatedAt           time.Time
 }
 
 func (m Model) Id() uuid.UUID             { return m.id }
@@ -44,10 +49,15 @@ func (m Model) TokenExpiry() time.Time    { return m.tokenExpiry }
 func (m Model) UserDisplayName() string   { return m.userDisplayName }
 func (m Model) UserColor() string         { return m.userColor }
 func (m Model) WriteAccess() bool         { return m.writeAccess }
-func (m Model) LastSyncAt() *time.Time    { return m.lastSyncAt }
-func (m Model) LastSyncEventCount() int   { return m.lastSyncEventCount }
-func (m Model) CreatedAt() time.Time      { return m.createdAt }
-func (m Model) UpdatedAt() time.Time      { return m.updatedAt }
+func (m Model) LastSyncAt() *time.Time        { return m.lastSyncAt }
+func (m Model) LastSyncAttemptAt() *time.Time { return m.lastSyncAttemptAt }
+func (m Model) LastSyncEventCount() int       { return m.lastSyncEventCount }
+func (m Model) ErrorCode() *string            { return m.errorCode }
+func (m Model) ErrorMessage() *string         { return m.errorMessage }
+func (m Model) LastErrorAt() *time.Time       { return m.lastErrorAt }
+func (m Model) ConsecutiveFailures() int      { return m.consecutiveFailures }
+func (m Model) CreatedAt() time.Time          { return m.createdAt }
+func (m Model) UpdatedAt() time.Time          { return m.updatedAt }
 
 func (m Model) IsTokenExpired() bool {
 	return time.Now().UTC().After(m.tokenExpiry)

@@ -70,6 +70,28 @@ func (p *Processor) Get(id uuid.UUID) (Model, error) {
 	return m, nil
 }
 
+// GetByIDs fetches canonical ingredients (with aliases) for many ids and
+// returns them keyed by ingredient id. Empty input returns an empty map
+// without hitting the database.
+func (p *Processor) GetByIDs(ids []uuid.UUID) (map[uuid.UUID]Model, error) {
+	result := make(map[uuid.UUID]Model)
+	if len(ids) == 0 {
+		return result, nil
+	}
+	entities, err := GetByIDs(ids)(p.db.WithContext(p.ctx))
+	if err != nil {
+		return nil, err
+	}
+	for _, e := range entities {
+		m, err := Make(e)
+		if err != nil {
+			return nil, err
+		}
+		result[e.Id] = m
+	}
+	return result, nil
+}
+
 func (p *Processor) Search(tenantID uuid.UUID, query string, page, pageSize int) ([]Model, int64, error) {
 	if page < 1 {
 		page = 1
@@ -209,13 +231,68 @@ func (p *Processor) SearchWithUsage(tenantID uuid.UUID, query string, categoryFi
 		if err != nil {
 			return nil, 0, err
 		}
-		models[i] = m.WithUsageCount(int(e.UsageCount)).WithCategoryName(e.CategoryName)
+		models[i] = m.WithUsageCount(int(e.UsageCount))
 	}
 	return models, total, nil
 }
 
 func (p *Processor) BulkCategorize(tenantID uuid.UUID, ingredientIDs []uuid.UUID, categoryID uuid.UUID) error {
 	return bulkUpdateCategory(p.db.WithContext(p.ctx), ingredientIDs, tenantID, categoryID)
+}
+
+// LookupByName resolves a free-form ingredient name to a canonical ingredient
+// for the given tenant. It tries (in order): exact name match, alias match,
+// then a normalized variant (strips leading articles and a trailing plural
+// 's') against both names and aliases. Returns (model, true, nil) on a match,
+// (Model{}, false, nil) on a clean miss, and (Model{}, false, err) for any
+// database error other than "not found".
+func (p *Processor) LookupByName(tenantID uuid.UUID, name string) (Model, bool, error) {
+	normalized := strings.ToLower(strings.TrimSpace(name))
+	if normalized == "" {
+		return Model{}, false, nil
+	}
+
+	candidates := []string{normalized}
+	if alt := lookupNormalizeText(normalized); alt != normalized && alt != "" {
+		candidates = append(candidates, alt)
+	}
+
+	for _, candidate := range candidates {
+		if e, err := GetByName(tenantID, candidate)(p.db.WithContext(p.ctx))(); err == nil {
+			m, err := Make(e)
+			if err != nil {
+				return Model{}, false, err
+			}
+			return m, true, nil
+		}
+		if e, _, err := GetByAlias(tenantID, candidate)(p.db.WithContext(p.ctx)); err == nil {
+			m, err := Make(*e)
+			if err != nil {
+				return Model{}, false, err
+			}
+			return m, true, nil
+		}
+	}
+	return Model{}, false, nil
+}
+
+// lookupNormalizeText strips leading articles and a trailing plural 's' so
+// that "the eggs" matches a canonical entry stored as "egg". Mirrors the
+// normalization package's helper but kept private here to avoid an import
+// cycle on a four-line function.
+func lookupNormalizeText(s string) string {
+	for _, article := range []string{"the ", "a ", "an "} {
+		if strings.HasPrefix(s, article) {
+			s = s[len(article):]
+			break
+		}
+	}
+	fields := strings.Fields(s)
+	s = strings.Join(fields, " ")
+	if len(s) > 1 && strings.HasSuffix(s, "s") && !strings.HasSuffix(s, "ss") {
+		s = s[:len(s)-1]
+	}
+	return strings.TrimSpace(s)
 }
 
 func (p *Processor) Suggest(tenantID uuid.UUID, prefix string, limit int) ([]Model, error) {

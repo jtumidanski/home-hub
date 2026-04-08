@@ -3,13 +3,11 @@ package export
 import (
 	"context"
 	"regexp"
-	"sort"
 	"strconv"
 	"strings"
 	"time"
 
 	"github.com/google/uuid"
-	"math"
 
 	"github.com/jtumidanski/home-hub/services/recipe-service/internal/categoryclient"
 	"github.com/jtumidanski/home-hub/services/recipe-service/internal/ingredient"
@@ -17,17 +15,29 @@ import (
 	"github.com/jtumidanski/home-hub/services/recipe-service/internal/planitem"
 	"github.com/jtumidanski/home-hub/services/recipe-service/internal/planner"
 	"github.com/jtumidanski/home-hub/services/recipe-service/internal/recipe"
+	tenantctx "github.com/jtumidanski/home-hub/shared/go/tenant"
 	"github.com/sirupsen/logrus"
 	"gorm.io/gorm"
 )
 
+// tokenPrefix returns the first 12 characters of an access token (the JWT
+// header — never the body or signature) so diagnostic logs can correlate a
+// recipe-service outbound call with the cookie value the browser is sending,
+// without writing any sensitive claim or signature material to logs.
+func tokenPrefix(token string) string {
+	if len(token) <= 12 {
+		return ""
+	}
+	return token[:12]
+}
+
 // PlanData is a minimal representation of a plan, avoiding an import of the plan package.
 type PlanData struct {
-	ID         uuid.UUID
-	TenantID   uuid.UUID
-	Name       string
-	StartsOn   time.Time
-	AuthHeader string
+	ID          uuid.UUID
+	TenantID    uuid.UUID
+	Name        string
+	StartsOn    time.Time
+	AccessToken string
 }
 
 // QuantityUnit is an additional quantity+unit pair for cross-family grouping.
@@ -75,6 +85,35 @@ func (p *Processor) ConsolidateIngredients(pd PlanData) []ConsolidatedIngredient
 	plannerProc := planner.NewProcessor(p.l, p.ctx, p.db)
 	ingredientProc := ingredient.NewProcessor(p.l, p.ctx, p.db)
 
+	// Batch-fetch all per-recipe data referenced by the plan items in a fixed
+	// number of queries (one per source) instead of N per item.
+	recipeIDs := make([]uuid.UUID, 0, len(items))
+	seenRecipe := make(map[uuid.UUID]struct{}, len(items))
+	for _, item := range items {
+		rid := item.RecipeID()
+		if _, ok := seenRecipe[rid]; ok {
+			continue
+		}
+		seenRecipe[rid] = struct{}{}
+		recipeIDs = append(recipeIDs, rid)
+	}
+
+	normByRecipe, err := normProc.GetByRecipeIDs(recipeIDs)
+	if err != nil {
+		p.l.WithError(err).Error("Failed to batch-fetch normalized ingredients")
+		normByRecipe = map[uuid.UUID][]normalization.Model{}
+	}
+	plannerByRecipe, err := plannerProc.GetByRecipeIDs(recipeIDs)
+	if err != nil {
+		p.l.WithError(err).Error("Failed to batch-fetch planner configs")
+		plannerByRecipe = map[uuid.UUID]planner.Model{}
+	}
+	recipesByID, err := recipeProc.GetByIDs(recipeIDs)
+	if err != nil {
+		p.l.WithError(err).Error("Failed to batch-fetch recipes")
+		recipesByID = map[uuid.UUID]recipe.Model{}
+	}
+
 	// Accumulator per canonical ingredient, keyed by base unit.
 	type baseUnitAccum struct {
 		baseUnit string
@@ -92,28 +131,73 @@ func (p *Processor) ConsolidateIngredients(pd PlanData) []ConsolidatedIngredient
 	resolved := make(map[uuid.UUID]*ingredientAccum)
 	var unresolved []ConsolidatedIngredient
 
-	// Build category lookup map for sort order
-	type catInfo struct {
-		name      string
-		sortOrder int
+	// Diagnostic: log the request tenant context alongside the plan's
+	// own tenant_id and a fingerprint of the access token. This is the
+	// next step in tracking down why categoryclient is returning a
+	// different set of categories than the user's browser sees from
+	// /api/v1/categories — comparing the request tenant to the browser
+	// tenant tells us whether the inbound auth is misrouted vs. the
+	// outbound categoryclient call hitting a different tenant.
+	diagFields := logrus.Fields{
+		"plan_id":          pd.ID,
+		"plan_tenant_id":   pd.TenantID,
+		"token_len":        len(pd.AccessToken),
+		"token_prefix":     tokenPrefix(pd.AccessToken),
 	}
-	categoryByID := make(map[uuid.UUID]catInfo)
-	if p.catClient != nil && pd.AuthHeader != "" {
-		if cats, err := p.catClient.ListCategories(pd.AuthHeader); err == nil {
-			for _, c := range cats {
-				categoryByID[c.ID] = catInfo{name: c.Name, sortOrder: c.SortOrder}
+	if t, ok := tenantctx.FromContext(p.ctx); ok {
+		diagFields["request_tenant_id"] = t.Id()
+		diagFields["request_household_id"] = t.HouseholdId()
+		diagFields["request_user_id"] = t.UserId()
+	} else {
+		diagFields["request_tenant_id"] = "<missing from context>"
+	}
+	p.l.WithFields(diagFields).Info("ConsolidateIngredients tenant context snapshot")
+
+	// Build category lookup map for sort order. On any categoryclient
+	// failure we log and fall back to an empty map so the endpoint stays
+	// 200 OK with everything in "Uncategorized".
+	//
+	// Pull tenant/household from the request context so categoryclient
+	// can forward them as X-Tenant-ID / X-Household-ID headers. The
+	// auth-service issues JWTs with nil tenant/household claims and the
+	// auth middleware falls back to these headers — without them,
+	// category-service resolves the call as the nil tenant and returns
+	// an unrelated auto-seeded set of defaults.
+	var reqTenantID, reqHouseholdID uuid.UUID
+	if t, ok := tenantctx.FromContext(p.ctx); ok {
+		reqTenantID = t.Id()
+		reqHouseholdID = t.HouseholdId()
+	}
+	categoryByID := loadCategoryLookup(p.l, p.catClient, pd.AccessToken, pd.ID, reqTenantID, reqHouseholdID)
+
+	// effectiveMultiplierFromMaps computes the serving multiplier for an item
+	// using only the pre-fetched maps, no DB calls.
+	effectiveMultiplierFromMaps := func(item planitem.Model) float64 {
+		if item.PlannedServings() != nil {
+			yield := 0
+			if pc, ok := plannerByRecipe[item.RecipeID()]; ok && pc.ServingsYield() != nil {
+				yield = *pc.ServingsYield()
+			} else if rm, ok := recipesByID[item.RecipeID()]; ok && rm.Servings() != nil {
+				yield = *rm.Servings()
+			}
+			if yield > 0 {
+				return float64(*item.PlannedServings()) / float64(yield)
 			}
 		}
+		if item.ServingMultiplier() != nil {
+			return *item.ServingMultiplier()
+		}
+		return 1.0
 	}
 
 	for _, item := range items {
-		multiplier := effectiveMultiplier(item, recipeProc, plannerProc)
+		multiplier := effectiveMultiplierFromMaps(item)
 
-		ingredients, err := normProc.GetByRecipeID(item.RecipeID())
-		if err != nil || len(ingredients) == 0 {
+		ingredients := normByRecipe[item.RecipeID()]
+		if len(ingredients) == 0 {
 			// Fall back to raw parsed Cooklang
-			rm, _, recipeErr := recipeProc.Get(item.RecipeID())
-			if recipeErr != nil {
+			rm, ok := recipesByID[item.RecipeID()]
+			if !ok {
 				continue
 			}
 			parsed := recipeProc.ParseSource(rm.Source())
@@ -155,17 +239,6 @@ func (p *Processor) ConsolidateIngredients(pd PlanData) []ConsolidatedIngredient
 						name:  ing.RawName(),
 						units: make(map[string]*baseUnitAccum),
 					}
-					if canonical, err := ingredientProc.Get(canonID); err == nil {
-						acc.displayName = canonical.DisplayName()
-						acc.name = canonical.Name()
-						acc.unitFamily = canonical.UnitFamily()
-						if canonical.CategoryID() != nil {
-							if ci, ok := categoryByID[*canonical.CategoryID()]; ok {
-								acc.categoryName = ci.name
-								acc.categorySortOrder = ci.sortOrder
-							}
-						}
-					}
 					resolved[canonID] = acc
 				}
 
@@ -186,41 +259,57 @@ func (p *Processor) ConsolidateIngredients(pd PlanData) []ConsolidatedIngredient
 		}
 	}
 
-	result := make([]ConsolidatedIngredient, 0, len(resolved)+len(unresolved))
-	// Sort resolved ingredients by category sort order, then alphabetically by display name.
-	sortedAccums := make([]*ingredientAccum, 0, len(resolved))
-	for _, acc := range resolved {
-		sortedAccums = append(sortedAccums, acc)
+	// Second pass: fetch all canonical ingredients (with aliases) at once and
+	// fill in displayName / canonical name / unit family / category info.
+	canonIDs := make([]uuid.UUID, 0, len(resolved))
+	for id := range resolved {
+		canonIDs = append(canonIDs, id)
 	}
-	sort.Slice(sortedAccums, func(i, j int) bool {
-		// Uncategorized (sortOrder 0, no category) sorts last
-		oi, oj := sortedAccums[i].categorySortOrder, sortedAccums[j].categorySortOrder
-		if sortedAccums[i].categoryName == "" {
-			oi = math.MaxInt32
+	canonicalsByID, err := ingredientProc.GetByIDs(canonIDs)
+	if err != nil {
+		p.l.WithError(err).Error("Failed to batch-fetch canonical ingredients")
+		canonicalsByID = map[uuid.UUID]ingredient.Model{}
+	}
+	if len(canonicalsByID) < len(canonIDs) {
+		p.l.WithFields(logrus.Fields{
+			"plan_id":       pd.ID,
+			"requested":     len(canonIDs),
+			"received":      len(canonicalsByID),
+			"missing_count": len(canonIDs) - len(canonicalsByID),
+		}).Warn("Canonical ingredient batch fetch returned fewer rows than requested")
+	}
+	for canonID, acc := range resolved {
+		canonical, ok := canonicalsByID[canonID]
+		if !ok {
+			continue
 		}
-		if sortedAccums[j].categoryName == "" {
-			oj = math.MaxInt32
+		acc.displayName = canonical.DisplayName()
+		acc.name = canonical.Name()
+		acc.unitFamily = canonical.UnitFamily()
+		if canonical.CategoryID() != nil {
+			if ci, ok := categoryByID[*canonical.CategoryID()]; ok {
+				acc.categoryName = ci.name
+				acc.categorySortOrder = ci.sortOrder
+			} else {
+				p.l.WithFields(logrus.Fields{
+					"plan_id":                 pd.ID,
+					"canonical_ingredient_id": canonID,
+					"category_id":             *canonical.CategoryID(),
+				}).Warn("Canonical ingredient references unknown category")
+			}
 		}
-		if oi != oj {
-			return oi < oj
-		}
-		ni, nj := sortedAccums[i].displayName, sortedAccums[j].displayName
-		if ni == "" {
-			ni = sortedAccums[i].name
-		}
-		if nj == "" {
-			nj = sortedAccums[j].name
-		}
-		return ni < nj
-	})
-	for _, acc := range sortedAccums {
-		// Collect all base-unit entries, convert to display units
+	}
+
+	// Materialize each accumulator into a ConsolidatedIngredient. Order is
+	// finalized below by GroupByCategory so that the JSON:API response and
+	// the markdown shopping list export share a single ordering rule.
+	flat := make([]ConsolidatedIngredient, 0, len(resolved)+len(unresolved))
+	for _, acc := range resolved {
 		var pairs []QuantityUnit
 		for _, bu := range acc.units {
 			displayUnit, displayQty := fromBaseUnit(bu.baseUnit, bu.qty)
 			pairs = append(pairs, QuantityUnit{Quantity: displayQty, Unit: displayUnit})
 		}
-		// First pair is primary, rest are extras
 		ci := ConsolidatedIngredient{
 			ID:                acc.id,
 			Name:              acc.name,
@@ -235,24 +324,16 @@ func (p *Processor) ConsolidateIngredients(pd PlanData) []ConsolidatedIngredient
 		if len(pairs) > 1 {
 			ci.ExtraQuantities = pairs[1:]
 		}
-		result = append(result, ci)
+		flat = append(flat, ci)
 	}
-	result = append(result, unresolved...)
-	return result
-}
+	flat = append(flat, unresolved...)
 
-// effectiveMultiplier computes the serving scaling for a plan item.
-func effectiveMultiplier(item planitem.Model, recipeProc *recipe.Processor, plannerProc *planner.Processor) float64 {
-	if item.PlannedServings() != nil {
-		servingsYield := getServingsYield(item.RecipeID(), recipeProc, plannerProc)
-		if servingsYield > 0 {
-			return float64(*item.PlannedServings()) / float64(servingsYield)
-		}
+	groups := GroupByCategory(flat)
+	result := make([]ConsolidatedIngredient, 0, len(flat))
+	for _, g := range groups {
+		result = append(result, g.Ingredients...)
 	}
-	if item.ServingMultiplier() != nil {
-		return *item.ServingMultiplier()
-	}
-	return 1.0
+	return result
 }
 
 func getServingsYield(recipeID uuid.UUID, recipeProc *recipe.Processor, plannerProc *planner.Processor) int {

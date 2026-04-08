@@ -195,7 +195,7 @@ func (p *Processor) Duplicate(sourceID uuid.UUID, tenantID, householdID, userID 
 	return newPlan, nil
 }
 
-func (p *Processor) ExportMarkdown(id uuid.UUID, authHeader string, catClient *categoryclient.Client) (string, error) {
+func (p *Processor) ExportMarkdown(id uuid.UUID, accessToken string, catClient *categoryclient.Client) (string, error) {
 	m, err := p.Get(id)
 	if err != nil {
 		return "", err
@@ -204,7 +204,7 @@ func (p *Processor) ExportMarkdown(id uuid.UUID, authHeader string, catClient *c
 	exportProc := export.NewProcessor(p.l, p.ctx, p.db, catClient)
 	markdown := exportProc.GenerateMarkdown(export.PlanData{
 		ID: m.Id(), TenantID: m.TenantID(), Name: m.Name(), StartsOn: m.StartsOn(),
-		AuthHeader: authHeader,
+		AccessToken: accessToken,
 	})
 
 	p.emitAudit(m.Id(), "plan.exported", map[string]interface{}{
@@ -213,7 +213,7 @@ func (p *Processor) ExportMarkdown(id uuid.UUID, authHeader string, catClient *c
 	return markdown, nil
 }
 
-func (p *Processor) ConsolidateIngredients(id uuid.UUID, authHeader string, catClient *categoryclient.Client) ([]export.ConsolidatedIngredient, error) {
+func (p *Processor) ConsolidateIngredients(id uuid.UUID, accessToken string, catClient *categoryclient.Client) ([]export.ConsolidatedIngredient, error) {
 	m, err := p.Get(id)
 	if err != nil {
 		return nil, err
@@ -222,7 +222,7 @@ func (p *Processor) ConsolidateIngredients(id uuid.UUID, authHeader string, catC
 	exportProc := export.NewProcessor(p.l, p.ctx, p.db, catClient)
 	consolidated := exportProc.ConsolidateIngredients(export.PlanData{
 		ID: m.Id(), TenantID: m.TenantID(), Name: m.Name(), StartsOn: m.StartsOn(),
-		AuthHeader: authHeader,
+		AccessToken: accessToken,
 	})
 	return consolidated, nil
 }
@@ -265,6 +265,30 @@ func (p *Processor) BuildItemsResponse(m Model) []RestItemModel {
 	recipeProc := recipe.NewProcessor(p.l, p.ctx, p.db)
 	plannerProc := planner.NewProcessor(p.l, p.ctx, p.db)
 
+	// Batch-fetch recipes and planner configs for all distinct recipe ids in
+	// this plan; avoids one round-trip per item per source.
+	recipeIDs := make([]uuid.UUID, 0, len(items))
+	seen := make(map[uuid.UUID]struct{}, len(items))
+	for _, item := range items {
+		rid := item.RecipeID()
+		if _, ok := seen[rid]; ok {
+			continue
+		}
+		seen[rid] = struct{}{}
+		recipeIDs = append(recipeIDs, rid)
+	}
+
+	recipesByID, err := recipeProc.GetByIDs(recipeIDs)
+	if err != nil {
+		p.l.WithError(err).Error("Failed to batch-fetch recipes for plan items")
+		recipesByID = map[uuid.UUID]recipe.Model{}
+	}
+	plannerByRecipe, err := plannerProc.GetByRecipeIDs(recipeIDs)
+	if err != nil {
+		p.l.WithError(err).Error("Failed to batch-fetch planner configs for plan items")
+		plannerByRecipe = map[uuid.UUID]planner.Model{}
+	}
+
 	restItems := make([]RestItemModel, len(items))
 	for i, item := range items {
 		ri := RestItemModel{
@@ -278,17 +302,16 @@ func (p *Processor) BuildItemsResponse(m Model) []RestItemModel {
 			Position:          item.Position(),
 		}
 
-		rm, _, recipeErr := recipeProc.Get(item.RecipeID())
-		if recipeErr != nil {
-			ri.RecipeDeleted = true
-			ri.RecipeTitle = "(deleted recipe)"
-		} else {
+		if rm, ok := recipesByID[item.RecipeID()]; ok {
 			ri.RecipeTitle = rm.Title()
 			ri.RecipeServings = rm.Servings()
 			ri.RecipeDeleted = false
+		} else {
+			ri.RecipeDeleted = true
+			ri.RecipeTitle = "(deleted recipe)"
 		}
 
-		if pc, err := plannerProc.GetByRecipeID(item.RecipeID()); err == nil {
+		if pc, ok := plannerByRecipe[item.RecipeID()]; ok {
 			ri.RecipeClassification = pc.Classification()
 			if ri.RecipeServings == nil && pc.ServingsYield() != nil {
 				ri.RecipeServings = pc.ServingsYield()

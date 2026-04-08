@@ -23,6 +23,7 @@ import { IngredientDetailPage } from "@/pages/IngredientDetailPage";
 import { MealsPage } from "@/pages/MealsPage";
 import { ShoppingListsPage } from "@/pages/ShoppingListsPage";
 import { ShoppingListDetailPage } from "@/pages/ShoppingListDetailPage";
+import { WishListPage } from "@/pages/WishListPage";
 import { CalendarPage } from "@/pages/CalendarPage";
 import { PackagesPage } from "@/pages/PackagesPage";
 import { TrackerPage } from "@/pages/TrackerPage";
@@ -61,8 +62,10 @@ export function App() {
                   <Route path="recipes/:id" element={<RecipeDetailPage />} />
                   <Route path="recipes/:id/edit" element={<RecipeFormPage />} />
                   <Route path="meals" element={<MealsPage />} />
-                  <Route path="shopping" element={<ShoppingListsPage />} />
-                  <Route path="shopping/:id" element={<ShoppingListDetailPage />} />
+                  <Route path="shopping" element={<Navigate to="/app/shopping/grocery" replace />} />
+                  <Route path="shopping/grocery" element={<ShoppingListsPage />} />
+                  <Route path="shopping/grocery/:id" element={<ShoppingListDetailPage />} />
+                  <Route path="shopping/wish-list" element={<WishListPage />} />
                   <Route path="ingredients" element={<IngredientsPage />} />
                   <Route path="ingredients/:id" element={<IngredientDetailPage />} />
                   <Route path="households" element={<HouseholdsPage />} />

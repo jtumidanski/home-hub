@@ -5,10 +5,15 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"net/url"
 	"strings"
 
 	"github.com/google/uuid"
 )
+
+func urlQueryEscape(s string) string {
+	return url.QueryEscape(s)
+}
 
 type PlanIngredient struct {
 	ID                uuid.UUID
@@ -57,13 +62,23 @@ func New(baseURL string) *Client {
 	}
 }
 
-func (c *Client) GetPlanIngredients(planID uuid.UUID, authHeader string) ([]PlanIngredient, error) {
+func (c *Client) GetPlanIngredients(planID uuid.UUID, accessToken string, tenantID, householdID uuid.UUID) ([]PlanIngredient, error) {
 	url := fmt.Sprintf("%s/api/v1/meals/plans/%s/ingredients", c.baseURL, planID)
 	req, err := http.NewRequest(http.MethodGet, url, nil)
 	if err != nil {
 		return nil, err
 	}
-	req.Header.Set("Authorization", authHeader)
+	req.AddCookie(&http.Cookie{Name: "access_token", Value: accessToken})
+	// Forward tenant context. The auth-service issues JWTs with nil
+	// tenant/household claims and the auth middleware on recipe-service
+	// falls back to these headers — without them, recipe-service resolves
+	// the request as the nil tenant.
+	if tenantID != uuid.Nil {
+		req.Header.Set("X-Tenant-ID", tenantID.String())
+	}
+	if householdID != uuid.Nil {
+		req.Header.Set("X-Household-ID", householdID.String())
+	}
 
 	resp, err := c.httpClient.Do(req)
 	if err != nil {
@@ -114,6 +129,84 @@ func (c *Client) GetPlanIngredients(planID uuid.UUID, authHeader string) ([]Plan
 		ingredients = append(ingredients, pi)
 	}
 	return ingredients, nil
+}
+
+type IngredientLookup struct {
+	CanonicalID  uuid.UUID
+	Name         string
+	DisplayName  string
+	CategoryID   *uuid.UUID
+}
+
+type ingredientLookupResponse struct {
+	Data struct {
+		ID         string `json:"id"`
+		Type       string `json:"type"`
+		Attributes struct {
+			Name        string  `json:"name"`
+			DisplayName string  `json:"display_name"`
+			CategoryId  *string `json:"category_id"`
+		} `json:"attributes"`
+	} `json:"data"`
+}
+
+// LookupIngredient asks recipe-service to resolve a free-form ingredient name
+// to a canonical ingredient (matching by name, alias, or normalized variants).
+// Returns (lookup, true, nil) on match, (nil, false, nil) on a clean miss
+// (HTTP 404), and (nil, false, err) for any other error.
+func (c *Client) LookupIngredient(name, accessToken string, tenantID, householdID uuid.UUID) (*IngredientLookup, bool, error) {
+	if strings.TrimSpace(name) == "" {
+		return nil, false, nil
+	}
+	url := fmt.Sprintf("%s/api/v1/ingredients/lookup?name=%s", c.baseURL, urlQueryEscape(name))
+	req, err := http.NewRequest(http.MethodGet, url, nil)
+	if err != nil {
+		return nil, false, err
+	}
+	req.AddCookie(&http.Cookie{Name: "access_token", Value: accessToken})
+	if tenantID != uuid.Nil {
+		req.Header.Set("X-Tenant-ID", tenantID.String())
+	}
+	if householdID != uuid.Nil {
+		req.Header.Set("X-Household-ID", householdID.String())
+	}
+
+	resp, err := c.httpClient.Do(req)
+	if err != nil {
+		return nil, false, err
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode == http.StatusNotFound {
+		return nil, false, nil
+	}
+	if resp.StatusCode != http.StatusOK {
+		body, _ := io.ReadAll(resp.Body)
+		return nil, false, fmt.Errorf("recipe-service returned %d: %s", resp.StatusCode, string(body))
+	}
+
+	var lookup ingredientLookupResponse
+	if err := json.NewDecoder(resp.Body).Decode(&lookup); err != nil {
+		return nil, false, err
+	}
+
+	id, err := uuid.Parse(lookup.Data.ID)
+	if err != nil {
+		return nil, false, fmt.Errorf("invalid canonical ingredient id %q: %w", lookup.Data.ID, err)
+	}
+	result := &IngredientLookup{
+		CanonicalID: id,
+		Name:        lookup.Data.Attributes.Name,
+		DisplayName: lookup.Data.Attributes.DisplayName,
+	}
+	if lookup.Data.Attributes.CategoryId != nil && *lookup.Data.Attributes.CategoryId != "" {
+		cid, err := uuid.Parse(*lookup.Data.Attributes.CategoryId)
+		if err != nil {
+			return nil, false, fmt.Errorf("invalid category id %q: %w", *lookup.Data.Attributes.CategoryId, err)
+		}
+		result.CategoryID = &cid
+	}
+	return result, true, nil
 }
 
 func formatQuantity(qty float64, unit string) string {
