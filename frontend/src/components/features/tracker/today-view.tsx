@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -137,13 +137,20 @@ function NumericInput({ itemId, date, currentCount, putEntry }: { itemId: string
 function RangeInput({ itemId, date, config, currentValue, putEntry }: { itemId: string; date: string; config: RangeConfig | null; currentValue?: number | undefined; putEntry: ReturnType<typeof usePutEntry> }) {
   const min = config?.min ?? 0;
   const max = config?.max ?? 100;
-  const val = currentValue ?? Math.round((min + max) / 2);
+  const [local, setLocal] = useState<number>(currentValue ?? Math.round((min + max) / 2));
+  useEffect(() => {
+    if (currentValue !== undefined) setLocal(currentValue);
+  }, [currentValue]);
+  const commit = (n: number) => putEntry.mutate({ itemId, date, value: { value: n } });
   return (
     <div className="flex items-center gap-2">
-      <input type="range" min={min} max={max} value={val} className="flex-1"
-        onChange={(e) => putEntry.mutate({ itemId, date, value: { value: parseInt(e.target.value) } })}
+      <input type="range" min={min} max={max} value={local} className="flex-1"
+        onChange={(e) => setLocal(parseInt(e.target.value))}
+        onMouseUp={(e) => commit(parseInt((e.target as HTMLInputElement).value))}
+        onTouchEnd={(e) => commit(parseInt((e.target as HTMLInputElement).value))}
+        onKeyUp={(e) => commit(parseInt((e.target as HTMLInputElement).value))}
       />
-      <span className="w-10 text-center font-mono text-sm">{val}</span>
+      <span className="w-10 text-center font-mono text-sm">{local}</span>
     </div>
   );
 }
