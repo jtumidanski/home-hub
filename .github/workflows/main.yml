@@ -47,6 +47,9 @@ jobs:
           - service: tracker-service
             context: .
             dockerfile: services/tracker-service/Dockerfile
+          - service: workout-service
+            context: .
+            dockerfile: services/workout-service/Dockerfile
           - service: frontend
             context: frontend
             dockerfile: frontend/Dockerfile

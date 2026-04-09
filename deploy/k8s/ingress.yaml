@@ -148,6 +148,13 @@ spec:
                             name: tracker-service
                             port:
                                 number: 8080
+                  - path: /api/v1/workouts
+                    pathType: Prefix
+                    backend:
+                        service:
+                            name: workout-service
+                            port:
+                                number: 8080
                   - path: /api/v1/weather
                     pathType: Prefix
                     backend:
@@ -296,6 +303,13 @@ spec:
                     backend:
                         service:
                             name: tracker-service
+                            port:
+                                number: 8080
+                  - path: /api/v1/workouts
+                    pathType: Prefix
+                    backend:
+                        service:
+                            name: workout-service
                             port:
                                 number: 8080
                   - path: /api/v1/weather

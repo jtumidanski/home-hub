@@ -67,6 +67,7 @@ Routing:
 /api/v1/categories -> category-service
 /api/v1/shopping -> shopping-service
 /api/v1/trackers -> tracker-service
+/api/v1/workouts -> workout-service
 ```
 
 All services are stateless except for database persistence. Authentication is handled by auth-service. Authorization is enforced by each service using JWT claims.
@@ -307,6 +308,32 @@ Rules:
 - a month is `complete` when expected = filled + skipped and no future scheduled days remain
 - report endpoint refuses incomplete months (400)
 - schedule changes write a new snapshot effective today; previous snapshots are preserved
+
+### 3.12 workout-service
+
+Responsibilities:
+
+- per-user exercise catalog with theme/region taxonomy and three exercise kinds (strength, isometric, cardio)
+- weekly workout planning (planned items per day-of-week, ordered, with kind-shaped defaults)
+- per-exercise performance logging — summary mode by default, optional per-set mode for strength
+- copy-from-previous-week (planned and actual modes), today view (mobile landing), per-week summary projection
+- soft delete on themes, regions, and exercises with read-through display in historical weeks
+
+Schema: `workout.themes`, `workout.regions`, `workout.exercises`, `workout.weeks`, `workout.planned_items`, `workout.performances`, `workout.performance_sets`
+
+Rules:
+
+- scoped by tenant and user only — no household scope
+- weeks are stored at the Monday of the ISO week; the server normalizes any inbound `weekStart` date
+- weeks are lazily created on first mutation; `GET /weeks/{weekStart}` returns 404 when no row exists
+- exercise `kind` and `weightType` are immutable after creation; `defaults` shape must match `kind`
+- primary `regionId` and `secondaryRegionIds` must be disjoint
+- partial unique indexes on `(tenant_id, user_id, name) WHERE deleted_at IS NULL` for themes, regions, and exercises
+- soft-deleted exercises cannot be added to new planned items but continue to render in historical weeks via the read-through join
+- performance state machine per PRD §4.4.1; the server derives `partial`/`done` when only actuals are sent
+- per-set mode is only valid for strength items; switching modes uses explicit `PUT`/`DELETE .../performance/sets` with documented collapse rules
+- `weight_unit` lives on the performance row; switching it while per-set rows exist is rejected (409)
+- per-week summary `strengthVolume` excludes bodyweight and isometric items; per-region totals only count the primary region
 
 ## 4. API Design
 

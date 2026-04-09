@@ -18,6 +18,7 @@ jobs:
       shopping: ${{ steps.changes.outputs.shopping }}
       package: ${{ steps.changes.outputs.package }}
       tracker: ${{ steps.changes.outputs.tracker }}
+      workout: ${{ steps.changes.outputs.workout }}
       frontend: ${{ steps.changes.outputs.frontend }}
       shared: ${{ steps.changes.outputs.shared }}
     steps:
@@ -55,6 +56,9 @@ jobs:
               - 'shared/go/**'
             tracker:
               - 'services/tracker-service/**'
+              - 'shared/go/**'
+            workout:
+              - 'services/workout-service/**'
               - 'shared/go/**'
             frontend:
               - 'frontend/**'
@@ -221,6 +225,22 @@ jobs:
           cd services/tracker-service
           go test ./... -count=1
 
+  build-workout:
+    needs: detect-changes
+    if: needs.detect-changes.outputs.workout == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version: '1.26'
+      - name: Build
+        run: go build ./services/workout-service/...
+      - name: Test
+        run: |
+          cd services/workout-service
+          go test ./... -count=1
+
   build-shared:
     needs: detect-changes
     if: needs.detect-changes.outputs.shared == 'true'
@@ -309,6 +329,10 @@ jobs:
             context: .
             dockerfile: services/tracker-service/Dockerfile
             changed: tracker
+          - service: workout-service
+            context: .
+            dockerfile: services/workout-service/Dockerfile
+            changed: workout
           - service: frontend
             context: frontend
             dockerfile: frontend/Dockerfile

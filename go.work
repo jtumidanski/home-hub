@@ -11,6 +11,7 @@ use (
 	./services/shopping-service
 	./services/tracker-service
 	./services/weather-service
+	./services/workout-service
 	./shared/go/auth
 	./shared/go/database
 	./shared/go/http

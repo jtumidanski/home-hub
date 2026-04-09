@@ -27,6 +27,12 @@ import { WishListPage } from "@/pages/WishListPage";
 import { CalendarPage } from "@/pages/CalendarPage";
 import { PackagesPage } from "@/pages/PackagesPage";
 import { TrackerPage } from "@/pages/TrackerPage";
+import { WorkoutShell } from "@/components/features/workout/workout-shell";
+import { WorkoutTodayPage } from "@/pages/WorkoutTodayPage";
+import { WorkoutWeekPage } from "@/pages/WorkoutWeekPage";
+import { WorkoutExercisesPage } from "@/pages/WorkoutExercisesPage";
+import { WorkoutTaxonomyPage } from "@/pages/WorkoutTaxonomyPage";
+import { WorkoutSummaryPage } from "@/pages/WorkoutSummaryPage";
 import { Error404Page } from "@/components/common/error-page";
 
 export function App() {
@@ -55,6 +61,16 @@ export function App() {
                   <Route path="calendar" element={<CalendarPage />} />
                   <Route path="packages" element={<PackagesPage />} />
                   <Route path="tracker" element={<TrackerPage />} />
+                  <Route path="workouts" element={<WorkoutShell />}>
+                    <Route index element={<Navigate to="today" replace />} />
+                    <Route path="today" element={<WorkoutTodayPage />} />
+                    <Route path="week" element={<WorkoutWeekPage />} />
+                    <Route path="week/:weekStart" element={<WorkoutWeekPage />} />
+                    <Route path="exercises" element={<WorkoutExercisesPage />} />
+                    <Route path="taxonomy" element={<WorkoutTaxonomyPage />} />
+                    <Route path="summary" element={<WorkoutSummaryPage />} />
+                    <Route path="summary/:weekStart" element={<WorkoutSummaryPage />} />
+                  </Route>
                   <Route path="settings" element={<SettingsPage />} />
                   <Route path="weather" element={<WeatherPage />} />
                   <Route path="recipes" element={<RecipesPage />} />
