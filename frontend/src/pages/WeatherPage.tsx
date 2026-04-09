@@ -105,8 +105,8 @@ export function WeatherPage() {
     await Promise.all([refetchForecast(), refetchCurrent()]);
   }, [refetchForecast, refetchCurrent]);
 
-  const handleSelectChange = (value: string) => {
-    setSelectedLocationId(value === PRIMARY_VALUE ? undefined : value);
+  const handleSelectChange = (value: string | null) => {
+    setSelectedLocationId(!value || value === PRIMARY_VALUE ? undefined : value);
   };
 
   const headerLocationName = (() => {
