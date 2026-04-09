@@ -1,132 +1,115 @@
+// Package weekview's Processor owns the cross-domain orchestration that
+// produces the embedded "week with items" projection and executes the
+// copy-from-previous workflow. Domain processors (week, planneditem,
+// performance) remain the source of truth for their own state; this
+// processor only stitches them together for the composite endpoints.
 package weekview
 
 import (
 	"context"
-	"encoding/json"
 	"errors"
-	"io"
-	"net/http"
 	"time"
 
 	"github.com/google/uuid"
 	"github.com/jtumidanski/home-hub/services/workout-service/internal/performance"
 	"github.com/jtumidanski/home-hub/services/workout-service/internal/planneditem"
 	"github.com/jtumidanski/home-hub/services/workout-service/internal/week"
-	"github.com/jtumidanski/home-hub/shared/go/server"
-	tenantctx "github.com/jtumidanski/home-hub/shared/go/tenant"
 	"github.com/sirupsen/logrus"
 	"gorm.io/gorm"
 )
 
+// Domain-level errors surfaced by this package. The handlers map them onto
+// the §4.2 status codes (404 / 409 / 400 / 422).
 var (
-	errCopyTargetNotEmpty = errors.New("target week already has planned items")
-	errCopyNoSource       = errors.New("no prior week with planned items found")
+	ErrCopyTargetNotEmpty = errors.New("target week already has planned items")
+	ErrCopyNoSource       = errors.New("no prior week with planned items found")
+	ErrInvalidCopyMode    = errors.New("mode must be 'planned' or 'actual'")
 )
 
-// CopyHandler handles POST /workouts/weeks/{weekStart}/copy. The handler is
-// exposed as a separate function rather than registered inside
-// InitializeRoutes so the file/route ownership stays in copy.go and a future
-// reader sees it next to the copy logic.
-func CopyHandler(db *gorm.DB) server.GetHandler {
-	return func(d *server.HandlerDependency, c *server.HandlerContext) http.HandlerFunc {
-		return func(w http.ResponseWriter, r *http.Request) {
-			t := tenantctx.MustFromContext(r.Context())
-			weekStart, err := parseWeekStart(r)
-			if err != nil {
-				server.WriteError(w, http.StatusBadRequest, "Invalid weekStart", "weekStart must be YYYY-MM-DD")
-				return
-			}
-			body, _ := io.ReadAll(r.Body)
-			var env struct {
-				Data struct {
-					Attributes struct {
-						Mode string `json:"mode"`
-					} `json:"attributes"`
-				} `json:"data"`
-			}
-			if err := json.Unmarshal(body, &env); err != nil {
-				server.WriteError(w, http.StatusBadRequest, "Invalid Request", "Could not parse request body")
-				return
-			}
-			mode := env.Data.Attributes.Mode
-			if mode != "planned" && mode != "actual" {
-				server.WriteError(w, http.StatusBadRequest, "Validation Failed", "mode must be 'planned' or 'actual'")
-				return
-			}
+const (
+	CopyModePlanned = "planned"
+	CopyModeActual  = "actual"
+)
 
-			weekProc := week.NewProcessor(d.Logger(), r.Context(), db)
-			created, err := copyWeek(r.Context(), d.Logger(), db, t.Id(), t.UserId(), weekStart, mode)
-			if err != nil {
-				switch {
-				case errors.Is(err, errCopyTargetNotEmpty):
-					server.WriteError(w, http.StatusConflict, "Conflict", err.Error())
-				case errors.Is(err, errCopyNoSource):
-					server.WriteError(w, http.StatusNotFound, "Not Found", err.Error())
-				default:
-					d.Logger().WithError(err).Error("Failed to copy week")
-					server.WriteError(w, http.StatusInternalServerError, "Error", "")
-				}
-				return
-			}
-			renderWeek(w, d.Logger(), weekProc, created, http.StatusCreated)
-		}
-	}
+type Processor struct {
+	l   logrus.FieldLogger
+	ctx context.Context
+	db  *gorm.DB
 }
 
-// copyWeek implements the planned|actual semantics in PRD §4.5 and
-// api-contracts §4.2:
+func NewProcessor(l logrus.FieldLogger, ctx context.Context, db *gorm.DB) *Processor {
+	return &Processor{l: l, ctx: ctx, db: db}
+}
+
+// LoadWeekDocument resolves the week + its embedded items into a JSON:API
+// document. Used by every read and post-mutation render path.
+func (p *Processor) LoadWeekDocument(weekModel week.Model) (Document, error) {
+	items, err := AssembleItems(p.db.WithContext(p.ctx), weekModel.Id())
+	if err != nil {
+		return Document{}, err
+	}
+	return BuildDocument(weekModel, items), nil
+}
+
+// Copy implements `POST /workouts/weeks/{weekStart}/copy`. The week is
+// lazily created if missing; the source is the most recent prior week with
+// planned items.
 //
 //   - planned: clone every planned item from the source week verbatim.
 //   - actual:  clone the structure but seed each planned_* field from the
 //     corresponding performance row's actuals when present, falling back to
 //     the source planned values otherwise. Per-set rows are collapsed using
 //     the §5.3 rule (count, max-reps, max-weight).
-func copyWeek(ctx context.Context, l logrus.FieldLogger, db *gorm.DB, tenantID, userID uuid.UUID, weekStart time.Time, mode string) (week.Model, error) {
-	weekProc := week.NewProcessor(l, ctx, db)
+func (p *Processor) Copy(tenantID, userID uuid.UUID, weekStart time.Time, mode string) (week.Model, error) {
+	if mode != CopyModePlanned && mode != CopyModeActual {
+		return week.Model{}, ErrInvalidCopyMode
+	}
+
+	weekProc := week.NewProcessor(p.l, p.ctx, p.db)
 	target, err := weekProc.EnsureExists(tenantID, userID, weekStart)
 	if err != nil {
 		return week.Model{}, err
 	}
 
 	// Reject if the target already has any planned items.
-	existing, err := planneditem.GetByWeek(target.Id)(db.WithContext(ctx))()
+	existing, err := planneditem.GetByWeek(target.Id)(p.db.WithContext(p.ctx))()
 	if err != nil {
 		return week.Model{}, err
 	}
 	if len(existing) > 0 {
-		return week.Model{}, errCopyTargetNotEmpty
+		return week.Model{}, ErrCopyTargetNotEmpty
 	}
 
-	source, err := week.GetMostRecentPriorWithItems(db.WithContext(ctx), userID, target.WeekStartDate)
+	source, err := week.GetMostRecentPriorWithItems(p.db.WithContext(p.ctx), userID, target.WeekStartDate)
 	if err != nil {
-		return week.Model{}, errCopyNoSource
+		return week.Model{}, ErrCopyNoSource
 	}
-	sourceItems, err := planneditem.GetByWeek(source.Id)(db.WithContext(ctx))()
+	sourceItems, err := planneditem.GetByWeek(source.Id)(p.db.WithContext(p.ctx))()
 	if err != nil {
 		return week.Model{}, err
 	}
 	if len(sourceItems) == 0 {
-		return week.Model{}, errCopyNoSource
+		return week.Model{}, ErrCopyNoSource
 	}
 
 	itemIDs := make([]uuid.UUID, 0, len(sourceItems))
 	for _, it := range sourceItems {
 		itemIDs = append(itemIDs, it.Id)
 	}
-	perfMap, setMap, err := performance.LoadByPlannedItems(db.WithContext(ctx), itemIDs)
+	perfMap, setMap, err := performance.LoadByPlannedItems(p.db.WithContext(p.ctx), itemIDs)
 	if err != nil {
 		return week.Model{}, err
 	}
 
 	// Insert clones inside a single transaction so a partial copy can never
 	// leak past a mid-loop failure.
-	err = db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
+	err = p.db.WithContext(p.ctx).Transaction(func(tx *gorm.DB) error {
 		for _, src := range sourceItems {
 			cloned := src
 			cloned.Id = uuid.Nil // re-issue
 			cloned.WeekId = target.Id
 
-			if mode == "actual" {
+			if mode == CopyModeActual {
 				if perf, ok := perfMap[src.Id]; ok {
 					applyActualsAsPlanned(&cloned, perf, setMap[perf.Id])
 				}

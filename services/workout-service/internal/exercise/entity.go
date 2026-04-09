@@ -122,3 +122,24 @@ func uuidsToStrings(ids []uuid.UUID) []string {
 	}
 	return out
 }
+
+// uuidsFromJSON decodes a `secondary_region_ids` jsonb column into a slice of
+// UUIDs. Returns an empty slice for null or empty inputs. Used by the
+// exercise processor's Update path so ownership re-validation can run against
+// the merged secondary list.
+func uuidsFromJSON(raw json.RawMessage) []uuid.UUID {
+	if len(raw) == 0 || string(raw) == "null" {
+		return nil
+	}
+	var strs []string
+	if err := json.Unmarshal(raw, &strs); err != nil {
+		return nil
+	}
+	out := make([]uuid.UUID, 0, len(strs))
+	for _, s := range strs {
+		if id, err := uuid.Parse(s); err == nil {
+			out = append(out, id)
+		}
+	}
+	return out
+}

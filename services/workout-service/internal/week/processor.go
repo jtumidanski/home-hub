@@ -68,7 +68,10 @@ func (p *Processor) PatchRestDayFlags(tenantID, userID uuid.UUID, weekStart time
 	if err != nil {
 		return Model{}, err
 	}
-	jb, _ := json.Marshal(flags)
+	jb, err := json.Marshal(flags)
+	if err != nil {
+		return Model{}, err
+	}
 	e.RestDayFlags = jb
 	if err := updateWeek(p.db.WithContext(p.ctx), &e); err != nil {
 		return Model{}, err

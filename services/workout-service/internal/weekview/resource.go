@@ -1,9 +1,8 @@
 package weekview
 
 import (
-	"encoding/json"
+	"context"
 	"errors"
-	"io"
 	"net/http"
 	"time"
 
@@ -20,22 +19,30 @@ import (
 
 const weekDateLayout = "2006-01-02"
 
-// InitializeRoutes mounts both the week endpoints and the planned-item
-// endpoints under /workouts/weeks/{weekStart}/...
+// InitializeRoutes mounts the week endpoints and the planned-item endpoints
+// under `/workouts/weeks/{weekStart}/...`. Write endpoints use
+// `RegisterInputHandler[T]` so api2go handles the JSON:API envelope; only
+// pure GETs (and the `DELETE .../items/{itemId}`) use `RegisterHandler`.
 func InitializeRoutes(db *gorm.DB) func(l logrus.FieldLogger, si jsonapi.ServerInformation, api *mux.Router) {
 	return func(l logrus.FieldLogger, si jsonapi.ServerInformation, api *mux.Router) {
 		rh := server.RegisterHandler(l)(si)
+		rihPatchWeek := server.RegisterInputHandler[PatchWeekRequest](l)(si)
+		rihCopy := server.RegisterInputHandler[CopyWeekRequest](l)(si)
+		rihAdd := server.RegisterInputHandler[AddPlannedItemRequest](l)(si)
+		rihBulk := server.RegisterInputHandler[BulkAddPlannedItemsRequest](l)(si)
+		rihReorder := server.RegisterInputHandler[ReorderPlannedItemsRequest](l)(si)
+		rihUpdate := server.RegisterInputHandler[UpdatePlannedItemRequest](l)(si)
 
 		// Order: more specific paths first so the weekStart-only routes don't
 		// swallow the items/* and items/{itemId} variants.
-		api.HandleFunc("/workouts/weeks/{weekStart}/copy", rh("CopyWeek", CopyHandler(db))).Methods(http.MethodPost)
-		api.HandleFunc("/workouts/weeks/{weekStart}/items/bulk", rh("BulkAddPlannedItems", bulkAddHandler(db))).Methods(http.MethodPost)
-		api.HandleFunc("/workouts/weeks/{weekStart}/items/reorder", rh("ReorderPlannedItems", reorderHandler(db))).Methods(http.MethodPost)
-		api.HandleFunc("/workouts/weeks/{weekStart}/items/{itemId}", rh("UpdatePlannedItem", updateItemHandler(db))).Methods(http.MethodPatch)
+		api.HandleFunc("/workouts/weeks/{weekStart}/copy", rihCopy("CopyWeek", copyHandler(db))).Methods(http.MethodPost)
+		api.HandleFunc("/workouts/weeks/{weekStart}/items/bulk", rihBulk("BulkAddPlannedItems", bulkAddHandler(db))).Methods(http.MethodPost)
+		api.HandleFunc("/workouts/weeks/{weekStart}/items/reorder", rihReorder("ReorderPlannedItems", reorderHandler(db))).Methods(http.MethodPost)
+		api.HandleFunc("/workouts/weeks/{weekStart}/items/{itemId}", rihUpdate("UpdatePlannedItem", updateItemHandler(db))).Methods(http.MethodPatch)
 		api.HandleFunc("/workouts/weeks/{weekStart}/items/{itemId}", rh("DeletePlannedItem", deleteItemHandler(db))).Methods(http.MethodDelete)
-		api.HandleFunc("/workouts/weeks/{weekStart}/items", rh("AddPlannedItem", addItemHandler(db))).Methods(http.MethodPost)
+		api.HandleFunc("/workouts/weeks/{weekStart}/items", rihAdd("AddPlannedItem", addItemHandler(db))).Methods(http.MethodPost)
 		api.HandleFunc("/workouts/weeks/{weekStart}", rh("GetWeek", getWeekHandler(db))).Methods(http.MethodGet)
-		api.HandleFunc("/workouts/weeks/{weekStart}", rh("PatchWeek", patchWeekHandler(db))).Methods(http.MethodPatch)
+		api.HandleFunc("/workouts/weeks/{weekStart}", rihPatchWeek("PatchWeek", patchWeekHandler(db))).Methods(http.MethodPatch)
 	}
 }
 
@@ -47,17 +54,17 @@ func parseItemID(r *http.Request) (uuid.UUID, error) {
 	return uuid.Parse(mux.Vars(r)["itemId"])
 }
 
-// renderWeek loads the week and its embedded items, marshals the JSON:API
-// document, and writes the response. Used by every mutation endpoint so the
-// client gets the post-update state in one round-trip.
-func renderWeek(w http.ResponseWriter, l logrus.FieldLogger, weekProc *week.Processor, weekModel week.Model, status int) {
-	items, err := AssembleItems(weekProc.DB(), weekModel.Id())
+// renderWeek loads a week's embedded items via the weekview processor and
+// writes the JSON:API envelope. Used by every mutation endpoint so the client
+// gets the post-update state in one round-trip.
+func renderWeek(w http.ResponseWriter, l logrus.FieldLogger, viewProc *Processor, weekModel week.Model, status int) {
+	doc, err := viewProc.LoadWeekDocument(weekModel)
 	if err != nil {
-		l.WithError(err).Error("Failed to assemble week items")
+		l.WithError(err).Error("Failed to load week document")
 		server.WriteError(w, http.StatusInternalServerError, "Error", "")
 		return
 	}
-	body, err := MarshalDocument(BuildDocument(weekModel, items))
+	body, err := MarshalDocument(doc)
 	if err != nil {
 		l.WithError(err).Error("Failed to marshal week document")
 		server.WriteError(w, http.StatusInternalServerError, "Error", "")
@@ -68,7 +75,11 @@ func renderWeek(w http.ResponseWriter, l logrus.FieldLogger, weekProc *week.Proc
 	_, _ = w.Write(body)
 }
 
-func ensureAndRender(w http.ResponseWriter, l logrus.FieldLogger, weekProc *week.Processor, tenantID, userID uuid.UUID, weekStart time.Time, status int) bool {
+// ensureAndRender lazily creates the week if missing, then renders the
+// post-update state. Mutation handlers call this after the underlying domain
+// processor has applied its change.
+func ensureAndRender(w http.ResponseWriter, l logrus.FieldLogger, db *gorm.DB, ctx context.Context, tenantID, userID uuid.UUID, weekStart time.Time, status int) bool {
+	weekProc := week.NewProcessor(l, ctx, db)
 	e, err := weekProc.EnsureExists(tenantID, userID, weekStart)
 	if err != nil {
 		l.WithError(err).Error("Failed to ensure week")
@@ -81,7 +92,8 @@ func ensureAndRender(w http.ResponseWriter, l logrus.FieldLogger, weekProc *week
 		server.WriteError(w, http.StatusInternalServerError, "Error", "")
 		return false
 	}
-	renderWeek(w, l, weekProc, m, status)
+	viewProc := NewProcessor(l, ctx, db)
+	renderWeek(w, l, viewProc, m, status)
 	return true
 }
 
@@ -105,13 +117,14 @@ func getWeekHandler(db *gorm.DB) server.GetHandler {
 				server.WriteError(w, http.StatusInternalServerError, "Error", "")
 				return
 			}
-			renderWeek(w, d.Logger(), weekProc, m, http.StatusOK)
+			viewProc := NewProcessor(d.Logger(), r.Context(), db)
+			renderWeek(w, d.Logger(), viewProc, m, http.StatusOK)
 		}
 	}
 }
 
-func patchWeekHandler(db *gorm.DB) server.GetHandler {
-	return func(d *server.HandlerDependency, c *server.HandlerContext) http.HandlerFunc {
+func patchWeekHandler(db *gorm.DB) server.InputHandler[PatchWeekRequest] {
+	return func(d *server.HandlerDependency, c *server.HandlerContext, input PatchWeekRequest) http.HandlerFunc {
 		return func(w http.ResponseWriter, r *http.Request) {
 			t := tenantctx.MustFromContext(r.Context())
 			weekStart, err := parseWeekStart(r)
@@ -119,24 +132,12 @@ func patchWeekHandler(db *gorm.DB) server.GetHandler {
 				server.WriteError(w, http.StatusBadRequest, "Invalid weekStart", "weekStart must be YYYY-MM-DD")
 				return
 			}
-			body, _ := io.ReadAll(r.Body)
-			var env struct {
-				Data struct {
-					Attributes struct {
-						RestDayFlags *[]int `json:"restDayFlags"`
-					} `json:"attributes"`
-				} `json:"data"`
-			}
-			if err := json.Unmarshal(body, &env); err != nil {
-				server.WriteError(w, http.StatusBadRequest, "Invalid Request", "Could not parse request body")
-				return
-			}
-			if env.Data.Attributes.RestDayFlags == nil {
+			if input.RestDayFlags == nil {
 				server.WriteError(w, http.StatusBadRequest, "Validation Failed", "restDayFlags is required")
 				return
 			}
 			weekProc := week.NewProcessor(d.Logger(), r.Context(), db)
-			m, err := weekProc.PatchRestDayFlags(t.Id(), t.UserId(), weekStart, *env.Data.Attributes.RestDayFlags)
+			m, err := weekProc.PatchRestDayFlags(t.Id(), t.UserId(), weekStart, *input.RestDayFlags)
 			if err != nil {
 				if errors.Is(err, week.ErrInvalidRestDay) {
 					server.WriteError(w, http.StatusBadRequest, "Validation Failed", err.Error())
@@ -146,64 +147,41 @@ func patchWeekHandler(db *gorm.DB) server.GetHandler {
 				server.WriteError(w, http.StatusInternalServerError, "Error", "")
 				return
 			}
-			renderWeek(w, d.Logger(), weekProc, m, http.StatusOK)
+			viewProc := NewProcessor(d.Logger(), r.Context(), db)
+			renderWeek(w, d.Logger(), viewProc, m, http.StatusOK)
 		}
 	}
 }
 
-// itemAttrs is the per-item create payload shared by single and bulk add.
-type itemAttrs struct {
-	ExerciseID uuid.UUID `json:"exerciseId"`
-	DayOfWeek  int       `json:"dayOfWeek"`
-	Position   *int      `json:"position,omitempty"`
-	Planned    *struct {
-		Sets            *int     `json:"sets"`
-		Reps            *int     `json:"reps"`
-		Weight          *float64 `json:"weight"`
-		WeightUnit      *string  `json:"weightUnit"`
-		DurationSeconds *int     `json:"durationSeconds"`
-		Distance        *float64 `json:"distance"`
-		DistanceUnit    *string  `json:"distanceUnit"`
-	} `json:"planned,omitempty"`
-	Notes *string `json:"notes,omitempty"`
-}
-
-func (a itemAttrs) toAddInput() planneditem.AddInput {
+// toAddInput projects a planned-item attrs payload onto the processor input.
+// Shared by single-add (AddPlannedItemRequest) and bulk-add (entries inside
+// BulkAddPlannedItemsRequest) so the projection lives in one place.
+func toAddInput(exerciseID uuid.UUID, dayOfWeek int, position *int, planned *PlannedAttrs, notes *string) planneditem.AddInput {
 	in := planneditem.AddInput{
-		ExerciseID: a.ExerciseID,
-		DayOfWeek:  a.DayOfWeek,
-		Position:   a.Position,
-		Notes:      a.Notes,
+		ExerciseID: exerciseID,
+		DayOfWeek:  dayOfWeek,
+		Position:   position,
+		Notes:      notes,
 	}
-	if a.Planned != nil {
-		in.PlannedSets = a.Planned.Sets
-		in.PlannedReps = a.Planned.Reps
-		in.PlannedWeight = a.Planned.Weight
-		in.PlannedWeightUnit = a.Planned.WeightUnit
-		in.PlannedDurationSeconds = a.Planned.DurationSeconds
-		in.PlannedDistance = a.Planned.Distance
-		in.PlannedDistanceUnit = a.Planned.DistanceUnit
+	if planned != nil {
+		in.PlannedSets = planned.Sets
+		in.PlannedReps = planned.Reps
+		in.PlannedWeight = planned.Weight
+		in.PlannedWeightUnit = planned.WeightUnit
+		in.PlannedDurationSeconds = planned.DurationSeconds
+		in.PlannedDistance = planned.Distance
+		in.PlannedDistanceUnit = planned.DistanceUnit
 	}
 	return in
 }
 
-func addItemHandler(db *gorm.DB) server.GetHandler {
-	return func(d *server.HandlerDependency, c *server.HandlerContext) http.HandlerFunc {
+func addItemHandler(db *gorm.DB) server.InputHandler[AddPlannedItemRequest] {
+	return func(d *server.HandlerDependency, c *server.HandlerContext, input AddPlannedItemRequest) http.HandlerFunc {
 		return func(w http.ResponseWriter, r *http.Request) {
 			t := tenantctx.MustFromContext(r.Context())
 			weekStart, err := parseWeekStart(r)
 			if err != nil {
 				server.WriteError(w, http.StatusBadRequest, "Invalid weekStart", "weekStart must be YYYY-MM-DD")
-				return
-			}
-			body, _ := io.ReadAll(r.Body)
-			var env struct {
-				Data struct {
-					Attributes itemAttrs `json:"attributes"`
-				} `json:"data"`
-			}
-			if err := json.Unmarshal(body, &env); err != nil {
-				server.WriteError(w, http.StatusBadRequest, "Invalid Request", "Could not parse request body")
 				return
 			}
 			weekProc := week.NewProcessor(d.Logger(), r.Context(), db)
@@ -213,35 +191,24 @@ func addItemHandler(db *gorm.DB) server.GetHandler {
 				server.WriteError(w, http.StatusInternalServerError, "Error", "")
 				return
 			}
+			in := toAddInput(input.ExerciseID, input.DayOfWeek, input.Position, input.Planned, input.Notes)
 			proc := planneditem.NewProcessor(d.Logger(), r.Context(), db)
-			if _, err := proc.Add(t.Id(), t.UserId(), weekEntity.Id, env.Data.Attributes.toAddInput()); err != nil {
+			if _, err := proc.Add(t.Id(), t.UserId(), weekEntity.Id, in); err != nil {
 				writePlannedItemError(w, d.Logger(), "Failed to add planned item", err)
 				return
 			}
-			ensureAndRender(w, d.Logger(), weekProc, t.Id(), t.UserId(), weekStart, http.StatusCreated)
+			ensureAndRender(w, d.Logger(), db, r.Context(), t.Id(), t.UserId(), weekStart, http.StatusCreated)
 		}
 	}
 }
 
-func bulkAddHandler(db *gorm.DB) server.GetHandler {
-	return func(d *server.HandlerDependency, c *server.HandlerContext) http.HandlerFunc {
+func bulkAddHandler(db *gorm.DB) server.InputHandler[BulkAddPlannedItemsRequest] {
+	return func(d *server.HandlerDependency, c *server.HandlerContext, input BulkAddPlannedItemsRequest) http.HandlerFunc {
 		return func(w http.ResponseWriter, r *http.Request) {
 			t := tenantctx.MustFromContext(r.Context())
 			weekStart, err := parseWeekStart(r)
 			if err != nil {
 				server.WriteError(w, http.StatusBadRequest, "Invalid weekStart", "weekStart must be YYYY-MM-DD")
-				return
-			}
-			body, _ := io.ReadAll(r.Body)
-			var env struct {
-				Data struct {
-					Attributes struct {
-						Items []itemAttrs `json:"items"`
-					} `json:"attributes"`
-				} `json:"data"`
-			}
-			if err := json.Unmarshal(body, &env); err != nil {
-				server.WriteError(w, http.StatusBadRequest, "Invalid Request", "Could not parse request body")
 				return
 			}
 			weekProc := week.NewProcessor(d.Logger(), r.Context(), db)
@@ -251,22 +218,22 @@ func bulkAddHandler(db *gorm.DB) server.GetHandler {
 				server.WriteError(w, http.StatusInternalServerError, "Error", "")
 				return
 			}
-			inputs := make([]planneditem.AddInput, 0, len(env.Data.Attributes.Items))
-			for _, a := range env.Data.Attributes.Items {
-				inputs = append(inputs, a.toAddInput())
+			inputs := make([]planneditem.AddInput, 0, len(input.Items))
+			for _, a := range input.Items {
+				inputs = append(inputs, toAddInput(a.ExerciseID, a.DayOfWeek, a.Position, a.Planned, a.Notes))
 			}
 			proc := planneditem.NewProcessor(d.Logger(), r.Context(), db)
 			if _, err := proc.BulkAdd(t.Id(), t.UserId(), weekEntity.Id, inputs); err != nil {
 				writePlannedItemError(w, d.Logger(), "Failed to bulk add planned items", err)
 				return
 			}
-			ensureAndRender(w, d.Logger(), weekProc, t.Id(), t.UserId(), weekStart, http.StatusCreated)
+			ensureAndRender(w, d.Logger(), db, r.Context(), t.Id(), t.UserId(), weekStart, http.StatusCreated)
 		}
 	}
 }
 
-func updateItemHandler(db *gorm.DB) server.GetHandler {
-	return func(d *server.HandlerDependency, c *server.HandlerContext) http.HandlerFunc {
+func updateItemHandler(db *gorm.DB) server.InputHandler[UpdatePlannedItemRequest] {
+	return func(d *server.HandlerDependency, c *server.HandlerContext, input UpdatePlannedItemRequest) http.HandlerFunc {
 		return func(w http.ResponseWriter, r *http.Request) {
 			t := tenantctx.MustFromContext(r.Context())
 			weekStart, err := parseWeekStart(r)
@@ -279,50 +246,26 @@ func updateItemHandler(db *gorm.DB) server.GetHandler {
 				server.WriteError(w, http.StatusBadRequest, "Invalid itemId", "itemId must be a UUID")
 				return
 			}
-			body, _ := io.ReadAll(r.Body)
-			var env struct {
-				Data struct {
-					Attributes struct {
-						DayOfWeek *int `json:"dayOfWeek,omitempty"`
-						Position  *int `json:"position,omitempty"`
-						Planned   *struct {
-							Sets            *int     `json:"sets"`
-							Reps            *int     `json:"reps"`
-							Weight          *float64 `json:"weight"`
-							WeightUnit      *string  `json:"weightUnit"`
-							DurationSeconds *int     `json:"durationSeconds"`
-							Distance        *float64 `json:"distance"`
-							DistanceUnit    *string  `json:"distanceUnit"`
-						} `json:"planned,omitempty"`
-						Notes *string `json:"notes,omitempty"`
-					} `json:"attributes"`
-				} `json:"data"`
-			}
-			if err := json.Unmarshal(body, &env); err != nil {
-				server.WriteError(w, http.StatusBadRequest, "Invalid Request", "Could not parse request body")
-				return
-			}
 			ui := planneditem.UpdateInput{
-				DayOfWeek: env.Data.Attributes.DayOfWeek,
-				Position:  env.Data.Attributes.Position,
-				Notes:     env.Data.Attributes.Notes,
+				DayOfWeek: input.DayOfWeek,
+				Position:  input.Position,
+				Notes:     input.Notes,
 			}
-			if env.Data.Attributes.Planned != nil {
-				ui.PlannedSets = env.Data.Attributes.Planned.Sets
-				ui.PlannedReps = env.Data.Attributes.Planned.Reps
-				ui.PlannedWeight = env.Data.Attributes.Planned.Weight
-				ui.PlannedWeightUnit = env.Data.Attributes.Planned.WeightUnit
-				ui.PlannedDurationSeconds = env.Data.Attributes.Planned.DurationSeconds
-				ui.PlannedDistance = env.Data.Attributes.Planned.Distance
-				ui.PlannedDistanceUnit = env.Data.Attributes.Planned.DistanceUnit
+			if input.Planned != nil {
+				ui.PlannedSets = input.Planned.Sets
+				ui.PlannedReps = input.Planned.Reps
+				ui.PlannedWeight = input.Planned.Weight
+				ui.PlannedWeightUnit = input.Planned.WeightUnit
+				ui.PlannedDurationSeconds = input.Planned.DurationSeconds
+				ui.PlannedDistance = input.Planned.Distance
+				ui.PlannedDistanceUnit = input.Planned.DistanceUnit
 			}
 			proc := planneditem.NewProcessor(d.Logger(), r.Context(), db)
 			if _, err := proc.Update(itemID, ui); err != nil {
 				writePlannedItemError(w, d.Logger(), "Failed to update planned item", err)
 				return
 			}
-			weekProc := week.NewProcessor(d.Logger(), r.Context(), db)
-			ensureAndRender(w, d.Logger(), weekProc, t.Id(), t.UserId(), weekStart, http.StatusOK)
+			ensureAndRender(w, d.Logger(), db, r.Context(), t.Id(), t.UserId(), weekStart, http.StatusOK)
 		}
 	}
 }
@@ -345,29 +288,13 @@ func deleteItemHandler(db *gorm.DB) server.GetHandler {
 	}
 }
 
-func reorderHandler(db *gorm.DB) server.GetHandler {
-	return func(d *server.HandlerDependency, c *server.HandlerContext) http.HandlerFunc {
+func reorderHandler(db *gorm.DB) server.InputHandler[ReorderPlannedItemsRequest] {
+	return func(d *server.HandlerDependency, c *server.HandlerContext, input ReorderPlannedItemsRequest) http.HandlerFunc {
 		return func(w http.ResponseWriter, r *http.Request) {
 			t := tenantctx.MustFromContext(r.Context())
 			weekStart, err := parseWeekStart(r)
 			if err != nil {
 				server.WriteError(w, http.StatusBadRequest, "Invalid weekStart", "weekStart must be YYYY-MM-DD")
-				return
-			}
-			body, _ := io.ReadAll(r.Body)
-			var env struct {
-				Data struct {
-					Attributes struct {
-						Items []struct {
-							ItemID    uuid.UUID `json:"itemId"`
-							DayOfWeek int       `json:"dayOfWeek"`
-							Position  int       `json:"position"`
-						} `json:"items"`
-					} `json:"attributes"`
-				} `json:"data"`
-			}
-			if err := json.Unmarshal(body, &env); err != nil {
-				server.WriteError(w, http.StatusBadRequest, "Invalid Request", "Could not parse request body")
 				return
 			}
 			weekProc := week.NewProcessor(d.Logger(), r.Context(), db)
@@ -377,8 +304,8 @@ func reorderHandler(db *gorm.DB) server.GetHandler {
 				server.WriteError(w, http.StatusInternalServerError, "Error", "")
 				return
 			}
-			entries := make([]planneditem.ReorderEntry, 0, len(env.Data.Attributes.Items))
-			for _, it := range env.Data.Attributes.Items {
+			entries := make([]planneditem.ReorderEntry, 0, len(input.Items))
+			for _, it := range input.Items {
 				entries = append(entries, planneditem.ReorderEntry{
 					ItemID:    it.ItemID,
 					DayOfWeek: it.DayOfWeek,
@@ -390,7 +317,37 @@ func reorderHandler(db *gorm.DB) server.GetHandler {
 				writePlannedItemError(w, d.Logger(), "Failed to reorder planned items", err)
 				return
 			}
-			ensureAndRender(w, d.Logger(), weekProc, t.Id(), t.UserId(), weekStart, http.StatusOK)
+			ensureAndRender(w, d.Logger(), db, r.Context(), t.Id(), t.UserId(), weekStart, http.StatusOK)
+		}
+	}
+}
+
+func copyHandler(db *gorm.DB) server.InputHandler[CopyWeekRequest] {
+	return func(d *server.HandlerDependency, c *server.HandlerContext, input CopyWeekRequest) http.HandlerFunc {
+		return func(w http.ResponseWriter, r *http.Request) {
+			t := tenantctx.MustFromContext(r.Context())
+			weekStart, err := parseWeekStart(r)
+			if err != nil {
+				server.WriteError(w, http.StatusBadRequest, "Invalid weekStart", "weekStart must be YYYY-MM-DD")
+				return
+			}
+			viewProc := NewProcessor(d.Logger(), r.Context(), db)
+			created, err := viewProc.Copy(t.Id(), t.UserId(), weekStart, input.Mode)
+			if err != nil {
+				switch {
+				case errors.Is(err, ErrInvalidCopyMode):
+					server.WriteError(w, http.StatusBadRequest, "Validation Failed", err.Error())
+				case errors.Is(err, ErrCopyTargetNotEmpty):
+					server.WriteError(w, http.StatusConflict, "Conflict", err.Error())
+				case errors.Is(err, ErrCopyNoSource):
+					server.WriteError(w, http.StatusNotFound, "Not Found", err.Error())
+				default:
+					d.Logger().WithError(err).Error("Failed to copy week")
+					server.WriteError(w, http.StatusInternalServerError, "Error", "")
+				}
+				return
+			}
+			renderWeek(w, d.Logger(), viewProc, created, http.StatusCreated)
 		}
 	}
 }

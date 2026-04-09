@@ -3,6 +3,7 @@ package planneditem
 import (
 	"context"
 	"errors"
+	"time"
 
 	"github.com/google/uuid"
 	"github.com/jtumidanski/home-hub/services/workout-service/internal/exercise"
@@ -242,9 +243,12 @@ type ReorderEntry struct {
 }
 
 // Reorder applies a list of (itemId → day, position) updates atomically. Used
-// by the drag-and-drop weekly planner.
+// by the drag-and-drop weekly planner. The new updated_at timestamp is
+// computed in Go so the same query works under both Postgres and the
+// sqlite-backed test harness.
 func (p *Processor) Reorder(weekID uuid.UUID, entries []ReorderEntry) error {
 	return p.db.WithContext(p.ctx).Transaction(func(tx *gorm.DB) error {
+		now := time.Now().UTC()
 		for _, r := range entries {
 			if r.DayOfWeek < 0 || r.DayOfWeek > 6 {
 				return ErrInvalidDayOfWeek
@@ -257,7 +261,7 @@ func (p *Processor) Reorder(weekID uuid.UUID, entries []ReorderEntry) error {
 				Updates(map[string]any{
 					"day_of_week": r.DayOfWeek,
 					"position":    r.Position,
-					"updated_at":  gorm.Expr("NOW()"),
+					"updated_at":  now,
 				})
 			if res.Error != nil {
 				return res.Error

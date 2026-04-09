@@ -91,3 +91,151 @@ type attributes struct {
 func MarshalDocument(doc Document) ([]byte, error) {
 	return json.Marshal(doc)
 }
+
+// --- request types --------------------------------------------------------
+//
+// All request structs implement the JSON:API EntityNamer + UnmarshalIdentifier
+// interfaces so `server.RegisterInputHandler[T]` can deserialize them
+// directly. The api2go layer strips the `{data: {type, id, attributes}}`
+// envelope and json-unmarshals the attributes into the struct, so request
+// payloads can be modeled as flat structs.
+
+// PatchWeekRequest is the body of `PATCH /workouts/weeks/{weekStart}`. Only
+// `restDayFlags` is patchable today; the field is a pointer so we can detect
+// "field omitted" vs "explicit empty array" — both meaningful.
+type PatchWeekRequest struct {
+	Id           uuid.UUID `json:"-"`
+	RestDayFlags *[]int    `json:"restDayFlags,omitempty"`
+}
+
+func (r PatchWeekRequest) GetName() string { return "weeks" }
+func (r PatchWeekRequest) GetID() string   { return r.Id.String() }
+func (r *PatchWeekRequest) SetID(id string) error {
+	if id == "" {
+		return nil
+	}
+	var err error
+	r.Id, err = uuid.Parse(id)
+	return err
+}
+
+// CopyWeekRequest is the body of `POST /workouts/weeks/{weekStart}/copy`.
+type CopyWeekRequest struct {
+	Id   uuid.UUID `json:"-"`
+	Mode string    `json:"mode"`
+}
+
+func (r CopyWeekRequest) GetName() string { return "weeks" }
+func (r CopyWeekRequest) GetID() string   { return r.Id.String() }
+func (r *CopyWeekRequest) SetID(id string) error {
+	if id == "" {
+		return nil
+	}
+	var err error
+	r.Id, err = uuid.Parse(id)
+	return err
+}
+
+// PlannedAttrs is the kind-shaped planned-values payload shared by add and
+// update requests. Pointer fields preserve "omitted vs explicit value".
+type PlannedAttrs struct {
+	Sets            *int     `json:"sets,omitempty"`
+	Reps            *int     `json:"reps,omitempty"`
+	Weight          *float64 `json:"weight,omitempty"`
+	WeightUnit      *string  `json:"weightUnit,omitempty"`
+	DurationSeconds *int     `json:"durationSeconds,omitempty"`
+	Distance        *float64 `json:"distance,omitempty"`
+	DistanceUnit    *string  `json:"distanceUnit,omitempty"`
+}
+
+// AddPlannedItemRequest is the body of `POST /weeks/{weekStart}/items`.
+type AddPlannedItemRequest struct {
+	Id         uuid.UUID     `json:"-"`
+	ExerciseID uuid.UUID     `json:"exerciseId"`
+	DayOfWeek  int           `json:"dayOfWeek"`
+	Position   *int          `json:"position,omitempty"`
+	Planned    *PlannedAttrs `json:"planned,omitempty"`
+	Notes      *string       `json:"notes,omitempty"`
+}
+
+func (r AddPlannedItemRequest) GetName() string { return "planned-items" }
+func (r AddPlannedItemRequest) GetID() string   { return r.Id.String() }
+func (r *AddPlannedItemRequest) SetID(id string) error {
+	if id == "" {
+		return nil
+	}
+	var err error
+	r.Id, err = uuid.Parse(id)
+	return err
+}
+
+// BulkAddPlannedItemsRequest is the body of `POST /weeks/{weekStart}/items/bulk`.
+// Each item shares the same shape as the single-add request.
+type BulkAddPlannedItemsRequest struct {
+	Id    uuid.UUID                 `json:"-"`
+	Items []BulkAddPlannedItemEntry `json:"items"`
+}
+
+// BulkAddPlannedItemEntry is one row in a bulk-add request.
+type BulkAddPlannedItemEntry struct {
+	ExerciseID uuid.UUID     `json:"exerciseId"`
+	DayOfWeek  int           `json:"dayOfWeek"`
+	Position   *int          `json:"position,omitempty"`
+	Planned    *PlannedAttrs `json:"planned,omitempty"`
+	Notes      *string       `json:"notes,omitempty"`
+}
+
+func (r BulkAddPlannedItemsRequest) GetName() string { return "planned-items" }
+func (r BulkAddPlannedItemsRequest) GetID() string   { return r.Id.String() }
+func (r *BulkAddPlannedItemsRequest) SetID(id string) error {
+	if id == "" {
+		return nil
+	}
+	var err error
+	r.Id, err = uuid.Parse(id)
+	return err
+}
+
+// UpdatePlannedItemRequest is the body of `PATCH /weeks/{weekStart}/items/{itemId}`.
+type UpdatePlannedItemRequest struct {
+	Id        uuid.UUID     `json:"-"`
+	DayOfWeek *int          `json:"dayOfWeek,omitempty"`
+	Position  *int          `json:"position,omitempty"`
+	Planned   *PlannedAttrs `json:"planned,omitempty"`
+	Notes     *string       `json:"notes,omitempty"`
+}
+
+func (r UpdatePlannedItemRequest) GetName() string { return "planned-items" }
+func (r UpdatePlannedItemRequest) GetID() string   { return r.Id.String() }
+func (r *UpdatePlannedItemRequest) SetID(id string) error {
+	if id == "" {
+		return nil
+	}
+	var err error
+	r.Id, err = uuid.Parse(id)
+	return err
+}
+
+// ReorderPlannedItemEntry is one row in the reorder request payload.
+type ReorderPlannedItemEntry struct {
+	ItemID    uuid.UUID `json:"itemId"`
+	DayOfWeek int       `json:"dayOfWeek"`
+	Position  int       `json:"position"`
+}
+
+// ReorderPlannedItemsRequest is the body of `POST /weeks/{weekStart}/items/reorder`.
+type ReorderPlannedItemsRequest struct {
+	Id    uuid.UUID                 `json:"-"`
+	Items []ReorderPlannedItemEntry `json:"items"`
+}
+
+func (r ReorderPlannedItemsRequest) GetName() string { return "planned-items" }
+func (r ReorderPlannedItemsRequest) GetID() string   { return r.Id.String() }
+func (r *ReorderPlannedItemsRequest) SetID(id string) error {
+	if id == "" {
+		return nil
+	}
+	var err error
+	r.Id, err = uuid.Parse(id)
+	return err
+}

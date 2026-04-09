@@ -157,6 +157,16 @@ class WorkoutService extends BaseService {
     this.setTenant(tenant);
     return api.delete(`/workouts/weeks/${weekStart}/items/${itemId}`);
   }
+  reorderPlannedItems(
+    tenant: { id: string },
+    weekStart: string,
+    items: Array<{ itemId: string; dayOfWeek: number; position: number }>
+  ): Promise<WeekDocument> {
+    this.setTenant(tenant);
+    return api.post<WeekDocument>(`/workouts/weeks/${weekStart}/items/reorder`, {
+      data: { type: "planned-items", attributes: { items } },
+    });
+  }
 
   // --- performance -----------------------------------------------------------
 

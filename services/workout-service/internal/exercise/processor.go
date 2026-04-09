@@ -128,7 +128,10 @@ func (p *Processor) Create(tenantID, userID uuid.UUID, in CreateInput) (Model, e
 		return Model{}, ErrDuplicateName
 	}
 
-	secondaryJSON, _ := json.Marshal(uuidsToStrings(in.SecondaryRegionIDs))
+	secondaryJSON, err := json.Marshal(uuidsToStrings(in.SecondaryRegionIDs))
+	if err != nil {
+		return Model{}, err
+	}
 	e := Entity{
 		TenantId:               tenantID,
 		UserId:                 userID,
@@ -173,29 +176,34 @@ func (p *Processor) Update(id uuid.UUID, in UpdateInput) (Model, error) {
 		e.Name = trimmed
 	}
 	if in.ThemeID != nil {
-		if _, err := theme.GetByID(*in.ThemeID)(p.db.WithContext(p.ctx))(); err != nil {
-			return Model{}, ErrThemeNotFound
-		}
 		e.ThemeId = *in.ThemeID
 	}
 	if in.RegionID != nil {
-		if _, err := region.GetByID(*in.RegionID)(p.db.WithContext(p.ctx))(); err != nil {
-			return Model{}, ErrRegionNotFound
-		}
 		e.RegionId = *in.RegionID
 	}
 	if in.SecondaryRegionIDs != nil {
-		// Validate all secondary regions exist and the primary is not among them.
+		// Reject the primary appearing in the secondary list before doing any
+		// DB lookups; checkReferences will validate ownership of every region.
 		for _, sid := range *in.SecondaryRegionIDs {
 			if sid == e.RegionId {
 				return Model{}, ErrPrimaryInSecondary
 			}
-			if _, err := region.GetByID(sid)(p.db.WithContext(p.ctx))(); err != nil {
-				return Model{}, ErrSecondaryNotFound
-			}
 		}
-		j, _ := json.Marshal(uuidsToStrings(*in.SecondaryRegionIDs))
+		j, err := json.Marshal(uuidsToStrings(*in.SecondaryRegionIDs))
+		if err != nil {
+			return Model{}, err
+		}
 		e.SecondaryRegionIds = j
+	}
+
+	// Re-validate theme/region ownership against the merged state. Ownership
+	// is checked in one place so a future change to checkReferences (e.g.
+	// soft-delete handling) covers Update too.
+	if in.ThemeID != nil || in.RegionID != nil || in.SecondaryRegionIDs != nil {
+		secondary := uuidsFromJSON(e.SecondaryRegionIds)
+		if err := p.checkReferences(e.UserId, e.ThemeId, e.RegionId, secondary); err != nil {
+			return Model{}, err
+		}
 	}
 	if in.Defaults != nil {
 		// Round-trip the merged entity through the builder so all defaults-shape

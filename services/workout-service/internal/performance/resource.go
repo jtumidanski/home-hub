@@ -3,7 +3,6 @@ package performance
 import (
 	"encoding/json"
 	"errors"
-	"io"
 	"net/http"
 
 	"github.com/google/uuid"
@@ -15,11 +14,17 @@ import (
 	"gorm.io/gorm"
 )
 
+// InitializeRoutes mounts the performance write endpoints. PATCH and PUT use
+// `RegisterInputHandler[T]` so api2go handles the JSON:API envelope; DELETE
+// has no body so it stays on the GET handler signature.
 func InitializeRoutes(db *gorm.DB) func(l logrus.FieldLogger, si jsonapi.ServerInformation, api *mux.Router) {
 	return func(l logrus.FieldLogger, si jsonapi.ServerInformation, api *mux.Router) {
 		rh := server.RegisterHandler(l)(si)
-		api.HandleFunc("/workouts/weeks/{weekStart}/items/{itemId}/performance", rh("PatchPerformance", patchHandler(db))).Methods(http.MethodPatch)
-		api.HandleFunc("/workouts/weeks/{weekStart}/items/{itemId}/performance/sets", rh("PutPerformanceSets", putSetsHandler(db))).Methods(http.MethodPut)
+		rihPatch := server.RegisterInputHandler[PatchPerformanceRequest](l)(si)
+		rihPutSets := server.RegisterInputHandler[PutPerformanceSetsRequest](l)(si)
+
+		api.HandleFunc("/workouts/weeks/{weekStart}/items/{itemId}/performance", rihPatch("PatchPerformance", patchHandler(db))).Methods(http.MethodPatch)
+		api.HandleFunc("/workouts/weeks/{weekStart}/items/{itemId}/performance/sets", rihPutSets("PutPerformanceSets", putSetsHandler(db))).Methods(http.MethodPut)
 		api.HandleFunc("/workouts/weeks/{weekStart}/items/{itemId}/performance/sets", rh("DeletePerformanceSets", deleteSetsHandler(db))).Methods(http.MethodDelete)
 	}
 }
@@ -29,12 +34,12 @@ func parseItemID(r *http.Request) (uuid.UUID, error) {
 }
 
 type performanceRest struct {
-	Status     string                `json:"status"`
-	Mode       string                `json:"mode"`
-	WeightUnit *string               `json:"weightUnit,omitempty"`
-	Actuals    *actualsRest          `json:"actuals,omitempty"`
-	Sets       []setRest             `json:"sets,omitempty"`
-	Notes      *string               `json:"notes,omitempty"`
+	Status     string       `json:"status"`
+	Mode       string       `json:"mode"`
+	WeightUnit *string      `json:"weightUnit,omitempty"`
+	Actuals    *actualsRest `json:"actuals,omitempty"`
+	Sets       []setRest    `json:"sets,omitempty"`
+	Notes      *string      `json:"notes,omitempty"`
 }
 
 type actualsRest struct {
@@ -110,8 +115,8 @@ func writePerformanceError(w http.ResponseWriter, l logrus.FieldLogger, op strin
 	}
 }
 
-func patchHandler(db *gorm.DB) server.GetHandler {
-	return func(d *server.HandlerDependency, c *server.HandlerContext) http.HandlerFunc {
+func patchHandler(db *gorm.DB) server.InputHandler[PatchPerformanceRequest] {
+	return func(d *server.HandlerDependency, c *server.HandlerContext, input PatchPerformanceRequest) http.HandlerFunc {
 		return func(w http.ResponseWriter, r *http.Request) {
 			t := tenantctx.MustFromContext(r.Context())
 			itemID, err := parseItemID(r)
@@ -119,41 +124,19 @@ func patchHandler(db *gorm.DB) server.GetHandler {
 				server.WriteError(w, http.StatusBadRequest, "Invalid itemId", "itemId must be a UUID")
 				return
 			}
-			body, _ := io.ReadAll(r.Body)
-			var env struct {
-				Data struct {
-					Attributes struct {
-						Status     *string `json:"status,omitempty"`
-						WeightUnit *string `json:"weightUnit,omitempty"`
-						Actuals    *struct {
-							Sets            *int     `json:"sets,omitempty"`
-							Reps            *int     `json:"reps,omitempty"`
-							Weight          *float64 `json:"weight,omitempty"`
-							DurationSeconds *int     `json:"durationSeconds,omitempty"`
-							Distance        *float64 `json:"distance,omitempty"`
-							DistanceUnit    *string  `json:"distanceUnit,omitempty"`
-						} `json:"actuals,omitempty"`
-						Notes *string `json:"notes,omitempty"`
-					} `json:"attributes"`
-				} `json:"data"`
-			}
-			if err := json.Unmarshal(body, &env); err != nil {
-				server.WriteError(w, http.StatusBadRequest, "Invalid Request", "Could not parse request body")
-				return
-			}
 
 			in := PatchInput{
-				Status:     env.Data.Attributes.Status,
-				WeightUnit: env.Data.Attributes.WeightUnit,
-				Notes:      env.Data.Attributes.Notes,
+				Status:     input.Status,
+				WeightUnit: input.WeightUnit,
+				Notes:      input.Notes,
 			}
-			if env.Data.Attributes.Actuals != nil {
-				in.ActualSets = env.Data.Attributes.Actuals.Sets
-				in.ActualReps = env.Data.Attributes.Actuals.Reps
-				in.ActualWeight = env.Data.Attributes.Actuals.Weight
-				in.ActualDurationSeconds = env.Data.Attributes.Actuals.DurationSeconds
-				in.ActualDistance = env.Data.Attributes.Actuals.Distance
-				in.ActualDistanceUnit = env.Data.Attributes.Actuals.DistanceUnit
+			if input.Actuals != nil {
+				in.ActualSets = input.Actuals.Sets
+				in.ActualReps = input.Actuals.Reps
+				in.ActualWeight = input.Actuals.Weight
+				in.ActualDurationSeconds = input.Actuals.DurationSeconds
+				in.ActualDistance = input.Actuals.Distance
+				in.ActualDistanceUnit = input.Actuals.DistanceUnit
 			}
 
 			proc := NewProcessor(d.Logger(), r.Context(), db)
@@ -167,8 +150,8 @@ func patchHandler(db *gorm.DB) server.GetHandler {
 	}
 }
 
-func putSetsHandler(db *gorm.DB) server.GetHandler {
-	return func(d *server.HandlerDependency, c *server.HandlerContext) http.HandlerFunc {
+func putSetsHandler(db *gorm.DB) server.InputHandler[PutPerformanceSetsRequest] {
+	return func(d *server.HandlerDependency, c *server.HandlerContext, input PutPerformanceSetsRequest) http.HandlerFunc {
 		return func(w http.ResponseWriter, r *http.Request) {
 			t := tenantctx.MustFromContext(r.Context())
 			itemID, err := parseItemID(r)
@@ -176,28 +159,12 @@ func putSetsHandler(db *gorm.DB) server.GetHandler {
 				server.WriteError(w, http.StatusBadRequest, "Invalid itemId", "itemId must be a UUID")
 				return
 			}
-			body, _ := io.ReadAll(r.Body)
-			var env struct {
-				Data struct {
-					Attributes struct {
-						WeightUnit string `json:"weightUnit"`
-						Sets       []struct {
-							Reps   int     `json:"reps"`
-							Weight float64 `json:"weight"`
-						} `json:"sets"`
-					} `json:"attributes"`
-				} `json:"data"`
-			}
-			if err := json.Unmarshal(body, &env); err != nil {
-				server.WriteError(w, http.StatusBadRequest, "Invalid Request", "Could not parse request body")
-				return
-			}
-			inputs := make([]SetInput, len(env.Data.Attributes.Sets))
-			for i, s := range env.Data.Attributes.Sets {
+			inputs := make([]SetInput, len(input.Sets))
+			for i, s := range input.Sets {
 				inputs[i] = SetInput{Reps: s.Reps, Weight: s.Weight}
 			}
 			proc := NewProcessor(d.Logger(), r.Context(), db)
-			m, sets, err := proc.ReplaceSets(t.Id(), t.UserId(), itemID, env.Data.Attributes.WeightUnit, inputs)
+			m, sets, err := proc.ReplaceSets(t.Id(), t.UserId(), itemID, input.WeightUnit, inputs)
 			if err != nil {
 				writePerformanceError(w, d.Logger(), "Failed to replace performance sets", err)
 				return

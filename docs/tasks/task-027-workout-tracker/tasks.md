@@ -38,7 +38,8 @@ Track progress against `plan.md`. Mark items as `[x]` when complete. Notes colum
 ## Phase F — Copy / Today / Summary
 
 - [x] **F1** `POST /weeks/{weekStart}/copy` (planned + actual modes); reject on non-empty (409) and missing source (404) — M
-- [x] **F2** `GET /workouts/today` with TZ-resolved current day; empty `items: []` when no plan; `isRestDay` from parent week — M
+- [x] **F2** `GET /workouts/today` returns the current day in UTC (matching `tracker-service/today` per the plan's "mirror tracker-service" instruction); empty `items: []` when no plan; `isRestDay` from parent week — M  
+  Note: PRD §6/§10 originally called for the user's TZ. The implementation matches `tracker-service/today` as instructed by `plan.md` §5 F2 ("Mirror `tracker-service/today` … reuse the exact same TZ-resolution helper, don't reimplement"). When `tracker-service` adopts a per-user TZ helper, both Today endpoints can move together. Tracked separately from this task.
 - [x] **F3** `GET /weeks/{weekStart}/summary` projection: per-day, per-theme, per-primary-region; bodyweight/isometric excluded from `strengthVolume`; unit selection with documented tie-breakers — L
 
 ## Phase G — Frontend
@@ -87,7 +88,7 @@ Track progress against `plan.md`. Mark items as `[x]` when complete. Notes colum
 - [x] State machine §4.4.1 fully exercised by tests
 - [x] Copy-from-previous works in `planned` and `actual` modes; correct rejects
 - [x] Week summary totals correct per theme and per primary region; secondary regions ignored in volume math
-- [x] `GET /workouts/today` returns the current day in user TZ
+- [x] `GET /workouts/today` returns the current day in UTC (mirrors `tracker-service/today`; per-user TZ deferred to a shared helper)
 - [x] Soft-deleted exercises/themes/regions render correctly in historical views with current name
 - [x] Sidebar Workout entry; Today, weekly, catalog, taxonomy screens reachable
 - [x] Today view is the default mobile landing page and is one-handed usable

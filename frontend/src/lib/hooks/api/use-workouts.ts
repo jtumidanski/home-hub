@@ -256,6 +256,27 @@ export function useDeletePlannedItem() {
   });
 }
 
+// useReorderPlannedItems wires the DnD planner to POST /items/reorder. The
+// caller supplies the full ordered list for the affected day(s); the server
+// applies it atomically and returns the post-reorder week document.
+export function useReorderPlannedItems() {
+  const qc = useQueryClient();
+  const { tenant, household } = useTenant();
+  return useMutation({
+    mutationFn: ({
+      weekStart,
+      items,
+    }: {
+      weekStart: string;
+      items: Array<{ itemId: string; dayOfWeek: number; position: number }>;
+    }) => workoutService.reorderPlannedItems(tenant!, weekStart, items),
+    onSuccess: (_data, vars) => {
+      qc.invalidateQueries({ queryKey: workoutKeys.week(tenant, household, vars.weekStart) });
+      qc.invalidateQueries({ queryKey: workoutKeys.today(tenant, household) });
+    },
+  });
+}
+
 export function usePatchPerformance() {
   const qc = useQueryClient();
   const { tenant, household } = useTenant();
