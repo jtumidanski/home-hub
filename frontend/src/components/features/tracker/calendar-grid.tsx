@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Card, CardContent } from "@/components/ui/card";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -117,7 +118,18 @@ export function CalendarGrid({ month, onMonthChange, onViewReport }: Props) {
         </div>
       )}
 
-      <div className="overflow-x-auto">
+      <div className="md:hidden">
+        <MobileDayView
+          month={month}
+          items={sortedItems}
+          entryMap={entryMap}
+          putEntry={putEntry}
+          deleteEntry={deleteEntry}
+          skipEntry={skipEntry}
+        />
+      </div>
+
+      <div className="hidden md:block overflow-x-auto">
         <table className="w-full text-xs border-collapse">
           <thead>
             <tr>
@@ -174,6 +186,97 @@ export function CalendarGrid({ month, onMonthChange, onViewReport }: Props) {
       {sortedItems.length === 0 && (
         <p className="text-muted-foreground text-sm text-center py-8">No tracking items. Add items in Settings to get started.</p>
       )}
+    </div>
+  );
+}
+
+function MobileDayView({ month, items, entryMap, putEntry, deleteEntry, skipEntry }: {
+  month: string;
+  items: MonthItemInfo[];
+  entryMap: Map<string, TrackerEntry>;
+  putEntry: ReturnType<typeof usePutEntry>;
+  deleteEntry: ReturnType<typeof useDeleteEntry>;
+  skipEntry: ReturnType<typeof useSkipEntry>;
+}) {
+  const today = new Date().toISOString().slice(0, 10);
+  const daysInMonth = getDaysInMonth(month);
+  const [y, m] = splitMonth(month);
+  const monthKey = `${y}-${m}`;
+  const isCurrentMonth = monthKey === today.slice(0, 7);
+  const initialDay = isCurrentMonth ? parseInt(today.slice(8, 10)) : 1;
+
+  const [selectedDay, setSelectedDay] = useState<number>(initialDay);
+
+  useEffect(() => {
+    setSelectedDay(isCurrentMonth ? parseInt(today.slice(8, 10)) : 1);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [month]);
+
+  const dayStr = String(selectedDay).padStart(2, "0");
+  const dateStr = `${y}-${m}-${dayStr}`;
+  const isFuture = dateStr > today;
+  const dateLabel = new Date(dateStr + "T12:00:00").toLocaleDateString("en-US", {
+    weekday: "long", month: "short", day: "numeric",
+  });
+
+  const visibleItems = items.filter((item) => {
+    const scheduled = isScheduledDay(selectedDay, month, item);
+    const entry = entryMap.get(`${item.id}:${dateStr}`);
+    return scheduled || entry;
+  });
+
+  return (
+    <div className="space-y-3">
+      <div className="flex items-center justify-between gap-2">
+        <Button variant="ghost" size="icon" onClick={() => setSelectedDay((d) => Math.max(1, d - 1))} disabled={selectedDay <= 1}>
+          <ChevronLeft className="h-4 w-4" />
+        </Button>
+        <p className="text-sm font-medium flex-1 text-center">{dateLabel}</p>
+        <Button variant="ghost" size="icon" onClick={() => setSelectedDay((d) => Math.min(daysInMonth, d + 1))} disabled={selectedDay >= daysInMonth}>
+          <ChevronRight className="h-4 w-4" />
+        </Button>
+      </div>
+
+      {visibleItems.length === 0 && (
+        <p className="text-muted-foreground text-sm text-center py-4">Nothing scheduled for this day.</p>
+      )}
+
+      {visibleItems.map((item) => {
+        const scheduled = isScheduledDay(selectedDay, month, item);
+        const entry = entryMap.get(`${item.id}:${dateStr}`);
+        const entryAttrs = entry?.attributes ?? (entry as unknown as TrackerEntry["attributes"]);
+        const hasValue = entryAttrs && !entryAttrs.skipped && entryAttrs.value;
+        const isSkipped = entryAttrs?.skipped;
+
+        return (
+          <Card key={item.id}>
+            <CardContent className="py-3 px-4 space-y-2">
+              <div className="flex items-center gap-2">
+                <span className={cn("w-3 h-3 rounded-full", colorBg[item.color]?.replace("100", "500").replace("950", "500"))} />
+                <span className="font-medium text-sm">{item.name}</span>
+                {hasValue && <span className="text-xs text-green-600 ml-auto">logged</span>}
+                {isSkipped && <span className="text-xs text-muted-foreground ml-auto">skipped</span>}
+              </div>
+              {isFuture ? (
+                <p className="text-xs text-muted-foreground">{scheduled ? "Scheduled — log on the day." : ""}</p>
+              ) : (
+                <CellEditor
+                  itemId={item.id}
+                  date={dateStr}
+                  scaleType={item.scale_type}
+                  scaleConfig={item.scale_config}
+                  scheduled={scheduled}
+                  entry={entryAttrs}
+                  putEntry={putEntry}
+                  deleteEntry={deleteEntry}
+                  skipEntry={skipEntry}
+                  onDone={() => {}}
+                />
+              )}
+            </CardContent>
+          </Card>
+        );
+      })}
     </div>
   );
 }

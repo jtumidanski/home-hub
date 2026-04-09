@@ -35,7 +35,7 @@ export function MonthReport({ month, onBackToCalendar }: Props) {
         <Button variant="outline" size="sm" onClick={onBackToCalendar}>Calendar</Button>
       </div>
 
-      <div className="grid grid-cols-2 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         <Card>
           <CardContent className="pt-4 text-center">
             <p className="text-2xl font-bold">{Math.round(report.summary.completion_rate * 100)}%</p>
@@ -91,7 +91,7 @@ function SentimentCard({ item }: { item: ReportItem }) {
             <div className="bg-red-500 transition-all" style={{ width: `${(stats.negative / total) * 100}%` }} />
           </>}
         </div>
-        <div className="flex gap-4 text-xs text-muted-foreground">
+        <div className="flex flex-wrap gap-x-4 gap-y-1 text-xs text-muted-foreground">
           <span>+ {stats.positive}</span>
           <span>~ {stats.neutral}</span>
           <span>- {stats.negative}</span>
@@ -111,7 +111,7 @@ function NumericCard({ item }: { item: ReportItem }) {
         <CardTitle className="text-sm">{item.name}</CardTitle>
       </CardHeader>
       <CardContent className="py-2 px-4 space-y-2">
-        <div className="flex gap-4 text-sm">
+        <div className="flex flex-wrap gap-x-4 gap-y-1 text-sm">
           <span>Total: <strong>{stats.total}</strong></span>
           <span>Avg: <strong>{stats.daily_average}</strong>/day</span>
           <span>{Math.round(stats.days_with_entries_above_zero_pct * 100)}% days &gt;0</span>
@@ -121,7 +121,7 @@ function NumericCard({ item }: { item: ReportItem }) {
             <div key={i} className="flex-1 bg-primary/60 rounded-t" style={{ height: `${maxVal > 0 ? (dv.count / maxVal) * 100 : 0}%`, minHeight: dv.count > 0 ? "2px" : "0" }} />
           ))}
         </div>
-        <div className="flex gap-4 text-xs text-muted-foreground">
+        <div className="flex flex-wrap gap-x-4 gap-y-1 text-xs text-muted-foreground">
           {stats.min && <span>Min: {stats.min.count} ({new Date(stats.min.date + "T12:00:00").toLocaleDateString("en-US", { month: "short", day: "numeric" })})</span>}
           {stats.max && <span>Max: {stats.max.count} ({new Date(stats.max.date + "T12:00:00").toLocaleDateString("en-US", { month: "short", day: "numeric" })})</span>}
         </div>
@@ -138,7 +138,7 @@ function RangeCard({ item }: { item: ReportItem }) {
         <CardTitle className="text-sm">{item.name}</CardTitle>
       </CardHeader>
       <CardContent className="py-2 px-4 space-y-2">
-        <div className="flex gap-4 text-sm">
+        <div className="flex flex-wrap gap-x-4 gap-y-1 text-sm">
           <span>Avg: <strong>{stats.average}</strong></span>
           <span>Std Dev: <strong>{stats.std_dev}</strong></span>
         </div>
@@ -152,7 +152,7 @@ function RangeCard({ item }: { item: ReportItem }) {
             );
           })}
         </div>
-        <div className="flex gap-4 text-xs text-muted-foreground">
+        <div className="flex flex-wrap gap-x-4 gap-y-1 text-xs text-muted-foreground">
           {stats.min && <span>Min: {stats.min.value} ({new Date(stats.min.date + "T12:00:00").toLocaleDateString("en-US", { month: "short", day: "numeric" })})</span>}
           {stats.max && <span>Max: {stats.max.value} ({new Date(stats.max.date + "T12:00:00").toLocaleDateString("en-US", { month: "short", day: "numeric" })})</span>}
         </div>

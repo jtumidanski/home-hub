@@ -17,8 +17,13 @@ export function TrackerPage() {
   const [view, setView] = useState<View>("today");
   const [month, setMonth] = useState(getCurrentMonth);
 
+  const widthClass =
+    view === "calendar" ? "max-w-none" :
+    view === "report" ? "max-w-6xl" :
+    "max-w-3xl";
+
   return (
-    <div className="container max-w-5xl mx-auto py-4 px-4 space-y-4">
+    <div className={`mx-auto py-4 px-4 space-y-4 ${widthClass}`}>
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-bold">Tracker</h1>
         <div className="flex gap-1">
