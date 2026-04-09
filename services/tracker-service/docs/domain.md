@@ -40,15 +40,16 @@ All fields on Model are immutable after construction. Access is through getter m
 
 **Processor** (`trackingitem.Processor`)
 
-| Method                                                | Description                                                                  |
-|-------------------------------------------------------|------------------------------------------------------------------------------|
-| `List(userID)`                                        | Lists active tracking items for a user                                       |
-| `Get(id)`                                             | Returns a single tracking item                                               |
-| `Create(tenantID, userID, name, scaleType, ...)`      | Validates, creates the item, and writes the initial schedule snapshot        |
-| `Update(id, name?, color?, schedule?, sort?, scaleConfig?)` | Partial update; a schedule change creates a new snapshot effective today |
-| `Delete(id)`                                          | Soft-deletes the item                                                         |
-| `GetCurrentSchedule(itemID)`                          | Returns the schedule active today for the item                                |
-| `GetScheduleHistory(itemID)`                          | Returns all schedule snapshots for the item, oldest first                    |
+| Method                                                                    | Description                                                                                |
+|---------------------------------------------------------------------------|--------------------------------------------------------------------------------------------|
+| `List(userID)`                                                            | Lists active tracking items for a user                                                     |
+| `ListWithSchedules(userID)`                                               | Lists active tracking items paired with each item's current effective schedule             |
+| `Get(id)`                                                                 | Returns a single tracking item                                                             |
+| `Create(tenantID, userID, name, scaleType, color, scaleConfig, sched, sortOrder)` | Validates, creates the item, and writes the initial schedule snapshot              |
+| `Update(id, name?, color?, schedule?, sortOrder?, scaleConfig?)`          | Partial update; a schedule change creates a new snapshot effective today                  |
+| `Delete(id)`                                                              | Soft-deletes the item                                                                      |
+| `GetCurrentSchedule(itemID)`                                              | Returns the schedule active today for the item                                             |
+| `GetScheduleHistory(itemID)`                                              | Returns all schedule snapshots for the item, oldest first                                  |
 
 ---
 
@@ -80,12 +81,14 @@ Versions a tracking item's weekly schedule so historical month calculations rema
 
 ### Processors
 
-| Method                                          | Description                                                       |
-|-------------------------------------------------|-------------------------------------------------------------------|
-| `GetByTrackingItemID(itemID)`                   | Lists all snapshots for an item                                   |
-| `GetByTrackingItemIDs(itemIDs)`                 | Bulk-loads snapshots for multiple items (used by month summary)  |
-| `GetEffectiveSchedule(itemID, date)`            | Returns the snapshot active for the given date                    |
-| `CreateSnapshot(tx, itemID, schedule, date)`    | Creates a new snapshot inside a transaction                       |
+**Processor** (`schedule.Processor`)
+
+| Method                                       | Description                                                                                          |
+|----------------------------------------------|------------------------------------------------------------------------------------------------------|
+| `GetEffective(itemID, date)`                 | Returns the snapshot active for the given date; returns `ErrNotFound` when no snapshot covers it    |
+| `GetHistory(itemID)`                         | Returns all snapshots for the item, oldest first                                                     |
+| `GetHistoriesByItems(itemIDs)`               | Bulk-loads snapshots for multiple items, keyed by item ID (used by month summary/report)            |
+| `CreateSnapshot(itemID, days, effectiveDate)` | Creates a new snapshot; the constructor's `*gorm.DB` may be a transaction handle                    |
 
 ---
 
@@ -127,13 +130,14 @@ Stores the actual logged values: one entry per tracking item per date. Enforces 
 
 **Processor** (`entry.Processor`)
 
-| Method                                                                             | Description                                                                       |
-|------------------------------------------------------------------------------------|-----------------------------------------------------------------------------------|
-| `CreateOrUpdate(tenantID, userID, itemID, date, value, note, scaleType, scaleConfig)` | Upserts an entry; clears any prior `skipped` flag                              |
-| `Delete(itemID, date)`                                                             | Removes the entry for the given item and date                                     |
-| `Skip(tenantID, userID, itemID, date, isScheduled)`                                | Marks a scheduled day as skipped; rejects unscheduled days                        |
-| `RemoveSkip(itemID, date)`                                                         | Removes a previously-set skip flag                                                |
-| `ListByMonth(userID, monthYYYYMM)`                                                 | Returns all entries for a user across all items for the given month               |
+| Method                                                              | Description                                                                                                                                    |
+|---------------------------------------------------------------------|------------------------------------------------------------------------------------------------------------------------------------------------|
+| `CreateOrUpdate(tenantID, userID, itemID, date, value, note)`       | Resolves the tracking item internally, validates the value against its scale, and upserts an entry; clears any prior `skipped` flag           |
+| `Delete(itemID, date)`                                              | Removes the entry for the given item and date; idempotent                                                                                      |
+| `Skip(tenantID, userID, itemID, date)`                              | Marks a scheduled day as skipped; rejects future dates and dates that do not fall on the item's effective schedule                            |
+| `RemoveSkip(itemID, date)`                                          | Deletes the entry if it is currently marked skipped; idempotent                                                                                |
+| `ListByMonth(userID, monthYYYYMM)`                                  | Returns all entries for a user across all items for the given month                                                                            |
+| `ListByMonthWithScheduled(userID, monthYYYYMM)`                     | Same as `ListByMonth`, paired with the per-entry `scheduled` projection (whether the entry's date matches the item's effective schedule)      |
 
 ---
 
@@ -162,10 +166,11 @@ Computes derived month-level data on demand: completion status, summary stats, a
 
 **Processor** (`month.Processor`)
 
-| Method                                  | Description                                                                |
-|-----------------------------------------|----------------------------------------------------------------------------|
-| `ComputeMonthSummary(userID, monthStr)` | Returns the summary plus the active items and entries used to compute it  |
-| `ComputeReport(userID, monthStr)`       | Returns the dashboard report; errors with `ErrMonthIncomplete` if not done |
+| Method                                        | Description                                                                                                                          |
+|-----------------------------------------------|--------------------------------------------------------------------------------------------------------------------------------------|
+| `ComputeMonthSummary(userID, monthStr)`       | Returns the summary plus the active items and entries used to compute it                                                            |
+| `ComputeMonthSummaryDetail(userID, monthStr)` | Returns a `SummaryDetail` bundling the summary, active items, in-month entries, and the schedule snapshots that govern expected days |
+| `ComputeReport(userID, monthStr)`             | Returns the dashboard report; errors with `ErrMonthIncomplete` if the month is not complete                                          |
 
 ---
 
@@ -175,9 +180,21 @@ Computes derived month-level data on demand: completion status, summary stats, a
 
 Convenience read-side view that returns the items scheduled for the current day along with any entries already logged today. Pure composition over `trackingitem`, `schedule`, and `entry` — no persistence of its own.
 
-### Behavior
+### Core Models
 
-- Uses the user's current effective schedule (snapshot with `effective_date <= today`) for each active item.
-- Items with an empty schedule are always included.
+- `Result` — `{Date, Items: []trackingitem.Model, Entries: []entry.Model}`. Carries the orchestrated payload to the REST layer; not persisted.
+
+### Invariants
+
+- Uses the user's effective schedule (snapshot with `effective_date <= date`) for each active item; an item with no covering snapshot is excluded.
+- An empty effective schedule is treated as "every day".
 - Entries are returned only for items in the scheduled set.
-- Date is computed in UTC and truncated to midnight.
+- The date is truncated to UTC midnight.
+
+### Processors
+
+**Processor** (`today.Processor`)
+
+| Method                | Description                                                                                                  |
+|-----------------------|--------------------------------------------------------------------------------------------------------------|
+| `Today(userID, date)` | Returns the `Result` for the user on the given date — scheduled items and any entries already recorded     |
