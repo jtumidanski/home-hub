@@ -13,7 +13,19 @@ import (
 	"gorm.io/gorm"
 )
 
-var ErrNoLocation = errors.New("household has no location configured")
+var (
+	ErrNoLocation       = errors.New("household has no location configured")
+	ErrLocationNotFound = errors.New("location of interest not found")
+)
+
+// LocationResolver looks up a saved location by id and returns its coordinates.
+// Implemented in cmd/main.go (and tests) by adapting locationofinterest.Processor;
+// defined here as an interface so the forecast package does not import
+// locationofinterest, which would create an import cycle (locationofinterest
+// already depends on forecast for cache warming).
+type LocationResolver interface {
+	ResolveLocation(householdID, locationID uuid.UUID) (lat, lon float64, err error)
+}
 
 type Processor struct {
 	l        logrus.FieldLogger
@@ -21,10 +33,11 @@ type Processor struct {
 	db       *gorm.DB
 	client   *openmeteo.Client
 	cacheTTL time.Duration
+	resolver LocationResolver
 }
 
-func NewProcessor(l logrus.FieldLogger, ctx context.Context, db *gorm.DB, client *openmeteo.Client, cacheTTL time.Duration) *Processor {
-	return &Processor{l: l, ctx: ctx, db: db, client: client, cacheTTL: cacheTTL}
+func NewProcessor(l logrus.FieldLogger, ctx context.Context, db *gorm.DB, client *openmeteo.Client, cacheTTL time.Duration, resolver LocationResolver) *Processor {
+	return &Processor{l: l, ctx: ctx, db: db, client: client, cacheTTL: cacheTTL, resolver: resolver}
 }
 
 func (p *Processor) ByHouseholdAndLocationProvider(householdID uuid.UUID, locationID *uuid.UUID) model.Provider[Model] {
@@ -35,12 +48,52 @@ func (p *Processor) AllProvider() model.Provider[[]Model] {
 	return model.SliceMap(Make)(getAll()(p.db.WithContext(p.ctx)))
 }
 
-func (p *Processor) GetCurrent(tenantID, householdID uuid.UUID, locationID *uuid.UUID, lat, lon float64, units, timezone string) (Model, error) {
+// LocationRequest is what handlers pass to the forecast processor: either a
+// saved-location id (resolved internally via the LocationResolver dependency)
+// or an explicit lat/lon pair. Exactly one mode must be populated.
+type LocationRequest struct {
+	LocationID *uuid.UUID
+	Latitude   float64
+	Longitude  float64
+	HasCoords  bool
+}
+
+func (p *Processor) GetCurrent(tenantID, householdID uuid.UUID, req LocationRequest, units, timezone string) (Model, error) {
+	locationID, lat, lon, err := p.resolveLocation(householdID, req)
+	if err != nil {
+		return Model{}, err
+	}
 	return p.getOrFetch(tenantID, householdID, locationID, lat, lon, units, timezone)
 }
 
-func (p *Processor) GetForecast(tenantID, householdID uuid.UUID, locationID *uuid.UUID, lat, lon float64, units, timezone string) (Model, error) {
+func (p *Processor) GetForecast(tenantID, householdID uuid.UUID, req LocationRequest, units, timezone string) (Model, error) {
+	locationID, lat, lon, err := p.resolveLocation(householdID, req)
+	if err != nil {
+		return Model{}, err
+	}
 	return p.getOrFetch(tenantID, householdID, locationID, lat, lon, units, timezone)
+}
+
+// resolveLocation translates a LocationRequest into concrete (locationID, lat,
+// lon). If the request carries a LocationID, the injected resolver is used to
+// look up coordinates; otherwise the explicit lat/lon are used. Returns
+// ErrLocationNotFound when the resolver reports the saved location is missing.
+func (p *Processor) resolveLocation(householdID uuid.UUID, req LocationRequest) (*uuid.UUID, float64, float64, error) {
+	if req.LocationID != nil {
+		if p.resolver == nil {
+			return nil, 0, 0, ErrLocationNotFound
+		}
+		lat, lon, err := p.resolver.ResolveLocation(householdID, *req.LocationID)
+		if err != nil {
+			return nil, 0, 0, err
+		}
+		idCopy := *req.LocationID
+		return &idCopy, lat, lon, nil
+	}
+	if !req.HasCoords {
+		return nil, 0, 0, ErrNoLocation
+	}
+	return nil, req.Latitude, req.Longitude, nil
 }
 
 // WarmLocationCache implements locationofinterest.CacheWarmer. It synchronously

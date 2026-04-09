@@ -38,17 +38,13 @@ func listHandler(db *gorm.DB) server.GetHandler {
 				server.WriteError(w, http.StatusInternalServerError, "Error", "")
 				return
 			}
-			transformed, err := TransformSlice(models)
+			rest, err := TransformSlice(models)
 			if err != nil {
 				d.Logger().WithError(err).Error("Failed to transform locations of interest")
 				server.WriteError(w, http.StatusInternalServerError, "Error", "")
 				return
 			}
-			rest := make([]*RestModel, len(transformed))
-			for i := range transformed {
-				rest[i] = &transformed[i]
-			}
-			server.MarshalSliceResponse[*RestModel](d.Logger())(w)(c.ServerInformation())(rest)
+			server.MarshalSliceResponse[RestModel](d.Logger())(w)(c.ServerInformation())(rest)
 		}
 	}
 }
