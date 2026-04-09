@@ -8,6 +8,7 @@ import {
   useDeleteCategory,
 } from "@/lib/hooks/api/use-ingredient-categories";
 import { Button } from "@/components/ui/button";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
 import { createErrorFromUnknown } from "@/lib/api/errors";
@@ -22,6 +23,7 @@ export function CategoryManager() {
   const [newName, setNewName] = useState("");
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editName, setEditName] = useState("");
+  const [deleteTarget, setDeleteTarget] = useState<{ id: string; name: string; ingredientCount: number } | null>(null);
 
   const categories = data?.data ?? [];
 
@@ -55,14 +57,19 @@ export function CategoryManager() {
     }
   };
 
-  const handleDelete = async (id: string, ingredientCount: number) => {
-    const confirmed = ingredientCount > 0
-      ? window.confirm(`${ingredientCount} ingredient${ingredientCount > 1 ? "s" : ""} will become uncategorized. Continue?`)
-      : true;
-    if (!confirmed) return;
+  const requestDelete = (id: string, name: string, ingredientCount: number) => {
+    if (ingredientCount > 0) {
+      setDeleteTarget({ id, name, ingredientCount });
+      return;
+    }
+    void performDelete(id);
+  };
+
+  const performDelete = async (id: string) => {
     try {
       await deleteCategory.mutateAsync(id);
       toast.success("Category deleted");
+      setDeleteTarget(null);
     } catch (error) {
       toast.error(createErrorFromUnknown(error, "Failed to delete category").message);
     }
@@ -117,7 +124,7 @@ export function CategoryManager() {
                   size="sm"
                   variant="ghost"
                   className="h-7 w-7 p-0 text-destructive hover:text-destructive"
-                  onClick={() => handleDelete(cat.id, cat.attributes.ingredient_count ?? 0)}
+                  onClick={() => requestDelete(cat.id, cat.attributes.name, cat.attributes.ingredient_count ?? 0)}
                 >
                   <X className="h-3.5 w-3.5" />
                 </Button>
@@ -140,6 +147,31 @@ export function CategoryManager() {
           Add
         </Button>
       </div>
+
+      <Dialog open={!!deleteTarget} onOpenChange={(open) => !open && setDeleteTarget(null)}>
+        <DialogContent className="max-w-sm">
+          <DialogHeader>
+            <DialogTitle>Delete category</DialogTitle>
+          </DialogHeader>
+          <p className="text-sm text-muted-foreground">
+            Delete &ldquo;{deleteTarget?.name}&rdquo;? {deleteTarget?.ingredientCount} ingredient
+            {(deleteTarget?.ingredientCount ?? 0) > 1 ? "s" : ""} will become uncategorized.
+          </p>
+          <div className="flex gap-2 justify-end">
+            <Button variant="outline" size="sm" onClick={() => setDeleteTarget(null)}>
+              Cancel
+            </Button>
+            <Button
+              variant="destructive"
+              size="sm"
+              disabled={deleteCategory.isPending}
+              onClick={() => deleteTarget && void performDelete(deleteTarget.id)}
+            >
+              Delete
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

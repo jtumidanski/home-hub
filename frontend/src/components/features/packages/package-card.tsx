@@ -2,6 +2,7 @@ import { useState } from "react";
 import { ChevronDown, ChevronUp, RefreshCw, Archive, ArchiveRestore, Trash2, Lock, Unlock, Pencil } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { StatusBadge } from "./status-badge";
 import { CarrierIcon } from "./carrier-icon";
 import { PackageDetail } from "./package-detail";
@@ -22,6 +23,7 @@ interface PackageCardProps {
 export function PackageCard({ pkg }: PackageCardProps) {
   const [expanded, setExpanded] = useState(false);
   const [editing, setEditing] = useState(false);
+  const [confirmingDelete, setConfirmingDelete] = useState(false);
   const refreshMutation = useRefreshPackage();
   const archiveMutation = useArchivePackage();
   const unarchiveMutation = useUnarchivePackage();
@@ -138,11 +140,7 @@ export function PackageCard({ pkg }: PackageCardProps) {
                     variant="ghost"
                     size="icon"
                     className="h-7 w-7 text-destructive hover:text-destructive"
-                    onClick={() => {
-                      if (window.confirm("Delete this package?")) {
-                        deleteMutation.mutate(pkg.id);
-                      }
-                    }}
+                    onClick={() => setConfirmingDelete(true)}
                     disabled={deleteMutation.isPending}
                     title="Delete"
                   >
@@ -177,6 +175,34 @@ export function PackageCard({ pkg }: PackageCardProps) {
           onClose={() => setEditing(false)}
         />
       )}
+
+      <Dialog open={confirmingDelete} onOpenChange={setConfirmingDelete}>
+        <DialogContent className="max-w-sm">
+          <DialogHeader>
+            <DialogTitle>Delete package</DialogTitle>
+          </DialogHeader>
+          <p className="text-sm text-muted-foreground">
+            Delete &ldquo;{a.label ?? "this package"}&rdquo;? This cannot be undone.
+          </p>
+          <div className="flex gap-2 justify-end">
+            <Button variant="outline" size="sm" onClick={() => setConfirmingDelete(false)}>
+              Cancel
+            </Button>
+            <Button
+              variant="destructive"
+              size="sm"
+              disabled={deleteMutation.isPending}
+              onClick={() => {
+                deleteMutation.mutate(pkg.id, {
+                  onSuccess: () => setConfirmingDelete(false),
+                });
+              }}
+            >
+              Delete
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
     </>
   );
 }
