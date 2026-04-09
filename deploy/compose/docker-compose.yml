@@ -17,6 +17,7 @@ services:
       - package-service
       - category-service
       - shopping-service
+      - tracker-service
 
   frontend:
     container_name: hh-frontend
@@ -165,6 +166,22 @@ services:
     build:
       context: ../..
       dockerfile: services/category-service/Dockerfile
+    expose:
+      - "8080"
+    environment:
+      - DB_HOST=${DB_HOST:-postgres.home}
+      - DB_PORT=${DB_PORT:-5432}
+      - DB_USER=${DB_USER:-home_hub}
+      - DB_PASSWORD=${DB_PASSWORD}
+      - DB_NAME=${DB_NAME:-home_hub}
+      - PORT=8080
+      - JWKS_URL=http://auth-service:8080/api/v1/auth/.well-known/jwks.json
+
+  tracker-service:
+    container_name: hh-tracker
+    build:
+      context: ../..
+      dockerfile: services/tracker-service/Dockerfile
     expose:
       - "8080"
     environment:

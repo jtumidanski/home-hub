@@ -9,6 +9,7 @@ use (
 	./services/productivity-service
 	./services/recipe-service
 	./services/shopping-service
+	./services/tracker-service
 	./services/weather-service
 	./shared/go/auth
 	./shared/go/database

@@ -141,6 +141,13 @@ spec:
                             name: shopping-service
                             port:
                                 number: 8080
+                  - path: /api/v1/trackers
+                    pathType: Prefix
+                    backend:
+                        service:
+                            name: tracker-service
+                            port:
+                                number: 8080
                   - path: /api/v1/weather
                     pathType: Prefix
                     backend:

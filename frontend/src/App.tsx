@@ -26,6 +26,7 @@ import { ShoppingListDetailPage } from "@/pages/ShoppingListDetailPage";
 import { WishListPage } from "@/pages/WishListPage";
 import { CalendarPage } from "@/pages/CalendarPage";
 import { PackagesPage } from "@/pages/PackagesPage";
+import { TrackerPage } from "@/pages/TrackerPage";
 import { Error404Page } from "@/components/common/error-page";
 
 export function App() {
@@ -53,6 +54,7 @@ export function App() {
                   <Route path="reminders" element={<RemindersPage />} />
                   <Route path="calendar" element={<CalendarPage />} />
                   <Route path="packages" element={<PackagesPage />} />
+                  <Route path="tracker" element={<TrackerPage />} />
                   <Route path="settings" element={<SettingsPage />} />
                   <Route path="weather" element={<WeatherPage />} />
                   <Route path="recipes" element={<RecipesPage />} />
