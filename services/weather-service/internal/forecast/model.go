@@ -36,6 +36,7 @@ type Model struct {
 	id           uuid.UUID
 	tenantID     uuid.UUID
 	householdID  uuid.UUID
+	locationID   *uuid.UUID
 	latitude     float64
 	longitude    float64
 	units        string
@@ -49,6 +50,7 @@ type Model struct {
 func (m Model) Id() uuid.UUID              { return m.id }
 func (m Model) TenantID() uuid.UUID        { return m.tenantID }
 func (m Model) HouseholdID() uuid.UUID     { return m.householdID }
+func (m Model) LocationID() *uuid.UUID     { return m.locationID }
 func (m Model) Latitude() float64          { return m.latitude }
 func (m Model) Longitude() float64         { return m.longitude }
 func (m Model) Units() string              { return m.units }

@@ -6,9 +6,13 @@ import (
 	"gorm.io/gorm"
 )
 
-func getByHouseholdID(householdID uuid.UUID) database.EntityProvider[Entity] {
+func getByHouseholdAndLocation(householdID uuid.UUID, locationID *uuid.UUID) database.EntityProvider[Entity] {
 	return database.Query[Entity](func(db *gorm.DB) *gorm.DB {
-		return db.Where("household_id = ?", householdID)
+		q := db.Where("household_id = ?", householdID)
+		if locationID == nil {
+			return q.Where("location_id IS NULL")
+		}
+		return q.Where("location_id = ?", *locationID)
 	})
 }
 

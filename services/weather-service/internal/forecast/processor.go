@@ -27,24 +27,32 @@ func NewProcessor(l logrus.FieldLogger, ctx context.Context, db *gorm.DB, client
 	return &Processor{l: l, ctx: ctx, db: db, client: client, cacheTTL: cacheTTL}
 }
 
-func (p *Processor) ByHouseholdIDProvider(householdID uuid.UUID) model.Provider[Model] {
-	return model.Map(Make)(getByHouseholdID(householdID)(p.db.WithContext(p.ctx)))
+func (p *Processor) ByHouseholdAndLocationProvider(householdID uuid.UUID, locationID *uuid.UUID) model.Provider[Model] {
+	return model.Map(Make)(getByHouseholdAndLocation(householdID, locationID)(p.db.WithContext(p.ctx)))
 }
 
 func (p *Processor) AllProvider() model.Provider[[]Model] {
 	return model.SliceMap(Make)(getAll()(p.db.WithContext(p.ctx)))
 }
 
-func (p *Processor) GetCurrent(tenantID, householdID uuid.UUID, lat, lon float64, units, timezone string) (Model, error) {
-	return p.getOrFetch(tenantID, householdID, lat, lon, units, timezone)
+func (p *Processor) GetCurrent(tenantID, householdID uuid.UUID, locationID *uuid.UUID, lat, lon float64, units, timezone string) (Model, error) {
+	return p.getOrFetch(tenantID, householdID, locationID, lat, lon, units, timezone)
 }
 
-func (p *Processor) GetForecast(tenantID, householdID uuid.UUID, lat, lon float64, units, timezone string) (Model, error) {
-	return p.getOrFetch(tenantID, householdID, lat, lon, units, timezone)
+func (p *Processor) GetForecast(tenantID, householdID uuid.UUID, locationID *uuid.UUID, lat, lon float64, units, timezone string) (Model, error) {
+	return p.getOrFetch(tenantID, householdID, locationID, lat, lon, units, timezone)
 }
 
-func (p *Processor) getOrFetch(tenantID, householdID uuid.UUID, lat, lon float64, units, timezone string) (Model, error) {
-	m, err := p.ByHouseholdIDProvider(householdID)()
+// WarmLocationCache implements locationofinterest.CacheWarmer. It synchronously
+// fetches and caches the forecast for a newly-created saved location so the
+// first user view does not show a loading state.
+func (p *Processor) WarmLocationCache(tenantID, householdID, locationID uuid.UUID, lat, lon float64) error {
+	_, err := p.fetchAndCache(tenantID, householdID, &locationID, lat, lon, "metric", "UTC")
+	return err
+}
+
+func (p *Processor) getOrFetch(tenantID, householdID uuid.UUID, locationID *uuid.UUID, lat, lon float64, units, timezone string) (Model, error) {
+	m, err := p.ByHouseholdAndLocationProvider(householdID, locationID)()
 	if err == nil {
 		// Check if cached coordinates/units still match
 		if m.Latitude() == lat && m.Longitude() == lon && m.Units() == units {
@@ -58,10 +66,10 @@ func (p *Processor) getOrFetch(tenantID, householdID uuid.UUID, lat, lon float64
 		// Stale cache — coordinates, units changed, missing hourly data, or TTL expired, re-fetch
 	}
 
-	return p.fetchAndCache(tenantID, householdID, lat, lon, units, timezone)
+	return p.fetchAndCache(tenantID, householdID, locationID, lat, lon, units, timezone)
 }
 
-func (p *Processor) fetchAndCache(tenantID, householdID uuid.UUID, lat, lon float64, units, timezone string) (Model, error) {
+func (p *Processor) fetchAndCache(tenantID, householdID uuid.UUID, locationID *uuid.UUID, lat, lon float64, units, timezone string) (Model, error) {
 	resp, err := p.client.FetchForecast(lat, lon, units, timezone)
 	if err != nil {
 		return Model{}, err
@@ -69,7 +77,7 @@ func (p *Processor) fetchAndCache(tenantID, householdID uuid.UUID, lat, lon floa
 
 	current, daily := transformResponse(resp)
 
-	e, err := create(p.db.WithContext(p.ctx), tenantID, householdID, lat, lon, units, current, daily)
+	e, err := create(p.db.WithContext(p.ctx), tenantID, householdID, locationID, lat, lon, units, current, daily)
 	if err != nil {
 		return Model{}, err
 	}
@@ -88,7 +96,7 @@ func (p *Processor) RefreshCache(m Model) error {
 
 	current, daily := transformResponse(resp)
 
-	_, err = create(p.db.WithContext(p.ctx), m.TenantID(), m.HouseholdID(), m.Latitude(), m.Longitude(), m.Units(), current, daily)
+	_, err = create(p.db.WithContext(p.ctx), m.TenantID(), m.HouseholdID(), m.LocationID(), m.Latitude(), m.Longitude(), m.Units(), current, daily)
 	return err
 }
 

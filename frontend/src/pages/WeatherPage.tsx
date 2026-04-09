@@ -1,16 +1,27 @@
 import { useCallback, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useWeatherForecast, useCurrentWeather } from "@/lib/hooks/api/use-weather";
+import { useLocationsOfInterest } from "@/lib/hooks/api/use-locations-of-interest";
 import { useTenant } from "@/context/tenant-context";
 import { hasLocation } from "@/types/models/household";
 import { WeatherIcon } from "@/components/common/weather-icon";
 import { PullToRefresh } from "@/components/common/pull-to-refresh";
 import { Card, CardContent } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
-import { MapPin, AlertTriangle, ChevronDown } from "lucide-react";
+import { MapPin, AlertTriangle, ChevronDown, Settings } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { ManageLocationsDialog } from "@/components/features/weather/manage-locations-dialog";
 import { cn } from "@/lib/utils";
 import type { HourlyForecastEntry } from "@/types/models/weather";
+
+const PRIMARY_VALUE = "__primary__";
 
 function formatTime(isoString: string): string {
   const date = new Date(isoString);
@@ -77,18 +88,79 @@ export function WeatherPage() {
   const navigate = useNavigate();
   const { household } = useTenant();
   const locationSet = household && hasLocation(household);
-  const { data: forecastData, isLoading: forecastLoading, isError: forecastError, refetch: refetchForecast } = useWeatherForecast();
-  const { data: currentData, refetch: refetchCurrent } = useCurrentWeather();
+
+  // Always defaults to undefined (= primary) on mount; reload resets.
+  const [selectedLocationId, setSelectedLocationId] = useState<string | undefined>(undefined);
+  const [manageOpen, setManageOpen] = useState(false);
   const [expandedDay, setExpandedDay] = useState<string | null>(null);
+
+  const { data: locationsData } = useLocationsOfInterest();
+  const savedLocations = locationsData?.data ?? [];
+
+  const { data: forecastData, isLoading: forecastLoading, isError: forecastError, refetch: refetchForecast } =
+    useWeatherForecast(selectedLocationId);
+  const { data: currentData, refetch: refetchCurrent } = useCurrentWeather(selectedLocationId);
 
   const handleRefresh = useCallback(async () => {
     await Promise.all([refetchForecast(), refetchCurrent()]);
   }, [refetchForecast, refetchCurrent]);
 
-  if (!locationSet) {
+  const handleSelectChange = (value: string) => {
+    setSelectedLocationId(value === PRIMARY_VALUE ? undefined : value);
+  };
+
+  const headerLocationName = (() => {
+    if (selectedLocationId) {
+      const match = savedLocations.find((l) => l.id === selectedLocationId);
+      if (match) return match.attributes.label ?? match.attributes.placeName;
+    }
+    return household?.attributes.locationName ?? null;
+  })();
+
+  const headerTitle = (
+    <div className="flex flex-wrap items-center gap-2">
+      <h1 className="text-xl md:text-2xl font-semibold">
+        Weather{headerLocationName ? ` \u2014 ${headerLocationName}` : ""}
+      </h1>
+      <Button
+        variant="ghost"
+        size="sm"
+        className="h-7 px-2 text-xs"
+        onClick={() => setManageOpen(true)}
+      >
+        <Settings className="h-3.5 w-3.5 mr-1" />
+        Manage Locations
+      </Button>
+    </div>
+  );
+
+  const selector =
+    savedLocations.length > 0 ? (
+      <Select
+        value={selectedLocationId ?? PRIMARY_VALUE}
+        onValueChange={handleSelectChange}
+      >
+        <SelectTrigger className="w-full max-w-xs">
+          <SelectValue />
+        </SelectTrigger>
+        <SelectContent>
+          <SelectItem value={PRIMARY_VALUE}>
+            {household?.attributes.locationName ?? "Primary Location"}
+          </SelectItem>
+          {savedLocations.map((loc) => (
+            <SelectItem key={loc.id} value={loc.id}>
+              {loc.attributes.label ?? loc.attributes.placeName}
+            </SelectItem>
+          ))}
+        </SelectContent>
+      </Select>
+    ) : null;
+
+  // Empty state: primary unset.
+  if (!locationSet && !selectedLocationId) {
     return (
-      <div className="p-4 md:p-6">
-        <h1 className="text-xl md:text-2xl font-semibold mb-4">Weather</h1>
+      <div className="p-4 md:p-6 space-y-4">
+        {headerTitle}
         <Card>
           <CardContent className="flex flex-col items-center justify-center py-8 text-center">
             <MapPin className="h-10 w-10 text-muted-foreground mb-3" />
@@ -98,26 +170,53 @@ export function WeatherPage() {
             <Button variant="outline" onClick={() => navigate("/app/households")}>
               Set Location
             </Button>
+            {savedLocations.length > 0 && (
+              <div className="mt-6 w-full">
+                <p className="text-sm text-muted-foreground mb-2">
+                  Or pick one of your saved locations:
+                </p>
+                <div className="flex flex-wrap gap-2 justify-center">
+                  {savedLocations.map((loc) => (
+                    <Button
+                      key={loc.id}
+                      variant="secondary"
+                      size="sm"
+                      onClick={() => setSelectedLocationId(loc.id)}
+                    >
+                      {loc.attributes.label ?? loc.attributes.placeName}
+                    </Button>
+                  ))}
+                </div>
+              </div>
+            )}
           </CardContent>
         </Card>
+        <ManageLocationsDialog open={manageOpen} onOpenChange={setManageOpen} />
       </div>
     );
   }
 
   if (forecastLoading) {
-    return <WeatherSkeleton />;
+    return (
+      <div>
+        <WeatherSkeleton />
+        <ManageLocationsDialog open={manageOpen} onOpenChange={setManageOpen} />
+      </div>
+    );
   }
 
   if (forecastError || !forecastData?.data) {
     return (
-      <div className="p-4 md:p-6">
-        <h1 className="text-xl md:text-2xl font-semibold mb-4">Weather</h1>
+      <div className="p-4 md:p-6 space-y-4">
+        {headerTitle}
+        {selector}
         <Card>
           <CardContent className="flex items-center gap-2 py-6 text-muted-foreground">
             <AlertTriangle className="h-4 w-4" />
             <span>Failed to load weather forecast. Please try again later.</span>
           </CardContent>
         </Card>
+        <ManageLocationsDialog open={manageOpen} onOpenChange={setManageOpen} />
       </div>
     );
   }
@@ -128,15 +227,14 @@ export function WeatherPage() {
   return (
     <PullToRefresh onRefresh={handleRefresh}>
       <div className="p-4 md:p-6 space-y-4">
-        <div>
-          <h1 className="text-xl md:text-2xl font-semibold">
-            Weather {household?.attributes.locationName ? `\u2014 ${household.attributes.locationName}` : ""}
-          </h1>
+        <div className="space-y-2">
+          {headerTitle}
           {fetchedAt && (
-            <p className="text-xs text-muted-foreground mt-1">
+            <p className="text-xs text-muted-foreground">
               Updated {formatTime(fetchedAt)}
             </p>
           )}
+          {selector}
         </div>
 
         <div className="space-y-2">
@@ -194,6 +292,7 @@ export function WeatherPage() {
           })}
         </div>
       </div>
+      <ManageLocationsDialog open={manageOpen} onOpenChange={setManageOpen} />
     </PullToRefresh>
   );
 }

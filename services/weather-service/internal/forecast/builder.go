@@ -20,6 +20,7 @@ type Builder struct {
 	id           uuid.UUID
 	tenantID     uuid.UUID
 	householdID  uuid.UUID
+	locationID   *uuid.UUID
 	latitude     float64
 	longitude    float64
 	units        string
@@ -46,6 +47,11 @@ func (b *Builder) SetTenantID(tenantID uuid.UUID) *Builder {
 
 func (b *Builder) SetHouseholdID(householdID uuid.UUID) *Builder {
 	b.householdID = householdID
+	return b
+}
+
+func (b *Builder) SetLocationID(locationID *uuid.UUID) *Builder {
+	b.locationID = locationID
 	return b
 }
 
@@ -109,6 +115,7 @@ func (b *Builder) Build() (Model, error) {
 		id:           b.id,
 		tenantID:     b.tenantID,
 		householdID:  b.householdID,
+		locationID:   b.locationID,
 		latitude:     b.latitude,
 		longitude:    b.longitude,
 		units:        b.units,

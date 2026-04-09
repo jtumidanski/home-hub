@@ -5,47 +5,61 @@ import { hasLocation } from "@/types/models/household";
 
 export const weatherKeys = {
   all: ["weather"] as const,
-  current: (householdId: string | undefined) =>
-    [...weatherKeys.all, "current", householdId ?? "none"] as const,
-  forecast: (householdId: string | undefined) =>
-    [...weatherKeys.all, "forecast", householdId ?? "none"] as const,
+  current: (householdId: string | undefined, locationId?: string) =>
+    [
+      ...weatherKeys.all,
+      "current",
+      householdId ?? "none",
+      locationId ?? "primary",
+    ] as const,
+  forecast: (householdId: string | undefined, locationId?: string) =>
+    [
+      ...weatherKeys.all,
+      "forecast",
+      householdId ?? "none",
+      locationId ?? "primary",
+    ] as const,
   geocoding: (query: string) =>
     [...weatherKeys.all, "geocoding", query] as const,
 };
 
-export function useCurrentWeather() {
+export function useCurrentWeather(locationId?: string) {
   const { household } = useTenant();
   const locationSet = household && hasLocation(household);
+  const enabled = !!locationId || !!locationSet;
 
   return useQuery({
-    queryKey: weatherKeys.current(household?.id),
+    queryKey: weatherKeys.current(household?.id, locationId),
     queryFn: () =>
       weatherService.getCurrent(
-        household!.attributes.latitude!,
-        household!.attributes.longitude!,
-        household!.attributes.units,
-        household!.attributes.timezone,
+        household?.attributes.latitude ?? 0,
+        household?.attributes.longitude ?? 0,
+        household?.attributes.units ?? "metric",
+        household?.attributes.timezone ?? "UTC",
+        locationId,
       ),
-    enabled: !!locationSet,
+    enabled,
     staleTime: 5 * 60 * 1000,
     gcTime: 10 * 60 * 1000,
   });
 }
 
-export function useWeatherForecast() {
+export function useWeatherForecast(locationId?: string) {
   const { household } = useTenant();
   const locationSet = household && hasLocation(household);
+  const enabled = !!locationId || !!locationSet;
 
   return useQuery({
-    queryKey: weatherKeys.forecast(household?.id),
+    queryKey: weatherKeys.forecast(household?.id, locationId),
     queryFn: () =>
       weatherService.getForecast(
-        household!.attributes.latitude!,
-        household!.attributes.longitude!,
-        household!.attributes.units,
-        household!.attributes.timezone,
+        household?.attributes.latitude ?? 0,
+        household?.attributes.longitude ?? 0,
+        household?.attributes.units ?? "metric",
+        household?.attributes.timezone ?? "UTC",
+        locationId,
       ),
-    enabled: !!locationSet,
+    enabled,
     staleTime: 5 * 60 * 1000,
     gcTime: 10 * 60 * 1000,
   });

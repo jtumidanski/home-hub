@@ -38,8 +38,15 @@ func refreshAll(ctx context.Context, db *gorm.DB, client *openmeteo.Client, l lo
 	l.WithField("count", len(entries)).Info("refreshing weather cache")
 
 	for _, m := range entries {
+		locationField := "primary"
+		if m.LocationID() != nil {
+			locationField = m.LocationID().String()
+		}
 		if err := proc.RefreshCache(m); err != nil {
-			l.WithError(err).WithField("household_id", m.HouseholdID().String()).Warn("failed to refresh weather cache entry")
+			l.WithError(err).
+				WithField("household_id", m.HouseholdID().String()).
+				WithField("location_id", locationField).
+				Warn("failed to refresh weather cache entry")
 		}
 	}
 }
