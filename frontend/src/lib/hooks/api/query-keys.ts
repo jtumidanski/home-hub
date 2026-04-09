@@ -30,6 +30,13 @@ export const wishListKeys = {
     [...wishListKeys.all(tenant, household), "items"] as const,
 };
 
+export const locationsOfInterestKeys = {
+  all: (tenant: Tenant | null, household: Household | null) =>
+    ["locations-of-interest", tenant?.id ?? "no-tenant", household?.id ?? "no-household"] as const,
+  list: (tenant: Tenant | null, household: Household | null) =>
+    [...locationsOfInterestKeys.all(tenant, household), "list"] as const,
+};
+
 export const categoryKeys = {
   all: (tenant: Tenant | null, household: Household | null) =>
     ["categories", tenant?.id ?? "no-tenant", household?.id ?? "no-household"] as const,

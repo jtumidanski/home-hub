@@ -24,7 +24,7 @@ func TestTransformCurrent(t *testing.T) {
 		fetchedAt: time.Now(),
 	}
 
-	rest, err := TransformCurrent(m)
+	rest, err := Transform(m)
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
@@ -63,7 +63,7 @@ func TestTransformCurrentMetric(t *testing.T) {
 		},
 	}
 
-	rest, err := TransformCurrent(m)
+	rest, err := Transform(m)
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
@@ -87,7 +87,7 @@ func TestTransformForecast(t *testing.T) {
 		},
 	}
 
-	rest, err := TransformForecast(m)
+	rest, err := TransformDaily(m)
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
@@ -139,7 +139,7 @@ func TestTransformCurrentNoForecastData(t *testing.T) {
 		forecastData: []DailyForecast{},
 	}
 
-	rest, err := TransformCurrent(m)
+	rest, err := Transform(m)
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}

@@ -31,6 +31,17 @@ func NewClient() *Client {
 	}
 }
 
+// NewClientWithEndpoints constructs a Client with caller-supplied upstream
+// URLs. Intended for cross-package tests that point the client at an
+// httptest server.
+func NewClientWithEndpoints(forecastURL, geocodingURL string) *Client {
+	return &Client{
+		httpClient:   &http.Client{Timeout: 10 * time.Second},
+		forecastURL:  forecastURL,
+		geocodingURL: geocodingURL,
+	}
+}
+
 func (c *Client) throttle() {
 	c.mu.Lock()
 	defer c.mu.Unlock()

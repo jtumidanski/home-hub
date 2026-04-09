@@ -6,7 +6,7 @@ import (
 	"github.com/google/uuid"
 )
 
-type CurrentRestModel struct {
+type RestModel struct {
 	Id              uuid.UUID `json:"-"`
 	Temperature     float64   `json:"temperature"`
 	TemperatureUnit string    `json:"temperatureUnit"`
@@ -18,15 +18,15 @@ type CurrentRestModel struct {
 	FetchedAt       time.Time `json:"fetchedAt"`
 }
 
-func (r CurrentRestModel) GetName() string { return "weather-current" }
-func (r CurrentRestModel) GetID() string   { return r.Id.String() }
-func (r *CurrentRestModel) SetID(id string) error {
+func (r RestModel) GetName() string { return "weather-current" }
+func (r RestModel) GetID() string   { return r.Id.String() }
+func (r *RestModel) SetID(id string) error {
 	var err error
 	r.Id, err = uuid.Parse(id)
 	return err
 }
 
-func TransformCurrent(m Model) (CurrentRestModel, error) {
+func Transform(m Model) (RestModel, error) {
 	tempUnit := m.TemperatureUnit()
 	current := m.CurrentData()
 
@@ -37,7 +37,7 @@ func TransformCurrent(m Model) (CurrentRestModel, error) {
 		lowTemp = today.LowTemperature
 	}
 
-	return CurrentRestModel{
+	return RestModel{
 		Id:              m.HouseholdID(),
 		Temperature:     current.Temperature,
 		TemperatureUnit: tempUnit,
@@ -50,10 +50,10 @@ func TransformCurrent(m Model) (CurrentRestModel, error) {
 	}, nil
 }
 
-func TransformCurrentSlice(models []Model) ([]CurrentRestModel, error) {
-	result := make([]CurrentRestModel, len(models))
+func TransformSlice(models []Model) ([]RestModel, error) {
+	result := make([]RestModel, len(models))
 	for i, m := range models {
-		rm, err := TransformCurrent(m)
+		rm, err := Transform(m)
 		if err != nil {
 			return nil, err
 		}
@@ -90,7 +90,10 @@ func (r *DailyRestModel) SetID(id string) error {
 	return nil
 }
 
-func TransformForecast(m Model) ([]DailyRestModel, error) {
+// TransformDaily converts a single forecast Model into the per-day REST slice.
+// This is forecast-specific (one Model fans out into N daily entries) and is
+// distinct from the canonical Transform/TransformSlice pair above.
+func TransformDaily(m Model) ([]DailyRestModel, error) {
 	tempUnit := m.TemperatureUnit()
 	result := make([]DailyRestModel, len(m.ForecastData()))
 	for i, d := range m.ForecastData() {
