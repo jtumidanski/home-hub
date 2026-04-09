@@ -162,3 +162,153 @@ spec:
                             name: frontend
                             port:
                                 number: 80
+        - host: tumidanski.com
+          http:
+              paths:
+                  - path: /api/v1/auth
+                    pathType: Prefix
+                    backend:
+                        service:
+                            name: auth-service
+                            port:
+                                number: 8080
+                  - path: /api/v1/users
+                    pathType: Prefix
+                    backend:
+                        service:
+                            name: auth-service
+                            port:
+                                number: 8080
+                  - path: /api/v1/tenants
+                    pathType: Prefix
+                    backend:
+                        service:
+                            name: account-service
+                            port:
+                                number: 8080
+                  - path: /api/v1/households
+                    pathType: Prefix
+                    backend:
+                        service:
+                            name: account-service
+                            port:
+                                number: 8080
+                  - path: /api/v1/memberships
+                    pathType: Prefix
+                    backend:
+                        service:
+                            name: account-service
+                            port:
+                                number: 8080
+                  - path: /api/v1/preferences
+                    pathType: Prefix
+                    backend:
+                        service:
+                            name: account-service
+                            port:
+                                number: 8080
+                  - path: /api/v1/contexts
+                    pathType: Prefix
+                    backend:
+                        service:
+                            name: account-service
+                            port:
+                                number: 8080
+                  - path: /api/v1/invitations
+                    pathType: Prefix
+                    backend:
+                        service:
+                            name: account-service
+                            port:
+                                number: 8080
+                  - path: /api/v1/tasks
+                    pathType: Prefix
+                    backend:
+                        service:
+                            name: productivity-service
+                            port:
+                                number: 8080
+                  - path: /api/v1/reminders
+                    pathType: Prefix
+                    backend:
+                        service:
+                            name: productivity-service
+                            port:
+                                number: 8080
+                  - path: /api/v1/summary
+                    pathType: Prefix
+                    backend:
+                        service:
+                            name: productivity-service
+                            port:
+                                number: 8080
+                  - path: /api/v1/calendar
+                    pathType: Prefix
+                    backend:
+                        service:
+                            name: calendar-service
+                            port:
+                                number: 8080
+                  - path: /api/v1/packages
+                    pathType: Prefix
+                    backend:
+                        service:
+                            name: package-service
+                            port:
+                                number: 8080
+                  - path: /api/v1/recipes
+                    pathType: Prefix
+                    backend:
+                        service:
+                            name: recipe-service
+                            port:
+                                number: 8080
+                  - path: /api/v1/meals
+                    pathType: Prefix
+                    backend:
+                        service:
+                            name: recipe-service
+                            port:
+                                number: 8080
+                  - path: /api/v1/ingredients
+                    pathType: Prefix
+                    backend:
+                        service:
+                            name: recipe-service
+                            port:
+                                number: 8080
+                  - path: /api/v1/categories
+                    pathType: Prefix
+                    backend:
+                        service:
+                            name: category-service
+                            port:
+                                number: 8080
+                  - path: /api/v1/shopping
+                    pathType: Prefix
+                    backend:
+                        service:
+                            name: shopping-service
+                            port:
+                                number: 8080
+                  - path: /api/v1/trackers
+                    pathType: Prefix
+                    backend:
+                        service:
+                            name: tracker-service
+                            port:
+                                number: 8080
+                  - path: /api/v1/weather
+                    pathType: Prefix
+                    backend:
+                        service:
+                            name: weather-service
+                            port:
+                                number: 8080
+                  - path: /
+                    pathType: Prefix
+                    backend:
+                        service:
+                            name: frontend
+                            port:
+                                number: 80
