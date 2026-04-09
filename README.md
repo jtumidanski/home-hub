@@ -16,6 +16,9 @@ Home Hub runs behind a reverse proxy with path-prefix routing. All services are 
 | **calendar-service** | Google Calendar integration with per-user OAuth and household-merged view |
 | **package-service** | Package delivery tracking across USPS, UPS, and FedEx with background polling |
 | **weather-service** | Weather forecasts, current conditions, and geocoding via Open-Meteo |
+| **category-service** | Grocery/shopping category management with per-tenant default seeding |
+| **shopping-service** | Shopping list and item management with category enrichment and meal-plan import |
+| **tracker-service** | Per-user daily tracking items with versioned schedules and monthly reports |
 
 Shared Go libraries under `shared/go/` provide auth, database, HTTP, logging, server lifecycle, tenant context, and test utilities. No business logic lives in shared code.
 
@@ -50,6 +53,9 @@ services/
   calendar-service/         Google Calendar integration
   package-service/          Package delivery tracking
   weather-service/          Weather forecasts and geocoding
+  category-service/         Shopping category management
+  shopping-service/         Shopping lists and items
+  tracker-service/          Per-user daily tracking items
 shared/go/                  Shared Go libraries
 deploy/
   compose/                  Docker Compose setup
