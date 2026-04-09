@@ -183,12 +183,33 @@ func TestComputeMonthSummary_MidMonthDeleteCapsExpectedRange(t *testing.T) {
 	// Item active Dec 25 .. Jan 15 inclusive: only Jan 1..15 (15 days) should count.
 	createdAt := time.Date(2024, 12, 25, 0, 0, 0, 0, time.UTC)
 	deletedAt := time.Date(2025, 1, 15, 0, 0, 0, 0, time.UTC)
-	seedItem(t, db, userID, "Was active", "numeric", nil, []int{}, createdAt, &deletedAt, createdAt)
+	item := seedItem(t, db, userID, "Was active", "numeric", nil, []int{}, createdAt, &deletedAt, createdAt)
+	// At least one historical entry within the month so the deleted item is
+	// preserved in the summary (a delete-and-recreate with no entries should
+	// drop the ghost row — see the no-entries test below).
+	seedEntry(t, db, item, time.Date(2025, 1, 5, 0, 0, 0, 0, time.UTC), numericValue(1), false)
 
 	summary, items, _, err := p.ComputeMonthSummary(userID, testMonth)
 	require.NoError(t, err)
 	assert.Equal(t, 15, summary.Completion.Expected)
-	assert.Len(t, items, 1, "soft-deleted items should still appear in historical month summary")
+	assert.Len(t, items, 1, "soft-deleted items with historical entries this month must still appear")
+}
+
+func TestComputeMonthSummary_DeletedItemWithoutEntriesIsDropped(t *testing.T) {
+	db := setupTestDB(t)
+	p := newTestProcessor(t, db)
+	userID := uuid.New()
+
+	// Soft-deleted item whose lifetime overlaps the month but never logged any
+	// entries this month — the calendar must not render a ghost row for it.
+	createdAt := time.Date(2024, 12, 25, 0, 0, 0, 0, time.UTC)
+	deletedAt := time.Date(2025, 1, 15, 0, 0, 0, 0, time.UTC)
+	seedItem(t, db, userID, "Deleted, no entries", "numeric", nil, []int{}, createdAt, &deletedAt, createdAt)
+
+	summary, items, _, err := p.ComputeMonthSummary(userID, testMonth)
+	require.NoError(t, err)
+	assert.Empty(t, items, "soft-deleted items with no entries this month must be dropped")
+	assert.Equal(t, 0, summary.Completion.Expected)
 }
 
 func TestComputeMonthSummary_ScheduleChangeUsesPriorSnapshotForEarlierDays(t *testing.T) {

@@ -1,4 +1,4 @@
-import { useState, useMemo } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
@@ -238,6 +238,24 @@ function CellContent({ itemId, date, scaleType, scaleConfig, scheduled, entry, i
   );
 }
 
+function RangeEditor({ min, max, initial, onCommit }: { min: number; max: number; initial: number | undefined; onCommit: (n: number) => void }) {
+  const [local, setLocal] = useState<number>(initial ?? Math.round((min + max) / 2));
+  useEffect(() => {
+    if (initial !== undefined) setLocal(initial);
+  }, [initial]);
+  return (
+    <div className="space-y-1">
+      <input type="range" min={min} max={max} value={local} className="w-full"
+        onChange={(e) => setLocal(parseInt(e.target.value))}
+        onMouseUp={(e) => onCommit(parseInt((e.target as HTMLInputElement).value))}
+        onTouchEnd={(e) => onCommit(parseInt((e.target as HTMLInputElement).value))}
+        onKeyUp={(e) => onCommit(parseInt((e.target as HTMLInputElement).value))}
+      />
+      <p className="text-center text-xs font-mono">{local}</p>
+    </div>
+  );
+}
+
 function CellEditor({ itemId, date, scaleType, scaleConfig, scheduled, entry, putEntry, deleteEntry, skipEntry, onDone }: {
   itemId: string; date: string; scaleType: string; scaleConfig: { min: number; max: number } | null;
   scheduled: boolean; entry: TrackerEntry["attributes"] | undefined;
@@ -269,12 +287,12 @@ function CellEditor({ itemId, date, scaleType, scaleConfig, scheduled, entry, pu
         </div>
       )}
       {scaleType === "range" && (
-        <div className="space-y-1">
-          <input type="range" min={scaleConfig?.min ?? 0} max={scaleConfig?.max ?? 100}
-            value={(entry?.value as RangeValue)?.value ?? Math.round(((scaleConfig?.min ?? 0) + (scaleConfig?.max ?? 100)) / 2)}
-            className="w-full" onChange={(e) => save({ value: parseInt(e.target.value) })} />
-          <p className="text-center text-xs font-mono">{(entry?.value as RangeValue)?.value ?? ""}</p>
-        </div>
+        <RangeEditor
+          min={scaleConfig?.min ?? 0}
+          max={scaleConfig?.max ?? 100}
+          initial={(entry?.value as RangeValue)?.value}
+          onCommit={(n) => save({ value: n })}
+        />
       )}
       <Input placeholder="Note..." className="text-xs h-7" value={note} onChange={(e) => setNote(e.target.value)}
         onBlur={() => { if (entry?.value) putEntry.mutate({ itemId, date, value: entry.value, note: note || null }); }} />

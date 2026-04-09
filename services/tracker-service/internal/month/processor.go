@@ -75,6 +75,22 @@ func (p *Processor) computeMonthSummary(userID uuid.UUID, monthStr string) (Mont
 		return MonthSummary{}, nil, nil, nil, err
 	}
 
+	entries, err := entry.GetByUserAndMonth(userID, monthStart, monthEnd)(p.db.WithContext(p.ctx))()
+	if err != nil {
+		return MonthSummary{}, nil, nil, nil, err
+	}
+
+	var entryModels []entry.Model
+	itemsWithEntries := make(map[uuid.UUID]bool)
+	for _, e := range entries {
+		m, err := entry.Make(e)
+		if err != nil {
+			continue
+		}
+		entryModels = append(entryModels, m)
+		itemsWithEntries[m.TrackingItemID()] = true
+	}
+
 	var activeItems []trackingitem.Model
 	for _, e := range items {
 		m, err := trackingitem.Make(e)
@@ -90,6 +106,12 @@ func (p *Processor) computeMonthSummary(userID uuid.UUID, monthStr string) (Mont
 			if deletedAt.Before(monthStart) {
 				continue
 			}
+			// Soft-deleted items are only included when they actually have
+			// historical entries this month — otherwise a delete-and-recreate
+			// of the same name leaves a ghost row in the calendar.
+			if !itemsWithEntries[m.Id()] {
+				continue
+			}
 		}
 		activeItems = append(activeItems, m)
 	}
@@ -102,20 +124,6 @@ func (p *Processor) computeMonthSummary(userID uuid.UUID, monthStr string) (Mont
 	snapshotsByItem, err := schedule.NewProcessor(p.l, p.ctx, p.db).GetHistoriesByItems(itemIDs)
 	if err != nil {
 		return MonthSummary{}, nil, nil, nil, err
-	}
-
-	entries, err := entry.GetByUserAndMonth(userID, monthStart, monthEnd)(p.db.WithContext(p.ctx))()
-	if err != nil {
-		return MonthSummary{}, nil, nil, nil, err
-	}
-
-	var entryModels []entry.Model
-	for _, e := range entries {
-		m, err := entry.Make(e)
-		if err != nil {
-			continue
-		}
-		entryModels = append(entryModels, m)
 	}
 
 	entryMap := make(map[string]entry.Model)

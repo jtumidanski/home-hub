@@ -2,6 +2,7 @@ import { useState } from "react";
 import { Plus, Pencil, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { useTrackers, useDeleteTracker } from "@/lib/hooks/api/use-trackers";
 import { CreateTrackerDialog } from "./create-tracker-dialog";
 import { EditTrackerDialog } from "./edit-tracker-dialog";
@@ -26,6 +27,7 @@ export function TrackerSetup() {
   const deleteMutation = useDeleteTracker();
   const [createOpen, setCreateOpen] = useState(false);
   const [editTracker, setEditTracker] = useState<Tracker | null>(null);
+  const [deleteTarget, setDeleteTarget] = useState<Tracker | null>(null);
 
   const trackers = data?.data ?? [];
 
@@ -62,9 +64,7 @@ export function TrackerSetup() {
               </div>
               <div className="flex gap-1">
                 <Button variant="ghost" size="icon" onClick={() => setEditTracker(t)}><Pencil className="h-4 w-4" /></Button>
-                <Button variant="ghost" size="icon" onClick={() => {
-                  if (confirm(`Delete "${t.attributes.name}"?`)) deleteMutation.mutate(t.id);
-                }}><Trash2 className="h-4 w-4" /></Button>
+                <Button variant="ghost" size="icon" onClick={() => setDeleteTarget(t)}><Trash2 className="h-4 w-4" /></Button>
               </div>
             </CardContent>
           </Card>
@@ -75,6 +75,36 @@ export function TrackerSetup() {
       {editTracker && (
         <EditTrackerDialog open={!!editTracker} onClose={() => setEditTracker(null)} tracker={editTracker} />
       )}
+
+      <Dialog open={!!deleteTarget} onOpenChange={(open) => !open && setDeleteTarget(null)}>
+        <DialogContent className="max-w-sm">
+          <DialogHeader>
+            <DialogTitle>Delete tracking item</DialogTitle>
+          </DialogHeader>
+          <p className="text-sm text-muted-foreground">
+            Delete &ldquo;{deleteTarget?.attributes.name}&rdquo;? Historical entries for completed
+            months will still be visible in past reports.
+          </p>
+          <div className="flex gap-2 justify-end">
+            <Button variant="outline" size="sm" onClick={() => setDeleteTarget(null)}>
+              Cancel
+            </Button>
+            <Button
+              variant="destructive"
+              size="sm"
+              disabled={deleteMutation.isPending}
+              onClick={() => {
+                if (!deleteTarget) return;
+                deleteMutation.mutate(deleteTarget.id, {
+                  onSuccess: () => setDeleteTarget(null),
+                });
+              }}
+            >
+              Delete
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

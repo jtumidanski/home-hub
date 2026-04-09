@@ -20,6 +20,7 @@ services/
   productivity-service/
   recipe-service/
   shopping-service/
+  tracker-service/
   weather-service/
 
 shared/go/
@@ -108,7 +109,7 @@ Local development uses `.env`. Do not commit real secrets.
 ./scripts/local-down.sh  # stop compose
 ```
 
-Compose runs: nginx, frontend, auth-service, account-service, calendar-service, category-service, package-service, productivity-service, recipe-service, shopping-service, weather-service. Database is external.
+Compose runs: nginx, frontend, auth-service, account-service, calendar-service, category-service, package-service, productivity-service, recipe-service, shopping-service, tracker-service, weather-service. Database is external.
 
 ## 6. Frontend Development
 
@@ -134,7 +135,7 @@ Uses React, Vite, ShadCN. No server-side rendering.
 ./scripts/build-weather.sh      # build weather-service
 ```
 
-Each service must compile independently.
+Per-service build scripts exist only for the services listed above. The remaining services (calendar, package, category, shopping, tracker) build via `./scripts/build-all.sh`. Each service must compile independently.
 
 ## 8. Testing
 
@@ -226,6 +227,7 @@ ghcr.io/<owner>/home-hub-calendar
 ghcr.io/<owner>/home-hub-package
 ghcr.io/<owner>/home-hub-category
 ghcr.io/<owner>/home-hub-shopping
+ghcr.io/<owner>/home-hub-tracker
 ghcr.io/<owner>/home-hub-frontend
 ```
 
