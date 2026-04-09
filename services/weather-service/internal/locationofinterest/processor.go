@@ -11,10 +11,13 @@ import (
 	"gorm.io/gorm"
 )
 
+// ErrCapReached's message is part of the public API contract — see PRD §4.1
+// (task-026). Clients display it verbatim; do not change without updating the
+// PRD and the corresponding processor test.
 var (
-	ErrNotFound    = errors.New("location of interest not found")
-	ErrCapReached  = errors.New("Households can save up to 10 locations of interest. Remove one to add another.")
-	MaxLocations   = 10
+	ErrNotFound   = errors.New("location of interest not found")
+	ErrCapReached = errors.New("Households can save up to 10 locations of interest. Remove one to add another.")
+	MaxLocations  = 10
 )
 
 // CacheWarmer is the minimal slice of forecast.Processor needed to warm the

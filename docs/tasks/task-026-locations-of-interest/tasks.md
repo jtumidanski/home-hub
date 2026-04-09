@@ -34,6 +34,14 @@ Effort: S = small, M = medium, L = large, XL = extra large.
 - [x] **P4.T2 (S)** Frontend: `tsc --noEmit` and project test runner. No errors.
 - [ ] **P4.T3 (S)** Walk PRD §10 acceptance criteria end-to-end against the running stack. Tick every box. _(Pending live-stack smoke walkthrough; code-level verification done.)_
 
+## Audit Follow-Up (2026-04-09)
+
+- [x] Add `locationofinterest/processor_test.go` covering 10-cap, label trim/64-char limit, 4-decimal coordinate normalization, missing-id 404, cross-household isolation (Get/UpdateLabel/Delete), per-household cap independence, warmer error swallowing, and verbatim `ErrCapReached` message check.
+- [x] Add `forecast/provider_test.go` covering `getByHouseholdAndLocation` for primary (NULL) and saved (non-nil) branches plus `getAll`.
+- [x] Add `refresh/refresh_test.go` covering mixed nil/non-nil rows refreshed via httptest server, plus per-row error log includes `location_id` ("primary" sentinel for nil).
+- [x] Add `openmeteo.NewClientWithEndpoints` to expose a cross-package test seam.
+- [x] Document `ErrCapReached` message as part of the public API contract.
+
 ## PRD §10 Acceptance Criteria (track here)
 
 - [x] Weather page defaults to primary forecast (no behavior change vs today).
