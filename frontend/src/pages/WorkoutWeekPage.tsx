@@ -471,12 +471,12 @@ function ExercisePickerButton({
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger>
         <Button variant="outline" size="sm" className="h-7 w-full text-xs">
-          + Add exercise
+          + Add Exercise
         </Button>
       </DialogTrigger>
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
-          <DialogTitle>Add exercise</DialogTitle>
+          <DialogTitle>Add Exercise</DialogTitle>
         </DialogHeader>
         <ExercisePickerModal
           exercises={exercises}
@@ -567,7 +567,7 @@ function ExercisePickerModal({
               className="w-full text-left px-2 py-1.5 text-xs rounded hover:bg-muted"
             >
               <span className="font-medium">{e.attributes.name}</span>
-              <span className="text-muted-foreground ml-1">({e.attributes.kind})</span>
+              <span className="text-muted-foreground ml-1">({e.attributes.kind.charAt(0).toUpperCase() + e.attributes.kind.slice(1)})</span>
             </button>
           ))
         )}

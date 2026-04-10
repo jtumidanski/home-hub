@@ -25,7 +25,7 @@ export function TrackerPage() {
   return (
     <div className="py-4 px-4 space-y-4">
       <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold">Tracker</h1>
+        <h1 className="text-2xl font-bold">Habits</h1>
         <div className="flex gap-1">
           <Button variant={view === "today" ? "default" : "ghost"} size="sm" onClick={() => setView("today")}>
             <ListChecks className="h-4 w-4 mr-1" /> Today
@@ -41,7 +41,7 @@ export function TrackerPage() {
 
       <div className={`mx-auto ${widthClass}`}>
         {view === "today" && (
-          <TodayView onNavigateToCalendar={() => setView("calendar")} />
+          <TodayView />
         )}
         {view === "calendar" && (
           <CalendarGrid month={month} onMonthChange={setMonth} onViewReport={() => setView("report")} />

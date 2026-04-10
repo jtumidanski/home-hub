@@ -32,7 +32,7 @@ interface TodayItem {
   sort_order: number;
 }
 
-export function TodayView({ onNavigateToCalendar }: { onNavigateToCalendar: () => void }) {
+export function TodayView() {
   const { data, isLoading } = useTrackerToday();
   const putEntry = usePutEntry();
   const skipEntry = useSkipEntry();
@@ -52,15 +52,14 @@ export function TodayView({ onNavigateToCalendar }: { onNavigateToCalendar: () =
     entryMap.set(itemId, e);
   });
 
-  const loggedCount = entries.filter((e) => !e.attributes?.skipped).length;
-  const skippedCount = entries.filter((e) => e.attributes?.skipped).length;
+  const loggedCount = entries.filter((e) => !(e.attributes ?? e as unknown as TrackerEntry["attributes"])?.skipped).length;
+  const skippedCount = entries.filter((e) => (e.attributes ?? e as unknown as TrackerEntry["attributes"])?.skipped).length;
   const filledAndSkipped = loggedCount + skippedCount;
 
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between">
         <h2 className="text-lg font-semibold">Today — {new Date(todayDate + "T12:00:00").toLocaleDateString("en-US", { weekday: "long", month: "short", day: "numeric" })}</h2>
-        <Button variant="outline" size="sm" onClick={onNavigateToCalendar}>Calendar</Button>
       </div>
 
       {items.length > 0 && (
@@ -78,8 +77,9 @@ export function TodayView({ onNavigateToCalendar }: { onNavigateToCalendar: () =
 
       {items.map((item) => {
         const entry = entryMap.get(item.id);
-        const hasValue = entry && !entry.attributes?.skipped && entry.attributes?.value;
-        const isSkipped = entry?.attributes?.skipped;
+        const entryAttrs = entry?.attributes ?? (entry as unknown as TrackerEntry["attributes"]);
+        const hasValue = entryAttrs && !entryAttrs.skipped && entryAttrs.value;
+        const isSkipped = entryAttrs?.skipped;
 
         return (
           <Card key={item.id} className={cn(
@@ -96,25 +96,25 @@ export function TodayView({ onNavigateToCalendar }: { onNavigateToCalendar: () =
               </div>
 
               {item.scale_type === "sentiment" && (
-                <SentimentInput itemId={item.id} date={todayDate} currentRating={(entry?.attributes?.value as { rating?: string })?.rating} putEntry={putEntry} />
+                <SentimentInput itemId={item.id} date={todayDate} currentRating={(entryAttrs?.value as { rating?: string })?.rating} putEntry={putEntry} />
               )}
               {item.scale_type === "numeric" && (
-                <NumericInput itemId={item.id} date={todayDate} currentCount={(entry?.attributes?.value as { count?: number })?.count} putEntry={putEntry} />
+                <NumericInput itemId={item.id} date={todayDate} currentCount={(entryAttrs?.value as { count?: number })?.count} putEntry={putEntry} />
               )}
               {item.scale_type === "range" && (
-                <RangeInput itemId={item.id} date={todayDate} config={item.scale_config} currentValue={(entry?.attributes?.value as { value?: number })?.value} putEntry={putEntry} />
+                <RangeInput itemId={item.id} date={todayDate} config={item.scale_config} currentValue={(entryAttrs?.value as { value?: number })?.value} putEntry={putEntry} />
               )}
 
               <div className="flex items-center gap-2">
                 <Input
                   placeholder="Add a note..."
                   className="text-xs h-7"
-                  value={notes[item.id] ?? entry?.attributes?.note ?? ""}
+                  value={notes[item.id] ?? entryAttrs?.note ?? ""}
                   onChange={(e) => setNotes((prev) => ({ ...prev, [item.id]: e.target.value }))}
                   onBlur={() => {
                     const note = notes[item.id];
-                    if (note !== undefined && entry?.attributes?.value) {
-                      putEntry.mutate({ itemId: item.id, date: todayDate, value: entry.attributes.value, note: note || null });
+                    if (note !== undefined && entryAttrs?.value) {
+                      putEntry.mutate({ itemId: item.id, date: todayDate, value: entryAttrs.value, note: note || null });
                     }
                   }}
                 />
@@ -151,11 +151,12 @@ function SentimentInput({ itemId, date, currentRating, putEntry }: { itemId: str
 }
 
 function NumericInput({ itemId, date, currentCount, putEntry }: { itemId: string; date: string; currentCount?: number | undefined; putEntry: ReturnType<typeof usePutEntry> }) {
+  const isSet = currentCount !== undefined;
   const count = currentCount ?? 0;
   return (
     <div className="flex items-center gap-2">
       <Button variant="outline" size="sm" onClick={() => putEntry.mutate({ itemId, date, value: { count: Math.max(0, count - 1) } })}>-</Button>
-      <span className="w-8 text-center font-mono">{count}</span>
+      <span className={cn("w-8 text-center font-mono", !isSet && "text-muted-foreground")}>{count}</span>
       <Button variant="outline" size="sm" onClick={() => putEntry.mutate({ itemId, date, value: { count: count + 1 } })}>+</Button>
     </div>
   );
@@ -164,6 +165,7 @@ function NumericInput({ itemId, date, currentCount, putEntry }: { itemId: string
 function RangeInput({ itemId, date, config, currentValue, putEntry }: { itemId: string; date: string; config: RangeConfig | null; currentValue?: number | undefined; putEntry: ReturnType<typeof usePutEntry> }) {
   const min = config?.min ?? 0;
   const max = config?.max ?? 100;
+  const isSet = currentValue !== undefined;
   const [local, setLocal] = useState<number>(currentValue ?? Math.round((min + max) / 2));
   useEffect(() => {
     if (currentValue !== undefined) setLocal(currentValue);
@@ -177,7 +179,7 @@ function RangeInput({ itemId, date, config, currentValue, putEntry }: { itemId: 
         onTouchEnd={(e) => commit(parseInt((e.target as HTMLInputElement).value))}
         onKeyUp={(e) => commit(parseInt((e.target as HTMLInputElement).value))}
       />
-      <span className="w-10 text-center font-mono text-sm">{local}</span>
+      <span className={cn("w-10 text-center font-mono text-sm", !isSet && "text-muted-foreground")}>{isSet ? local : "Not set"}</span>
     </div>
   );
 }

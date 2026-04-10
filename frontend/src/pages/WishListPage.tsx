@@ -216,7 +216,7 @@ export function WishListPage() {
       <Dialog open={showForm} onOpenChange={(o) => !o && closeForm()}>
         <DialogContent className="sm:max-w-[400px]">
           <DialogHeader>
-            <DialogTitle>{editing ? "Edit wish list item" : "Add wish list item"}</DialogTitle>
+            <DialogTitle>{editing ? "Edit Wish List Item" : "Add Wish List Item"}</DialogTitle>
           </DialogHeader>
           <Form {...form}>
             <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
@@ -298,7 +298,7 @@ export function WishListPage() {
       >
         <DialogContent className="sm:max-w-[380px]">
           <DialogHeader>
-            <DialogTitle>Delete wish list item?</DialogTitle>
+            <DialogTitle>Delete Wish List Item?</DialogTitle>
           </DialogHeader>
           <p className="text-sm text-muted-foreground">
             “{pendingDelete?.attributes.name}” will be removed from your wish list.

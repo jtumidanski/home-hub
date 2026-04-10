@@ -192,7 +192,7 @@ export function CalendarGrid({ month, onMonthChange, onViewReport }: Props) {
       </div>
 
       {sortedItems.length === 0 && (
-        <p className="text-muted-foreground text-sm text-center py-8">No tracking items. Add items in Settings to get started.</p>
+        <p className="text-muted-foreground text-sm text-center py-8">No habits yet. Add items in Setup to get started.</p>
       )}
     </div>
   );
@@ -355,18 +355,23 @@ function CellContent({ itemId, date, scaleType, scaleConfig, scheduled, entry, i
 
 function RangeEditor({ min, max, initial, onCommit }: { min: number; max: number; initial: number | undefined; onCommit: (n: number) => void }) {
   const [local, setLocal] = useState<number>(initial ?? Math.round((min + max) / 2));
+  const [touched, setTouched] = useState(initial !== undefined);
   useEffect(() => {
-    if (initial !== undefined) setLocal(initial);
+    if (initial !== undefined) {
+      setLocal(initial);
+      setTouched(true);
+    }
   }, [initial]);
+  const handleCommit = (n: number) => { setTouched(true); onCommit(n); };
   return (
     <div className="space-y-1">
       <input type="range" min={min} max={max} value={local} className="w-full"
-        onChange={(e) => setLocal(parseInt(e.target.value))}
-        onMouseUp={(e) => onCommit(parseInt((e.target as HTMLInputElement).value))}
-        onTouchEnd={(e) => onCommit(parseInt((e.target as HTMLInputElement).value))}
-        onKeyUp={(e) => onCommit(parseInt((e.target as HTMLInputElement).value))}
+        onChange={(e) => { setLocal(parseInt(e.target.value)); setTouched(true); }}
+        onMouseUp={(e) => handleCommit(parseInt((e.target as HTMLInputElement).value))}
+        onTouchEnd={(e) => handleCommit(parseInt((e.target as HTMLInputElement).value))}
+        onKeyUp={(e) => handleCommit(parseInt((e.target as HTMLInputElement).value))}
       />
-      <p className="text-center text-xs font-mono">{local}</p>
+      <p className={cn("text-center text-xs font-mono", !touched && "text-muted-foreground")}>{touched ? local : "Not set"}</p>
     </div>
   );
 }
@@ -394,13 +399,17 @@ function CellEditor({ itemId, date, scaleType, scaleConfig, scheduled, entry, pu
           ))}
         </div>
       )}
-      {scaleType === "numeric" && (
-        <div className="flex items-center gap-1">
-          <Button variant="outline" size="sm" onClick={() => save({ count: Math.max(0, ((entry?.value as NumericValue)?.count ?? 0) - 1) })}>-</Button>
-          <span className="flex-1 text-center font-mono">{(entry?.value as NumericValue)?.count ?? 0}</span>
-          <Button variant="outline" size="sm" onClick={() => save({ count: ((entry?.value as NumericValue)?.count ?? 0) + 1 })}>+</Button>
-        </div>
-      )}
+      {scaleType === "numeric" && (() => {
+        const hasEntry = entry?.value != null;
+        const count = hasEntry ? ((entry.value as NumericValue)?.count ?? 0) : null;
+        return (
+          <div className="flex items-center gap-1">
+            <Button variant="outline" size="sm" onClick={() => save({ count: Math.max(0, (count ?? 0) - 1) })}>-</Button>
+            <span className={cn("flex-1 text-center font-mono", count === null && "text-muted-foreground")}>{count ?? "–"}</span>
+            <Button variant="outline" size="sm" onClick={() => save({ count: (count ?? 0) + 1 })}>+</Button>
+          </div>
+        );
+      })()}
       {scaleType === "range" && (
         <RangeEditor
           min={scaleConfig?.min ?? 0}
