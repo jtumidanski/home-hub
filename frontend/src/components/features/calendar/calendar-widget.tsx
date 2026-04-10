@@ -58,8 +58,8 @@ export function CalendarWidget() {
   const events = sortEvents(data?.data ?? []);
 
   return (
-    <Link to="/app/calendar" className="transition-opacity hover:opacity-80">
-      <Card>
+    <Link to="/app/calendar" className="block h-full transition-opacity hover:opacity-80">
+      <Card className="h-full">
         <CardHeader>
           <CardTitle className="text-sm font-medium">Calendar</CardTitle>
           <CardAction>

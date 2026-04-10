@@ -36,8 +36,8 @@ export function WorkoutWidget() {
   const items = attrs?.items ?? [];
 
   return (
-    <Link to="/app/workouts" className="transition-opacity hover:opacity-80">
-      <Card>
+    <Link to="/app/workouts" className="block h-full transition-opacity hover:opacity-80">
+      <Card className="h-full">
         <CardHeader>
           <CardTitle className="text-sm font-medium">Workout</CardTitle>
           <CardAction>

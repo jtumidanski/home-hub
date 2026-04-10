@@ -30,9 +30,19 @@ function DashboardSkeleton() {
         <Skeleton className="mt-1 h-4 w-32" />
       </div>
       <Skeleton className="h-48" />
-      <div className="grid gap-4 grid-cols-1 md:grid-cols-2">
-        {Array.from({ length: 6 }).map((_, i) => (
+      <div className="grid gap-4 grid-cols-1 md:grid-cols-3">
+        {Array.from({ length: 3 }).map((_, i) => (
           <Skeleton key={i} className="h-28" />
+        ))}
+      </div>
+      <div className="grid gap-4 grid-cols-1 md:grid-cols-3">
+        {Array.from({ length: 3 }).map((_, i) => (
+          <Skeleton key={i} className="h-36" />
+        ))}
+      </div>
+      <div className="grid gap-4 grid-cols-1 md:grid-cols-2">
+        {Array.from({ length: 2 }).map((_, i) => (
+          <Skeleton key={i} className="h-36" />
         ))}
       </div>
     </div>
@@ -88,59 +98,65 @@ export function DashboardPage() {
 
         <WeatherWidget />
 
-        <div className="grid gap-4 grid-cols-1 md:grid-cols-2">
-          <PackageSummaryWidget />
-          <CalendarWidget />
+        {/* Tasks / Reminders / Overdue — 3-column row */}
+        <div className="grid gap-4 grid-cols-1 md:grid-cols-3">
+          <Link to="/app/tasks?status=pending" className="transition-opacity hover:opacity-80">
+            <Card className="h-full">
+              <CardHeader className="flex flex-row items-center justify-between pb-2">
+                <CardTitle className="text-sm font-medium">Pending Tasks</CardTitle>
+                <CheckSquare className="h-4 w-4 text-muted-foreground" />
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold">{taskSummary?.pendingCount ?? "-"}</div>
+                <p className="text-xs text-muted-foreground">
+                  {taskSummary?.completedTodayCount ?? 0} completed today
+                </p>
+              </CardContent>
+            </Card>
+          </Link>
+
+          <Link to="/app/reminders?status=active" className="transition-opacity hover:opacity-80">
+            <Card className="h-full">
+              <CardHeader className="flex flex-row items-center justify-between pb-2">
+                <CardTitle className="text-sm font-medium">Active Reminders</CardTitle>
+                <Bell className="h-4 w-4 text-muted-foreground" />
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold">{reminderSummary?.dueNowCount ?? "-"}</div>
+                <p className="text-xs text-muted-foreground">
+                  {reminderSummary?.upcomingCount ?? 0} upcoming
+                </p>
+              </CardContent>
+            </Card>
+          </Link>
+
+          <Link to="/app/tasks?status=overdue" className="transition-opacity hover:opacity-80">
+            <Card className="h-full">
+              <CardHeader className="flex flex-row items-center justify-between pb-2">
+                <CardTitle className="text-sm font-medium">Overdue</CardTitle>
+                <AlertTriangle className="h-4 w-4 text-muted-foreground" />
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold">{taskSummary?.overdueCount ?? "-"}</div>
+                <p className="text-xs text-muted-foreground">
+                  {reminderSummary?.snoozedCount ?? 0} snoozed reminders
+                </p>
+              </CardContent>
+            </Card>
+          </Link>
+        </div>
+
+        {/* Meals / Habits / Packages — 3-column row, equal height */}
+        <div className="grid gap-4 grid-cols-1 md:grid-cols-3 md:auto-rows-fr">
           <MealPlanWidget />
           <HabitsWidget />
+          <PackageSummaryWidget />
+        </div>
+
+        {/* Calendar / Workout — 2-column row, equal height */}
+        <div className="grid gap-4 grid-cols-1 md:grid-cols-2 md:auto-rows-fr">
+          <CalendarWidget />
           <WorkoutWidget />
-
-          <div className="grid gap-4 grid-cols-1 md:grid-cols-2 md:col-span-2">
-            <Link to="/app/tasks?status=pending" className="transition-opacity hover:opacity-80">
-              <Card>
-                <CardHeader className="flex flex-row items-center justify-between pb-2">
-                  <CardTitle className="text-sm font-medium">Pending Tasks</CardTitle>
-                  <CheckSquare className="h-4 w-4 text-muted-foreground" />
-                </CardHeader>
-                <CardContent>
-                  <div className="text-2xl font-bold">{taskSummary?.pendingCount ?? "-"}</div>
-                  <p className="text-xs text-muted-foreground">
-                    {taskSummary?.completedTodayCount ?? 0} completed today
-                  </p>
-                </CardContent>
-              </Card>
-            </Link>
-
-            <Link to="/app/reminders?status=active" className="transition-opacity hover:opacity-80">
-              <Card>
-                <CardHeader className="flex flex-row items-center justify-between pb-2">
-                  <CardTitle className="text-sm font-medium">Active Reminders</CardTitle>
-                  <Bell className="h-4 w-4 text-muted-foreground" />
-                </CardHeader>
-                <CardContent>
-                  <div className="text-2xl font-bold">{reminderSummary?.dueNowCount ?? "-"}</div>
-                  <p className="text-xs text-muted-foreground">
-                    {reminderSummary?.upcomingCount ?? 0} upcoming
-                  </p>
-                </CardContent>
-              </Card>
-            </Link>
-
-            <Link to="/app/tasks?status=overdue" className="transition-opacity hover:opacity-80">
-              <Card>
-                <CardHeader className="flex flex-row items-center justify-between pb-2">
-                  <CardTitle className="text-sm font-medium">Overdue</CardTitle>
-                  <AlertTriangle className="h-4 w-4 text-muted-foreground" />
-                </CardHeader>
-                <CardContent>
-                  <div className="text-2xl font-bold">{taskSummary?.overdueCount ?? "-"}</div>
-                  <p className="text-xs text-muted-foreground">
-                    {reminderSummary?.snoozedCount ?? 0} snoozed reminders
-                  </p>
-                </CardContent>
-              </Card>
-            </Link>
-          </div>
         </div>
       </div>
     </PullToRefresh>

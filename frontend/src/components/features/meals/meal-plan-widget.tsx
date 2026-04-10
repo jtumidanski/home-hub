@@ -80,8 +80,8 @@ export function MealPlanWidget() {
     }) ?? [];
 
   return (
-    <Link to="/app/meals" className="transition-opacity hover:opacity-80">
-      <Card>
+    <Link to="/app/meals" className="block h-full transition-opacity hover:opacity-80">
+      <Card className="h-full">
         <CardHeader>
           <CardTitle className="text-sm font-medium">Meals</CardTitle>
           <CardAction>

@@ -55,8 +55,8 @@ export function PackageSummaryWidget() {
   }
 
   return (
-    <Link to="/app/packages" className="transition-opacity hover:opacity-80">
-      <Card>
+    <Link to="/app/packages" className="block h-full transition-opacity hover:opacity-80">
+      <Card className="h-full">
         <CardHeader>
           <CardTitle className="text-sm font-medium">Packages</CardTitle>
           <CardAction>

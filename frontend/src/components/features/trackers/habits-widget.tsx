@@ -46,8 +46,8 @@ export function HabitsWidget() {
   );
 
   return (
-    <Link to="/app/habits" className="transition-opacity hover:opacity-80">
-      <Card>
+    <Link to="/app/habits" className="block h-full transition-opacity hover:opacity-80">
+      <Card className="h-full">
         <CardHeader>
           <CardTitle className="text-sm font-medium">Habits</CardTitle>
           <CardAction>
