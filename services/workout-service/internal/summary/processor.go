@@ -29,18 +29,18 @@ func NewProcessor(l logrus.FieldLogger, ctx context.Context, db *gorm.DB) *Proce
 	return &Processor{l: l, ctx: ctx, db: db}
 }
 
-// Build assembles the JSON:API summary document for one week. Read-only —
+// Build assembles the JSON:API summary projection for one week. Read-only —
 // every state mutation is delegated to the underlying domain processors.
-func (p *Processor) Build(wk week.Model) (document, error) {
+func (p *Processor) Build(wk week.Model) (RestModel, error) {
 	db := p.db.WithContext(p.ctx)
 	items, err := planneditem.GetByWeek(wk.Id())(db)()
 	if err != nil {
-		return document{}, err
+		return RestModel{}, err
 	}
 
 	exMap, themeMap, regionMap, err := loadCatalog(db, items)
 	if err != nil {
-		return document{}, err
+		return RestModel{}, err
 	}
 	itemIDs := make([]uuid.UUID, 0, len(items))
 	for _, it := range items {
@@ -48,7 +48,7 @@ func (p *Processor) Build(wk week.Model) (document, error) {
 	}
 	perfMap, setMap, err := performance.LoadByPlannedItems(db, itemIDs)
 	if err != nil {
-		return document{}, err
+		return RestModel{}, err
 	}
 
 	// Tally weight + distance unit usage so we can pick the most-used unit
@@ -132,23 +132,21 @@ func (p *Processor) Build(wk week.Model) (document, error) {
 		regions = append(regions, *g)
 	}
 
-	doc := document{
-		Data: data{
-			Type: "week-summaries",
-			ID:   wk.WeekStartDate().Format("2006-01-02"),
-			Attributes: attributes{
-				WeekStartDate:       wk.WeekStartDate().Format("2006-01-02"),
-				RestDayFlags:        wk.RestDayFlags(),
-				TotalPlannedItems:   totals.planned,
-				TotalPerformedItems: totals.performed,
-				TotalSkippedItems:   totals.skipped,
-				ByDay:               dayList,
-				ByTheme:             themes,
-				ByRegion:            regions,
-			},
-		},
+	flags := wk.RestDayFlags()
+	if flags == nil {
+		flags = []int{}
 	}
-	return doc, nil
+	return RestModel{
+		Id:                  wk.WeekStartDate().Format("2006-01-02"),
+		WeekStartDate:       wk.WeekStartDate().Format("2006-01-02"),
+		RestDayFlags:        flags,
+		TotalPlannedItems:   totals.planned,
+		TotalPerformedItems: totals.performed,
+		TotalSkippedItems:   totals.skipped,
+		ByDay:               dayList,
+		ByTheme:             themes,
+		ByRegion:            regions,
+	}, nil
 }
 
 // --- catalog & unit-selection helpers ------------------------------------

@@ -41,14 +41,14 @@ func NewProcessor(l logrus.FieldLogger, ctx context.Context, db *gorm.DB) *Proce
 	return &Processor{l: l, ctx: ctx, db: db}
 }
 
-// LoadWeekDocument resolves the week + its embedded items into a JSON:API
-// document. Used by every read and post-mutation render path.
-func (p *Processor) LoadWeekDocument(weekModel week.Model) (Document, error) {
+// LoadWeekDocument resolves the week + its embedded items into the JSON:API
+// resource model. Used by every read and post-mutation render path.
+func (p *Processor) LoadWeekDocument(weekModel week.Model) (RestModel, error) {
 	items, err := AssembleItems(p.db.WithContext(p.ctx), weekModel.Id())
 	if err != nil {
-		return Document{}, err
+		return RestModel{}, err
 	}
-	return BuildDocument(weekModel, items), nil
+	return BuildRestModel(weekModel, items), nil
 }
 
 // Copy implements `POST /workouts/weeks/{weekStart}/copy`. The week is
@@ -101,41 +101,25 @@ func (p *Processor) Copy(tenantID, userID uuid.UUID, weekStart time.Time, mode s
 		return week.Model{}, err
 	}
 
+	// Build the clone batch first so the transaction body is a thin call
+	// into the planneditem administrator. Routing through
+	// `weekview/administrator.go` keeps cross-domain writes from reaching
+	// past the planneditem package boundary.
+	clones := make([]planneditem.Entity, 0, len(sourceItems))
+	for _, src := range sourceItems {
+		cloned := src
+		if mode == CopyModeActual {
+			if perf, ok := perfMap[src.Id]; ok {
+				applyActualsAsPlanned(&cloned, perf, setMap[perf.Id])
+			}
+		}
+		clones = append(clones, cloned)
+	}
+
 	// Insert clones inside a single transaction so a partial copy can never
 	// leak past a mid-loop failure.
 	err = p.db.WithContext(p.ctx).Transaction(func(tx *gorm.DB) error {
-		for _, src := range sourceItems {
-			cloned := src
-			cloned.Id = uuid.Nil // re-issue
-			cloned.WeekId = target.Id
-
-			if mode == CopyModeActual {
-				if perf, ok := perfMap[src.Id]; ok {
-					applyActualsAsPlanned(&cloned, perf, setMap[perf.Id])
-				}
-			}
-
-			ent := planneditem.Entity{
-				TenantId:               tenantID,
-				UserId:                 userID,
-				WeekId:                 target.Id,
-				ExerciseId:             cloned.ExerciseId,
-				DayOfWeek:              cloned.DayOfWeek,
-				Position:               cloned.Position,
-				PlannedSets:            cloned.PlannedSets,
-				PlannedReps:            cloned.PlannedReps,
-				PlannedWeight:          cloned.PlannedWeight,
-				PlannedWeightUnit:      cloned.PlannedWeightUnit,
-				PlannedDurationSeconds: cloned.PlannedDurationSeconds,
-				PlannedDistance:        cloned.PlannedDistance,
-				PlannedDistanceUnit:    cloned.PlannedDistanceUnit,
-				Notes:                  cloned.Notes,
-			}
-			if err := tx.Create(&ent).Error; err != nil {
-				return err
-			}
-		}
-		return nil
+		return cloneItems(tx, tenantID, userID, target.Id, clones)
 	})
 	if err != nil {
 		return week.Model{}, err

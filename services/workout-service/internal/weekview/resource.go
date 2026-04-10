@@ -57,28 +57,24 @@ func parseItemID(r *http.Request) (uuid.UUID, error) {
 // renderWeek loads a week's embedded items via the weekview processor and
 // writes the JSON:API envelope. Used by every mutation endpoint so the client
 // gets the post-update state in one round-trip.
-func renderWeek(w http.ResponseWriter, l logrus.FieldLogger, viewProc *Processor, weekModel week.Model, status int) {
-	doc, err := viewProc.LoadWeekDocument(weekModel)
+func renderWeek(w http.ResponseWriter, l logrus.FieldLogger, si jsonapi.ServerInformation, viewProc *Processor, weekModel week.Model, status int) {
+	rm, err := viewProc.LoadWeekDocument(weekModel)
 	if err != nil {
 		l.WithError(err).Error("Failed to load week document")
 		server.WriteError(w, http.StatusInternalServerError, "Error", "")
 		return
 	}
-	body, err := MarshalDocument(doc)
-	if err != nil {
-		l.WithError(err).Error("Failed to marshal week document")
-		server.WriteError(w, http.StatusInternalServerError, "Error", "")
+	if status == http.StatusCreated {
+		server.MarshalCreatedResponse[RestModel](l)(w)(si)(rm)
 		return
 	}
-	w.Header().Set("Content-Type", "application/vnd.api+json")
-	w.WriteHeader(status)
-	_, _ = w.Write(body)
+	server.MarshalResponse[RestModel](l)(w)(si)(map[string][]string{})(rm)
 }
 
 // ensureAndRender lazily creates the week if missing, then renders the
 // post-update state. Mutation handlers call this after the underlying domain
 // processor has applied its change.
-func ensureAndRender(w http.ResponseWriter, l logrus.FieldLogger, db *gorm.DB, ctx context.Context, tenantID, userID uuid.UUID, weekStart time.Time, status int) bool {
+func ensureAndRender(w http.ResponseWriter, l logrus.FieldLogger, si jsonapi.ServerInformation, db *gorm.DB, ctx context.Context, tenantID, userID uuid.UUID, weekStart time.Time, status int) bool {
 	weekProc := week.NewProcessor(l, ctx, db)
 	e, err := weekProc.EnsureExists(tenantID, userID, weekStart)
 	if err != nil {
@@ -93,7 +89,7 @@ func ensureAndRender(w http.ResponseWriter, l logrus.FieldLogger, db *gorm.DB, c
 		return false
 	}
 	viewProc := NewProcessor(l, ctx, db)
-	renderWeek(w, l, viewProc, m, status)
+	renderWeek(w, l, si, viewProc, m, status)
 	return true
 }
 
@@ -118,7 +114,7 @@ func getWeekHandler(db *gorm.DB) server.GetHandler {
 				return
 			}
 			viewProc := NewProcessor(d.Logger(), r.Context(), db)
-			renderWeek(w, d.Logger(), viewProc, m, http.StatusOK)
+			renderWeek(w, d.Logger(), c.ServerInformation(), viewProc, m, http.StatusOK)
 		}
 	}
 }
@@ -148,7 +144,7 @@ func patchWeekHandler(db *gorm.DB) server.InputHandler[PatchWeekRequest] {
 				return
 			}
 			viewProc := NewProcessor(d.Logger(), r.Context(), db)
-			renderWeek(w, d.Logger(), viewProc, m, http.StatusOK)
+			renderWeek(w, d.Logger(), c.ServerInformation(), viewProc, m, http.StatusOK)
 		}
 	}
 }
@@ -197,7 +193,7 @@ func addItemHandler(db *gorm.DB) server.InputHandler[AddPlannedItemRequest] {
 				writePlannedItemError(w, d.Logger(), "Failed to add planned item", err)
 				return
 			}
-			ensureAndRender(w, d.Logger(), db, r.Context(), t.Id(), t.UserId(), weekStart, http.StatusCreated)
+			ensureAndRender(w, d.Logger(), c.ServerInformation(), db, r.Context(), t.Id(), t.UserId(), weekStart, http.StatusCreated)
 		}
 	}
 }
@@ -227,7 +223,7 @@ func bulkAddHandler(db *gorm.DB) server.InputHandler[BulkAddPlannedItemsRequest]
 				writePlannedItemError(w, d.Logger(), "Failed to bulk add planned items", err)
 				return
 			}
-			ensureAndRender(w, d.Logger(), db, r.Context(), t.Id(), t.UserId(), weekStart, http.StatusCreated)
+			ensureAndRender(w, d.Logger(), c.ServerInformation(), db, r.Context(), t.Id(), t.UserId(), weekStart, http.StatusCreated)
 		}
 	}
 }
@@ -265,7 +261,7 @@ func updateItemHandler(db *gorm.DB) server.InputHandler[UpdatePlannedItemRequest
 				writePlannedItemError(w, d.Logger(), "Failed to update planned item", err)
 				return
 			}
-			ensureAndRender(w, d.Logger(), db, r.Context(), t.Id(), t.UserId(), weekStart, http.StatusOK)
+			ensureAndRender(w, d.Logger(), c.ServerInformation(), db, r.Context(), t.Id(), t.UserId(), weekStart, http.StatusOK)
 		}
 	}
 }
@@ -317,7 +313,7 @@ func reorderHandler(db *gorm.DB) server.InputHandler[ReorderPlannedItemsRequest]
 				writePlannedItemError(w, d.Logger(), "Failed to reorder planned items", err)
 				return
 			}
-			ensureAndRender(w, d.Logger(), db, r.Context(), t.Id(), t.UserId(), weekStart, http.StatusOK)
+			ensureAndRender(w, d.Logger(), c.ServerInformation(), db, r.Context(), t.Id(), t.UserId(), weekStart, http.StatusOK)
 		}
 	}
 }
@@ -347,7 +343,7 @@ func copyHandler(db *gorm.DB) server.InputHandler[CopyWeekRequest] {
 				}
 				return
 			}
-			renderWeek(w, d.Logger(), viewProc, created, http.StatusCreated)
+			renderWeek(w, d.Logger(), c.ServerInformation(), viewProc, created, http.StatusCreated)
 		}
 	}
 }

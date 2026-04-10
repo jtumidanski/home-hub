@@ -8,7 +8,6 @@
 package weekview
 
 import (
-	"encoding/json"
 	"time"
 
 	"github.com/google/uuid"
@@ -71,25 +70,25 @@ type ItemRest struct {
 	Notes           *string          `json:"notes,omitempty"`
 }
 
-// Document is the typed JSON:API document the week endpoint emits.
-type Document struct {
-	Data data `json:"data"`
-}
-
-type data struct {
-	Type       string     `json:"type"`
-	ID         string     `json:"id"`
-	Attributes attributes `json:"attributes"`
-}
-
-type attributes struct {
+// RestModel is the JSON:API resource for the composite "week with embedded
+// items" view. The struct is flat — api2go marshals every json-tagged field
+// into the response's `attributes` block automatically.
+type RestModel struct {
+	Id            uuid.UUID  `json:"-"`
 	WeekStartDate string     `json:"weekStartDate"`
 	RestDayFlags  []int      `json:"restDayFlags"`
 	Items         []ItemRest `json:"items"`
 }
 
-func MarshalDocument(doc Document) ([]byte, error) {
-	return json.Marshal(doc)
+func (r RestModel) GetName() string { return "weeks" }
+func (r RestModel) GetID() string   { return r.Id.String() }
+func (r *RestModel) SetID(id string) error {
+	if id == "" {
+		return nil
+	}
+	var err error
+	r.Id, err = uuid.Parse(id)
+	return err
 }
 
 // --- request types --------------------------------------------------------

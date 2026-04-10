@@ -6,7 +6,6 @@
 package summary
 
 import (
-	"encoding/json"
 	"errors"
 	"net/http"
 	"time"
@@ -51,17 +50,13 @@ func summaryHandler(db *gorm.DB) server.GetHandler {
 				return
 			}
 
-			doc, err := NewProcessor(d.Logger(), r.Context(), db).Build(wkModel)
+			rm, err := NewProcessor(d.Logger(), r.Context(), db).Build(wkModel)
 			if err != nil {
 				d.Logger().WithError(err).Error("Failed to build week summary")
 				server.WriteError(w, http.StatusInternalServerError, "Error", "")
 				return
 			}
-			w.Header().Set("Content-Type", "application/vnd.api+json")
-			w.WriteHeader(http.StatusOK)
-			if err := json.NewEncoder(w).Encode(doc); err != nil {
-				d.Logger().WithError(err).Error("Failed to encode summary document")
-			}
+			server.MarshalResponse[RestModel](d.Logger())(w)(c.ServerInformation())(map[string][]string{})(rm)
 		}
 	}
 }

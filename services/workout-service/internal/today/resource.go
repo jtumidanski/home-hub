@@ -7,7 +7,6 @@
 package today
 
 import (
-	"encoding/json"
 	"net/http"
 	"time"
 
@@ -27,22 +26,35 @@ func InitializeRoutes(db *gorm.DB) func(l logrus.FieldLogger, si jsonapi.ServerI
 	}
 }
 
-type document struct {
-	Data data `json:"data"`
-}
-
-type data struct {
-	Type       string     `json:"type"`
-	ID         string     `json:"id"`
-	Attributes attributes `json:"attributes"`
-}
-
-type attributes struct {
+// RestModel is the JSON:API resource for the today projection. The id is
+// today's ISO date so the URL identifier and the resource identifier match.
+type RestModel struct {
+	Id            string              `json:"-"`
 	Date          string              `json:"date"`
 	WeekStartDate string              `json:"weekStartDate"`
 	DayOfWeek     int                 `json:"dayOfWeek"`
 	IsRestDay     bool                `json:"isRestDay"`
 	Items         []weekview.ItemRest `json:"items"`
+}
+
+func (r RestModel) GetName() string         { return "today" }
+func (r RestModel) GetID() string           { return r.Id }
+func (r *RestModel) SetID(id string) error { r.Id = id; return nil }
+
+func transform(res Result) RestModel {
+	items := res.Items
+	if items == nil {
+		items = []weekview.ItemRest{}
+	}
+	d := res.Date.Format("2006-01-02")
+	return RestModel{
+		Id:            d,
+		Date:          d,
+		WeekStartDate: res.WeekStartDate.Format("2006-01-02"),
+		DayOfWeek:     res.DayOfWeek,
+		IsRestDay:     res.IsRestDay,
+		Items:         items,
+	}
 }
 
 func todayHandler(db *gorm.DB) server.GetHandler {
@@ -55,28 +67,7 @@ func todayHandler(db *gorm.DB) server.GetHandler {
 				server.WriteError(w, http.StatusInternalServerError, "Error", "")
 				return
 			}
-			writeDoc(w, d.Logger(), res)
+			server.MarshalResponse[RestModel](d.Logger())(w)(c.ServerInformation())(map[string][]string{})(transform(res))
 		}
-	}
-}
-
-func writeDoc(w http.ResponseWriter, l logrus.FieldLogger, res Result) {
-	doc := document{
-		Data: data{
-			Type: "today",
-			ID:   res.Date.Format("2006-01-02"),
-			Attributes: attributes{
-				Date:          res.Date.Format("2006-01-02"),
-				WeekStartDate: res.WeekStartDate.Format("2006-01-02"),
-				DayOfWeek:     res.DayOfWeek,
-				IsRestDay:     res.IsRestDay,
-				Items:         res.Items,
-			},
-		},
-	}
-	w.Header().Set("Content-Type", "application/vnd.api+json")
-	w.WriteHeader(http.StatusOK)
-	if err := json.NewEncoder(w).Encode(doc); err != nil {
-		l.WithError(err).Error("Failed to encode today document")
 	}
 }

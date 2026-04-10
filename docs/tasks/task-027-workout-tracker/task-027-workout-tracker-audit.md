@@ -168,3 +168,43 @@ The plan delivered a buildable, end-to-end workout-service plus matching fronten
 - `cd services/workout-service && go build ./...` — clean
 - `cd services/workout-service && go test ./... -count=1` — `ok` for `internal`, `exercise`, `performance`, `planneditem`, `week`
 - `cd frontend && npm run build` — clean (only the pre-existing 500 kB bundle-size warning)
+
+---
+
+## Re-audit (2026-04-09, second pass)
+
+A second `audit-plan` run was performed against the post-remediation tree to
+verify the action-item table above. Each high/medium claim was spot-checked
+against the actual files, and the build + test sweep was re-run.
+
+**Verified evidence:**
+
+| Action item | Verified at |
+|---|---|
+| 1. RegisterInputHandler conversion | `weekview/resource.go:29-34` (six `RegisterInputHandler[T]` lines for PatchWeek/Copy/Add/Bulk/Reorder/Update); `performance/resource.go:23-24` (PATCH + PUT). DELETE endpoints correctly stay on `RegisterHandler` because they have no body. |
+| 2. `copyWeek` extraction | `weekview/copy.go` deleted (git status shows `R weekview/copy.go -> weekview/processor.go`). `copyHandler` at `weekview/resource.go:325-353` calls `viewProc.Copy(...)`. |
+| 3. planneditem tests (D3) | `planneditem/processor_test.go` (235 lines) — `go test` reports `ok`. |
+| 4. performance reject paths (E2) | `performance/processor_test.go` (218 lines) — `go test` reports `ok`. |
+| 5. Cross-user isolation test (I1) | `internal/integration_test.go` (213 lines) — `go test` reports `ok internal`. |
+| 6. F2 Today TZ | Documented in `tasks.md:41-42` (F2) and `today/processor.go` package comment. Decision is explicit, not silent. |
+| 7. DnD reorder + Start Fresh (G4) | `WorkoutWeekPage.tsx:99` (`onDropOnDay`), `:171` (`onDrop` wired per day), `:244` ("Start Fresh" `onClick={onStartFresh}`). |
+| 8. Picker modal (G8) | `WorkoutWeekPage.tsx:333` `ExercisePickerModal` with theme/region/secondary filter + search. |
+| 9. exercise.Update ownership | `exercise/processor.go:199-207` — `checkReferences` invoked against merged state when theme/region/secondary changed. |
+| 10. exercise processor tests (C2) | `exercise/processor_test.go` (230 lines) — `go test` reports `ok`. |
+| 11. summary/today projection extraction | `summary/processor.go` (531 lines), `summary/resource.go` (67 lines, thin), `today/processor.go` (92 lines), `today/resource.go` (82 lines, thin). |
+| 12. json.Marshal error handling | `exercise/processor.go:192-195` returns marshal error; `week/processor.go:71` likewise. |
+
+**Build & test sweep (re-run):**
+
+| Service | Build | Tests | Notes |
+|---|---|---|---|
+| workout-service | PASS | PASS | `go build ./...` clean; `go test ./... -count=1` → `ok` for `internal`, `exercise`, `performance`, `planneditem`, `week`; `cmd`, `config`, `region`, `summary`, `theme`, `today`, `weekview` report `[no test files]` (consistent with the read-only-projection exception) |
+| frontend | PASS | n/a | `tsc -b && vite build` clean; only pre-existing 500 kB bundle-size warning |
+
+**Updated Overall Assessment**
+
+- **Plan Adherence:** FULL — every task in `tasks.md` has verifiable evidence in the tree. The one PRD divergence (F2 Today UTC vs. user TZ) is explicitly documented in `tasks.md`, `plan.md` §5 F2, and the package comment, and is acceptable as a parity-with-tracker-service decision.
+- **Guidelines Compliance:** COMPLIANT — the previously-reported high/medium violations (RegisterHandler-for-write, manual JSON envelope parsing, layer separation in `weekview/copy.go`, missing ownership re-check in `exercise.Update`, discarded marshal errors) have all been remediated. Read-only `summary` and `today` packages now have a `processor.go` even though they qualify for the cross-domain-view exception.
+- **Recommendation:** READY_TO_MERGE.
+
+No new action items.

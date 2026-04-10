@@ -1,7 +1,6 @@
 package performance
 
 import (
-	"encoding/json"
 	"errors"
 	"net/http"
 
@@ -33,70 +32,8 @@ func parseItemID(r *http.Request) (uuid.UUID, error) {
 	return uuid.Parse(mux.Vars(r)["itemId"])
 }
 
-type performanceRest struct {
-	Status     string       `json:"status"`
-	Mode       string       `json:"mode"`
-	WeightUnit *string      `json:"weightUnit,omitempty"`
-	Actuals    *actualsRest `json:"actuals,omitempty"`
-	Sets       []setRest    `json:"sets,omitempty"`
-	Notes      *string      `json:"notes,omitempty"`
-}
-
-type actualsRest struct {
-	Sets            *int     `json:"sets,omitempty"`
-	Reps            *int     `json:"reps,omitempty"`
-	Weight          *float64 `json:"weight,omitempty"`
-	DurationSeconds *int     `json:"durationSeconds,omitempty"`
-	Distance        *float64 `json:"distance,omitempty"`
-	DistanceUnit    *string  `json:"distanceUnit,omitempty"`
-}
-
-type setRest struct {
-	SetNumber int     `json:"setNumber"`
-	Reps      int     `json:"reps"`
-	Weight    float64 `json:"weight"`
-}
-
-func projectPerformance(m Model, sets []SetModel) performanceRest {
-	out := performanceRest{
-		Status:     m.Status(),
-		Mode:       m.Mode(),
-		WeightUnit: m.WeightUnit(),
-		Notes:      m.Notes(),
-	}
-	if m.Mode() == ModePerSet {
-		rows := make([]setRest, 0, len(sets))
-		for _, s := range sets {
-			rows = append(rows, setRest{SetNumber: s.SetNumber(), Reps: s.Reps(), Weight: s.Weight()})
-		}
-		out.Sets = rows
-	} else {
-		out.Actuals = &actualsRest{
-			Sets:            m.ActualSets(),
-			Reps:            m.ActualReps(),
-			Weight:          m.ActualWeight(),
-			DurationSeconds: m.ActualDurationSeconds(),
-			Distance:        m.ActualDistance(),
-			DistanceUnit:    m.ActualDistanceUnit(),
-		}
-	}
-	return out
-}
-
-func writePerformance(w http.ResponseWriter, status int, m Model, sets []SetModel) {
-	envelope := struct {
-		Data struct {
-			Type       string          `json:"type"`
-			ID         string          `json:"id"`
-			Attributes performanceRest `json:"attributes"`
-		} `json:"data"`
-	}{}
-	envelope.Data.Type = "performances"
-	envelope.Data.ID = m.PlannedItemID().String()
-	envelope.Data.Attributes = projectPerformance(m, sets)
-	w.Header().Set("Content-Type", "application/vnd.api+json")
-	w.WriteHeader(status)
-	_ = json.NewEncoder(w).Encode(envelope)
+func writePerformance(w http.ResponseWriter, l logrus.FieldLogger, si jsonapi.ServerInformation, m Model, sets []SetModel) {
+	server.MarshalResponse[RestModel](l)(w)(si)(map[string][]string{})(Transform(m, sets))
 }
 
 func writePerformanceError(w http.ResponseWriter, l logrus.FieldLogger, op string, err error) {
@@ -145,7 +82,7 @@ func patchHandler(db *gorm.DB) server.InputHandler[PatchPerformanceRequest] {
 				writePerformanceError(w, d.Logger(), "Failed to patch performance", err)
 				return
 			}
-			writePerformance(w, http.StatusOK, m, sets)
+			writePerformance(w, d.Logger(), c.ServerInformation(), m, sets)
 		}
 	}
 }
@@ -169,7 +106,7 @@ func putSetsHandler(db *gorm.DB) server.InputHandler[PutPerformanceSetsRequest] 
 				writePerformanceError(w, d.Logger(), "Failed to replace performance sets", err)
 				return
 			}
-			writePerformance(w, http.StatusOK, m, sets)
+			writePerformance(w, d.Logger(), c.ServerInformation(), m, sets)
 		}
 	}
 }
@@ -189,7 +126,7 @@ func deleteSetsHandler(db *gorm.DB) server.GetHandler {
 				writePerformanceError(w, d.Logger(), "Failed to collapse performance sets", err)
 				return
 			}
-			writePerformance(w, http.StatusOK, m, nil)
+			writePerformance(w, d.Logger(), c.ServerInformation(), m, nil)
 		}
 	}
 }

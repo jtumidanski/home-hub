@@ -75,22 +75,22 @@ func AssembleItems(db *gorm.DB, weekID uuid.UUID) ([]ItemRest, error) {
 	return out, nil
 }
 
-// BuildDocument wraps a week model + its assembled items in the JSON:API
-// envelope. The caller is responsible for marshaling.
-func BuildDocument(m week.Model, items []ItemRest) Document {
+// BuildRestModel projects a week model + its assembled items into the
+// composite JSON:API resource. The caller hands the result to
+// `server.MarshalResponse[RestModel]`.
+func BuildRestModel(m week.Model, items []ItemRest) RestModel {
 	if items == nil {
 		items = []ItemRest{}
 	}
-	return Document{
-		Data: data{
-			Type: "weeks",
-			ID:   m.Id().String(),
-			Attributes: attributes{
-				WeekStartDate: m.WeekStartDate().Format("2006-01-02"),
-				RestDayFlags:  m.RestDayFlags(),
-				Items:         items,
-			},
-		},
+	flags := m.RestDayFlags()
+	if flags == nil {
+		flags = []int{}
+	}
+	return RestModel{
+		Id:            m.Id(),
+		WeekStartDate: m.WeekStartDate().Format("2006-01-02"),
+		RestDayFlags:  flags,
+		Items:         items,
 	}
 }
 

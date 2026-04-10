@@ -1,6 +1,8 @@
 package summary
 
-import "github.com/google/uuid"
+import (
+	"github.com/google/uuid"
+)
 
 // quantity is a paired value+unit used by strength volume and cardio totals.
 type quantity struct {
@@ -47,17 +49,11 @@ type dayBlock struct {
 	Items     []dayItem `json:"items"`
 }
 
-type document struct {
-	Data data `json:"data"`
-}
-
-type data struct {
-	Type       string     `json:"type"`
-	ID         string     `json:"id"`
-	Attributes attributes `json:"attributes"`
-}
-
-type attributes struct {
+// RestModel is the JSON:API resource for the per-week summary projection.
+// The id is the week's ISO start date so the URL identifier and the resource
+// identifier match (the URL is `/weeks/{weekStart}/summary`).
+type RestModel struct {
+	Id                  string        `json:"-"`
 	WeekStartDate       string        `json:"weekStartDate"`
 	RestDayFlags        []int         `json:"restDayFlags"`
 	TotalPlannedItems   int           `json:"totalPlannedItems"`
@@ -67,3 +63,7 @@ type attributes struct {
 	ByTheme             []themeGroup  `json:"byTheme"`
 	ByRegion            []regionGroup `json:"byRegion"`
 }
+
+func (r RestModel) GetName() string         { return "week-summaries" }
+func (r RestModel) GetID() string           { return r.Id }
+func (r *RestModel) SetID(id string) error { r.Id = id; return nil }
