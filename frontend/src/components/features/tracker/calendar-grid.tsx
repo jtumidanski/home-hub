@@ -308,7 +308,7 @@ function CellContent({ itemId, date, scaleType, scaleConfig, scheduled, entry, i
     const val = entry.value;
     if (scaleType === "sentiment") {
       const r = (val as SentimentValue)?.rating;
-      display = r === "positive" ? "+" : r === "negative" ? "-" : "~";
+      display = r === "positive" ? "😊" : r === "negative" ? "😞" : "😐";
     } else if (scaleType === "numeric") {
       display = String((val as NumericValue)?.count ?? 0);
     } else if (scaleType === "range") {
@@ -378,7 +378,7 @@ function CellEditor({ itemId, date, scaleType, scaleConfig, scheduled, entry, pu
           {(["positive", "neutral", "negative"] as const).map((r) => (
             <Button key={r} variant={(entry?.value as SentimentValue)?.rating === r ? "default" : "outline"} size="sm" className="text-xs flex-1"
               onClick={() => save({ rating: r })}
-            >{r === "positive" ? "+" : r === "negative" ? "-" : "~"}</Button>
+            >{r === "positive" ? "😊" : r === "negative" ? "😞" : "😐"}</Button>
           ))}
         </div>
       )}

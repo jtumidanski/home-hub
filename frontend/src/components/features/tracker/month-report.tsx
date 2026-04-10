@@ -92,9 +92,9 @@ function SentimentCard({ item }: { item: ReportItem }) {
           </>}
         </div>
         <div className="flex flex-wrap gap-x-4 gap-y-1 text-xs text-muted-foreground">
-          <span>+ {stats.positive}</span>
-          <span>~ {stats.neutral}</span>
-          <span>- {stats.negative}</span>
+          <span>😊 {stats.positive}</span>
+          <span>😐 {stats.neutral}</span>
+          <span>😞 {stats.negative}</span>
           {stats.skipped_days > 0 && <span>skipped {stats.skipped_days}</span>}
         </div>
       </CardContent>
