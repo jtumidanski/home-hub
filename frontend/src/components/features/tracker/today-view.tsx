@@ -1,4 +1,6 @@
 import { useEffect, useState } from "react";
+import { Check } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -12,6 +14,13 @@ const colorDot: Record<string, string> = {
   lime: "bg-lime-500", green: "bg-green-500", emerald: "bg-emerald-500", teal: "bg-teal-500",
   cyan: "bg-cyan-500", blue: "bg-blue-500", indigo: "bg-indigo-500", violet: "bg-violet-500",
   purple: "bg-purple-500", fuchsia: "bg-fuchsia-500", pink: "bg-pink-500", rose: "bg-rose-500",
+};
+
+const colorBorderLeft: Record<string, string> = {
+  red: "border-l-red-500", orange: "border-l-orange-500", amber: "border-l-amber-500", yellow: "border-l-yellow-500",
+  lime: "border-l-lime-500", green: "border-l-green-500", emerald: "border-l-emerald-500", teal: "border-l-teal-500",
+  cyan: "border-l-cyan-500", blue: "border-l-blue-500", indigo: "border-l-indigo-500", violet: "border-l-violet-500",
+  purple: "border-l-purple-500", fuchsia: "border-l-fuchsia-500", pink: "border-l-pink-500", rose: "border-l-rose-500",
 };
 
 interface TodayItem {
@@ -44,6 +53,8 @@ export function TodayView({ onNavigateToCalendar }: { onNavigateToCalendar: () =
   });
 
   const loggedCount = entries.filter((e) => !e.attributes?.skipped).length;
+  const skippedCount = entries.filter((e) => e.attributes?.skipped).length;
+  const filledAndSkipped = loggedCount + skippedCount;
 
   return (
     <div className="space-y-4">
@@ -52,6 +63,15 @@ export function TodayView({ onNavigateToCalendar }: { onNavigateToCalendar: () =
         <Button variant="outline" size="sm" onClick={onNavigateToCalendar}>Calendar</Button>
       </div>
 
+      {items.length > 0 && (
+        <div className="flex items-center gap-2 text-sm text-muted-foreground">
+          <div className="flex-1 bg-muted rounded-full h-2 overflow-hidden">
+            <div className="bg-primary h-full transition-all" style={{ width: `${items.length > 0 ? (filledAndSkipped / items.length) * 100 : 0}%` }} />
+          </div>
+          <span>{filledAndSkipped}/{items.length} entries</span>
+        </div>
+      )}
+
       {items.length === 0 && (
         <p className="text-muted-foreground text-sm">No items scheduled for today.</p>
       )}
@@ -59,14 +79,20 @@ export function TodayView({ onNavigateToCalendar }: { onNavigateToCalendar: () =
       {items.map((item) => {
         const entry = entryMap.get(item.id);
         const hasValue = entry && !entry.attributes?.skipped && entry.attributes?.value;
+        const isSkipped = entry?.attributes?.skipped;
 
         return (
-          <Card key={item.id} className={cn(!hasValue && "border-primary/30")}>
+          <Card key={item.id} className={cn(
+            !hasValue && !isSkipped && "border-l-[3px]",
+            !hasValue && !isSkipped && colorBorderLeft[item.color],
+            isSkipped && "opacity-60",
+          )}>
             <CardContent className="py-3 px-4 space-y-2">
               <div className="flex items-center gap-2">
                 <span className={cn("w-3 h-3 rounded-full", colorDot[item.color])} />
                 <span className="font-medium">{item.name}</span>
-                {hasValue && <span className="text-xs text-green-600 ml-auto">logged</span>}
+                {hasValue && <Badge className="ml-auto bg-green-100 text-green-700 dark:bg-green-950 dark:text-green-400 border-transparent"><Check className="h-3 w-3" />logged</Badge>}
+                {isSkipped && <Badge variant="secondary" className="ml-auto">skipped</Badge>}
               </div>
 
               {item.scale_type === "sentiment" && (
@@ -102,6 +128,7 @@ export function TodayView({ onNavigateToCalendar }: { onNavigateToCalendar: () =
       })}
 
       <p className="text-sm text-muted-foreground text-center">{loggedCount}/{items.length} logged today</p>
+
     </div>
   );
 }
