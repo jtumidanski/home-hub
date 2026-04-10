@@ -1,6 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { render, screen } from "@testing-library/react";
 import { MemoryRouter } from "react-router-dom";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 
 const mockUseTaskSummary = vi.fn();
 const mockUseReminderSummary = vi.fn();
@@ -18,6 +19,10 @@ vi.mock("@/components/providers/auth-provider", () => ({
   useAuth: () => mockUseAuth(),
 }));
 
+vi.mock("@/context/tenant-context", () => ({
+  useTenant: () => ({ tenant: { id: "t1" }, household: { id: "h1" } }),
+}));
+
 vi.mock("@/components/features/weather/weather-widget", () => ({
   WeatherWidget: () => <div data-testid="weather-widget">Weather Widget</div>,
 }));
@@ -26,10 +31,31 @@ vi.mock("@/components/features/packages/package-summary-widget", () => ({
   PackageSummaryWidget: () => null,
 }));
 
+vi.mock("@/components/features/meals/meal-plan-widget", () => ({
+  MealPlanWidget: () => null,
+}));
+
+vi.mock("@/components/features/calendar/calendar-widget", () => ({
+  CalendarWidget: () => null,
+}));
+
+vi.mock("@/components/features/trackers/habits-widget", () => ({
+  HabitsWidget: () => null,
+}));
+
+vi.mock("@/components/features/workouts/workout-widget", () => ({
+  WorkoutWidget: () => null,
+}));
+
 import { DashboardPage } from "../DashboardPage";
 
 function renderWithRouter(ui: React.ReactElement) {
-  return render(<MemoryRouter>{ui}</MemoryRouter>);
+  const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+  return render(
+    <QueryClientProvider client={queryClient}>
+      <MemoryRouter>{ui}</MemoryRouter>
+    </QueryClientProvider>
+  );
 }
 
 describe("DashboardPage", () => {
