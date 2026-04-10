@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
-import { ChevronLeft, ChevronRight } from "lucide-react";
+import { Check, ChevronLeft, ChevronRight } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
@@ -18,6 +19,13 @@ const colorBg: Record<string, string> = {
   indigo: "bg-indigo-100 dark:bg-indigo-950", violet: "bg-violet-100 dark:bg-violet-950",
   purple: "bg-purple-100 dark:bg-purple-950", fuchsia: "bg-fuchsia-100 dark:bg-fuchsia-950",
   pink: "bg-pink-100 dark:bg-pink-950", rose: "bg-rose-100 dark:bg-rose-950",
+};
+
+const colorBorderLeft: Record<string, string> = {
+  red: "border-l-red-500", orange: "border-l-orange-500", amber: "border-l-amber-500", yellow: "border-l-yellow-500",
+  lime: "border-l-lime-500", green: "border-l-green-500", emerald: "border-l-emerald-500", teal: "border-l-teal-500",
+  cyan: "border-l-cyan-500", blue: "border-l-blue-500", indigo: "border-l-indigo-500", violet: "border-l-violet-500",
+  purple: "border-l-purple-500", fuchsia: "border-l-fuchsia-500", pink: "border-l-pink-500", rose: "border-l-rose-500",
 };
 
 function splitMonth(month: string): [string, string] {
@@ -249,13 +257,17 @@ function MobileDayView({ month, items, entryMap, putEntry, deleteEntry, skipEntr
         const isSkipped = entryAttrs?.skipped;
 
         return (
-          <Card key={item.id}>
+          <Card key={item.id} className={cn(
+            !hasValue && !isSkipped && "border-l-[3px]",
+            !hasValue && !isSkipped && colorBorderLeft[item.color],
+            isSkipped && "opacity-60",
+          )}>
             <CardContent className="py-3 px-4 space-y-2">
               <div className="flex items-center gap-2">
                 <span className={cn("w-3 h-3 rounded-full", colorBg[item.color]?.replace("100", "500").replace("950", "500"))} />
                 <span className="font-medium text-sm">{item.name}</span>
-                {hasValue && <span className="text-xs text-green-600 ml-auto">logged</span>}
-                {isSkipped && <span className="text-xs text-muted-foreground ml-auto">skipped</span>}
+                {hasValue && <Badge className="ml-auto bg-green-100 text-green-700 dark:bg-green-950 dark:text-green-400 border-transparent"><Check className="h-3 w-3" />logged</Badge>}
+                {isSkipped && <Badge variant="secondary" className="ml-auto">skipped</Badge>}
               </div>
               {isFuture ? (
                 <p className="text-xs text-muted-foreground">{scheduled ? "Scheduled — log on the day." : ""}</p>
