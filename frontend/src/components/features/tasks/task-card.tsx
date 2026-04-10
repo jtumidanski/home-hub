@@ -1,5 +1,5 @@
 import { Circle, CheckCircle2, Trash2, Calendar } from "lucide-react";
-import { type Task } from "@/types/models/task";
+import { type Task, isTaskOverdue } from "@/types/models/task";
 import { Card, CardHeader, CardTitle, CardAction, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { CardActionMenu } from "@/components/common/card-action-menu";
@@ -15,6 +15,7 @@ interface TaskCardProps {
 export function TaskCard({ task, ownerName, onToggleComplete, onDelete }: TaskCardProps) {
   const { id, attributes } = task;
   const isCompleted = attributes.status === "completed";
+  const overdue = isTaskOverdue(task);
 
   return (
     <Card size="sm">
@@ -48,8 +49,8 @@ export function TaskCard({ task, ownerName, onToggleComplete, onDelete }: TaskCa
       </CardHeader>
       <CardContent>
         <div className="flex flex-wrap items-center gap-2">
-          <Badge variant={isCompleted ? "secondary" : "default"}>
-            {attributes.status}
+          <Badge variant={isCompleted ? "secondary" : overdue ? "destructive" : "default"}>
+            {overdue ? "overdue" : attributes.status}
           </Badge>
           {attributes.dueOn && (
             <span className="inline-flex items-center gap-1 text-xs text-muted-foreground">
