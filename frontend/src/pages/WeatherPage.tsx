@@ -141,7 +141,12 @@ export function WeatherPage() {
         onValueChange={handleSelectChange}
       >
         <SelectTrigger className="w-full max-w-xs">
-          <SelectValue />
+          <SelectValue>
+            {selectedLocationId
+              ? (savedLocations.find((l) => l.id === selectedLocationId)?.attributes.label ??
+                 savedLocations.find((l) => l.id === selectedLocationId)?.attributes.placeName)
+              : (household?.attributes.locationName ?? "Primary Location")}
+          </SelectValue>
         </SelectTrigger>
         <SelectContent>
           <SelectItem value={PRIMARY_VALUE}>
