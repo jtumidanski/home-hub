@@ -30,17 +30,17 @@ function DashboardSkeleton() {
         <Skeleton className="mt-1 h-4 w-32" />
       </div>
       <Skeleton className="h-48" />
-      <div className="grid gap-4 grid-cols-1 md:grid-cols-3">
+      <div className="grid gap-6 md:gap-4 grid-cols-1 md:grid-cols-3">
         {Array.from({ length: 3 }).map((_, i) => (
           <Skeleton key={i} className="h-28" />
         ))}
       </div>
-      <div className="grid gap-4 grid-cols-1 md:grid-cols-3">
+      <div className="grid gap-6 md:gap-4 grid-cols-1 md:grid-cols-3">
         {Array.from({ length: 3 }).map((_, i) => (
           <Skeleton key={i} className="h-36" />
         ))}
       </div>
-      <div className="grid gap-4 grid-cols-1 md:grid-cols-2">
+      <div className="grid gap-6 md:gap-4 grid-cols-1 md:grid-cols-2">
         {Array.from({ length: 2 }).map((_, i) => (
           <Skeleton key={i} className="h-36" />
         ))}
@@ -99,7 +99,7 @@ export function DashboardPage() {
         <WeatherWidget />
 
         {/* Tasks / Reminders / Overdue — 3-column row */}
-        <div className="grid gap-4 grid-cols-1 md:grid-cols-3">
+        <div className="grid gap-6 md:gap-4 grid-cols-1 md:grid-cols-3">
           <Link to="/app/tasks?status=pending" className="transition-opacity hover:opacity-80">
             <Card className="h-full">
               <CardHeader className="flex flex-row items-center justify-between pb-2">
@@ -147,14 +147,14 @@ export function DashboardPage() {
         </div>
 
         {/* Meals / Habits / Packages — 3-column row, equal height */}
-        <div className="grid gap-4 grid-cols-1 md:grid-cols-3 md:auto-rows-fr">
+        <div className="grid gap-6 md:gap-4 grid-cols-1 md:grid-cols-3 md:auto-rows-fr">
           <MealPlanWidget />
           <HabitsWidget />
           <PackageSummaryWidget />
         </div>
 
         {/* Calendar / Workout — 2-column row, equal height */}
-        <div className="grid gap-4 grid-cols-1 md:grid-cols-2 md:auto-rows-fr">
+        <div className="grid gap-6 md:gap-4 grid-cols-1 md:grid-cols-2 md:auto-rows-fr">
           <CalendarWidget />
           <WorkoutWidget />
         </div>
