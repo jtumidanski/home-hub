@@ -32,7 +32,7 @@ export function WorkoutTodayPage() {
         <CardHeader>
           <CardTitle className="flex items-center justify-between">
             <span>{attrs.date}</span>
-            {attrs.isRestDay && <Badge variant="secondary">Rest day</Badge>}
+            {attrs.isRestDay && <Badge variant="secondary">Rest Day</Badge>}
           </CardTitle>
         </CardHeader>
         <CardContent>

@@ -46,7 +46,7 @@ export const navGroups: NavGroup[] = [
     key: "personal",
     label: "Personal",
     items: [
-      { to: "/app/tracker", icon: Target, label: "Tracker" },
+      { to: "/app/habits", icon: Target, label: "Habits" },
       { to: "/app/workouts/today", icon: Dumbbell, label: "Workouts" },
     ],
   },

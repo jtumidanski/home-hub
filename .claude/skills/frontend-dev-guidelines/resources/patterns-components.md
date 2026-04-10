@@ -274,6 +274,53 @@ For expandable content areas (e.g., inventory compartments):
 </Collapsible>
 ```
 
+## Text Casing Rules
+
+All user-facing interactive text must use **title case** — capitalize the first letter of each significant word.
+
+This applies to:
+- **Button labels**: "Add Exercise", "Save Changes", "Try Again"
+- **Dialog titles**: "Create Tracking Item", "Delete Recurring Event"
+- **Badge text**: "Rest Day", "Must Have"
+- **Tab / view-switcher labels**: "Today", "Calendar", "Setup"
+
+```tsx
+// ✅ Good — title case
+<Button>Add Exercise</Button>
+<DialogTitle>Edit Wish List Item</DialogTitle>
+<Badge>Rest Day</Badge>
+
+// ❌ Bad — sentence case or lowercase
+<Button>Add exercise</Button>
+<DialogTitle>Edit wish list item</DialogTitle>
+<Badge>Rest day</Badge>
+```
+
+**Exceptions**: Prepositions and articles in the middle of a label stay lowercase ("Add to Shopping List", "Import from Meal Plan"). First word is always capitalized regardless.
+
+**Enum display values**: When displaying backend enum values (e.g., `"strength"`, `"bodyweight"`), capitalize the first letter for display. Keep the underlying value unchanged.
+
+```tsx
+// ✅ Good — capitalize for display only
+<SelectItem value="strength">Strength</SelectItem>
+<span>{kind.charAt(0).toUpperCase() + kind.slice(1)}</span>
+
+// ❌ Bad — raw enum value shown to user
+<SelectItem value="strength">strength</SelectItem>
+```
+
+## Cursor Behavior
+
+All clickable elements must show `cursor-pointer` on hover. The base `<Button>` component already includes `cursor-pointer` in its CVA definition. For custom clickable elements (styled divs, card actions, etc.), add `cursor-pointer` explicitly:
+
+```tsx
+// ✅ Good — pointer cursor on clickable elements
+<div className="cursor-pointer" onClick={handleClick}>...</div>
+
+// ❌ Bad — default cursor on clickable element
+<div onClick={handleClick}>...</div>
+```
+
 ## Empty State Pattern
 
 ```tsx

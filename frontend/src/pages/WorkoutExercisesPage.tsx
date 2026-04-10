@@ -63,7 +63,7 @@ export function WorkoutExercisesPage() {
                       <div>
                         <p className="font-medium">{e.attributes.name}</p>
                         <p className="text-xs text-muted-foreground">
-                          {e.attributes.kind} · {theme?.attributes.name ?? "—"} ·{" "}
+                          {e.attributes.kind.charAt(0).toUpperCase() + e.attributes.kind.slice(1)} · {theme?.attributes.name ?? "—"} ·{" "}
                           {region?.attributes.name ?? "—"}
                         </p>
                       </div>
@@ -146,7 +146,7 @@ function ExerciseCreateDialog({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent>
         <DialogHeader>
-          <DialogTitle>New exercise</DialogTitle>
+          <DialogTitle>New Exercise</DialogTitle>
         </DialogHeader>
         <div className="space-y-3">
           <div>
@@ -161,22 +161,22 @@ function ExerciseCreateDialog({
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="strength">strength</SelectItem>
-                  <SelectItem value="isometric">isometric</SelectItem>
-                  <SelectItem value="cardio">cardio</SelectItem>
+                  <SelectItem value="strength">Strength</SelectItem>
+                  <SelectItem value="isometric">Isometric</SelectItem>
+                  <SelectItem value="cardio">Cardio</SelectItem>
                 </SelectContent>
               </Select>
             </div>
             {kind === "strength" && (
               <div>
-                <Label>Weight type</Label>
+                <Label>Weight Type</Label>
                 <Select value={weightType} onValueChange={(v) => setWeightType(v as WeightType)}>
                   <SelectTrigger>
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="free">free (barbell, dumbbell, etc.)</SelectItem>
-                    <SelectItem value="bodyweight">bodyweight (dips, pull-ups, etc.)</SelectItem>
+                    <SelectItem value="free">Free (barbell, dumbbell, etc.)</SelectItem>
+                    <SelectItem value="bodyweight">Bodyweight (dips, pull-ups, etc.)</SelectItem>
                   </SelectContent>
                 </Select>
               </div>

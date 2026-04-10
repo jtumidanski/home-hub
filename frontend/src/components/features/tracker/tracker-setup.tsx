@@ -38,12 +38,12 @@ export function TrackerSetup() {
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between">
-        <h2 className="text-lg font-semibold">My Tracking Items</h2>
+        <h2 className="text-lg font-semibold">My Habits</h2>
         <Button size="sm" onClick={() => setCreateOpen(true)}><Plus className="h-4 w-4 mr-1" /> Add</Button>
       </div>
 
       {trackers.length === 0 && (
-        <p className="text-muted-foreground text-sm">No tracking items yet. Click "Add" to create your first one.</p>
+        <p className="text-muted-foreground text-sm">No habits yet. Click "Add" to create your first one.</p>
       )}
 
       <div className="space-y-2">
@@ -79,7 +79,7 @@ export function TrackerSetup() {
       <Dialog open={!!deleteTarget} onOpenChange={(open) => !open && setDeleteTarget(null)}>
         <DialogContent className="max-w-sm">
           <DialogHeader>
-            <DialogTitle>Delete tracking item</DialogTitle>
+            <DialogTitle>Delete Habit</DialogTitle>
           </DialogHeader>
           <p className="text-sm text-muted-foreground">
             Delete &ldquo;{deleteTarget?.attributes.name}&rdquo;? Historical entries for completed

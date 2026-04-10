@@ -123,6 +123,15 @@ pages/
 - Component tests for dialogs
 - Hook tests for complex query logic
 
+### 13. Title Case for Interactive Text
+All button labels, dialog titles, badge text, and tab/view-switcher labels must use **title case** (capitalize the first letter of each significant word). Prepositions and articles in the middle stay lowercase. See [Component Patterns — Text Casing Rules](patterns-components.md#text-casing-rules).
+
+### 14. Cursor Pointer on Clickable Elements
+All clickable elements must show `cursor-pointer`. The `<Button>` component handles this automatically. For custom clickable elements (divs, cards, etc.), add `cursor-pointer` explicitly. See [Component Patterns — Cursor Behavior](patterns-components.md#cursor-behavior).
+
+### 15. Capitalize Enum Display Values
+When rendering backend enum values to users, capitalize the first letter for display. Keep the underlying form/API value unchanged (lowercase).
+
 ## Validation Rules
 
 Before submitting code, verify:
@@ -137,6 +146,9 @@ Before submitting code, verify:
 | Named exports | No `export default function` |
 | Error handling | All async ops have catch/error handling |
 | Skeleton loading | No raw spinners in content areas |
+| Title-case labels | All buttons, dialog titles, badges use title case |
+| Cursor pointer | All clickable elements have `cursor-pointer` |
+| Enum display casing | Backend enums capitalized for display |
 
 ## Common Composition Examples
 

@@ -51,7 +51,7 @@ export function CreateTrackerDialog({ open, onClose }: Props) {
   return (
     <Dialog open={open} onOpenChange={(v) => !v && onClose()}>
       <DialogContent className="max-w-md">
-        <DialogHeader><DialogTitle>Create Tracking Item</DialogTitle></DialogHeader>
+        <DialogHeader><DialogTitle>Create Habit</DialogTitle></DialogHeader>
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
           <div className="space-y-2">
             <Label htmlFor="name">Name</Label>

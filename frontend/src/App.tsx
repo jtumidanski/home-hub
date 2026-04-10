@@ -60,7 +60,8 @@ export function App() {
                   <Route path="reminders" element={<RemindersPage />} />
                   <Route path="calendar" element={<CalendarPage />} />
                   <Route path="packages" element={<PackagesPage />} />
-                  <Route path="tracker" element={<TrackerPage />} />
+                  <Route path="habits" element={<TrackerPage />} />
+                  <Route path="tracker" element={<Navigate to="/app/habits" replace />} />
                   <Route path="workouts" element={<WorkoutShell />}>
                     <Route index element={<Navigate to="today" replace />} />
                     <Route path="today" element={<WorkoutTodayPage />} />

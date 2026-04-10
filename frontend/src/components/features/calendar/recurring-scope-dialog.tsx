@@ -13,7 +13,7 @@ export function RecurringScopeDialog({ open, onOpenChange, action, onSelect }: R
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-sm">
         <DialogHeader>
-          <DialogTitle>{action === "edit" ? "Edit recurring event" : "Delete recurring event"}</DialogTitle>
+          <DialogTitle>{action === "edit" ? "Edit Recurring Event" : "Delete Recurring Event"}</DialogTitle>
         </DialogHeader>
         <div className="space-y-2">
           <Button variant="outline" className="w-full justify-start" onClick={() => onSelect("single")}>
