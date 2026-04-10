@@ -184,7 +184,9 @@ function ExerciseCreateDialog({
             <Label>Theme</Label>
             <Select value={themeId} onValueChange={(v) => setThemeId(v ?? "")}>
               <SelectTrigger>
-                <SelectValue placeholder="Select theme" />
+                <SelectValue placeholder="Select theme">
+                  {themes.find((t) => t.id === themeId)?.attributes.name}
+                </SelectValue>
               </SelectTrigger>
               <SelectContent>
                 {themes.map((t) => (
@@ -199,7 +201,9 @@ function ExerciseCreateDialog({
             <Label>Primary region</Label>
             <Select value={regionId} onValueChange={(v) => setRegionId(v ?? "")}>
               <SelectTrigger>
-                <SelectValue placeholder="Select region" />
+                <SelectValue placeholder="Select region">
+                  {regions.find((r) => r.id === regionId)?.attributes.name}
+                </SelectValue>
               </SelectTrigger>
               <SelectContent>
                 {regions.map((r) => (

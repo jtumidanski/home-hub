@@ -54,9 +54,10 @@ export function WorkoutWeekPage() {
   const goWeek = (offset: number) => navigate(`/app/workouts/week/${addDays(weekStart, offset * 7)}`);
 
   const items = week.data?.data.attributes.items ?? [];
-  // The week is "empty" only when the request succeeded with zero items. A
-  // 404 (week.error) is the unprovisioned-week state — same prompt UX.
-  const isEmpty = !!week.error || (week.data && items.length === 0);
+  // Show the empty-week prompt (Copy / Start Fresh) only when the week row
+  // does not exist (404). When the row exists but has zero items (e.g. after
+  // Start Fresh), show the planner grid so the user can add exercises.
+  const weekNotFound = !!week.error;
 
   const exerciseList = exercises.data?.data ?? [];
 
@@ -142,7 +143,7 @@ export function WorkoutWeekPage() {
         </Button>
       </div>
 
-      {isEmpty ? (
+      {weekNotFound ? (
         <EmptyWeek
           weekStart={weekStart}
           onCopy={(mode) =>

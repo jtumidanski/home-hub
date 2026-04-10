@@ -318,6 +318,7 @@ export function useWorkoutWeekSummary(weekStart: string) {
     queryKey: workoutKeys.summary(tenant, household, weekStart),
     queryFn: () => workoutService.getWeekSummary(tenant!, weekStart),
     enabled: !!tenant?.id && !!weekStart,
+    retry: false,
     staleTime: 30 * 1000,
   });
 }
