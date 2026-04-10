@@ -171,6 +171,30 @@ func searchWithUsage(tenantID uuid.UUID, query string, categoryFilter string, pa
 	}
 }
 
+type categoryCount struct {
+	CategoryId uuid.UUID
+	Count      int
+}
+
+func countByCategory(tenantID uuid.UUID) func(db *gorm.DB) (map[uuid.UUID]int, error) {
+	return func(db *gorm.DB) (map[uuid.UUID]int, error) {
+		var results []categoryCount
+		err := db.Table("canonical_ingredients").
+			Select("category_id, COUNT(*) as count").
+			Where("tenant_id = ? AND category_id IS NOT NULL", tenantID).
+			Group("category_id").
+			Find(&results).Error
+		if err != nil {
+			return nil, err
+		}
+		counts := make(map[uuid.UUID]int, len(results))
+		for _, r := range results {
+			counts[r.CategoryId] = r.Count
+		}
+		return counts, nil
+	}
+}
+
 func suggestByPrefix(tenantID uuid.UUID, prefix string, limit int) func(db *gorm.DB) ([]Entity, error) {
 	return func(db *gorm.DB) ([]Entity, error) {
 		pattern := strings.ToLower(prefix) + "%"

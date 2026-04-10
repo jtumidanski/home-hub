@@ -49,7 +49,7 @@ func main() {
 			api.Use(sharedauth.Middleware(l, authValidator))
 
 			recipe.InitializeRoutes(db)(l, si, api)
-			ingredient.InitializeRoutes(db)(l, si, api)
+			ingredient.InitializeRoutes(db, catClient)(l, si, api)
 			normalization.InitializeRoutes(db)(l, si, api)
 			plan.InitializeRoutes(db, catClient)(l, si, api)
 		}).

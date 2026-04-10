@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"time"
 
 	"github.com/google/uuid"
 )
@@ -13,6 +14,8 @@ type Category struct {
 	ID        uuid.UUID
 	Name      string
 	SortOrder int
+	CreatedAt time.Time
+	UpdatedAt time.Time
 }
 
 type categoryResponse struct {
@@ -20,8 +23,10 @@ type categoryResponse struct {
 		ID         string `json:"id"`
 		Type       string `json:"type"`
 		Attributes struct {
-			Name      string `json:"name"`
-			SortOrder int    `json:"sort_order"`
+			Name      string    `json:"name"`
+			SortOrder int       `json:"sort_order"`
+			CreatedAt time.Time `json:"created_at"`
+			UpdatedAt time.Time `json:"updated_at"`
 		} `json:"attributes"`
 	} `json:"data"`
 }
@@ -78,6 +83,8 @@ func (c *Client) ListCategories(accessToken string, tenantID, householdID uuid.U
 			ID:        id,
 			Name:      d.Attributes.Name,
 			SortOrder: d.Attributes.SortOrder,
+			CreatedAt: d.Attributes.CreatedAt,
+			UpdatedAt: d.Attributes.UpdatedAt,
 		}
 	}
 	return categories, nil

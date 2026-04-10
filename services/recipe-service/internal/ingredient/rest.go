@@ -65,6 +65,19 @@ func TransformLookup(m Model) RestLookupModel {
 	}
 }
 
+type RestCategorySummary struct {
+	Id              uuid.UUID `json:"-"`
+	Name            string    `json:"name"`
+	SortOrder       int       `json:"sort_order"`
+	IngredientCount int       `json:"ingredient_count"`
+	CreatedAt       time.Time `json:"created_at"`
+	UpdatedAt       time.Time `json:"updated_at"`
+}
+
+func (r RestCategorySummary) GetName() string       { return "categories" }
+func (r RestCategorySummary) GetID() string          { return r.Id.String() }
+func (r *RestCategorySummary) SetID(id string) error { var err error; r.Id, err = uuid.Parse(id); return err }
+
 type CreateRequest struct {
 	Id          uuid.UUID `json:"-"`
 	Name        string    `json:"name"`

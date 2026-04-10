@@ -9,13 +9,14 @@ import (
 	"github.com/google/uuid"
 	"github.com/gorilla/mux"
 	"github.com/jtumidanski/api2go/jsonapi"
+	"github.com/jtumidanski/home-hub/services/recipe-service/internal/categoryclient"
 	"github.com/jtumidanski/home-hub/shared/go/server"
 	tenantctx "github.com/jtumidanski/home-hub/shared/go/tenant"
 	"github.com/sirupsen/logrus"
 	"gorm.io/gorm"
 )
 
-func InitializeRoutes(db *gorm.DB) func(l logrus.FieldLogger, si jsonapi.ServerInformation, api *mux.Router) {
+func InitializeRoutes(db *gorm.DB, catClient *categoryclient.Client) func(l logrus.FieldLogger, si jsonapi.ServerInformation, api *mux.Router) {
 	return func(l logrus.FieldLogger, si jsonapi.ServerInformation, api *mux.Router) {
 		rh := server.RegisterHandler(l)(si)
 		rihCreate := server.RegisterInputHandler[CreateRequest](l)(si)
@@ -26,6 +27,7 @@ func InitializeRoutes(db *gorm.DB) func(l logrus.FieldLogger, si jsonapi.ServerI
 
 		api.HandleFunc("/ingredients", rh("ListIngredients", listIngredientsHandler(db))).Methods(http.MethodGet)
 		api.HandleFunc("/ingredients/lookup", rh("LookupIngredient", lookupIngredientHandler(db))).Methods(http.MethodGet)
+		api.HandleFunc("/ingredients/category-summary", rh("CategorySummary", categorySummaryHandler(db, catClient))).Methods(http.MethodGet)
 		api.HandleFunc("/ingredients/bulk-categorize", rihBulk("BulkCategorize", bulkCategorizeHandler(db))).Methods(http.MethodPost)
 		api.HandleFunc("/ingredients", rihCreate("CreateIngredient", createIngredientHandler(db))).Methods(http.MethodPost)
 		api.HandleFunc("/ingredients/{id}", rh("GetIngredient", getIngredientHandler(db))).Methods(http.MethodGet)
@@ -400,6 +402,51 @@ func bulkCategorizeHandler(db *gorm.DB) server.InputHandler[BulkCategorizeReques
 			w.WriteHeader(http.StatusNoContent)
 		}
 	}
+}
+
+func categorySummaryHandler(db *gorm.DB, catClient *categoryclient.Client) server.GetHandler {
+	return func(d *server.HandlerDependency, c *server.HandlerContext) http.HandlerFunc {
+		return func(w http.ResponseWriter, r *http.Request) {
+			t := tenantctx.MustFromContext(r.Context())
+
+			token := accessTokenCookie(r)
+			categories, err := catClient.ListCategories(token, t.Id(), t.HouseholdId())
+			if err != nil {
+				d.Logger().WithError(err).Error("Failed to fetch categories from category-service")
+				server.WriteError(w, http.StatusBadGateway, "Error", "Failed to fetch categories")
+				return
+			}
+
+			proc := NewProcessor(d.Logger(), r.Context(), db)
+			counts, err := proc.CountByCategory(t.Id())
+			if err != nil {
+				d.Logger().WithError(err).Error("Failed to query ingredient counts by category")
+				server.WriteError(w, http.StatusInternalServerError, "Error", "Failed to query ingredient counts")
+				return
+			}
+
+			rest := make([]RestCategorySummary, len(categories))
+			for i, cat := range categories {
+				rest[i] = RestCategorySummary{
+					Id:              cat.ID,
+					Name:            cat.Name,
+					SortOrder:       cat.SortOrder,
+					IngredientCount: counts[cat.ID],
+					CreatedAt:       cat.CreatedAt,
+					UpdatedAt:       cat.UpdatedAt,
+				}
+			}
+
+			server.MarshalSliceResponse[RestCategorySummary](d.Logger())(w)(c.ServerInformation())(rest)
+		}
+	}
+}
+
+func accessTokenCookie(r *http.Request) string {
+	if c, err := r.Cookie("access_token"); err == nil {
+		return c.Value
+	}
+	return ""
 }
 
 func queryInt(r *http.Request, key string, defaultVal int) int {
