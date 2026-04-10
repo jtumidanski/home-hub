@@ -108,16 +108,16 @@ export function TodayView({ onNavigateToCalendar }: { onNavigateToCalendar: () =
 
 function SentimentInput({ itemId, date, currentRating, putEntry }: { itemId: string; date: string; currentRating?: string | undefined; putEntry: ReturnType<typeof usePutEntry> }) {
   const ratings = [
-    { value: "positive", label: "Good", emoji: "+" },
-    { value: "neutral", label: "OK", emoji: "~" },
-    { value: "negative", label: "Bad", emoji: "-" },
+    { value: "positive", emoji: "😊" },
+    { value: "neutral", emoji: "😐" },
+    { value: "negative", emoji: "😞" },
   ];
   return (
     <div className="flex gap-2">
       {ratings.map((r) => (
         <Button key={r.value} variant={currentRating === r.value ? "default" : "outline"} size="sm"
           onClick={() => putEntry.mutate({ itemId, date, value: { rating: r.value } })}
-        >{r.emoji} {r.label}</Button>
+        >{r.emoji}</Button>
       ))}
     </div>
   );
