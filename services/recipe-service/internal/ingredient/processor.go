@@ -295,6 +295,10 @@ func lookupNormalizeText(s string) string {
 	return strings.TrimSpace(s)
 }
 
+func (p *Processor) CountByCategory(tenantID uuid.UUID) (map[uuid.UUID]int, error) {
+	return countByCategory(tenantID)(p.db.WithContext(p.ctx))
+}
+
 func (p *Processor) Suggest(tenantID uuid.UUID, prefix string, limit int) ([]Model, error) {
 	if limit < 1 || limit > 50 {
 		limit = 20

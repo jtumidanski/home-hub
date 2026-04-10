@@ -92,7 +92,7 @@ class IngredientService extends BaseService {
   }
 
   listCategories(tenant: Tenant) {
-    return this.getList<IngredientCategory>(tenant, "/categories");
+    return this.getList<IngredientCategory>(tenant, "/ingredients/category-summary");
   }
 
   createCategory(tenant: Tenant, attrs: IngredientCategoryCreateAttributes) {
