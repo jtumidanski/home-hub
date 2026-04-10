@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { ChevronLeft, ChevronRight, GripVertical, Search, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -28,16 +28,12 @@ import {
   useWorkoutThemes,
   useWorkoutRegions,
   usePatchWorkoutWeek,
+  useUpdatePlannedItem,
 } from "@/lib/hooks/api/use-workouts";
 import { addDays, currentWeekStart } from "@/lib/workout-week";
 import { DAYS_OF_WEEK_LABELS, type Exercise, type WeekItem } from "@/types/models/workout";
 import { toast } from "sonner";
 
-// Weekly planner. Desktop-first layout with one column per day. Drag-and-drop
-// reorder uses native HTML5 DnD so we don't pull in a new dependency. The
-// empty-week prompt offers Copy Planned / Copy Actual / Start Fresh per
-// PRD §4.5; "Start Fresh" lazily creates the week row by toggling rest days
-// off, then leaves the planner open for the user to add items.
 export function WorkoutWeekPage() {
   const params = useParams<{ weekStart?: string }>();
   const navigate = useNavigate();
@@ -50,17 +46,13 @@ export function WorkoutWeekPage() {
   const remove = useDeletePlannedItem();
   const reorder = useReorderPlannedItems();
   const exercises = useWorkoutExercises();
+  const updateItem = useUpdatePlannedItem();
 
   const goWeek = (offset: number) => navigate(`/app/workouts/week/${addDays(weekStart, offset * 7)}`);
 
   const items = week.data?.data.attributes.items ?? [];
-  // Show the empty-week prompt (Copy / Start Fresh) only when the week row
-  // does not exist (404). When the row exists but has zero items (e.g. after
-  // Start Fresh), show the planner grid so the user can add exercises.
   const weekNotFound = !!week.error;
-
   const exerciseList = exercises.data?.data ?? [];
-
   const restDayFlags = week.data?.data.attributes.restDayFlags ?? [];
 
   const toggleRestDay = (day: number) => {
@@ -73,9 +65,6 @@ export function WorkoutWeekPage() {
     );
   };
 
-  // startFresh lazily creates the week row by patching restDayFlags to its
-  // current (empty) value. The PATCH endpoint creates the row when missing,
-  // so subsequent adds have a parent week to attach to.
   const startFresh = () => {
     patch.mutate(
       { weekStart, restDayFlags: [] },
@@ -86,48 +75,85 @@ export function WorkoutWeekPage() {
     );
   };
 
-  // --- DnD reorder ---------------------------------------------------------
-  //
-  // We track the dragged item id in component state. The drop handler computes
-  // the new (day, position) for the dragged item and the shifted positions for
-  // every other item that crossed the move, then sends one reorder POST. The
-  // server applies it atomically.
+  // --- DnD reorder with positional drops -----------------------------------
+
   const [draggedItemId, setDraggedItemId] = useState<string | null>(null);
+  const [dropIndicator, setDropIndicator] = useState<{ day: number; position: number } | null>(null);
 
-  const onDragStart = (itemId: string) => () => setDraggedItemId(itemId);
-  const onDragEnd = () => setDraggedItemId(null);
+  const onDragStart = (itemId: string) => (e: React.DragEvent) => {
+    setDraggedItemId(itemId);
+    e.dataTransfer.effectAllowed = "move";
+  };
 
-  const onDropOnDay = (targetDay: number) => (e: React.DragEvent) => {
+  const onDragEnd = () => {
+    setDraggedItemId(null);
+    setDropIndicator(null);
+  };
+
+  // Per-item drag over: detect top/bottom half to set insertion position.
+  const onDragOverItem = (day: number, idx: number) => (e: React.DragEvent) => {
     e.preventDefault();
-    if (!draggedItemId) return;
+    e.stopPropagation();
+    const rect = (e.currentTarget as HTMLElement).getBoundingClientRect();
+    const midY = rect.top + rect.height / 2;
+    const pos = e.clientY < midY ? idx : idx + 1;
+    setDropIndicator((prev) =>
+      prev?.day === day && prev?.position === pos ? prev : { day, position: pos },
+    );
+  };
+
+  // Card-level drag over: fires when hovering empty area below items.
+  const onDragOverDay = (day: number, itemCount: number) => (e: React.DragEvent) => {
+    e.preventDefault();
+    setDropIndicator((prev) =>
+      prev?.day === day && prev?.position === itemCount ? prev : { day, position: itemCount },
+    );
+  };
+
+  const onDrop = (e: React.DragEvent) => {
+    e.preventDefault();
+    if (!draggedItemId || !dropIndicator) return;
     const dragged = items.find((it) => it.id === draggedItemId);
     if (!dragged) return;
 
-    // Build the new ordering: remove the dragged item from its current spot,
-    // append it to the target day's tail. We rebuild positions for both the
-    // source and target days so positions stay contiguous.
     const sourceDay = dragged.dayOfWeek;
+    const targetDay = dropIndicator.day;
+
     const sourceItems = items
-      .filter((it) => it.dayOfWeek === sourceDay && it.id !== dragged.id)
+      .filter((it) => it.dayOfWeek === sourceDay && it.id !== draggedItemId)
       .sort((a, b) => a.position - b.position);
-    const targetItems = items
-      .filter((it) => it.dayOfWeek === targetDay && it.id !== dragged.id)
+    const targetDayItems = items
+      .filter((it) => it.dayOfWeek === targetDay && it.id !== draggedItemId)
       .sort((a, b) => a.position - b.position);
-    targetItems.push(dragged);
+
+    // Adjust insertion index when dragging within the same day.
+    let insertIdx = dropIndicator.position;
+    if (sourceDay === targetDay) {
+      const origIdx = items
+        .filter((it) => it.dayOfWeek === sourceDay)
+        .sort((a, b) => a.position - b.position)
+        .findIndex((it) => it.id === draggedItemId);
+      if (origIdx >= 0 && origIdx < dropIndicator.position) insertIdx--;
+    }
+    targetDayItems.splice(insertIdx, 0, dragged);
 
     const reorderInputs: Array<{ itemId: string; dayOfWeek: number; position: number }> = [];
-    sourceItems.forEach((it, idx) => reorderInputs.push({ itemId: it.id, dayOfWeek: sourceDay, position: idx }));
-    targetItems.forEach((it, idx) => reorderInputs.push({ itemId: it.id, dayOfWeek: targetDay, position: idx }));
+    if (sourceDay !== targetDay) {
+      sourceItems.forEach((it, idx) =>
+        reorderInputs.push({ itemId: it.id, dayOfWeek: sourceDay, position: idx }),
+      );
+    }
+    targetDayItems.forEach((it, idx) =>
+      reorderInputs.push({ itemId: it.id, dayOfWeek: targetDay, position: idx }),
+    );
 
     reorder.mutate(
       { weekStart, items: reorderInputs },
       { onError: (err) => toast.error((err as Error).message ?? "Reorder failed") },
     );
     setDraggedItemId(null);
+    setDropIndicator(null);
   };
-
-  // Allow drop targets to receive the drop event.
-  const allowDrop = (e: React.DragEvent) => e.preventDefault();
 
   return (
     <div className="space-y-4">
@@ -168,38 +194,54 @@ export function WorkoutWeekPage() {
               <Card
                 key={day}
                 className="min-h-[8rem]"
-                onDragOver={allowDrop}
-                onDrop={onDropOnDay(day)}
+                onDragOver={onDragOverDay(day, dayItems.length)}
+                onDrop={onDrop}
               >
                 <CardHeader className="p-3">
                   <CardTitle className="flex items-center justify-between text-sm">
                     <span>{label}</span>
                     <button
                       onClick={() => toggleRestDay(day)}
-                      className={`text-xs rounded px-1.5 py-0.5 ${
-                        isRest ? "bg-secondary" : "text-muted-foreground hover:bg-muted"
+                      className={`text-xs rounded-full px-2 py-0.5 border transition-colors ${
+                        isRest
+                          ? "bg-secondary text-secondary-foreground border-secondary"
+                          : "text-muted-foreground border-transparent hover:border-muted-foreground/30"
                       }`}
                     >
-                      {isRest ? "Rest" : "·"}
+                      Rest
                     </button>
                   </CardTitle>
                 </CardHeader>
-                <CardContent className="p-3 pt-0 space-y-2">
-                  {dayItems.map((it) => (
-                    <PlannedRow
-                      key={it.id}
-                      item={it}
-                      draggable
-                      onDragStart={onDragStart(it.id)}
-                      onDragEnd={onDragEnd}
-                      onDelete={() =>
-                        remove.mutate(
-                          { weekStart, itemId: it.id },
-                          { onError: () => toast.error("Delete failed") },
-                        )
-                      }
-                    />
+                <CardContent className="p-3 pt-0 space-y-1">
+                  {dayItems.map((it, idx) => (
+                    <div key={it.id}>
+                      {dropIndicator?.day === day && dropIndicator.position === idx && (
+                        <div className="h-0.5 bg-primary rounded my-1" />
+                      )}
+                      <PlannedRow
+                        item={it}
+                        draggable
+                        onDragStart={onDragStart(it.id)}
+                        onDragEnd={onDragEnd}
+                        onDragOver={onDragOverItem(day, idx)}
+                        onDelete={() =>
+                          remove.mutate(
+                            { weekStart, itemId: it.id },
+                            { onError: () => toast.error("Delete failed") },
+                          )
+                        }
+                        onUpdatePlanned={(planned) =>
+                          updateItem.mutate(
+                            { weekStart, itemId: it.id, attrs: { planned } },
+                            { onError: () => toast.error("Update failed") },
+                          )
+                        }
+                      />
+                    </div>
                   ))}
+                  {dropIndicator?.day === day && dropIndicator.position === dayItems.length && (
+                    <div className="h-0.5 bg-primary rounded my-1" />
+                  )}
                   <ExercisePickerButton
                     exercises={exerciseList}
                     onSelect={(exerciseId) =>
@@ -251,34 +293,154 @@ function EmptyWeek({
   );
 }
 
+// --- Planned item row with inline editing ----------------------------------
+
 function PlannedRow({
   item,
   draggable,
   onDragStart,
   onDragEnd,
+  onDragOver,
   onDelete,
+  onUpdatePlanned,
 }: {
   item: WeekItem;
   draggable?: boolean;
-  onDragStart?: () => void;
+  onDragStart?: (e: React.DragEvent) => void;
   onDragEnd?: () => void;
+  onDragOver?: (e: React.DragEvent) => void;
   onDelete: () => void;
+  onUpdatePlanned: (planned: Record<string, unknown>) => void;
 }) {
+  const [editing, setEditing] = useState(false);
+  const firstInputRef = useRef<HTMLInputElement>(null);
+  const [sets, setSets] = useState(item.planned.sets?.toString() ?? "");
+  const [reps, setReps] = useState(item.planned.reps?.toString() ?? "");
+  const [weight, setWeight] = useState(item.planned.weight?.toString() ?? "");
+  const [weightUnit, setWeightUnit] = useState(item.planned.weightUnit ?? "lb");
+  const [durMin, setDurMin] = useState(item.planned.durationSeconds ? Math.floor(item.planned.durationSeconds / 60).toString() : "");
+  const [durSec, setDurSec] = useState(item.planned.durationSeconds ? (item.planned.durationSeconds % 60).toString() : "");
+  const [distance, setDistance] = useState(item.planned.distance?.toString() ?? "");
+  const [distanceUnit, setDistanceUnit] = useState(item.planned.distanceUnit ?? "mi");
+
+  useEffect(() => {
+    if (editing) firstInputRef.current?.focus();
+  }, [editing]);
+
+  const isBw = item.weightType === "bodyweight";
+
+  const save = () => {
+    const planned: Record<string, unknown> = {};
+    const totalSec = (parseInt(durMin) || 0) * 60 + (parseInt(durSec) || 0);
+    switch (item.kind) {
+      case "strength":
+        if (sets) planned.sets = parseInt(sets);
+        if (reps) planned.reps = parseInt(reps);
+        if (!isBw && weight) planned.weight = parseFloat(weight);
+        if (!isBw) planned.weightUnit = weightUnit;
+        break;
+      case "isometric":
+        if (sets) planned.sets = parseInt(sets);
+        if (totalSec) planned.durationSeconds = totalSec;
+        if (weight) planned.weight = parseFloat(weight);
+        if (weight) planned.weightUnit = weightUnit;
+        break;
+      case "cardio":
+        if (totalSec) planned.durationSeconds = totalSec;
+        if (distance) planned.distance = parseFloat(distance);
+        planned.distanceUnit = distanceUnit;
+        break;
+    }
+    onUpdatePlanned(planned);
+    setEditing(false);
+  };
+
   return (
     <div
-      className="flex items-start justify-between gap-1 rounded border p-2 text-xs"
+      className="rounded border p-2 text-xs"
       draggable={draggable}
       onDragStart={onDragStart}
       onDragEnd={onDragEnd}
+      onDragOver={onDragOver}
     >
-      <GripVertical className="h-3 w-3 mt-0.5 text-muted-foreground cursor-grab" />
-      <div className="flex-1">
-        <p className="font-medium">{item.exerciseName}</p>
-        <p className="text-muted-foreground">{summarize(item)}</p>
+      <div className="flex items-start gap-1">
+        <GripVertical className="h-3 w-3 mt-0.5 shrink-0 text-muted-foreground cursor-grab" />
+        <div className="flex-1 min-w-0 cursor-pointer" onClick={() => setEditing(!editing)}>
+          <p className="font-medium truncate">{item.exerciseName}</p>
+          <p className="text-muted-foreground truncate">{summarize(item)}</p>
+        </div>
+        <Button
+          size="icon"
+          variant="ghost"
+          onClick={onDelete}
+          aria-label="Delete"
+          className="shrink-0 h-6 w-6"
+        >
+          <Trash2 className="h-3 w-3" />
+        </Button>
       </div>
-      <Button size="icon" variant="ghost" onClick={onDelete} aria-label="Delete">
-        <Trash2 className="h-3 w-3" />
-      </Button>
+      {editing && (
+        <div className="mt-2 space-y-1.5 border-t pt-2">
+          {item.kind === "strength" && (
+            <div className={`grid gap-1 ${isBw ? "grid-cols-2" : "grid-cols-2"}`}>
+              <Input ref={firstInputRef} className="h-6 text-xs" placeholder="Sets" value={sets} onChange={(e) => setSets(e.target.value)} type="number" />
+              <Input className="h-6 text-xs" placeholder="Reps" value={reps} onChange={(e) => setReps(e.target.value)} type="number" />
+              {!isBw && (
+                <>
+                  <Input className="h-6 text-xs" placeholder="Weight" value={weight} onChange={(e) => setWeight(e.target.value)} type="number" />
+                  <Select value={weightUnit} onValueChange={(v) => v && setWeightUnit(v)}>
+                    <SelectTrigger className="h-6 text-xs"><SelectValue /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="lb">lb</SelectItem>
+                      <SelectItem value="kg">kg</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </>
+              )}
+            </div>
+          )}
+          {item.kind === "isometric" && (
+            <div className="grid grid-cols-2 gap-1">
+              <Input ref={firstInputRef} className="h-6 text-xs" placeholder="Sets" value={sets} onChange={(e) => setSets(e.target.value)} type="number" />
+              <div className="flex gap-0.5">
+                <Input className="h-6 text-xs" placeholder="Min" value={durMin} onChange={(e) => setDurMin(e.target.value)} type="number" />
+                <Input className="h-6 text-xs" placeholder="Sec" value={durSec} onChange={(e) => setDurSec(e.target.value)} type="number" />
+              </div>
+              <Input className="h-6 text-xs" placeholder="Weight" value={weight} onChange={(e) => setWeight(e.target.value)} type="number" />
+              <Select value={weightUnit} onValueChange={(v) => v && setWeightUnit(v)}>
+                <SelectTrigger className="h-6 text-xs"><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="lb">lb</SelectItem>
+                  <SelectItem value="kg">kg</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+          )}
+          {item.kind === "cardio" && (
+            <div className="space-y-1">
+              <div className="flex gap-0.5">
+                <Input ref={firstInputRef} className="h-6 text-xs" placeholder="Min" value={durMin} onChange={(e) => setDurMin(e.target.value)} type="number" />
+                <Input className="h-6 text-xs" placeholder="Sec" value={durSec} onChange={(e) => setDurSec(e.target.value)} type="number" />
+              </div>
+              <div className="flex gap-0.5">
+                <Input className="h-6 text-xs flex-1" placeholder="Distance" value={distance} onChange={(e) => setDistance(e.target.value)} type="number" />
+                <Select value={distanceUnit} onValueChange={(v) => v && setDistanceUnit(v)}>
+                  <SelectTrigger className="h-6 text-xs w-16"><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="mi">mi</SelectItem>
+                    <SelectItem value="km">km</SelectItem>
+                    <SelectItem value="m">m</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+          )}
+          <div className="flex gap-1">
+            <Button size="sm" className="h-6 text-xs" onClick={save}>Save</Button>
+            <Button size="sm" variant="ghost" className="h-6 text-xs" onClick={() => setEditing(false)}>Cancel</Button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
@@ -295,8 +457,8 @@ function summarize(it: WeekItem): string {
   }
 }
 
-// ExercisePickerButton opens the per-day add modal. The modal supports
-// theme/region (incl. secondary) filter + free-text search per G8.
+// --- Exercise picker (unchanged) -------------------------------------------
+
 function ExercisePickerButton({
   exercises,
   onSelect,
@@ -328,9 +490,6 @@ function ExercisePickerButton({
   );
 }
 
-// ExercisePickerModal is the filterable picker. The region filter matches
-// either the primary or any secondary region — same semantics as the backend
-// list endpoint.
 function ExercisePickerModal({
   exercises,
   onSelect,

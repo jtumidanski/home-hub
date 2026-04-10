@@ -23,7 +23,7 @@ export function TrackerPage() {
     "max-w-3xl";
 
   return (
-    <div className={`mx-auto py-4 px-4 space-y-4 ${widthClass}`}>
+    <div className="py-4 px-4 space-y-4">
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-bold">Tracker</h1>
         <div className="flex gap-1">
@@ -39,16 +39,18 @@ export function TrackerPage() {
         </div>
       </div>
 
-      {view === "today" && (
-        <TodayView onNavigateToCalendar={() => setView("calendar")} />
-      )}
-      {view === "calendar" && (
-        <CalendarGrid month={month} onMonthChange={setMonth} onViewReport={() => setView("report")} />
-      )}
-      {view === "setup" && <TrackerSetup />}
-      {view === "report" && (
-        <MonthReport month={month} onBackToCalendar={() => setView("calendar")} />
-      )}
+      <div className={`mx-auto ${widthClass}`}>
+        {view === "today" && (
+          <TodayView onNavigateToCalendar={() => setView("calendar")} />
+        )}
+        {view === "calendar" && (
+          <CalendarGrid month={month} onMonthChange={setMonth} onViewReport={() => setView("report")} />
+        )}
+        {view === "setup" && <TrackerSetup />}
+        {view === "report" && (
+          <MonthReport month={month} onBackToCalendar={() => setView("calendar")} />
+        )}
+      </div>
     </div>
   );
 }
