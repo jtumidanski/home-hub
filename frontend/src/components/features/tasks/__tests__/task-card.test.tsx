@@ -21,12 +21,12 @@ function makeTask(overrides: Partial<Task["attributes"]> = {}): Task {
 
 describe("TaskCard", () => {
   it("renders task title, status badge, and due date", () => {
-    const task = makeTask({ dueOn: "2026-04-01" });
+    const task = makeTask({ dueOn: "2099-12-31" });
     render(<TaskCard task={task} onToggleComplete={vi.fn()} onDelete={vi.fn()} />);
 
     expect(screen.getByText("Buy groceries")).toBeInTheDocument();
     expect(screen.getByText("pending")).toBeInTheDocument();
-    expect(screen.getByText("2026-04-01")).toBeInTheDocument();
+    expect(screen.getByText("2099-12-31")).toBeInTheDocument();
   });
 
   it('renders "Mark complete" action for pending task', async () => {
