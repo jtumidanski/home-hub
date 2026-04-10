@@ -153,7 +153,7 @@ function ExerciseCreateDialog({
             <Label htmlFor="ex-name">Name</Label>
             <Input id="ex-name" value={name} onChange={(e) => setName(e.target.value)} />
           </div>
-          <div className="grid grid-cols-2 gap-2">
+          <div className={`grid gap-2 ${kind === "strength" ? "grid-cols-2" : "grid-cols-1"}`}>
             <div>
               <Label>Kind</Label>
               <Select value={kind} onValueChange={(v) => setKind(v as WorkoutKind)}>
@@ -167,18 +167,20 @@ function ExerciseCreateDialog({
                 </SelectContent>
               </Select>
             </div>
-            <div>
-              <Label>Weight type</Label>
-              <Select value={weightType} onValueChange={(v) => setWeightType(v as WeightType)}>
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="free">free</SelectItem>
-                  <SelectItem value="bodyweight">bodyweight</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
+            {kind === "strength" && (
+              <div>
+                <Label>Weight type</Label>
+                <Select value={weightType} onValueChange={(v) => setWeightType(v as WeightType)}>
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="free">free (barbell, dumbbell, etc.)</SelectItem>
+                    <SelectItem value="bodyweight">bodyweight (dips, pull-ups, etc.)</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            )}
           </div>
           <div>
             <Label>Theme</Label>

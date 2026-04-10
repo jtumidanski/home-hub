@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { ChevronLeft, ChevronRight, GripVertical, Search, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -313,31 +313,40 @@ function PlannedRow({
   onUpdatePlanned: (planned: Record<string, unknown>) => void;
 }) {
   const [editing, setEditing] = useState(false);
+  const firstInputRef = useRef<HTMLInputElement>(null);
   const [sets, setSets] = useState(item.planned.sets?.toString() ?? "");
   const [reps, setReps] = useState(item.planned.reps?.toString() ?? "");
   const [weight, setWeight] = useState(item.planned.weight?.toString() ?? "");
   const [weightUnit, setWeightUnit] = useState(item.planned.weightUnit ?? "lb");
-  const [durationSeconds, setDurationSeconds] = useState(item.planned.durationSeconds?.toString() ?? "");
+  const [durMin, setDurMin] = useState(item.planned.durationSeconds ? Math.floor(item.planned.durationSeconds / 60).toString() : "");
+  const [durSec, setDurSec] = useState(item.planned.durationSeconds ? (item.planned.durationSeconds % 60).toString() : "");
   const [distance, setDistance] = useState(item.planned.distance?.toString() ?? "");
   const [distanceUnit, setDistanceUnit] = useState(item.planned.distanceUnit ?? "mi");
 
+  useEffect(() => {
+    if (editing) firstInputRef.current?.focus();
+  }, [editing]);
+
+  const isBw = item.weightType === "bodyweight";
+
   const save = () => {
     const planned: Record<string, unknown> = {};
+    const totalSec = (parseInt(durMin) || 0) * 60 + (parseInt(durSec) || 0);
     switch (item.kind) {
       case "strength":
         if (sets) planned.sets = parseInt(sets);
         if (reps) planned.reps = parseInt(reps);
-        if (weight) planned.weight = parseFloat(weight);
-        planned.weightUnit = weightUnit;
+        if (!isBw && weight) planned.weight = parseFloat(weight);
+        if (!isBw) planned.weightUnit = weightUnit;
         break;
       case "isometric":
         if (sets) planned.sets = parseInt(sets);
-        if (durationSeconds) planned.durationSeconds = parseInt(durationSeconds);
+        if (totalSec) planned.durationSeconds = totalSec;
         if (weight) planned.weight = parseFloat(weight);
         if (weight) planned.weightUnit = weightUnit;
         break;
       case "cardio":
-        if (durationSeconds) planned.durationSeconds = parseInt(durationSeconds);
+        if (totalSec) planned.durationSeconds = totalSec;
         if (distance) planned.distance = parseFloat(distance);
         planned.distanceUnit = distanceUnit;
         break;
@@ -373,23 +382,30 @@ function PlannedRow({
       {editing && (
         <div className="mt-2 space-y-1.5 border-t pt-2">
           {item.kind === "strength" && (
-            <div className="grid grid-cols-2 gap-1">
-              <Input className="h-6 text-xs" placeholder="Sets" value={sets} onChange={(e) => setSets(e.target.value)} type="number" />
+            <div className={`grid gap-1 ${isBw ? "grid-cols-2" : "grid-cols-2"}`}>
+              <Input ref={firstInputRef} className="h-6 text-xs" placeholder="Sets" value={sets} onChange={(e) => setSets(e.target.value)} type="number" />
               <Input className="h-6 text-xs" placeholder="Reps" value={reps} onChange={(e) => setReps(e.target.value)} type="number" />
-              <Input className="h-6 text-xs" placeholder="Weight" value={weight} onChange={(e) => setWeight(e.target.value)} type="number" />
-              <Select value={weightUnit} onValueChange={(v) => v && setWeightUnit(v)}>
-                <SelectTrigger className="h-6 text-xs"><SelectValue /></SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="lb">lb</SelectItem>
-                  <SelectItem value="kg">kg</SelectItem>
-                </SelectContent>
-              </Select>
+              {!isBw && (
+                <>
+                  <Input className="h-6 text-xs" placeholder="Weight" value={weight} onChange={(e) => setWeight(e.target.value)} type="number" />
+                  <Select value={weightUnit} onValueChange={(v) => v && setWeightUnit(v)}>
+                    <SelectTrigger className="h-6 text-xs"><SelectValue /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="lb">lb</SelectItem>
+                      <SelectItem value="kg">kg</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </>
+              )}
             </div>
           )}
           {item.kind === "isometric" && (
             <div className="grid grid-cols-2 gap-1">
-              <Input className="h-6 text-xs" placeholder="Sets" value={sets} onChange={(e) => setSets(e.target.value)} type="number" />
-              <Input className="h-6 text-xs" placeholder="Duration (s)" value={durationSeconds} onChange={(e) => setDurationSeconds(e.target.value)} type="number" />
+              <Input ref={firstInputRef} className="h-6 text-xs" placeholder="Sets" value={sets} onChange={(e) => setSets(e.target.value)} type="number" />
+              <div className="flex gap-0.5">
+                <Input className="h-6 text-xs" placeholder="Min" value={durMin} onChange={(e) => setDurMin(e.target.value)} type="number" />
+                <Input className="h-6 text-xs" placeholder="Sec" value={durSec} onChange={(e) => setDurSec(e.target.value)} type="number" />
+              </div>
               <Input className="h-6 text-xs" placeholder="Weight" value={weight} onChange={(e) => setWeight(e.target.value)} type="number" />
               <Select value={weightUnit} onValueChange={(v) => v && setWeightUnit(v)}>
                 <SelectTrigger className="h-6 text-xs"><SelectValue /></SelectTrigger>
@@ -401,17 +417,22 @@ function PlannedRow({
             </div>
           )}
           {item.kind === "cardio" && (
-            <div className="grid grid-cols-2 gap-1">
-              <Input className="h-6 text-xs" placeholder="Duration (s)" value={durationSeconds} onChange={(e) => setDurationSeconds(e.target.value)} type="number" />
-              <Input className="h-6 text-xs" placeholder="Distance" value={distance} onChange={(e) => setDistance(e.target.value)} type="number" />
-              <Select value={distanceUnit} onValueChange={(v) => v && setDistanceUnit(v)}>
-                <SelectTrigger className="h-6 text-xs"><SelectValue /></SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="mi">mi</SelectItem>
-                  <SelectItem value="km">km</SelectItem>
-                  <SelectItem value="m">m</SelectItem>
-                </SelectContent>
-              </Select>
+            <div className="space-y-1">
+              <div className="flex gap-0.5">
+                <Input ref={firstInputRef} className="h-6 text-xs" placeholder="Min" value={durMin} onChange={(e) => setDurMin(e.target.value)} type="number" />
+                <Input className="h-6 text-xs" placeholder="Sec" value={durSec} onChange={(e) => setDurSec(e.target.value)} type="number" />
+              </div>
+              <div className="flex gap-0.5">
+                <Input className="h-6 text-xs flex-1" placeholder="Distance" value={distance} onChange={(e) => setDistance(e.target.value)} type="number" />
+                <Select value={distanceUnit} onValueChange={(v) => v && setDistanceUnit(v)}>
+                  <SelectTrigger className="h-6 text-xs w-16"><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="mi">mi</SelectItem>
+                    <SelectItem value="km">km</SelectItem>
+                    <SelectItem value="m">m</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
             </div>
           )}
           <div className="flex gap-1">
