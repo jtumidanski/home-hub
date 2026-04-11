@@ -353,15 +353,18 @@ function CellContent({ itemId, date, scaleType, scaleConfig, scheduled, entry, i
   );
 }
 
-function RangeEditor({ min, max, initial, onCommit }: { min: number; max: number; initial: number | undefined; onCommit: (n: number) => void }) {
+function RangeEditor({ itemId, date, min, max, initial, onCommit }: { itemId: string; date: string; min: number; max: number; initial: number | undefined; onCommit: (n: number) => void }) {
   const [local, setLocal] = useState<number>(initial ?? Math.round((min + max) / 2));
   const [touched, setTouched] = useState(initial !== undefined);
   useEffect(() => {
     if (initial !== undefined) {
       setLocal(initial);
       setTouched(true);
+    } else {
+      setLocal(Math.round((min + max) / 2));
+      setTouched(false);
     }
-  }, [initial]);
+  }, [itemId, date, initial, min, max]);
   const handleCommit = (n: number) => { setTouched(true); onCommit(n); };
   return (
     <div className="space-y-1">
@@ -412,6 +415,8 @@ function CellEditor({ itemId, date, scaleType, scaleConfig, scheduled, entry, pu
       })()}
       {scaleType === "range" && (
         <RangeEditor
+          itemId={itemId}
+          date={date}
           min={scaleConfig?.min ?? 0}
           max={scaleConfig?.max ?? 100}
           initial={(entry?.value as RangeValue)?.value}

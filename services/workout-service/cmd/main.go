@@ -52,7 +52,7 @@ func main() {
 
 			// Order matters: more specific routes before generic
 			// /workouts/weeks/{weekStart}/... routes.
-			today.InitializeRoutes(db)(l, si, api)
+			today.InitializeRoutes(db, cfg.AccountBaseURL)(l, si, api)
 			summary.InitializeRoutes(db)(l, si, api)
 			performance.InitializeRoutes(db)(l, si, api)
 			weekview.InitializeRoutes(db)(l, si, api)

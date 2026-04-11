@@ -1,9 +1,7 @@
 // Package today's Processor builds the per-day projection used by the
-// `GET /workouts/today` endpoint. The current day is computed in UTC,
-// matching `tracker-service/today`. (PRD §6 calls for the user's TZ; we keep
-// parity with tracker-service rather than reinventing TZ resolution here.
-// When account-service grows a shared TZ helper, both Today endpoints can
-// adopt it together.)
+// `GET /workouts/today` endpoint. "Now" is resolved in the caller's
+// timezone (see internal/tz); callers must pass a time.Time whose Location
+// is already the resolved zone.
 package today
 
 import (
@@ -42,9 +40,13 @@ type Result struct {
 // slice when the user has no week row for the current ISO week, never an
 // error in that case.
 func (p *Processor) Today(userID uuid.UUID, now time.Time) (Result, error) {
-	now = now.UTC().Truncate(24 * time.Hour)
-	weekStart := week.NormalizeToMonday(now)
+	// Compute the calendar day in the caller's zone, then anchor to UTC for
+	// DB lookups so the DATE column ("type:date") compares as a plain date
+	// irrespective of tz offset.
 	dayOfWeek := (int(now.Weekday()) + 6) % 7 // Mon = 0
+	today := time.Date(now.Year(), now.Month(), now.Day(), 0, 0, 0, 0, time.UTC)
+	weekStart := today.AddDate(0, 0, -dayOfWeek)
+	now = today
 
 	weekProc := week.NewProcessor(p.l, p.ctx, p.db)
 	m, err := weekProc.Get(userID, weekStart)

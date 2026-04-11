@@ -168,8 +168,12 @@ function RangeInput({ itemId, date, config, currentValue, putEntry }: { itemId: 
   const isSet = currentValue !== undefined;
   const [local, setLocal] = useState<number>(currentValue ?? Math.round((min + max) / 2));
   useEffect(() => {
-    if (currentValue !== undefined) setLocal(currentValue);
-  }, [currentValue]);
+    if (currentValue !== undefined) {
+      setLocal(currentValue);
+    } else {
+      setLocal(Math.round((min + max) / 2));
+    }
+  }, [itemId, date, currentValue, min, max]);
   const commit = (n: number) => putEntry.mutate({ itemId, date, value: { value: n } });
   return (
     <div className="flex items-center gap-2">

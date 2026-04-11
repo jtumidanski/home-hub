@@ -136,6 +136,29 @@ func TestToday_ExcludesItemsWithoutSchedule(t *testing.T) {
 	assert.Empty(t, result.Entries)
 }
 
+func TestToday_HonorsCallerTimezoneForCrossMidnightCase(t *testing.T) {
+	db := setupTestDB(t)
+	p := newTestProcessor(t, db)
+
+	userID := uuid.New()
+	// 02:30 UTC on Tuesday 2026-04-07 is still 22:30 Monday 2026-04-06 in NYC.
+	// The tracker item is only scheduled on Monday (weekday 1). If the
+	// processor wrongly truncated to UTC the item would be filtered out.
+	nyc, err := time.LoadLocation("America/New_York")
+	require.NoError(t, err)
+	localNow := time.Date(2026, 4, 7, 2, 30, 0, 0, time.UTC).In(nyc)
+	require.Equal(t, time.Monday, localNow.Weekday())
+
+	mondayItem := makeItem(t, db, userID, "mon-only")
+	setSchedule(t, db, mondayItem, []int{int(time.Monday)})
+
+	result, err := p.Today(userID, localNow)
+	require.NoError(t, err)
+	require.Len(t, result.Items, 1)
+	assert.Equal(t, mondayItem, result.Items[0].Id())
+	assert.Equal(t, "2026-04-06", result.Date.Format("2006-01-02"))
+}
+
 func TestToday_OnlyReturnsItemsForRequestedUser(t *testing.T) {
 	db := setupTestDB(t)
 	p := newTestProcessor(t, db)

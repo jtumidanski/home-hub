@@ -37,8 +37,10 @@ func NewProcessor(l logrus.FieldLogger, ctx context.Context, db *gorm.DB) *Proce
 // (trackingitem, schedule, entry) are kept inside the processor so handlers
 // never reach across packages for orchestration.
 func (p *Processor) Today(userID uuid.UUID, date time.Time) (Result, error) {
-	day := date.UTC().Truncate(24 * time.Hour)
-	dow := int(day.Weekday())
+	// `date` is expected to be in the caller's resolved tz. Anchor the calendar
+	// day to UTC midnight so the entry DATE column compares as a plain date.
+	dow := int(date.Weekday())
+	day := time.Date(date.Year(), date.Month(), date.Day(), 0, 0, 0, 0, time.UTC)
 
 	itemEntities, err := trackingitem.GetAllByUser(userID)(p.db.WithContext(p.ctx))()
 	if err != nil {

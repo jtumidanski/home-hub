@@ -58,10 +58,23 @@ export function WorkoutExercisesPage() {
                 {exercises.data?.data.map((e) => {
                   const theme = themes.data?.data.find((t) => t.id === e.attributes.themeId);
                   const region = regions.data?.data.find((r) => r.id === e.attributes.regionId);
+                  const weightTypeLabel =
+                    e.attributes.kind === "strength"
+                      ? e.attributes.weightType === "bodyweight"
+                        ? "Bodyweight"
+                        : "Free"
+                      : null;
                   return (
                     <li key={e.id} className="flex items-center justify-between py-2">
                       <div>
-                        <p className="font-medium">{e.attributes.name}</p>
+                        <div className="flex items-center gap-2">
+                          <p className="font-medium">{e.attributes.name}</p>
+                          {weightTypeLabel && (
+                            <span className="inline-flex items-center rounded border px-1.5 py-0.5 text-[10px] font-medium text-muted-foreground">
+                              {weightTypeLabel}
+                            </span>
+                          )}
+                        </div>
                         <p className="text-xs text-muted-foreground">
                           {e.attributes.kind.charAt(0).toUpperCase() + e.attributes.kind.slice(1)} · {theme?.attributes.name ?? "—"} ·{" "}
                           {region?.attributes.name ?? "—"}
