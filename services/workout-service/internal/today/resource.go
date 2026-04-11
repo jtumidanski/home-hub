@@ -12,6 +12,7 @@ import (
 
 	"github.com/gorilla/mux"
 	"github.com/jtumidanski/api2go/jsonapi"
+	"github.com/jtumidanski/home-hub/services/workout-service/internal/tz"
 	"github.com/jtumidanski/home-hub/services/workout-service/internal/weekview"
 	"github.com/jtumidanski/home-hub/shared/go/server"
 	tenantctx "github.com/jtumidanski/home-hub/shared/go/tenant"
@@ -19,10 +20,10 @@ import (
 	"gorm.io/gorm"
 )
 
-func InitializeRoutes(db *gorm.DB) func(l logrus.FieldLogger, si jsonapi.ServerInformation, api *mux.Router) {
+func InitializeRoutes(db *gorm.DB, accountBaseURL string) func(l logrus.FieldLogger, si jsonapi.ServerInformation, api *mux.Router) {
 	return func(l logrus.FieldLogger, si jsonapi.ServerInformation, api *mux.Router) {
 		rh := server.RegisterHandler(l)(si)
-		api.HandleFunc("/workouts/today", rh("GetWorkoutsToday", todayHandler(db))).Methods(http.MethodGet)
+		api.HandleFunc("/workouts/today", rh("GetWorkoutsToday", todayHandler(db, accountBaseURL))).Methods(http.MethodGet)
 	}
 }
 
@@ -57,11 +58,14 @@ func transform(res Result) RestModel {
 	}
 }
 
-func todayHandler(db *gorm.DB) server.GetHandler {
+func todayHandler(db *gorm.DB, accountBaseURL string) server.GetHandler {
 	return func(d *server.HandlerDependency, c *server.HandlerContext) http.HandlerFunc {
 		return func(w http.ResponseWriter, r *http.Request) {
 			t := tenantctx.MustFromContext(r.Context())
-			res, err := NewProcessor(d.Logger(), r.Context(), db).Today(t.UserId(), time.Now())
+			lookup := tz.NewAccountHouseholdLookup(accountBaseURL, r.Header.Get("Authorization"))
+			loc := tz.Resolve(r.Context(), d.Logger(), r.Header, t.HouseholdId(), lookup)
+			ctx := tz.WithLocation(r.Context(), loc)
+			res, err := NewProcessor(d.Logger(), ctx, db).Today(t.UserId(), time.Now().In(loc))
 			if err != nil {
 				d.Logger().WithError(err).Error("Failed to load today")
 				server.WriteError(w, http.StatusInternalServerError, "Error", "")

@@ -244,9 +244,16 @@ export function WorkoutWeekPage() {
                   )}
                   <ExercisePickerButton
                     exercises={exerciseList}
-                    onSelect={(exerciseId) =>
+                    onSelect={(exerciseId, planned) =>
                       add.mutate(
-                        { weekStart, attrs: { exerciseId, dayOfWeek: day } },
+                        {
+                          weekStart,
+                          attrs: {
+                            exerciseId,
+                            dayOfWeek: day,
+                            ...(planned && Object.keys(planned).length > 0 ? { planned } : {}),
+                          },
+                        },
                         { onError: (e) => toast.error((e as Error).message ?? "Add failed") },
                       )
                     }
@@ -464,7 +471,7 @@ function ExercisePickerButton({
   onSelect,
 }: {
   exercises: Exercise[];
-  onSelect: (id: string) => void;
+  onSelect: (id: string, planned?: Record<string, unknown>) => void;
 }) {
   const [open, setOpen] = useState(false);
   return (
@@ -480,8 +487,8 @@ function ExercisePickerButton({
         </DialogHeader>
         <ExercisePickerModal
           exercises={exercises}
-          onSelect={(id) => {
-            onSelect(id);
+          onSelect={(id, planned) => {
+            onSelect(id, planned);
             setOpen(false);
           }}
         />
@@ -495,13 +502,14 @@ function ExercisePickerModal({
   onSelect,
 }: {
   exercises: Exercise[];
-  onSelect: (id: string) => void;
+  onSelect: (id: string, planned?: Record<string, unknown>) => void;
 }) {
   const themes = useWorkoutThemes();
   const regions = useWorkoutRegions();
   const [themeId, setThemeId] = useState<string>("all");
   const [regionId, setRegionId] = useState<string>("all");
   const [query, setQuery] = useState("");
+  const [selected, setSelected] = useState<Exercise | null>(null);
 
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase();
@@ -517,12 +525,31 @@ function ExercisePickerModal({
     });
   }, [exercises, themeId, regionId, query]);
 
+  const themeLabel =
+    themeId === "all"
+      ? "All themes"
+      : themes.data?.data?.find((t) => t.id === themeId)?.attributes.name ?? "All themes";
+  const regionLabel =
+    regionId === "all"
+      ? "All regions"
+      : regions.data?.data?.find((r) => r.id === regionId)?.attributes.name ?? "All regions";
+
+  if (selected) {
+    return (
+      <ExerciseInitialValuesForm
+        exercise={selected}
+        onCancel={() => setSelected(null)}
+        onConfirm={(planned) => onSelect(selected.id, planned)}
+      />
+    );
+  }
+
   return (
     <div className="space-y-3">
       <div className="grid grid-cols-2 gap-2">
         <Select value={themeId} onValueChange={(v) => setThemeId(v ?? "all")}>
           <SelectTrigger className="h-8 text-xs">
-            <SelectValue placeholder="Theme" />
+            <SelectValue placeholder="Theme">{themeLabel}</SelectValue>
           </SelectTrigger>
           <SelectContent>
             <SelectItem value="all">All themes</SelectItem>
@@ -535,7 +562,7 @@ function ExercisePickerModal({
         </Select>
         <Select value={regionId} onValueChange={(v) => setRegionId(v ?? "all")}>
           <SelectTrigger className="h-8 text-xs">
-            <SelectValue placeholder="Region" />
+            <SelectValue placeholder="Region">{regionLabel}</SelectValue>
           </SelectTrigger>
           <SelectContent>
             <SelectItem value="all">All regions</SelectItem>
@@ -563,7 +590,7 @@ function ExercisePickerModal({
           filtered.map((e) => (
             <button
               key={e.id}
-              onClick={() => onSelect(e.id)}
+              onClick={() => setSelected(e)}
               className="w-full text-left px-2 py-1.5 text-xs rounded hover:bg-muted"
             >
               <span className="font-medium">{e.attributes.name}</span>
@@ -571,6 +598,128 @@ function ExercisePickerModal({
             </button>
           ))
         )}
+      </div>
+    </div>
+  );
+}
+
+function ExerciseInitialValuesForm({
+  exercise,
+  onCancel,
+  onConfirm,
+}: {
+  exercise: Exercise;
+  onCancel: () => void;
+  onConfirm: (planned: Record<string, unknown>) => void;
+}) {
+  const kind = exercise.attributes.kind;
+  const isBw = exercise.attributes.weightType === "bodyweight";
+  const defaults = exercise.attributes.defaults ?? {};
+
+  const [sets, setSets] = useState(defaults.sets?.toString() ?? "");
+  const [reps, setReps] = useState(defaults.reps?.toString() ?? "");
+  const [weight, setWeight] = useState(defaults.weight?.toString() ?? "");
+  const [weightUnit, setWeightUnit] = useState<string>(defaults.weightUnit ?? "lb");
+  const [durMin, setDurMin] = useState(
+    defaults.durationSeconds ? Math.floor(defaults.durationSeconds / 60).toString() : "",
+  );
+  const [durSec, setDurSec] = useState(
+    defaults.durationSeconds ? (defaults.durationSeconds % 60).toString() : "",
+  );
+  const [distance, setDistance] = useState(defaults.distance?.toString() ?? "");
+  const [distanceUnit, setDistanceUnit] = useState<string>(defaults.distanceUnit ?? "mi");
+
+  const submit = () => {
+    const planned: Record<string, unknown> = {};
+    const totalSec = (parseInt(durMin) || 0) * 60 + (parseInt(durSec) || 0);
+    switch (kind) {
+      case "strength":
+        if (sets) planned.sets = parseInt(sets);
+        if (reps) planned.reps = parseInt(reps);
+        if (!isBw && weight) planned.weight = parseFloat(weight);
+        if (!isBw) planned.weightUnit = weightUnit;
+        break;
+      case "isometric":
+        if (sets) planned.sets = parseInt(sets);
+        if (totalSec) planned.durationSeconds = totalSec;
+        if (weight) planned.weight = parseFloat(weight);
+        if (weight) planned.weightUnit = weightUnit;
+        break;
+      case "cardio":
+        if (totalSec) planned.durationSeconds = totalSec;
+        if (distance) planned.distance = parseFloat(distance);
+        planned.distanceUnit = distanceUnit;
+        break;
+    }
+    onConfirm(planned);
+  };
+
+  return (
+    <div className="space-y-3">
+      <div>
+        <p className="font-medium text-sm">{exercise.attributes.name}</p>
+        <p className="text-xs text-muted-foreground">
+          {kind.charAt(0).toUpperCase() + kind.slice(1)}
+          {kind === "strength" && ` · ${isBw ? "Bodyweight" : "Free"}`}
+        </p>
+      </div>
+      {kind === "strength" && (
+        <div className="grid grid-cols-2 gap-2">
+          <Input placeholder="Sets" value={sets} onChange={(e) => setSets(e.target.value)} type="number" />
+          <Input placeholder="Reps" value={reps} onChange={(e) => setReps(e.target.value)} type="number" />
+          {!isBw && (
+            <>
+              <Input placeholder="Weight" value={weight} onChange={(e) => setWeight(e.target.value)} type="number" />
+              <Select value={weightUnit} onValueChange={(v) => v && setWeightUnit(v)}>
+                <SelectTrigger><SelectValue>{weightUnit}</SelectValue></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="lb">lb</SelectItem>
+                  <SelectItem value="kg">kg</SelectItem>
+                </SelectContent>
+              </Select>
+            </>
+          )}
+        </div>
+      )}
+      {kind === "isometric" && (
+        <div className="grid grid-cols-2 gap-2">
+          <Input placeholder="Sets" value={sets} onChange={(e) => setSets(e.target.value)} type="number" />
+          <div className="flex gap-1">
+            <Input placeholder="Min" value={durMin} onChange={(e) => setDurMin(e.target.value)} type="number" />
+            <Input placeholder="Sec" value={durSec} onChange={(e) => setDurSec(e.target.value)} type="number" />
+          </div>
+          <Input placeholder="Weight" value={weight} onChange={(e) => setWeight(e.target.value)} type="number" />
+          <Select value={weightUnit} onValueChange={(v) => v && setWeightUnit(v)}>
+            <SelectTrigger><SelectValue>{weightUnit}</SelectValue></SelectTrigger>
+            <SelectContent>
+              <SelectItem value="lb">lb</SelectItem>
+              <SelectItem value="kg">kg</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+      )}
+      {kind === "cardio" && (
+        <div className="space-y-2">
+          <div className="flex gap-1">
+            <Input placeholder="Min" value={durMin} onChange={(e) => setDurMin(e.target.value)} type="number" />
+            <Input placeholder="Sec" value={durSec} onChange={(e) => setDurSec(e.target.value)} type="number" />
+          </div>
+          <div className="flex gap-1">
+            <Input className="flex-1" placeholder="Distance" value={distance} onChange={(e) => setDistance(e.target.value)} type="number" />
+            <Select value={distanceUnit} onValueChange={(v) => v && setDistanceUnit(v)}>
+              <SelectTrigger className="w-20"><SelectValue>{distanceUnit}</SelectValue></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="mi">mi</SelectItem>
+                <SelectItem value="km">km</SelectItem>
+                <SelectItem value="m">m</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+        </div>
+      )}
+      <div className="flex gap-2 justify-end">
+        <Button variant="ghost" size="sm" onClick={onCancel}>Back</Button>
+        <Button size="sm" onClick={submit}>Add</Button>
       </div>
     </div>
   );
