@@ -36,16 +36,38 @@ func (pp *planProviderImpl) GetPlan(id uuid.UUID) (planitem.PlanInfo, error) {
 	}, nil
 }
 
+// NewPlanProvider returns a PlanProvider backed by the plan entity store.
+func NewPlanProvider(db *gorm.DB) planitem.PlanProvider {
+	return &planProviderImpl{db: db}
+}
+
+// recipeValidatorImpl implements planitem.RecipeValidator using a direct DB check.
+type recipeValidatorImpl struct {
+	db *gorm.DB
+}
+
+func (rv *recipeValidatorImpl) RecipeExists(id uuid.UUID) error {
+	var count int64
+	if err := rv.db.Table("recipes").Where("id = ? AND deleted_at IS NULL", id).Count(&count).Error; err != nil {
+		return err
+	}
+	if count == 0 {
+		return errors.New("recipe not found or deleted")
+	}
+	return nil
+}
+
+// NewRecipeValidator returns a RecipeValidator backed by a direct DB check.
+func NewRecipeValidator(db *gorm.DB) planitem.RecipeValidator {
+	return &recipeValidatorImpl{db: db}
+}
+
 func InitializeRoutes(db *gorm.DB, catClient *categoryclient.Client) func(l logrus.FieldLogger, si jsonapi.ServerInformation, api *mux.Router) {
 	return func(l logrus.FieldLogger, si jsonapi.ServerInformation, api *mux.Router) {
 		rh := server.RegisterHandler(l)(si)
 		rihCreate := server.RegisterInputHandler[CreateRequest](l)(si)
 		rihUpdate := server.RegisterInputHandler[UpdateRequest](l)(si)
 		rihDuplicate := server.RegisterInputHandler[DuplicateRequest](l)(si)
-		rihAddItem := server.RegisterInputHandler[planitem.CreateItemRequest](l)(si)
-		rihUpdateItem := server.RegisterInputHandler[planitem.UpdateItemRequest](l)(si)
-
-		pp := &planProviderImpl{db: db}
 
 		api.HandleFunc("/meals/plans", rihCreate("CreatePlan", createPlanHandler(db))).Methods(http.MethodPost)
 		api.HandleFunc("/meals/plans", rh("ListPlans", listPlansHandler(db))).Methods(http.MethodGet)
@@ -54,11 +76,6 @@ func InitializeRoutes(db *gorm.DB, catClient *categoryclient.Client) func(l logr
 		api.HandleFunc("/meals/plans/{planId}/lock", rh("LockPlan", lockPlanHandler(db))).Methods(http.MethodPost)
 		api.HandleFunc("/meals/plans/{planId}/unlock", rh("UnlockPlan", unlockPlanHandler(db))).Methods(http.MethodPost)
 		api.HandleFunc("/meals/plans/{planId}/duplicate", rihDuplicate("DuplicatePlan", duplicatePlanHandler(db))).Methods(http.MethodPost)
-
-		// Plan item routes
-		api.HandleFunc("/meals/plans/{planId}/items", rihAddItem("AddPlanItem", planitem.AddItemHandler(db, pp))).Methods(http.MethodPost)
-		api.HandleFunc("/meals/plans/{planId}/items/{itemId}", rihUpdateItem("UpdatePlanItem", planitem.UpdateItemHandler(db, pp))).Methods(http.MethodPatch)
-		api.HandleFunc("/meals/plans/{planId}/items/{itemId}", rh("RemovePlanItem", planitem.RemoveItemHandler(db, pp))).Methods(http.MethodDelete)
 
 		// Export routes
 		api.HandleFunc("/meals/plans/{planId}/export/markdown", rh("ExportMarkdown", exportMarkdownHandler(db, catClient))).Methods(http.MethodGet)

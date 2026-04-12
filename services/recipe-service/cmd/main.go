@@ -60,6 +60,7 @@ func main() {
 			ingredient.InitializeRoutes(db, catClient)(l, si, api)
 			normalization.InitializeRoutes(db)(l, si, api)
 			plan.InitializeRoutes(db, catClient)(l, si, api)
+			planitem.InitializeRoutes(db, plan.NewPlanProvider(db), plan.NewRecipeValidator(db))(l, si, api)
 		}).
 		Run()
 }
