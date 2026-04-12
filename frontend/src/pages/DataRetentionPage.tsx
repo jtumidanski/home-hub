@@ -1,4 +1,7 @@
 import { useMemo, useState } from "react";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { z } from "zod";
 import {
   useRetentionPolicies,
   useRetentionRuns,
@@ -8,7 +11,6 @@ import {
 } from "@/lib/hooks/api/use-retention";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -24,6 +26,13 @@ import {
 import { retentionService, type RetentionCategoryView } from "@/services/api/retention";
 import { useTenant } from "@/context/tenant-context";
 import { toast } from "sonner";
+
+function retentionDaysSchema(max: number) {
+  return z.object({
+    days: z.number({ error: "Must be a number" }).int().min(1, "Minimum 1 day").max(max, `Maximum ${max} days`),
+  });
+}
+type RetentionDaysData = z.infer<ReturnType<typeof retentionDaysSchema>>;
 
 const CATEGORY_LABELS: Record<string, string> = {
   "productivity.completed_tasks": "Completed tasks",
@@ -54,9 +63,12 @@ interface RowProps {
 }
 
 function CategoryRow({ category, current, scope, onSave, onPurge, saving }: RowProps) {
-  const [value, setValue] = useState<number>(current.days);
-  const dirty = value !== current.days;
   const max = categoryMax(category);
+  const schema = useMemo(() => retentionDaysSchema(max), [max]);
+  const { register, handleSubmit, formState: { errors, isDirty } } = useForm<RetentionDaysData>({
+    resolver: zodResolver(schema),
+    defaultValues: { days: current.days },
+  });
 
   return (
     <div className="flex flex-wrap items-center gap-3 py-3 border-b last:border-b-0">
@@ -68,20 +80,20 @@ function CategoryRow({ category, current, scope, onSave, onPurge, saving }: RowP
         {current.source}
       </Badge>
       <div className="flex items-center gap-2">
-        <Input
-          type="number"
-          min={1}
-          max={max}
-          value={value}
-          onChange={(e) => setValue(parseInt(e.target.value || "0", 10))}
-          className="w-24"
-        />
+        <div>
+          <Input
+            type="number"
+            {...register("days", { valueAsNumber: true })}
+            className="w-24"
+          />
+          {errors.days && <p className="text-xs text-destructive mt-1">{errors.days.message}</p>}
+        </div>
         <span className="text-xs text-muted-foreground">days</span>
       </div>
       <Button
         size="sm"
-        disabled={!dirty || saving || value < 1 || value > max}
-        onClick={() => onSave(category, value, current.days)}
+        disabled={!isDirty || saving || !!errors.days}
+        onClick={handleSubmit((data) => onSave(category, data.days, current.days))}
       >
         Save
       </Button>

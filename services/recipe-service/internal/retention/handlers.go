@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/google/uuid"
+	"github.com/jtumidanski/home-hub/services/recipe-service/internal/normalization"
 	"github.com/jtumidanski/home-hub/services/recipe-service/internal/planitem"
 	"github.com/jtumidanski/home-hub/services/recipe-service/internal/recipe"
 	sr "github.com/jtumidanski/home-hub/shared/go/retention"
@@ -66,6 +67,12 @@ func cascadeDeleteRecipes(tx *gorm.DB, ids []uuid.UUID) (int, error) {
 	var total int
 
 	r := tx.Where("recipe_id IN ?", ids).Delete(&recipe.TagEntity{})
+	if r.Error != nil {
+		return 0, r.Error
+	}
+	total += int(r.RowsAffected)
+
+	r = tx.Where("recipe_id IN ?", ids).Delete(&normalization.Entity{})
 	if r.Error != nil {
 		return 0, r.Error
 	}
