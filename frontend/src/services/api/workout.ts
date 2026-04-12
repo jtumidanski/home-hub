@@ -2,7 +2,6 @@ import { api } from "@/lib/api/client";
 import { BaseService } from "./base";
 import type {
   Exercise,
-  ExerciseDefaults,
   PerformanceStatus,
   Region,
   SummaryDocument,
@@ -77,7 +76,13 @@ class WorkoutService extends BaseService {
       themeId: string;
       regionId: string;
       secondaryRegionIds?: string[];
-      defaults: ExerciseDefaults;
+      defaultSets?: number | null;
+      defaultReps?: number | null;
+      defaultWeight?: number | null;
+      defaultWeightUnit?: WeightUnit | null;
+      defaultDurationSeconds?: number | null;
+      defaultDistance?: number | null;
+      defaultDistanceUnit?: string | null;
       notes?: string | null;
     }
   ) {
@@ -93,7 +98,13 @@ class WorkoutService extends BaseService {
       themeId?: string;
       regionId?: string;
       secondaryRegionIds?: string[];
-      defaults?: ExerciseDefaults;
+      defaultSets?: number | null;
+      defaultReps?: number | null;
+      defaultWeight?: number | null;
+      defaultWeightUnit?: WeightUnit | null;
+      defaultDurationSeconds?: number | null;
+      defaultDistance?: number | null;
+      defaultDistanceUnit?: string | null;
       notes?: string | null;
     }
   ) {
@@ -177,7 +188,12 @@ class WorkoutService extends BaseService {
     attrs: {
       status?: PerformanceStatus;
       weightUnit?: WeightUnit;
-      actuals?: Record<string, unknown>;
+      actualSets?: number | null;
+      actualReps?: number | null;
+      actualWeight?: number | null;
+      actualDurationSeconds?: number | null;
+      actualDistance?: number | null;
+      actualDistanceUnit?: string | null;
       notes?: string | null;
     }
   ): Promise<ApiResponse<unknown>> {

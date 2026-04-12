@@ -8,8 +8,10 @@ import (
 	"github.com/google/uuid"
 	"github.com/gorilla/mux"
 	"github.com/jtumidanski/api2go/jsonapi"
+	"github.com/jtumidanski/home-hub/services/calendar-service/internal/connection"
 	"github.com/jtumidanski/home-hub/services/calendar-service/internal/crypto"
 	"github.com/jtumidanski/home-hub/services/calendar-service/internal/googlecal"
+	"github.com/jtumidanski/home-hub/services/calendar-service/internal/source"
 	"github.com/jtumidanski/home-hub/shared/go/server"
 	tenantctx "github.com/jtumidanski/home-hub/shared/go/tenant"
 	"github.com/sirupsen/logrus"
@@ -113,7 +115,9 @@ func createEventHandler(db *gorm.DB, gcClient *googlecal.Client, enc *crypto.Enc
 				return
 			}
 
-			proc := NewProcessor(d.Logger(), r.Context(), db)
+			connProc := connection.NewProcessor(d.Logger(), r.Context(), db)
+			srcProc := source.NewProcessor(d.Logger(), r.Context(), db)
+			proc := NewMutationProcessor(d.Logger(), r.Context(), db, connProc, srcProc)
 			err = proc.CreateEventOnGoogle(connID, calID, t.UserId(), input, gcClient, enc, syncConn)
 			if err != nil {
 				handleMutationError(d, w, err, "create")
@@ -143,7 +147,9 @@ func updateEventHandler(db *gorm.DB, gcClient *googlecal.Client, enc *crypto.Enc
 				return
 			}
 
-			proc := NewProcessor(d.Logger(), r.Context(), db)
+			connProc := connection.NewProcessor(d.Logger(), r.Context(), db)
+			srcProc := source.NewProcessor(d.Logger(), r.Context(), db)
+			proc := NewMutationProcessor(d.Logger(), r.Context(), db, connProc, srcProc)
 			updated, err := proc.UpdateEventOnGoogle(connID, eventID, t.UserId(), input, gcClient, enc, syncConn)
 			if err != nil {
 				handleMutationError(d, w, err, "update")
@@ -181,7 +187,9 @@ func deleteEventHandler(db *gorm.DB, gcClient *googlecal.Client, enc *crypto.Enc
 
 			scope := r.URL.Query().Get("scope")
 
-			proc := NewProcessor(d.Logger(), r.Context(), db)
+			connProc := connection.NewProcessor(d.Logger(), r.Context(), db)
+			srcProc := source.NewProcessor(d.Logger(), r.Context(), db)
+			proc := NewMutationProcessor(d.Logger(), r.Context(), db, connProc, srcProc)
 			err = proc.DeleteEventOnGoogle(connID, eventID, t.UserId(), scope, gcClient, enc, syncConn)
 			if err != nil {
 				handleMutationError(d, w, err, "delete")

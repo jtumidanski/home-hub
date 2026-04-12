@@ -48,8 +48,11 @@ func Migration(db *gorm.DB) error {
 		ON exercises (tenant_id, user_id, name) WHERE deleted_at IS NULL`).Error
 }
 
-func (m Model) ToEntity() Entity {
-	secondary, _ := json.Marshal(uuidsToStrings(m.secondaryRegionIDs))
+func (m Model) ToEntity() (Entity, error) {
+	secondary, err := json.Marshal(uuidsToStrings(m.secondaryRegionIDs))
+	if err != nil {
+		return Entity{}, err
+	}
 	return Entity{
 		Id:                     m.id,
 		TenantId:               m.tenantID,
@@ -71,7 +74,7 @@ func (m Model) ToEntity() Entity {
 		CreatedAt:              m.createdAt,
 		UpdatedAt:              m.updatedAt,
 		DeletedAt:              m.deletedAt,
-	}
+	}, nil
 }
 
 func Make(e Entity) (Model, error) {

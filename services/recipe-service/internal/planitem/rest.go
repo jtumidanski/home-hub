@@ -6,7 +6,10 @@ import (
 	"time"
 
 	"github.com/google/uuid"
+	"github.com/gorilla/mux"
+	"github.com/jtumidanski/api2go/jsonapi"
 	"github.com/jtumidanski/home-hub/shared/go/server"
+	"github.com/sirupsen/logrus"
 	"gorm.io/gorm"
 )
 
@@ -22,7 +25,12 @@ type PlanInfo struct {
 	Locked   bool
 }
 
-func AddItemHandler(db *gorm.DB, pp PlanProvider) server.InputHandler[CreateItemRequest] {
+// RecipeValidator checks whether a recipe exists without importing the recipe package.
+type RecipeValidator interface {
+	RecipeExists(id uuid.UUID) error
+}
+
+func AddItemHandler(db *gorm.DB, pp PlanProvider, rv RecipeValidator) server.InputHandler[CreateItemRequest] {
 	return func(d *server.HandlerDependency, c *server.HandlerContext, input CreateItemRequest) http.HandlerFunc {
 		return server.ParseID("planId", func(planID uuid.UUID) http.HandlerFunc {
 			return func(w http.ResponseWriter, r *http.Request) {
@@ -48,13 +56,13 @@ func AddItemHandler(db *gorm.DB, pp PlanProvider) server.InputHandler[CreateItem
 					return
 				}
 
-				proc := NewProcessor(d.Logger(), r.Context(), db)
-
 				// Validate recipe exists and is active
-				if err := proc.ValidateRecipeExists(recipeID); err != nil {
+				if err := rv.RecipeExists(recipeID); err != nil {
 					server.WriteError(w, http.StatusNotFound, "Not Found", "Recipe not found or deleted")
 					return
 				}
+
+				proc := NewProcessor(d.Logger(), r.Context(), db)
 				m, err := proc.AddItem(planID, p.StartsOn, AddAttrs{
 					Day:               day,
 					Slot:              input.Slot,
@@ -150,6 +158,18 @@ func UpdateItemHandler(db *gorm.DB, pp PlanProvider) server.InputHandler[UpdateI
 				}
 			})
 		})
+	}
+}
+
+func InitializeRoutes(db *gorm.DB, pp PlanProvider, rv RecipeValidator) func(l logrus.FieldLogger, si jsonapi.ServerInformation, api *mux.Router) {
+	return func(l logrus.FieldLogger, si jsonapi.ServerInformation, api *mux.Router) {
+		rh := server.RegisterHandler(l)(si)
+		rihAddItem := server.RegisterInputHandler[CreateItemRequest](l)(si)
+		rihUpdateItem := server.RegisterInputHandler[UpdateItemRequest](l)(si)
+
+		api.HandleFunc("/meals/plans/{planId}/items", rihAddItem("AddPlanItem", AddItemHandler(db, pp, rv))).Methods(http.MethodPost)
+		api.HandleFunc("/meals/plans/{planId}/items/{itemId}", rihUpdateItem("UpdatePlanItem", UpdateItemHandler(db, pp))).Methods(http.MethodPatch)
+		api.HandleFunc("/meals/plans/{planId}/items/{itemId}", rh("RemovePlanItem", RemoveItemHandler(db, pp))).Methods(http.MethodDelete)
 	}
 }
 

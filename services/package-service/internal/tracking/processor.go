@@ -61,7 +61,7 @@ func (p *Processor) Create(tenantID, householdID, userID uuid.UUID, attrs Create
 		return Model{}, err
 	}
 
-	exists, err := existsByHouseholdAndTrackingNumber(p.db.WithContext(p.ctx), householdID, attrs.TrackingNumber)
+	exists, err := existsByHouseholdAndTrackingNumber(householdID, attrs.TrackingNumber)(p.db.WithContext(p.ctx))
 	if err != nil {
 		return Model{}, err
 	}
@@ -69,7 +69,7 @@ func (p *Processor) Create(tenantID, householdID, userID uuid.UUID, attrs Create
 		return Model{}, ErrDuplicate
 	}
 
-	count, err := countActiveByHousehold(p.db.WithContext(p.ctx), householdID)
+	count, err := countActiveByHousehold(householdID)(p.db.WithContext(p.ctx))
 	if err != nil {
 		return Model{}, err
 	}
@@ -117,19 +117,8 @@ func (p *Processor) Get(id uuid.UUID) (Model, error) {
 }
 
 func (p *Processor) GetTrackingEvents(packageID uuid.UUID) ([]trackingevent.Model, error) {
-	entities, err := trackingevent.GetByPackageID(packageID)(p.db.WithContext(p.ctx))()
-	if err != nil {
-		return nil, err
-	}
-	models := make([]trackingevent.Model, 0, len(entities))
-	for _, e := range entities {
-		m, merr := trackingevent.Make(e)
-		if merr != nil {
-			return nil, merr
-		}
-		models = append(models, m)
-	}
-	return models, nil
+	ep := trackingevent.NewProcessor(p.l, p.ctx, p.db)
+	return ep.GetByPackageID(packageID)()
 }
 
 func (p *Processor) List(householdID uuid.UUID, includeArchived bool, filterStatuses []string, hasETA bool, sortField string) ([]Model, error) {
@@ -176,27 +165,36 @@ func (p *Processor) Update(id, userID uuid.UUID, attrs UpdateAttrs) (Model, erro
 		return Model{}, ErrNotOwner
 	}
 
-	if attrs.Label != nil {
-		e.Label = attrs.Label
-	}
-	if attrs.Notes != nil {
-		e.Notes = attrs.Notes
-	}
-	if attrs.Carrier != nil {
-		if !validCarriers[*attrs.Carrier] {
-			return Model{}, ErrInvalidCarrier
-		}
-		e.Carrier = *attrs.Carrier
-	}
-	if attrs.Private != nil {
-		e.Private = *attrs.Private
-	}
-	e.UpdatedAt = time.Now().UTC()
-
-	if err := update(p.db.WithContext(p.ctx), &e); err != nil {
+	m, err := Make(e)
+	if err != nil {
 		return Model{}, err
 	}
-	return Make(e)
+
+	b := BuilderFromModel(m)
+	if attrs.Label != nil {
+		b.SetLabel(attrs.Label)
+	}
+	if attrs.Notes != nil {
+		b.SetNotes(attrs.Notes)
+	}
+	if attrs.Carrier != nil {
+		b.SetCarrier(*attrs.Carrier)
+	}
+	if attrs.Private != nil {
+		b.SetPrivate(*attrs.Private)
+	}
+	b.SetUpdatedAt(time.Now().UTC())
+
+	updated, err := b.Build()
+	if err != nil {
+		return Model{}, err
+	}
+
+	ue := updated.ToEntity()
+	if err := update(p.db.WithContext(p.ctx), &ue); err != nil {
+		return Model{}, err
+	}
+	return updated, nil
 }
 
 func (p *Processor) Delete(id, userID uuid.UUID) error {
@@ -270,22 +268,26 @@ func (p *Processor) Summary(householdID uuid.UUID) (SummaryResult, error) {
 	db := p.db.WithContext(p.ctx)
 
 	var err error
-	result.ArrivingTodayCount, err = countArrivingToday(db, householdID, today, tomorrow)
+	result.ArrivingTodayCount, err = countArrivingToday(householdID, today, tomorrow)(db)
 	if err != nil {
 		return result, err
 	}
 
-	result.InTransitCount, err = countInTransit(db, householdID)
+	result.InTransitCount, err = countInTransit(householdID)(db)
 	if err != nil {
 		return result, err
 	}
 
-	result.ExceptionCount, err = countExceptions(db, householdID)
+	result.ExceptionCount, err = countExceptions(householdID)(db)
 	if err != nil {
 		return result, err
 	}
 
 	return result, nil
+}
+
+func (p *Processor) DetectCarrier(trackingNumber string) carrier.DetectionResult {
+	return carrier.Detect(trackingNumber)
 }
 
 // PollEntity queries the carrier API for updated tracking data and persists the results.
@@ -340,6 +342,7 @@ func (p *Processor) pollEntity(e *Entity) {
 	}
 
 	// Store tracking events
+	ep := trackingevent.NewProcessor(p.l, noTenantCtx, p.db)
 	for _, ev := range result.Events {
 		loc := ev.Location
 		var locPtr *string
@@ -351,7 +354,7 @@ func (p *Processor) pollEntity(e *Entity) {
 		if raw != "" {
 			rawPtr = &raw
 		}
-		if err := trackingevent.Create(p.db.WithContext(noTenantCtx), e.Id, ev.Timestamp, ev.Status, ev.Description, locPtr, rawPtr); err != nil {
+		if err := ep.CreateEvent(e.Id, ev.Timestamp, ev.Status, ev.Description, locPtr, rawPtr); err != nil {
 			p.l.WithError(err).Warn("failed to store tracking event")
 		}
 	}

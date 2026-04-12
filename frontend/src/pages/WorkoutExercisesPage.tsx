@@ -148,7 +148,6 @@ function ExerciseCreateDialog({
       themeId,
       regionId,
       secondaryRegionIds: [],
-      defaults: {},
     });
     setName("");
     setThemeId("");

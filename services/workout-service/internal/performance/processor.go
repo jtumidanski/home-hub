@@ -131,7 +131,10 @@ func (p *Processor) Patch(tenantID, userID uuid.UUID, plannedItemID uuid.UUID, i
 			return Model{}, nil, err
 		}
 	}
-	m, _ = Make(e)
+	m, err = Make(e)
+	if err != nil {
+		return Model{}, nil, err
+	}
 	return m, nil, nil
 }
 
@@ -274,7 +277,10 @@ func (p *Processor) ReplaceSets(tenantID, userID uuid.UUID, plannedItemID uuid.U
 	if err != nil {
 		return Model{}, nil, err
 	}
-	m, _ := Make(e)
+	m, err := Make(e)
+	if err != nil {
+		return Model{}, nil, err
+	}
 	return m, out, nil
 }
 

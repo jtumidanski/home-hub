@@ -63,17 +63,15 @@ func patchHandler(db *gorm.DB) server.InputHandler[PatchPerformanceRequest] {
 			}
 
 			in := PatchInput{
-				Status:     input.Status,
-				WeightUnit: input.WeightUnit,
-				Notes:      input.Notes,
-			}
-			if input.Actuals != nil {
-				in.ActualSets = input.Actuals.Sets
-				in.ActualReps = input.Actuals.Reps
-				in.ActualWeight = input.Actuals.Weight
-				in.ActualDurationSeconds = input.Actuals.DurationSeconds
-				in.ActualDistance = input.Actuals.Distance
-				in.ActualDistanceUnit = input.Actuals.DistanceUnit
+				Status:                input.Status,
+				WeightUnit:            input.WeightUnit,
+				ActualSets:            input.ActualSets,
+				ActualReps:            input.ActualReps,
+				ActualWeight:          input.ActualWeight,
+				ActualDurationSeconds: input.ActualDurationSeconds,
+				ActualDistance:        input.ActualDistance,
+				ActualDistanceUnit:    input.ActualDistanceUnit,
+				Notes:                 input.Notes,
 			}
 
 			proc := NewProcessor(d.Logger(), r.Context(), db)

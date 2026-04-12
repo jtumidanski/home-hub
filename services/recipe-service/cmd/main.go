@@ -13,6 +13,7 @@ import (
 	"github.com/jtumidanski/home-hub/services/recipe-service/internal/planitem"
 	"github.com/jtumidanski/home-hub/services/recipe-service/internal/planner"
 	"github.com/jtumidanski/home-hub/services/recipe-service/internal/recipe"
+	"github.com/jtumidanski/home-hub/services/recipe-service/internal/retention"
 	sharedauth "github.com/jtumidanski/home-hub/shared/go/auth"
 	"github.com/jtumidanski/home-hub/shared/go/database"
 	"github.com/jtumidanski/home-hub/shared/go/logging"
@@ -42,9 +43,16 @@ func main() {
 	si := server.GetServerInformation()
 	catClient := categoryclient.New(cfg.CategoryServiceURL)
 
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+
 	server.New(l).
 		WithAddr(":" + cfg.Port).
 		AddRouteInitializer(func(router *mux.Router) {
+			if _, err := retention.Setup(ctx, l, db, router, cfg.AccountServiceURL, cfg.InternalToken, cfg.RetentionInterval); err != nil {
+				l.WithError(err).Fatal("retention setup failed")
+			}
+
 			api := router.PathPrefix("/api/v1").Subrouter()
 			api.Use(sharedauth.Middleware(l, authValidator))
 
@@ -52,6 +60,7 @@ func main() {
 			ingredient.InitializeRoutes(db, catClient)(l, si, api)
 			normalization.InitializeRoutes(db)(l, si, api)
 			plan.InitializeRoutes(db, catClient)(l, si, api)
+			planitem.InitializeRoutes(db, plan.NewPlanProvider(db), plan.NewRecipeValidator(db))(l, si, api)
 		}).
 		Run()
 }

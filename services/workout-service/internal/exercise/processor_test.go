@@ -89,20 +89,6 @@ func TestProcessor_Create_HappyPathStrength(t *testing.T) {
 	assert.Equal(t, KindStrength, m.Kind())
 }
 
-func TestProcessor_Create_DuplicateNameSameUserReturns409(t *testing.T) {
-	db := setupTestDB(t)
-	p := newProcessor(t, db)
-	tenantID, userID := uuid.New(), uuid.New()
-	themeID := seedTheme(t, db, tenantID, userID)
-	regionID := seedRegion(t, db, tenantID, userID)
-
-	in := CreateInput{Name: "Squat", Kind: KindStrength, ThemeID: themeID, RegionID: regionID, Defaults: Defaults{Sets: ptrInt(5), Reps: ptrInt(5), Weight: ptrFloat(225), WeightUnit: ptrString("lb")}}
-	_, err := p.Create(tenantID, userID, in)
-	require.NoError(t, err)
-	_, err = p.Create(tenantID, userID, in)
-	assert.ErrorIs(t, err, ErrDuplicateName)
-}
-
 func TestProcessor_Create_DuplicateNameAllowedAcrossUsers(t *testing.T) {
 	db := setupTestDB(t)
 	p := newProcessor(t, db)
@@ -123,58 +109,65 @@ func TestProcessor_Create_DuplicateNameAllowedAcrossUsers(t *testing.T) {
 	assert.NoError(t, err, "duplicate names are scoped per user, not per tenant")
 }
 
-func TestProcessor_Create_RejectsThemeFromOtherUser(t *testing.T) {
-	db := setupTestDB(t)
-	p := newProcessor(t, db)
-	tenantID := uuid.New()
-	userA, userB := uuid.New(), uuid.New()
-	otherTheme := seedTheme(t, db, tenantID, userB) // belongs to userB
-	regionA := seedRegion(t, db, tenantID, userA)
-
-	_, err := p.Create(tenantID, userA, CreateInput{
-		Name:     "OHP",
-		Kind:     KindStrength,
-		ThemeID:  otherTheme,
-		RegionID: regionA,
-		Defaults: Defaults{Sets: ptrInt(3), Reps: ptrInt(8), Weight: ptrFloat(95), WeightUnit: ptrString("lb")},
-	})
-	assert.ErrorIs(t, err, ErrThemeNotFound)
-}
-
-func TestProcessor_Create_RejectsMissingRegion(t *testing.T) {
-	db := setupTestDB(t)
-	p := newProcessor(t, db)
-	tenantID, userID := uuid.New(), uuid.New()
-	themeID := seedTheme(t, db, tenantID, userID)
-
-	_, err := p.Create(tenantID, userID, CreateInput{
-		Name:     "Row",
-		Kind:     KindStrength,
-		ThemeID:  themeID,
-		RegionID: uuid.New(), // no row
-		Defaults: Defaults{Sets: ptrInt(3), Reps: ptrInt(8), Weight: ptrFloat(95), WeightUnit: ptrString("lb")},
-	})
-	assert.ErrorIs(t, err, ErrRegionNotFound)
-}
-
-func TestProcessor_Create_RejectsSecondaryRegionFromOtherUser(t *testing.T) {
-	db := setupTestDB(t)
-	p := newProcessor(t, db)
-	tenantID := uuid.New()
-	userA, userB := uuid.New(), uuid.New()
-	themeA := seedTheme(t, db, tenantID, userA)
-	regionA := seedRegion(t, db, tenantID, userA)
-	otherRegion := seedRegion(t, db, tenantID, userB)
-
-	_, err := p.Create(tenantID, userA, CreateInput{
-		Name:               "Pull",
-		Kind:               KindStrength,
-		ThemeID:            themeA,
-		RegionID:           regionA,
-		SecondaryRegionIDs: []uuid.UUID{otherRegion},
-		Defaults:           Defaults{Sets: ptrInt(3), Reps: ptrInt(8), Weight: ptrFloat(95), WeightUnit: ptrString("lb")},
-	})
-	assert.ErrorIs(t, err, ErrSecondaryNotFound)
+func TestProcessor_Create_Rejections(t *testing.T) {
+	cases := []struct {
+		name    string
+		setup   func(t *testing.T, db *gorm.DB, tenantID, userID uuid.UUID) CreateInput
+		wantErr error
+	}{
+		{
+			name: "duplicate name same user",
+			setup: func(t *testing.T, db *gorm.DB, tenantID, userID uuid.UUID) CreateInput {
+				themeID := seedTheme(t, db, tenantID, userID)
+				regionID := seedRegion(t, db, tenantID, userID)
+				p := newProcessor(t, db)
+				in := CreateInput{Name: "Squat", Kind: KindStrength, ThemeID: themeID, RegionID: regionID, Defaults: Defaults{Sets: ptrInt(5), Reps: ptrInt(5), Weight: ptrFloat(225), WeightUnit: ptrString("lb")}}
+				_, err := p.Create(tenantID, userID, in)
+				require.NoError(t, err)
+				return in
+			},
+			wantErr: ErrDuplicateName,
+		},
+		{
+			name: "theme from other user",
+			setup: func(t *testing.T, db *gorm.DB, tenantID, userID uuid.UUID) CreateInput {
+				otherUser := uuid.New()
+				otherTheme := seedTheme(t, db, tenantID, otherUser)
+				regionID := seedRegion(t, db, tenantID, userID)
+				return CreateInput{Name: "OHP", Kind: KindStrength, ThemeID: otherTheme, RegionID: regionID, Defaults: Defaults{Sets: ptrInt(3), Reps: ptrInt(8), Weight: ptrFloat(95), WeightUnit: ptrString("lb")}}
+			},
+			wantErr: ErrThemeNotFound,
+		},
+		{
+			name: "missing region",
+			setup: func(t *testing.T, db *gorm.DB, tenantID, userID uuid.UUID) CreateInput {
+				themeID := seedTheme(t, db, tenantID, userID)
+				return CreateInput{Name: "Row", Kind: KindStrength, ThemeID: themeID, RegionID: uuid.New(), Defaults: Defaults{Sets: ptrInt(3), Reps: ptrInt(8), Weight: ptrFloat(95), WeightUnit: ptrString("lb")}}
+			},
+			wantErr: ErrRegionNotFound,
+		},
+		{
+			name: "secondary region from other user",
+			setup: func(t *testing.T, db *gorm.DB, tenantID, userID uuid.UUID) CreateInput {
+				otherUser := uuid.New()
+				themeID := seedTheme(t, db, tenantID, userID)
+				regionID := seedRegion(t, db, tenantID, userID)
+				otherRegion := seedRegion(t, db, tenantID, otherUser)
+				return CreateInput{Name: "Pull", Kind: KindStrength, ThemeID: themeID, RegionID: regionID, SecondaryRegionIDs: []uuid.UUID{otherRegion}, Defaults: Defaults{Sets: ptrInt(3), Reps: ptrInt(8), Weight: ptrFloat(95), WeightUnit: ptrString("lb")}}
+			},
+			wantErr: ErrSecondaryNotFound,
+		},
+	}
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			db := setupTestDB(t)
+			tenantID, userID := uuid.New(), uuid.New()
+			in := tc.setup(t, db, tenantID, userID)
+			p := newProcessor(t, db)
+			_, err := p.Create(tenantID, userID, in)
+			assert.ErrorIs(t, err, tc.wantErr)
+		})
+	}
 }
 
 func TestProcessor_Update_OwnershipReValidatedOnThemeChange(t *testing.T) {

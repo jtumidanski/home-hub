@@ -7,6 +7,7 @@ import (
 	"github.com/jtumidanski/home-hub/services/package-service/internal/carrier"
 	"github.com/jtumidanski/home-hub/services/package-service/internal/config"
 	"github.com/jtumidanski/home-hub/services/package-service/internal/poller"
+	"github.com/jtumidanski/home-hub/services/package-service/internal/retention"
 	"github.com/jtumidanski/home-hub/services/package-service/internal/tracking"
 	"github.com/jtumidanski/home-hub/services/package-service/internal/trackingevent"
 	sharedauth "github.com/jtumidanski/home-hub/shared/go/auth"
@@ -29,7 +30,6 @@ func main() {
 		),
 	)
 
-	// Set up carrier API clients
 	httpClient := carrier.NewHTTPClient()
 	tokenMgr := carrier.NewOAuthTokenManager(httpClient, l)
 	budget := carrier.NewRateBudget(map[string]int{
@@ -52,7 +52,6 @@ func main() {
 	authValidator := sharedauth.NewValidator(l, cfg.JWKSURL)
 	si := server.GetServerInformation()
 
-	// Start background workers
 	pollEngine := poller.NewEngine(db, carriers, cfg.MaxActivePerHousehold, l)
 
 	ctx, cancel := context.WithCancel(context.Background())
@@ -60,14 +59,16 @@ func main() {
 
 	go pollEngine.StartPollLoop(ctx, cfg.PollInterval, cfg.PollIntervalUrgent)
 	go pollEngine.StartCleanupLoop(ctx, poller.CleanupConfig{
-		ArchiveAfterDays: cfg.ArchiveAfterDays,
-		DeleteAfterDays:  cfg.DeleteAfterDays,
-		StaleAfterDays:   cfg.StaleAfterDays,
+		StaleAfterDays: cfg.StaleAfterDays,
 	})
 
 	server.New(l).
 		WithAddr(":" + cfg.Port).
 		AddRouteInitializer(func(router *mux.Router) {
+			if _, err := retention.Setup(ctx, l, db, router, cfg.AccountServiceURL, cfg.InternalToken, cfg.RetentionInterval); err != nil {
+				l.WithError(err).Fatal("retention setup failed")
+			}
+
 			api := router.PathPrefix("/api/v1").Subrouter()
 			api.Use(sharedauth.Middleware(l, authValidator))
 

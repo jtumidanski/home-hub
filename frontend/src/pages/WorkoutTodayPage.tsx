@@ -102,23 +102,23 @@ function TodayItem({ item, weekStart }: { item: WeekItem; weekStart: string }) {
   };
 
   const logActuals = () => {
-    const actuals: Record<string, unknown> = {};
+    const flat: Record<string, unknown> = {};
     const totalSec = (parseInt(durMin) || 0) * 60 + (parseInt(durSec) || 0);
     switch (item.kind) {
       case "strength":
-        if (sets) actuals.sets = parseInt(sets);
-        if (reps) actuals.reps = parseInt(reps);
-        if (!isBw && weight) actuals.weight = parseFloat(weight);
+        if (sets) flat.actualSets = parseInt(sets);
+        if (reps) flat.actualReps = parseInt(reps);
+        if (!isBw && weight) flat.actualWeight = parseFloat(weight);
         break;
       case "isometric":
-        if (sets) actuals.sets = parseInt(sets);
-        if (totalSec) actuals.durationSeconds = totalSec;
-        if (weight) actuals.weight = parseFloat(weight);
+        if (sets) flat.actualSets = parseInt(sets);
+        if (totalSec) flat.actualDurationSeconds = totalSec;
+        if (weight) flat.actualWeight = parseFloat(weight);
         break;
       case "cardio":
-        if (totalSec) actuals.durationSeconds = totalSec;
-        if (distance) actuals.distance = parseFloat(distance);
-        actuals.distanceUnit = distanceUnit;
+        if (totalSec) flat.actualDurationSeconds = totalSec;
+        if (distance) flat.actualDistance = parseFloat(distance);
+        flat.actualDistanceUnit = distanceUnit;
         break;
     }
     patch.mutate(
@@ -128,7 +128,7 @@ function TodayItem({ item, weekStart }: { item: WeekItem; weekStart: string }) {
         attrs: {
           status: "done",
           ...(item.kind !== "cardio" && !isBw ? { weightUnit: weightUnit as WeightUnit } : {}),
-          actuals,
+          ...flat,
         },
       },
       {

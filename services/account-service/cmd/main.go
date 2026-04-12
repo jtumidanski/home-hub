@@ -10,6 +10,7 @@ import (
 	"github.com/jtumidanski/home-hub/services/account-service/internal/invitation"
 	"github.com/jtumidanski/home-hub/services/account-service/internal/membership"
 	"github.com/jtumidanski/home-hub/services/account-service/internal/preference"
+	"github.com/jtumidanski/home-hub/services/account-service/internal/retention"
 	"github.com/jtumidanski/home-hub/services/account-service/internal/tenant"
 	sharedauth "github.com/jtumidanski/home-hub/shared/go/auth"
 	"github.com/jtumidanski/home-hub/shared/go/database"
@@ -31,15 +32,19 @@ func main() {
 			membership.Migration,
 			preference.Migration,
 			invitation.Migration,
+			retention.Migration,
 		),
 	)
 
 	authValidator := sharedauth.NewValidator(l, cfg.JWKSURL)
 	si := server.GetServerInformation()
+	fan := retention.NewHTTPFanout(cfg.ServiceURLs, cfg.InternalToken, l)
 
 	server.New(l).
 		WithAddr(":" + cfg.Port).
 		AddRouteInitializer(func(router *mux.Router) {
+			retention.InitializeInternalRoutes(db, cfg.InternalToken)(l, router)
+
 			api := router.PathPrefix("/api/v1").Subrouter()
 			api.Use(sharedauth.Middleware(l, authValidator))
 
@@ -49,6 +54,7 @@ func main() {
 			preference.InitializeRoutes(db)(l, si, api)
 			invitation.InitializeRoutes(db)(l, si, api)
 			appcontext.InitializeRoutes(db)(l, si, api)
+			retention.InitializeRoutes(db, fan)(l, si, api)
 		}).
 		Run()
 }

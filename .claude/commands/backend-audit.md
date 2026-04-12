@@ -103,9 +103,9 @@ If the service handles authentication, authorization, or token management:
 
 ## Phase 5: Produce Audit Artifacts
 
-Create directory: `dev/audits/[service-name]/`
+Create directory: `docs/audits/[service-name]/`
 
-### A) `dev/audits/[service-name]/audit.md`
+### A) `docs/audits/[service-name]/audit.md`
 
 Format:
 
@@ -151,7 +151,7 @@ Format:
 - [Bulleted list of WARN items with IDs]
 ```
 
-### B) `dev/audits/[service-name]/audit.json`
+### B) `docs/audits/[service-name]/audit.json`
 
 ```json
 {

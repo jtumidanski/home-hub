@@ -230,6 +230,18 @@ export function SettingsPage() {
           </Button>
         </CardContent>
       </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle>Data retention</CardTitle>
+          <CardDescription>Configure how long Home Hub keeps each kind of data.</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <Button variant="outline" render={<a href="/app/settings/data-retention" />}>
+            Open data retention settings
+          </Button>
+        </CardContent>
+      </Card>
     </div>
   );
 }

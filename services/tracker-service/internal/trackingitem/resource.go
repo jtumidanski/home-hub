@@ -63,8 +63,14 @@ func getHandler(db *gorm.DB) server.GetHandler {
 					return
 				}
 
-				sched, _ := proc.GetCurrentSchedule(m.Id())
-				history, _ := proc.GetScheduleHistory(m.Id())
+				sched, err := proc.GetCurrentSchedule(m.Id())
+				if err != nil {
+					d.Logger().WithError(err).Warn("Failed to enrich tracker with current schedule")
+				}
+				history, err := proc.GetScheduleHistory(m.Id())
+				if err != nil {
+					d.Logger().WithError(err).Warn("Failed to enrich tracker with schedule history")
+				}
 				rest := Transform(m, sched, history)
 				server.MarshalResponse[RestModel](d.Logger())(w)(c.ServerInformation())(map[string][]string{})(rest)
 			}
@@ -96,8 +102,14 @@ func createHandler(db *gorm.DB) server.InputHandler[CreateRequest] {
 				return
 			}
 
-			sched, _ := proc.GetCurrentSchedule(m.Id())
-			history, _ := proc.GetScheduleHistory(m.Id())
+			sched, err := proc.GetCurrentSchedule(m.Id())
+			if err != nil {
+				d.Logger().WithError(err).Warn("Failed to enrich tracker with current schedule")
+			}
+			history, err := proc.GetScheduleHistory(m.Id())
+			if err != nil {
+				d.Logger().WithError(err).Warn("Failed to enrich tracker with schedule history")
+			}
 			rest := Transform(m, sched, history)
 			server.MarshalCreatedResponse[RestModel](d.Logger())(w)(c.ServerInformation())(rest)
 		}
@@ -146,8 +158,14 @@ func updateHandler(db *gorm.DB) server.InputHandler[UpdateRequest] {
 					return
 				}
 
-				sched, _ := proc.GetCurrentSchedule(m.Id())
-				history, _ := proc.GetScheduleHistory(m.Id())
+				sched, err := proc.GetCurrentSchedule(m.Id())
+				if err != nil {
+					d.Logger().WithError(err).Warn("Failed to enrich tracker with current schedule")
+				}
+				history, err := proc.GetScheduleHistory(m.Id())
+				if err != nil {
+					d.Logger().WithError(err).Warn("Failed to enrich tracker with schedule history")
+				}
 				rest := Transform(m, sched, history)
 				server.MarshalResponse[RestModel](d.Logger())(w)(c.ServerInformation())(map[string][]string{})(rest)
 			}
