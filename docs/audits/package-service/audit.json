@@ -11,38 +11,36 @@
       "name": "tracking",
       "type": "domain",
       "checks": [
-        { "id": "DOM-01", "name": "builder.go exists", "status": "pass", "evidence": "builder.go:67,87" },
+        { "id": "DOM-01", "name": "builder.go exists", "status": "pass", "evidence": "builder.go:67,91-107,109" },
         { "id": "DOM-02", "name": "ToEntity() method", "status": "pass", "evidence": "entity.go:45" },
         { "id": "DOM-03", "name": "Make(Entity) function", "status": "pass", "evidence": "entity.go:67" },
-        { "id": "DOM-04", "name": "Transform function", "status": "pass", "evidence": "rest.go:164" },
-        { "id": "DOM-05", "name": "TransformSlice function", "status": "pass", "evidence": "rest.go:192" },
+        { "id": "DOM-04", "name": "Transform function", "status": "pass", "evidence": "rest.go:165" },
+        { "id": "DOM-05", "name": "TransformSlice function", "status": "pass", "evidence": "rest.go:193" },
         { "id": "DOM-06", "name": "Processor accepts FieldLogger", "status": "pass", "evidence": "processor.go:44,51" },
-        { "id": "DOM-07", "name": "Handlers pass d.Logger()", "status": "pass", "evidence": "resource.go:48,99,124,163,206,232,259,294,339" },
+        { "id": "DOM-07", "name": "Handlers pass d.Logger()", "status": "pass", "evidence": "resource.go:39-41" },
         { "id": "DOM-08", "name": "POST/PATCH use RegisterInputHandler", "status": "pass", "evidence": "resource.go:23-24" },
-        { "id": "DOM-09", "name": "Transform errors handled", "status": "pass", "evidence": "resource.go:75-79,108-112,146-150" },
+        { "id": "DOM-09", "name": "Transform errors handled", "status": "pass", "evidence": "resource.go:342 uses server.WriteError() for 429 response" },
         { "id": "DOM-10", "name": "Test DB has tenant callbacks", "status": "pass", "evidence": "processor_test.go:21" },
-        { "id": "DOM-11", "name": "Providers use lazy evaluation", "status": "pass", "evidence": "provider.go:11-12" },
-        { "id": "DOM-12", "name": "No os.Getenv() in handlers", "status": "pass", "evidence": "No matches" },
-        { "id": "DOM-13", "name": "No cross-domain logic in handlers", "status": "pass", "evidence": "resource.go:312-327 detectCarrierHandler delegates to proc.DetectCarrier() + TransformDetection()" },
-        { "id": "DOM-14", "name": "Handlers don't call providers directly", "status": "pass", "evidence": "Through processor" },
-        { "id": "DOM-15", "name": "No direct entity creation in handlers", "status": "pass", "evidence": "No db ops" },
-        { "id": "DOM-16", "name": "administrator.go exists", "status": "pass", "evidence": "administrator.go" },
-        { "id": "DOM-17", "name": "Domain error to HTTP status mapping", "status": "pass", "evidence": "resource.go:57-67,170-176,345-361" },
-        { "id": "DOM-18", "name": "JSON:API interface on REST models", "status": "pass", "evidence": "rest.go:29-31,40-42,78-80" },
-        { "id": "DOM-19", "name": "Request models use flat structure", "status": "pass", "evidence": "rest.go:131-138,152-158" },
-        { "id": "DOM-20", "name": "Table-driven tests", "status": "pass", "evidence": "builder_test.go:21-157, processor_test.go:97-129" }
+        { "id": "DOM-11", "name": "Providers use lazy evaluation", "status": "pass", "evidence": "provider.go:12,18,24,31" },
+        { "id": "DOM-12", "name": "No os.Getenv() in handlers", "status": "pass", "evidence": "No matches in tracking package" },
+        { "id": "DOM-13", "name": "No cross-domain logic in handlers", "status": "pass", "evidence": "All handlers delegate to Processor" },
+        { "id": "DOM-14", "name": "Handlers don't call providers directly", "status": "pass", "evidence": "All through Processor methods" },
+        { "id": "DOM-15", "name": "No direct entity creation in handlers", "status": "pass", "evidence": "No GORM writes in resource.go" },
+        { "id": "DOM-16", "name": "administrator.go exists", "status": "pass", "evidence": "administrator.go:8,12,16" },
+        { "id": "DOM-17", "name": "Domain error to HTTP status mapping", "status": "pass", "evidence": "resource.go:57-67,170-176,268-270,341-356" },
+        { "id": "DOM-18", "name": "JSON:API interface on REST models", "status": "pass", "evidence": "rest.go:30-32,41-43,55-57,79-81,141-150,161-163" },
+        { "id": "DOM-19", "name": "Request models use flat structure", "status": "pass", "evidence": "rest.go:132-139,153-159" },
+        { "id": "DOM-20", "name": "Table-driven tests", "status": "pass", "evidence": "builder_test.go:22-158, processor_test.go:97-129,342-367" }
       ]
     },
     {
       "name": "trackingevent",
-      "type": "domain",
+      "type": "sub-domain",
       "checks": [
-        { "id": "DOM-01", "name": "builder.go exists", "status": "pass", "evidence": "builder.go:27,37" },
-        { "id": "DOM-02", "name": "ToEntity() method", "status": "pass", "evidence": "entity.go:36" },
-        { "id": "DOM-03", "name": "Make(Entity) function", "status": "pass", "evidence": "entity.go:49" },
-        { "id": "DOM-11", "name": "Providers use lazy evaluation", "status": "pass", "evidence": "provider.go:9-13" },
-        { "id": "DOM-16", "name": "administrator.go exists", "status": "pass", "evidence": "administrator.go" },
-        { "id": "DOM-20", "name": "Table-driven tests", "status": "pass", "evidence": "builder_test.go:11-104" }
+        { "id": "SUB-01", "name": "Has processor or uses parent processor", "status": "pass", "evidence": "processor.go:13-16,19" },
+        { "id": "SUB-02", "name": "Has administrator for writes", "status": "pass", "evidence": "administrator.go:10" },
+        { "id": "SUB-03", "name": "Uses RegisterInputHandler for POST", "status": "n/a", "evidence": "No HTTP endpoints" },
+        { "id": "SUB-04", "name": "No manual JSON parsing", "status": "pass", "evidence": "No json.NewDecoder/Unmarshal/io.ReadAll found" }
       ]
     }
   ],

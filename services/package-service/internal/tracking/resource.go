@@ -1,7 +1,6 @@
 package tracking
 
 import (
-	"encoding/json"
 	"errors"
 	"fmt"
 	"net/http"
@@ -340,20 +339,7 @@ func refreshHandler(db *gorm.DB, maxActive int, carriers *carrier.Registry) serv
 						return
 					}
 					if errors.Is(err, ErrRefreshTooSoon) {
-						w.Header().Set("Content-Type", "application/vnd.api+json")
-						w.WriteHeader(http.StatusTooManyRequests)
-						json.NewEncoder(w).Encode(map[string]interface{}{
-							"errors": []map[string]interface{}{
-								{
-									"status": "429",
-									"title":  "Too Many Requests",
-									"detail": fmt.Sprintf("Package was recently refreshed. Try again in %d minutes.", int(refreshCooldown.Minutes())),
-									"meta": map[string]interface{}{
-										"retryAfterSeconds": int(refreshCooldown.Seconds()),
-									},
-								},
-							},
-						})
+						server.WriteError(w, http.StatusTooManyRequests, "Too Many Requests", fmt.Sprintf("Package was recently refreshed. Try again in %d minutes.", int(refreshCooldown.Minutes())))
 						return
 					}
 					d.Logger().WithError(err).Error("failed to refresh package")
