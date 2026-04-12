@@ -24,7 +24,7 @@ func InitializeRoutes(db *gorm.DB, maxActive int, carriers *carrier.Registry) fu
 		rihUpdate := server.RegisterInputHandler[UpdateRequest](l)(si)
 
 		api.HandleFunc("/packages/summary", rh("PackageSummary", summaryHandler(db, maxActive, carriers))).Methods(http.MethodGet)
-		api.HandleFunc("/packages/carriers/detect", rh("DetectCarrier", detectCarrierHandler())).Methods(http.MethodGet)
+		api.HandleFunc("/packages/carriers/detect", rh("DetectCarrier", detectCarrierHandler(db, maxActive, carriers))).Methods(http.MethodGet)
 		api.HandleFunc("/packages", rh("ListPackages", listHandler(db, maxActive, carriers))).Methods(http.MethodGet)
 		api.HandleFunc("/packages", rihCreate("CreatePackage", createHandler(db, maxActive, carriers))).Methods(http.MethodPost)
 		api.HandleFunc("/packages/{id}", rh("GetPackage", getHandler(db, maxActive, carriers))).Methods(http.MethodGet)
@@ -309,7 +309,7 @@ func summaryHandler(db *gorm.DB, maxActive int, carriers *carrier.Registry) serv
 	}
 }
 
-func detectCarrierHandler() server.GetHandler {
+func detectCarrierHandler(db *gorm.DB, maxActive int, carriers *carrier.Registry) server.GetHandler {
 	return func(d *server.HandlerDependency, c *server.HandlerContext) http.HandlerFunc {
 		return func(w http.ResponseWriter, r *http.Request) {
 			tn := r.URL.Query().Get("trackingNumber")
@@ -318,12 +318,9 @@ func detectCarrierHandler() server.GetHandler {
 				return
 			}
 
-			result := carrier.Detect(tn)
-			rest := carrier.RestDetectionModel{
-				TrackingNumber:  result.TrackingNumber,
-				DetectedCarrier: result.DetectedCarrier,
-				Confidence:      result.Confidence,
-			}
+			proc := newProc(d.Logger(), r, db, maxActive, carriers)
+			result := proc.DetectCarrier(tn)
+			rest := TransformDetection(result)
 			server.MarshalResponse[carrier.RestDetectionModel](d.Logger())(w)(c.ServerInformation())(map[string][]string{})(rest)
 		}
 	}

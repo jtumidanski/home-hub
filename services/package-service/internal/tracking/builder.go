@@ -66,6 +66,28 @@ type Builder struct {
 
 func NewBuilder() *Builder { return &Builder{status: StatusPreTransit} }
 
+func BuilderFromModel(m Model) *Builder {
+	return &Builder{
+		id:                 m.id,
+		tenantID:           m.tenantID,
+		householdID:        m.householdID,
+		userID:             m.userID,
+		trackingNumber:     m.trackingNumber,
+		carrier:            m.carrier,
+		label:              m.label,
+		notes:              m.notes,
+		status:             m.status,
+		private:            m.private,
+		estimatedDelivery:  m.estimatedDelivery,
+		actualDelivery:     m.actualDelivery,
+		lastPolledAt:       m.lastPolledAt,
+		lastStatusChangeAt: m.lastStatusChangeAt,
+		archivedAt:         m.archivedAt,
+		createdAt:          m.createdAt,
+		updatedAt:          m.updatedAt,
+	}
+}
+
 func (b *Builder) SetId(id uuid.UUID) *Builder                         { b.id = id; return b }
 func (b *Builder) SetTenantID(id uuid.UUID) *Builder                   { b.tenantID = id; return b }
 func (b *Builder) SetHouseholdID(id uuid.UUID) *Builder                { b.householdID = id; return b }

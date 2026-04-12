@@ -4,6 +4,7 @@ import (
 	"time"
 
 	"github.com/google/uuid"
+	"github.com/jtumidanski/home-hub/services/package-service/internal/carrier"
 	"github.com/jtumidanski/home-hub/services/package-service/internal/trackingevent"
 )
 
@@ -239,6 +240,14 @@ func TransformWithPrivacy(m Model, requesterUserID uuid.UUID) (RestModel, error)
 	}
 
 	return rm, nil
+}
+
+func TransformDetection(result carrier.DetectionResult) carrier.RestDetectionModel {
+	return carrier.RestDetectionModel{
+		TrackingNumber:  result.TrackingNumber,
+		DetectedCarrier: result.DetectedCarrier,
+		Confidence:      result.Confidence,
+	}
 }
 
 func TransformSliceWithPrivacy(models []Model, requesterUserID uuid.UUID) ([]RestModel, error) {
