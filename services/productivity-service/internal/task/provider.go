@@ -17,7 +17,7 @@ func getAll(includeDeleted bool) database.EntityProvider[[]Entity] {
 		if !includeDeleted {
 			db = db.Where("deleted_at IS NULL")
 		}
-		return db
+		return db.Order("status ASC").Order("due_on ASC NULLS LAST")
 	})
 }
 
