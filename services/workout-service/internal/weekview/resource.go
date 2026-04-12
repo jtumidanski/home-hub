@@ -149,26 +149,34 @@ func patchWeekHandler(db *gorm.DB) server.InputHandler[PatchWeekRequest] {
 	}
 }
 
-// toAddInput projects a planned-item attrs payload onto the processor input.
-// Shared by single-add (AddPlannedItemRequest) and bulk-add (entries inside
-// BulkAddPlannedItemsRequest) so the projection lives in one place.
-func toAddInput(exerciseID uuid.UUID, dayOfWeek int, position *int, planned *PlannedAttrs, notes *string) planneditem.AddInput {
-	in := planneditem.AddInput{
-		ExerciseID: exerciseID,
-		DayOfWeek:  dayOfWeek,
-		Position:   position,
-		Notes:      notes,
+// plannedFields groups the flat planned-values fields shared by add and bulk-add
+// request structs. Extracted so toAddInput can accept either caller shape.
+type plannedFields struct {
+	PlannedSets            *int
+	PlannedReps            *int
+	PlannedWeight          *float64
+	PlannedWeightUnit      *string
+	PlannedDurationSeconds *int
+	PlannedDistance        *float64
+	PlannedDistanceUnit    *string
+}
+
+// toAddInput projects flat planned-item attrs onto the processor input.
+// Shared by single-add and bulk-add handlers.
+func toAddInput(exerciseID uuid.UUID, dayOfWeek int, position *int, pf plannedFields, notes *string) planneditem.AddInput {
+	return planneditem.AddInput{
+		ExerciseID:             exerciseID,
+		DayOfWeek:              dayOfWeek,
+		Position:               position,
+		PlannedSets:            pf.PlannedSets,
+		PlannedReps:            pf.PlannedReps,
+		PlannedWeight:          pf.PlannedWeight,
+		PlannedWeightUnit:      pf.PlannedWeightUnit,
+		PlannedDurationSeconds: pf.PlannedDurationSeconds,
+		PlannedDistance:        pf.PlannedDistance,
+		PlannedDistanceUnit:    pf.PlannedDistanceUnit,
+		Notes:                  notes,
 	}
-	if planned != nil {
-		in.PlannedSets = planned.Sets
-		in.PlannedReps = planned.Reps
-		in.PlannedWeight = planned.Weight
-		in.PlannedWeightUnit = planned.WeightUnit
-		in.PlannedDurationSeconds = planned.DurationSeconds
-		in.PlannedDistance = planned.Distance
-		in.PlannedDistanceUnit = planned.DistanceUnit
-	}
-	return in
 }
 
 func addItemHandler(db *gorm.DB) server.InputHandler[AddPlannedItemRequest] {
@@ -187,7 +195,15 @@ func addItemHandler(db *gorm.DB) server.InputHandler[AddPlannedItemRequest] {
 				server.WriteError(w, http.StatusInternalServerError, "Error", "")
 				return
 			}
-			in := toAddInput(input.ExerciseID, input.DayOfWeek, input.Position, input.Planned, input.Notes)
+			in := toAddInput(input.ExerciseID, input.DayOfWeek, input.Position, plannedFields{
+				PlannedSets:            input.PlannedSets,
+				PlannedReps:            input.PlannedReps,
+				PlannedWeight:          input.PlannedWeight,
+				PlannedWeightUnit:      input.PlannedWeightUnit,
+				PlannedDurationSeconds: input.PlannedDurationSeconds,
+				PlannedDistance:        input.PlannedDistance,
+				PlannedDistanceUnit:    input.PlannedDistanceUnit,
+			}, input.Notes)
 			proc := planneditem.NewProcessor(d.Logger(), r.Context(), db)
 			if _, err := proc.Add(t.Id(), t.UserId(), weekEntity.Id, in); err != nil {
 				writePlannedItemError(w, d.Logger(), "Failed to add planned item", err)
@@ -216,7 +232,15 @@ func bulkAddHandler(db *gorm.DB) server.InputHandler[BulkAddPlannedItemsRequest]
 			}
 			inputs := make([]planneditem.AddInput, 0, len(input.Items))
 			for _, a := range input.Items {
-				inputs = append(inputs, toAddInput(a.ExerciseID, a.DayOfWeek, a.Position, a.Planned, a.Notes))
+				inputs = append(inputs, toAddInput(a.ExerciseID, a.DayOfWeek, a.Position, plannedFields{
+					PlannedSets:            a.PlannedSets,
+					PlannedReps:            a.PlannedReps,
+					PlannedWeight:          a.PlannedWeight,
+					PlannedWeightUnit:      a.PlannedWeightUnit,
+					PlannedDurationSeconds: a.PlannedDurationSeconds,
+					PlannedDistance:        a.PlannedDistance,
+					PlannedDistanceUnit:    a.PlannedDistanceUnit,
+				}, a.Notes))
 			}
 			proc := planneditem.NewProcessor(d.Logger(), r.Context(), db)
 			if _, err := proc.BulkAdd(t.Id(), t.UserId(), weekEntity.Id, inputs); err != nil {
@@ -243,18 +267,16 @@ func updateItemHandler(db *gorm.DB) server.InputHandler[UpdatePlannedItemRequest
 				return
 			}
 			ui := planneditem.UpdateInput{
-				DayOfWeek: input.DayOfWeek,
-				Position:  input.Position,
-				Notes:     input.Notes,
-			}
-			if input.Planned != nil {
-				ui.PlannedSets = input.Planned.Sets
-				ui.PlannedReps = input.Planned.Reps
-				ui.PlannedWeight = input.Planned.Weight
-				ui.PlannedWeightUnit = input.Planned.WeightUnit
-				ui.PlannedDurationSeconds = input.Planned.DurationSeconds
-				ui.PlannedDistance = input.Planned.Distance
-				ui.PlannedDistanceUnit = input.Planned.DistanceUnit
+				DayOfWeek:              input.DayOfWeek,
+				Position:               input.Position,
+				PlannedSets:            input.PlannedSets,
+				PlannedReps:            input.PlannedReps,
+				PlannedWeight:          input.PlannedWeight,
+				PlannedWeightUnit:      input.PlannedWeightUnit,
+				PlannedDurationSeconds: input.PlannedDurationSeconds,
+				PlannedDistance:        input.PlannedDistance,
+				PlannedDistanceUnit:    input.PlannedDistanceUnit,
+				Notes:                  input.Notes,
 			}
 			proc := planneditem.NewProcessor(d.Logger(), r.Context(), db)
 			if _, err := proc.Update(itemID, ui); err != nil {

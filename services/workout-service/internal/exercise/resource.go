@@ -74,13 +74,13 @@ func createHandler(db *gorm.DB) server.InputHandler[CreateRequest] {
 				RegionID:           input.RegionID,
 				SecondaryRegionIDs: input.SecondaryRegionIDs,
 				Defaults: Defaults{
-					Sets:            input.Defaults.Sets,
-					Reps:            input.Defaults.Reps,
-					Weight:          input.Defaults.Weight,
-					WeightUnit:      input.Defaults.WeightUnit,
-					DurationSeconds: input.Defaults.DurationSeconds,
-					Distance:        input.Defaults.Distance,
-					DistanceUnit:    input.Defaults.DistanceUnit,
+					Sets:            input.DefaultSets,
+					Reps:            input.DefaultReps,
+					Weight:          input.DefaultWeight,
+					WeightUnit:      input.DefaultWeightUnit,
+					DurationSeconds: input.DefaultDurationSeconds,
+					Distance:        input.DefaultDistance,
+					DistanceUnit:    input.DefaultDistanceUnit,
 				},
 				Notes: input.Notes,
 			})
@@ -114,15 +114,17 @@ func updateHandler(db *gorm.DB) server.InputHandler[UpdateRequest] {
 					SecondaryRegionIDs: input.SecondaryRegionIDs,
 					Notes:              input.Notes,
 				}
-				if input.Defaults != nil {
+				if input.DefaultSets != nil || input.DefaultReps != nil || input.DefaultWeight != nil ||
+					input.DefaultWeightUnit != nil || input.DefaultDurationSeconds != nil ||
+					input.DefaultDistance != nil || input.DefaultDistanceUnit != nil {
 					def := Defaults{
-						Sets:            input.Defaults.Sets,
-						Reps:            input.Defaults.Reps,
-						Weight:          input.Defaults.Weight,
-						WeightUnit:      input.Defaults.WeightUnit,
-						DurationSeconds: input.Defaults.DurationSeconds,
-						Distance:        input.Defaults.Distance,
-						DistanceUnit:    input.Defaults.DistanceUnit,
+						Sets:            input.DefaultSets,
+						Reps:            input.DefaultReps,
+						Weight:          input.DefaultWeight,
+						WeightUnit:      input.DefaultWeightUnit,
+						DurationSeconds: input.DefaultDurationSeconds,
+						Distance:        input.DefaultDistance,
+						DistanceUnit:    input.DefaultDistanceUnit,
 					}
 					ui.Defaults = &def
 				}

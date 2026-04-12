@@ -38,15 +38,21 @@ func (r RestModel) GetID() string            { return r.Id.String() }
 func (r *RestModel) SetID(id string) error   { var err error; r.Id, err = uuid.Parse(id); return err }
 
 type CreateRequest struct {
-	Id                 uuid.UUID    `json:"-"`
-	Name               string       `json:"name"`
-	Kind               string       `json:"kind"`
-	WeightType         string       `json:"weightType"`
-	ThemeID            uuid.UUID    `json:"themeId"`
-	RegionID           uuid.UUID    `json:"regionId"`
-	SecondaryRegionIDs []uuid.UUID  `json:"secondaryRegionIds"`
-	Defaults           DefaultsRest `json:"defaults"`
-	Notes              *string      `json:"notes,omitempty"`
+	Id                     uuid.UUID   `json:"-"`
+	Name                   string      `json:"name"`
+	Kind                   string      `json:"kind"`
+	WeightType             string      `json:"weightType"`
+	ThemeID                uuid.UUID   `json:"themeId"`
+	RegionID               uuid.UUID   `json:"regionId"`
+	SecondaryRegionIDs     []uuid.UUID `json:"secondaryRegionIds"`
+	DefaultSets            *int        `json:"defaultSets,omitempty"`
+	DefaultReps            *int        `json:"defaultReps,omitempty"`
+	DefaultWeight          *float64    `json:"defaultWeight,omitempty"`
+	DefaultWeightUnit      *string     `json:"defaultWeightUnit,omitempty"`
+	DefaultDurationSeconds *int        `json:"defaultDurationSeconds,omitempty"`
+	DefaultDistance        *float64    `json:"defaultDistance,omitempty"`
+	DefaultDistanceUnit    *string     `json:"defaultDistanceUnit,omitempty"`
+	Notes                  *string     `json:"notes,omitempty"`
 }
 
 func (r CreateRequest) GetName() string       { return "exercises" }
@@ -61,15 +67,21 @@ func (r *CreateRequest) SetID(id string) error {
 }
 
 type UpdateRequest struct {
-	Id                 uuid.UUID     `json:"-"`
-	Name               *string       `json:"name,omitempty"`
-	Kind               string        `json:"kind,omitempty"`
-	WeightType         string        `json:"weightType,omitempty"`
-	ThemeID            *uuid.UUID    `json:"themeId,omitempty"`
-	RegionID           *uuid.UUID    `json:"regionId,omitempty"`
-	SecondaryRegionIDs *[]uuid.UUID  `json:"secondaryRegionIds,omitempty"`
-	Defaults           *DefaultsRest `json:"defaults,omitempty"`
-	Notes              *string       `json:"notes,omitempty"`
+	Id                     uuid.UUID    `json:"-"`
+	Name                   *string      `json:"name,omitempty"`
+	Kind                   string       `json:"kind,omitempty"`
+	WeightType             string       `json:"weightType,omitempty"`
+	ThemeID                *uuid.UUID   `json:"themeId,omitempty"`
+	RegionID               *uuid.UUID   `json:"regionId,omitempty"`
+	SecondaryRegionIDs     *[]uuid.UUID `json:"secondaryRegionIds,omitempty"`
+	DefaultSets            *int         `json:"defaultSets,omitempty"`
+	DefaultReps            *int         `json:"defaultReps,omitempty"`
+	DefaultWeight          *float64     `json:"defaultWeight,omitempty"`
+	DefaultWeightUnit      *string      `json:"defaultWeightUnit,omitempty"`
+	DefaultDurationSeconds *int         `json:"defaultDurationSeconds,omitempty"`
+	DefaultDistance        *float64     `json:"defaultDistance,omitempty"`
+	DefaultDistanceUnit    *string      `json:"defaultDistanceUnit,omitempty"`
+	Notes                  *string      `json:"notes,omitempty"`
 }
 
 func (r UpdateRequest) GetName() string       { return "exercises" }

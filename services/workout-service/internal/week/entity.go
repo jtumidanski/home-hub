@@ -29,8 +29,11 @@ func Migration(db *gorm.DB) error {
 	return db.AutoMigrate(&Entity{})
 }
 
-func (m Model) ToEntity() Entity {
-	flags, _ := json.Marshal(m.restDayFlags)
+func (m Model) ToEntity() (Entity, error) {
+	flags, err := json.Marshal(m.restDayFlags)
+	if err != nil {
+		return Entity{}, err
+	}
 	return Entity{
 		Id:            m.id,
 		TenantId:      m.tenantID,
@@ -39,7 +42,7 @@ func (m Model) ToEntity() Entity {
 		RestDayFlags:  flags,
 		CreatedAt:     m.createdAt,
 		UpdatedAt:     m.updatedAt,
-	}
+	}, nil
 }
 
 func Make(e Entity) (Model, error) {

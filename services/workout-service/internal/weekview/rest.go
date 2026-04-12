@@ -135,26 +135,20 @@ func (r *CopyWeekRequest) SetID(id string) error {
 	return err
 }
 
-// PlannedAttrs is the kind-shaped planned-values payload shared by add and
-// update requests. Pointer fields preserve "omitted vs explicit value".
-type PlannedAttrs struct {
-	Sets            *int     `json:"sets,omitempty"`
-	Reps            *int     `json:"reps,omitempty"`
-	Weight          *float64 `json:"weight,omitempty"`
-	WeightUnit      *string  `json:"weightUnit,omitempty"`
-	DurationSeconds *int     `json:"durationSeconds,omitempty"`
-	Distance        *float64 `json:"distance,omitempty"`
-	DistanceUnit    *string  `json:"distanceUnit,omitempty"`
-}
-
 // AddPlannedItemRequest is the body of `POST /weeks/{weekStart}/items`.
 type AddPlannedItemRequest struct {
-	Id         uuid.UUID     `json:"-"`
-	ExerciseID uuid.UUID     `json:"exerciseId"`
-	DayOfWeek  int           `json:"dayOfWeek"`
-	Position   *int          `json:"position,omitempty"`
-	Planned    *PlannedAttrs `json:"planned,omitempty"`
-	Notes      *string       `json:"notes,omitempty"`
+	Id                     uuid.UUID `json:"-"`
+	ExerciseID             uuid.UUID `json:"exerciseId"`
+	DayOfWeek              int       `json:"dayOfWeek"`
+	Position               *int      `json:"position,omitempty"`
+	PlannedSets            *int      `json:"plannedSets,omitempty"`
+	PlannedReps            *int      `json:"plannedReps,omitempty"`
+	PlannedWeight          *float64  `json:"plannedWeight,omitempty"`
+	PlannedWeightUnit      *string   `json:"plannedWeightUnit,omitempty"`
+	PlannedDurationSeconds *int      `json:"plannedDurationSeconds,omitempty"`
+	PlannedDistance        *float64  `json:"plannedDistance,omitempty"`
+	PlannedDistanceUnit    *string   `json:"plannedDistanceUnit,omitempty"`
+	Notes                  *string   `json:"notes,omitempty"`
 }
 
 func (r AddPlannedItemRequest) GetName() string { return "planned-items" }
@@ -177,11 +171,17 @@ type BulkAddPlannedItemsRequest struct {
 
 // BulkAddPlannedItemEntry is one row in a bulk-add request.
 type BulkAddPlannedItemEntry struct {
-	ExerciseID uuid.UUID     `json:"exerciseId"`
-	DayOfWeek  int           `json:"dayOfWeek"`
-	Position   *int          `json:"position,omitempty"`
-	Planned    *PlannedAttrs `json:"planned,omitempty"`
-	Notes      *string       `json:"notes,omitempty"`
+	ExerciseID             uuid.UUID `json:"exerciseId"`
+	DayOfWeek              int       `json:"dayOfWeek"`
+	Position               *int      `json:"position,omitempty"`
+	PlannedSets            *int      `json:"plannedSets,omitempty"`
+	PlannedReps            *int      `json:"plannedReps,omitempty"`
+	PlannedWeight          *float64  `json:"plannedWeight,omitempty"`
+	PlannedWeightUnit      *string   `json:"plannedWeightUnit,omitempty"`
+	PlannedDurationSeconds *int      `json:"plannedDurationSeconds,omitempty"`
+	PlannedDistance        *float64  `json:"plannedDistance,omitempty"`
+	PlannedDistanceUnit    *string   `json:"plannedDistanceUnit,omitempty"`
+	Notes                  *string   `json:"notes,omitempty"`
 }
 
 func (r BulkAddPlannedItemsRequest) GetName() string { return "planned-items" }
@@ -197,11 +197,17 @@ func (r *BulkAddPlannedItemsRequest) SetID(id string) error {
 
 // UpdatePlannedItemRequest is the body of `PATCH /weeks/{weekStart}/items/{itemId}`.
 type UpdatePlannedItemRequest struct {
-	Id        uuid.UUID     `json:"-"`
-	DayOfWeek *int          `json:"dayOfWeek,omitempty"`
-	Position  *int          `json:"position,omitempty"`
-	Planned   *PlannedAttrs `json:"planned,omitempty"`
-	Notes     *string       `json:"notes,omitempty"`
+	Id                     uuid.UUID `json:"-"`
+	DayOfWeek              *int      `json:"dayOfWeek,omitempty"`
+	Position               *int      `json:"position,omitempty"`
+	PlannedSets            *int      `json:"plannedSets,omitempty"`
+	PlannedReps            *int      `json:"plannedReps,omitempty"`
+	PlannedWeight          *float64  `json:"plannedWeight,omitempty"`
+	PlannedWeightUnit      *string   `json:"plannedWeightUnit,omitempty"`
+	PlannedDurationSeconds *int      `json:"plannedDurationSeconds,omitempty"`
+	PlannedDistance        *float64  `json:"plannedDistance,omitempty"`
+	PlannedDistanceUnit    *string   `json:"plannedDistanceUnit,omitempty"`
+	Notes                  *string   `json:"notes,omitempty"`
 }
 
 func (r UpdatePlannedItemRequest) GetName() string { return "planned-items" }

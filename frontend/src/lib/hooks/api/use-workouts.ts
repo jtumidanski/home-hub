@@ -4,7 +4,6 @@ import { useTenant } from "@/context/tenant-context";
 import type { Tenant } from "@/types/models/tenant";
 import type { Household } from "@/types/models/household";
 import type {
-  ExerciseDefaults,
   PerformanceStatus,
   WeightType,
   WeightUnit,
@@ -130,7 +129,13 @@ export interface CreateExerciseAttrs {
   themeId: string;
   regionId: string;
   secondaryRegionIds?: string[];
-  defaults: ExerciseDefaults;
+  defaultSets?: number | null;
+  defaultReps?: number | null;
+  defaultWeight?: number | null;
+  defaultWeightUnit?: WeightUnit | null;
+  defaultDurationSeconds?: number | null;
+  defaultDistance?: number | null;
+  defaultDistanceUnit?: string | null;
   notes?: string | null;
 }
 
@@ -291,7 +296,12 @@ export function usePatchPerformance() {
       attrs: {
         status?: PerformanceStatus;
         weightUnit?: WeightUnit;
-        actuals?: Record<string, unknown>;
+        actualSets?: number | null;
+        actualReps?: number | null;
+        actualWeight?: number | null;
+        actualDurationSeconds?: number | null;
+        actualDistance?: number | null;
+        actualDistanceUnit?: string | null;
         notes?: string | null;
       };
     }) => workoutService.patchPerformance(tenant!, weekStart, itemId, attrs),

@@ -4,10 +4,9 @@ import (
 	"github.com/google/uuid"
 )
 
-// ActualsRest is the summary actuals projection sent over the wire. Mirrors
-// `PerformanceActualsAttrs` minus the request-side concerns. Pointer fields
-// preserve "absent" semantics so the client can render only the meaningful
-// shape for the parent exercise's kind.
+// ActualsRest is the summary actuals projection sent over the wire. Pointer
+// fields preserve "absent" semantics so the client can render only the
+// meaningful shape for the parent exercise's kind.
 type ActualsRest struct {
 	Sets            *int     `json:"sets,omitempty"`
 	Reps            *int     `json:"reps,omitempty"`
@@ -91,25 +90,19 @@ func TransformSlice(models []Model, setsByPerf map[uuid.UUID][]SetModel) []*Rest
 	return out
 }
 
-// PerformanceActualsAttrs is the summary actuals payload nested inside a
-// PATCH request. Pointer fields preserve "omitted vs explicit value".
-type PerformanceActualsAttrs struct {
-	Sets            *int     `json:"sets,omitempty"`
-	Reps            *int     `json:"reps,omitempty"`
-	Weight          *float64 `json:"weight,omitempty"`
-	DurationSeconds *int     `json:"durationSeconds,omitempty"`
-	Distance        *float64 `json:"distance,omitempty"`
-	DistanceUnit    *string  `json:"distanceUnit,omitempty"`
-}
-
 // PatchPerformanceRequest is the body of
 // `PATCH /workouts/weeks/{weekStart}/items/{itemId}/performance`.
 type PatchPerformanceRequest struct {
-	Id         uuid.UUID                `json:"-"`
-	Status     *string                  `json:"status,omitempty"`
-	WeightUnit *string                  `json:"weightUnit,omitempty"`
-	Actuals    *PerformanceActualsAttrs `json:"actuals,omitempty"`
-	Notes      *string                  `json:"notes,omitempty"`
+	Id                    uuid.UUID `json:"-"`
+	Status                *string   `json:"status,omitempty"`
+	WeightUnit            *string   `json:"weightUnit,omitempty"`
+	ActualSets            *int      `json:"actualSets,omitempty"`
+	ActualReps            *int      `json:"actualReps,omitempty"`
+	ActualWeight          *float64  `json:"actualWeight,omitempty"`
+	ActualDurationSeconds *int      `json:"actualDurationSeconds,omitempty"`
+	ActualDistance        *float64  `json:"actualDistance,omitempty"`
+	ActualDistanceUnit    *string   `json:"actualDistanceUnit,omitempty"`
+	Notes                 *string   `json:"notes,omitempty"`
 }
 
 func (r PatchPerformanceRequest) GetName() string { return "performances" }
