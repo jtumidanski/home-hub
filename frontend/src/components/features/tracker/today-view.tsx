@@ -165,25 +165,27 @@ function NumericInput({ itemId, date, currentCount, putEntry }: { itemId: string
 function RangeInput({ itemId, date, config, currentValue, putEntry }: { itemId: string; date: string; config: RangeConfig | null; currentValue?: number | undefined; putEntry: ReturnType<typeof usePutEntry> }) {
   const min = config?.min ?? 0;
   const max = config?.max ?? 100;
-  const isSet = currentValue !== undefined;
   const [local, setLocal] = useState<number>(currentValue ?? Math.round((min + max) / 2));
+  const [touched, setTouched] = useState(currentValue !== undefined);
   useEffect(() => {
     if (currentValue !== undefined) {
       setLocal(currentValue);
+      setTouched(true);
     } else {
       setLocal(Math.round((min + max) / 2));
+      setTouched(false);
     }
   }, [itemId, date, currentValue, min, max]);
   const commit = (n: number) => putEntry.mutate({ itemId, date, value: { value: n } });
   return (
     <div className="flex items-center gap-2">
       <input type="range" min={min} max={max} value={local} className="flex-1"
-        onChange={(e) => setLocal(parseInt(e.target.value))}
+        onChange={(e) => { setLocal(parseInt(e.target.value)); setTouched(true); }}
         onMouseUp={(e) => commit(parseInt((e.target as HTMLInputElement).value))}
         onTouchEnd={(e) => commit(parseInt((e.target as HTMLInputElement).value))}
         onKeyUp={(e) => commit(parseInt((e.target as HTMLInputElement).value))}
       />
-      <span className={cn("w-10 text-center font-mono text-sm", !isSet && "text-muted-foreground")}>{isSet ? local : "Not set"}</span>
+      <span className={cn("w-10 text-center font-mono text-sm", !touched && "text-muted-foreground")}>{touched ? local : "Not set"}</span>
     </div>
   );
 }
