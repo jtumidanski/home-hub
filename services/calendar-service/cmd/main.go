@@ -94,7 +94,7 @@ func main() {
 
 			connection.InitializeRoutes(db, gcClient, enc, cfg, syncTrigger, cascadeDelete)(l, si, api)
 			source.InitializeRoutes(db, ownerCheck)(l, si, api)
-			event.InitializeRoutes(db)(l, si, api)
+			event.InitializeRoutes(db, cfg.AccountServiceURL)(l, si, api)
 			event.InitializeMutationRoutes(db, gcClient, enc, syncConnectionDirect)(l, si, api)
 		}).
 		Run()

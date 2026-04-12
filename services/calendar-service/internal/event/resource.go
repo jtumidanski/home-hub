@@ -12,16 +12,17 @@ import (
 	"github.com/jtumidanski/home-hub/services/calendar-service/internal/crypto"
 	"github.com/jtumidanski/home-hub/services/calendar-service/internal/googlecal"
 	"github.com/jtumidanski/home-hub/services/calendar-service/internal/source"
+	"github.com/jtumidanski/home-hub/services/calendar-service/internal/tz"
 	"github.com/jtumidanski/home-hub/shared/go/server"
 	tenantctx "github.com/jtumidanski/home-hub/shared/go/tenant"
 	"github.com/sirupsen/logrus"
 	"gorm.io/gorm"
 )
 
-func InitializeRoutes(db *gorm.DB) func(l logrus.FieldLogger, si jsonapi.ServerInformation, api *mux.Router) {
+func InitializeRoutes(db *gorm.DB, accountBaseURL string) func(l logrus.FieldLogger, si jsonapi.ServerInformation, api *mux.Router) {
 	return func(l logrus.FieldLogger, si jsonapi.ServerInformation, api *mux.Router) {
 		rh := server.RegisterHandler(l)(si)
-		api.HandleFunc("/calendar/events", rh("ListEvents", listEventsHandler(db))).Methods(http.MethodGet)
+		api.HandleFunc("/calendar/events", rh("ListEvents", listEventsHandler(db, accountBaseURL))).Methods(http.MethodGet)
 	}
 }
 
@@ -37,12 +38,15 @@ func InitializeMutationRoutes(db *gorm.DB, gcClient *googlecal.Client, enc *cryp
 	}
 }
 
-func listEventsHandler(db *gorm.DB) server.GetHandler {
+func listEventsHandler(db *gorm.DB, accountBaseURL string) server.GetHandler {
 	return func(d *server.HandlerDependency, c *server.HandlerContext) http.HandlerFunc {
 		return func(w http.ResponseWriter, r *http.Request) {
 			t := tenantctx.MustFromContext(r.Context())
 
-			now := time.Now().UTC()
+			lookup := tz.NewAccountHouseholdLookup(accountBaseURL, r.Header.Get("Authorization"))
+			loc := tz.Resolve(r.Context(), d.Logger(), r.Header, t.HouseholdId(), lookup)
+
+			now := time.Now().In(loc)
 			startStr := r.URL.Query().Get("start")
 			endStr := r.URL.Query().Get("end")
 
@@ -56,7 +60,7 @@ func listEventsHandler(db *gorm.DB) server.GetHandler {
 					return
 				}
 			} else {
-				start = time.Date(now.Year(), now.Month(), now.Day(), 0, 0, 0, 0, time.UTC)
+				start = time.Date(now.Year(), now.Month(), now.Day(), 0, 0, 0, 0, loc)
 			}
 
 			if endStr != "" {

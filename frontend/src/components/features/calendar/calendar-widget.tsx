@@ -4,14 +4,8 @@ import { useCalendarEvents } from "@/lib/hooks/api/use-calendar";
 import { Card, CardAction, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { CalendarDays, ChevronRight } from "lucide-react";
+import { getLocalTodayRange } from "@/lib/date-utils";
 import type { CalendarEvent } from "@/types/models/calendar";
-
-function getTodayRange(): { start: string; end: string } {
-  const today = new Date();
-  const startOfDay = new Date(today.getFullYear(), today.getMonth(), today.getDate(), 0, 0, 0);
-  const endOfDay = new Date(today.getFullYear(), today.getMonth(), today.getDate(), 23, 59, 59);
-  return { start: startOfDay.toISOString(), end: endOfDay.toISOString() };
-}
 
 function formatEventTime(startTime: string): string {
   const date = new Date(startTime);
@@ -27,7 +21,7 @@ function sortEvents(events: CalendarEvent[]): CalendarEvent[] {
 }
 
 export function CalendarWidget() {
-  const { start, end } = useMemo(() => getTodayRange(), []);
+  const { start, end } = useMemo(() => getLocalTodayRange(), []);
   const { data, isLoading, isError } = useCalendarEvents(start, end);
 
   if (isLoading) {

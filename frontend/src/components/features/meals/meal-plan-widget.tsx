@@ -3,6 +3,7 @@ import { usePlans, usePlan } from "@/lib/hooks/api/use-meals";
 import { Card, CardAction, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { UtensilsCrossed, ChevronRight } from "lucide-react";
+import { getLocalWeekStart, getLocalTodayStr } from "@/lib/date-utils";
 import type { Slot } from "@/types/models/meal-plan";
 
 const SLOT_LABELS: Record<Slot, string> = {
@@ -13,29 +14,10 @@ const SLOT_LABELS: Record<Slot, string> = {
   side: "Side",
 };
 
-function getMonday(): string {
-  const today = new Date();
-  const day = today.getDay();
-  const diff = day === 0 ? -6 : 1 - day;
-  const monday = new Date(today);
-  monday.setDate(today.getDate() + diff);
-  const year = monday.getFullYear();
-  const month = String(monday.getMonth() + 1).padStart(2, "0");
-  const d = String(monday.getDate()).padStart(2, "0");
-  return `${year}-${month}-${d}`;
-}
-
-function getTodayStr(): string {
-  const today = new Date();
-  const year = today.getFullYear();
-  const month = String(today.getMonth() + 1).padStart(2, "0");
-  const day = String(today.getDate()).padStart(2, "0");
-  return `${year}-${month}-${day}`;
-}
-
 export function MealPlanWidget() {
-  const weekStart = getMonday();
-  const todayStr = getTodayStr();
+  const monday = getLocalWeekStart();
+  const weekStart = `${monday.getFullYear()}-${String(monday.getMonth() + 1).padStart(2, "0")}-${String(monday.getDate()).padStart(2, "0")}`;
+  const todayStr = getLocalTodayStr();
 
   const { data: plansData, isLoading: plansLoading, isError: plansError } = usePlans({
     starts_on: weekStart,
