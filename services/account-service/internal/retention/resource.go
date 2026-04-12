@@ -131,7 +131,12 @@ func patchHousehold(db *gorm.DB) server.InputHandler[PatchRequest] {
 					return
 				}
 
-				resolved, _ := proc.ResolveAll(t.Id(), householdID, t.UserId())
+				resolved, err := proc.ResolveAll(t.Id(), householdID, t.UserId())
+				if err != nil {
+					d.Logger().WithError(err).Error("retention: resolve after patch failed")
+					server.WriteError(w, http.StatusInternalServerError, "Error", "")
+					return
+				}
 				rest := PolicyRest{Id: t.Id()}
 				if resolved.Household != nil {
 					rest.Household = scopeToRest(resolved.Household)
@@ -165,7 +170,12 @@ func patchUser(db *gorm.DB) server.InputHandler[PatchRequest] {
 				return
 			}
 
-			resolved, _ := proc.ResolveAll(t.Id(), t.HouseholdId(), t.UserId())
+			resolved, err := proc.ResolveAll(t.Id(), t.HouseholdId(), t.UserId())
+			if err != nil {
+				d.Logger().WithError(err).Error("retention: resolve after patch failed")
+				server.WriteError(w, http.StatusInternalServerError, "Error", "")
+				return
+			}
 			rest := PolicyRest{Id: t.Id()}
 			if resolved.Household != nil {
 				rest.Household = scopeToRest(resolved.Household)

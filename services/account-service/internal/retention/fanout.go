@@ -151,7 +151,10 @@ func (f *HTTPFanout) Purge(ctx context.Context, tenantID uuid.UUID, scope shared
 	if err := json.NewDecoder(resp.Body).Decode(&out); err != nil {
 		return PurgeResult{}, err
 	}
-	rid, _ := uuid.Parse(out.RunId)
+	rid, err := uuid.Parse(out.RunId)
+	if err != nil {
+		return PurgeResult{}, fmt.Errorf("retention: invalid run_id %q: %w", out.RunId, err)
+	}
 	return PurgeResult{RunId: rid, Scanned: out.Scanned, Deleted: out.Deleted, DryRun: out.DryRun}, nil
 }
 
@@ -222,7 +225,11 @@ func (f *HTTPFanout) ListRuns(ctx context.Context, tenantID uuid.UUID, category,
 			mu.Lock()
 			defer mu.Unlock()
 			for _, r := range body.Runs {
-				rid, _ := uuid.Parse(r.RunId)
+				rid, err := uuid.Parse(r.RunId)
+				if err != nil {
+					f.Logger.WithError(err).WithField("run_id", r.RunId).Warn("retention: skipping run with invalid id")
+					continue
+				}
 				results = append(results, RunRest{
 					Id:         rid,
 					Service:    r.Service,
