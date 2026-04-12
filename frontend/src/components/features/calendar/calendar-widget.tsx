@@ -4,7 +4,8 @@ import { useCalendarEvents } from "@/lib/hooks/api/use-calendar";
 import { Card, CardAction, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { CalendarDays, ChevronRight } from "lucide-react";
-import { getLocalTodayRange } from "@/lib/date-utils";
+import { getLocalTodayRange, getLocalTodayStr } from "@/lib/date-utils";
+import { useTenant } from "@/context/tenant-context";
 import type { CalendarEvent } from "@/types/models/calendar";
 
 function formatEventTime(startTime: string): string {
@@ -21,7 +22,10 @@ function sortEvents(events: CalendarEvent[]): CalendarEvent[] {
 }
 
 export function CalendarWidget() {
-  const { start, end } = useMemo(() => getLocalTodayRange(), []);
+  const { household } = useTenant();
+  const timezone = household?.attributes.timezone;
+  const { start, end } = useMemo(() => getLocalTodayRange(timezone), [timezone]);
+  const todayStr = useMemo(() => getLocalTodayStr(timezone), [timezone]);
   const { data, isLoading, isError } = useCalendarEvents(start, end);
 
   if (isLoading) {
@@ -49,7 +53,14 @@ export function CalendarWidget() {
     );
   }
 
-  const events = sortEvents(data?.data ?? []);
+  const events = sortEvents(
+    (data?.data ?? []).filter((evt) => {
+      if (!evt.attributes.allDay) return true;
+      const startDate = evt.attributes.startTime.slice(0, 10);
+      const endDate = evt.attributes.endTime.slice(0, 10);
+      return todayStr >= startDate && todayStr <= endDate;
+    }),
+  );
 
   return (
     <Link to="/app/calendar" className="block h-full transition-opacity hover:opacity-80">
