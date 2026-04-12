@@ -12,6 +12,7 @@ import { DashboardPage } from "@/pages/DashboardPage";
 import { TasksPage } from "@/pages/TasksPage";
 import { RemindersPage } from "@/pages/RemindersPage";
 import { SettingsPage } from "@/pages/SettingsPage";
+import { DataRetentionPage } from "@/pages/DataRetentionPage";
 import { HouseholdsPage } from "@/pages/HouseholdsPage";
 import { HouseholdMembersPage } from "@/pages/HouseholdMembersPage";
 import { WeatherPage } from "@/pages/WeatherPage";
@@ -73,6 +74,7 @@ export function App() {
                     <Route path="summary/:weekStart" element={<WorkoutSummaryPage />} />
                   </Route>
                   <Route path="settings" element={<SettingsPage />} />
+                  <Route path="settings/data-retention" element={<DataRetentionPage />} />
                   <Route path="weather" element={<WeatherPage />} />
                   <Route path="recipes" element={<RecipesPage />} />
                   <Route path="recipes/new" element={<RecipeFormPage />} />

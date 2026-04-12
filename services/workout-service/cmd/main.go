@@ -9,6 +9,7 @@ import (
 	"github.com/jtumidanski/home-hub/services/workout-service/internal/performance"
 	"github.com/jtumidanski/home-hub/services/workout-service/internal/planneditem"
 	"github.com/jtumidanski/home-hub/services/workout-service/internal/region"
+	"github.com/jtumidanski/home-hub/services/workout-service/internal/retention"
 	"github.com/jtumidanski/home-hub/services/workout-service/internal/summary"
 	"github.com/jtumidanski/home-hub/services/workout-service/internal/theme"
 	"github.com/jtumidanski/home-hub/services/workout-service/internal/today"
@@ -44,9 +45,16 @@ func main() {
 	authValidator := sharedauth.NewValidator(l, cfg.JWKSURL)
 	si := server.GetServerInformation()
 
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+
 	server.New(l).
 		WithAddr(":" + cfg.Port).
 		AddRouteInitializer(func(router *mux.Router) {
+			if _, err := retention.Setup(ctx, l, db, router, cfg.AccountBaseURL, cfg.InternalToken, cfg.RetentionInterval); err != nil {
+				l.WithError(err).Fatal("retention setup failed")
+			}
+
 			api := router.PathPrefix("/api/v1").Subrouter()
 			api.Use(sharedauth.Middleware(l, authValidator))
 

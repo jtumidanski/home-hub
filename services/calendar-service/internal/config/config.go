@@ -18,6 +18,9 @@ type Config struct {
 	GoogleCalendarSecret     string
 	TokenEncryptionKey       string
 	SyncInterval             time.Duration
+	AccountServiceURL        string
+	InternalToken            string
+	RetentionInterval        time.Duration
 }
 
 func Load() Config {
@@ -41,7 +44,21 @@ func Load() Config {
 		GoogleCalendarSecret:     envOrDefault("GOOGLE_CALENDAR_CLIENT_SECRET", ""),
 		TokenEncryptionKey:       envOrDefault("CALENDAR_TOKEN_ENCRYPTION_KEY", ""),
 		SyncInterval:             time.Duration(intervalMin) * time.Minute,
+		AccountServiceURL:        envOrDefault("ACCOUNT_SERVICE_URL", "http://account-service:8080"),
+		InternalToken:            os.Getenv("INTERNAL_SERVICE_TOKEN"),
+		RetentionInterval:        parseDuration(os.Getenv("RETENTION_INTERVAL"), 6*time.Hour),
 	}
+}
+
+func parseDuration(v string, fallback time.Duration) time.Duration {
+	if v == "" {
+		return fallback
+	}
+	d, err := time.ParseDuration(v)
+	if err != nil {
+		return fallback
+	}
+	return d
 }
 
 func envOrDefault(key, fallback string) string {

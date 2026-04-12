@@ -2,6 +2,7 @@ package config
 
 import (
 	"os"
+	"time"
 
 	"github.com/jtumidanski/home-hub/shared/go/database"
 )
@@ -11,6 +12,9 @@ type Config struct {
 	Port               string
 	JWKSURL            string
 	CategoryServiceURL string
+	AccountServiceURL  string
+	InternalToken      string
+	RetentionInterval  time.Duration
 }
 
 func Load() Config {
@@ -26,6 +30,9 @@ func Load() Config {
 		Port:               envOrDefault("PORT", "8080"),
 		JWKSURL:            envOrDefault("JWKS_URL", "http://auth-service:8080/api/v1/auth/.well-known/jwks.json"),
 		CategoryServiceURL: envOrDefault("CATEGORY_SERVICE_URL", "http://category-service:8080"),
+		AccountServiceURL:  envOrDefault("ACCOUNT_SERVICE_URL", "http://account-service:8080"),
+		InternalToken:      os.Getenv("INTERNAL_SERVICE_TOKEN"),
+		RetentionInterval:  parseDuration(os.Getenv("RETENTION_INTERVAL"), 6*time.Hour),
 	}
 }
 
@@ -34,4 +41,15 @@ func envOrDefault(key, fallback string) string {
 		return v
 	}
 	return fallback
+}
+
+func parseDuration(v string, fallback time.Duration) time.Duration {
+	if v == "" {
+		return fallback
+	}
+	d, err := time.ParseDuration(v)
+	if err != nil {
+		return fallback
+	}
+	return d
 }

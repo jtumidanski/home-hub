@@ -532,7 +532,54 @@ services/<service>/docs/storage.md
 
 These are the authoritative source for domain logic, REST endpoints, and database schema per service.
 
-## 19. Design Principles
+## 19. Retention Framework
+
+Data retention is centrally configured in account-service and enforced by per-service reapers that consult policy on a jittered ~6h loop. The framework lives in `shared/go/retention` and is shared by every service that owns user data.
+
+### Components
+
+- **`shared/go/retention`** — the core library. Provides:
+  - `Category` enum + `Defaults` map (compiled-in default windows per PRD §4.2).
+  - `Loop` — jittered ticker (±10%) with graceful shutdown via context.
+  - `TryAdvisoryLock` — `pg_try_advisory_xact_lock` keyed on `hash(tenant_id, category)` so two replicas of the same service never reap the same `(tenant, category)` simultaneously.
+  - `PolicyClient` — HTTP client that calls account-service `/internal/retention-policies/overrides` and merges responses with compiled defaults. 5-minute TTL cache. On a network failure with no usable cache, returns `ErrPolicyUnavailable` and the reaper skips that scope rather than falling back to "0 days".
+  - `Reaper` — orchestrates `CategoryHandler` implementations, runs each one against every discovered scope inside a transaction, writes a `retention_runs` audit row, and emits Prometheus counters.
+  - `MountInternalEndpoints` — registers `POST /internal/retention/purge` and `GET /internal/retention/runs` on a service router. The purge endpoint supports `dry_run`, is rate-limited to one call per (tenant, category) per 60 seconds, and writes an audit row regardless of outcome.
+  - `Metrics` / `Handler` — Prometheus collectors (`retention_scanned_total`, `retention_deleted_total`, `retention_run_duration_seconds`, `retention_run_failures_total`) plus a `/metrics` HTTP handler.
+
+- **account-service** — owns the policy. Persists `retention_policy_overrides` rows (tenant + scope kind + scope id + category → days). Exposes:
+  - `GET /api/v1/retention-policies` — fully-resolved policy for the caller's household and personal scopes, with per-category source annotations.
+  - `PATCH /api/v1/retention-policies/household/{household_id}` — household-admin only. Sparse map; explicit `null` clears an override.
+  - `PATCH /api/v1/retention-policies/user` — user-scoped equivalent.
+  - `POST /api/v1/retention-policies/purge` — manual purge fan-out. Resolves the owning service from the category and forwards to its `/internal/retention/purge` endpoint. Returns 202.
+  - `GET /api/v1/retention-runs` — aggregated audit feed across reaper-owning services, fanned out at request time.
+  - `GET /internal/retention-policies/overrides` — internal-only, called by reapers via shared internal token.
+
+- **Reaper-owning services** (`productivity`, `recipe`, `tracker`, `workout`, `calendar`, `package`) each implement two or three `CategoryHandler` types and call `retention.Setup()` from `cmd/main.go`. Each service migrates its own `retention_runs` table.
+
+### Cascade rules
+
+Cascades are application-level inside a single transaction per parent (no DB `ON DELETE CASCADE`):
+
+- **productivity** — task → `task_restorations`.
+- **recipe** — recipe → `recipe_tags`, `recipe_restorations`, `plan_items` referencing the recipe. The parent meal plan is preserved.
+- **tracker** — `tracking_item` → `tracking_entries`. Reaping `tracking_entries` by date does not cascade upward.
+- **workout** — theme → regions → exercises → performances → performance_sets, in one tx per top-level parent.
+- **calendar** — `calendar_events` is leaf-level.
+- **package** — package → `tracking_events`. The package archive transition (delivered → archived) is the new home of the env-var-driven cleanup loop; the residual stale-marking pass is unrelated to retention and remains in `internal/poller/cleanup.go`.
+
+### Safety rules
+
+- **Cache-miss safety**: a reaper that cannot reach account-service AND has no cached value (even stale) skips the affected (tenant, category) and logs a warning. It must never delete based on a "0 days" fallback.
+- **Advisory locks**: every reap is wrapped in `pg_try_advisory_xact_lock`. A second replica observing a busy lock skips that (tenant, category) for the tick and retries on the next loop.
+- **Audit writes**: every reaper invocation — scheduled or manual, success or failure — writes a `retention_runs` row. Dry-run manual purges are recorded with `dry_run = true`.
+- **Self-cleaning audit**: each service runs the `system.retention_audit` category against its own `retention_runs` table.
+
+### Settings UI
+
+The frontend `DataRetentionPage` (route `/app/settings/data-retention`) lists each category, shows its current effective value with a `default` / `household` / `user` source badge, and lets the operator edit the days field. Lowering a window triggers a `dry_run: true` purge call, displays the would-have-deleted count in a confirmation modal, and only sends the `PATCH` after explicit confirmation. Per-category "Purge now" buttons call the public purge endpoint and surface 429 rate-limit responses.
+
+## 20. Design Principles
 
 - strict service boundaries
 - versioned APIs

@@ -8,6 +8,7 @@ import (
 	"github.com/jtumidanski/home-hub/services/productivity-service/internal/reminder"
 	"github.com/jtumidanski/home-hub/services/productivity-service/internal/reminder/dismissal"
 	"github.com/jtumidanski/home-hub/services/productivity-service/internal/reminder/snooze"
+	"github.com/jtumidanski/home-hub/services/productivity-service/internal/retention"
 	"github.com/jtumidanski/home-hub/services/productivity-service/internal/summary"
 	"github.com/jtumidanski/home-hub/services/productivity-service/internal/task"
 	"github.com/jtumidanski/home-hub/services/productivity-service/internal/task/restoration"
@@ -37,9 +38,16 @@ func main() {
 	authValidator := sharedauth.NewValidator(l, cfg.JWKSURL)
 	si := server.GetServerInformation()
 
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+
 	server.New(l).
 		WithAddr(":" + cfg.Port).
 		AddRouteInitializer(func(router *mux.Router) {
+			if _, err := retention.Setup(ctx, l, db, router, cfg.AccountServiceURL, cfg.InternalToken, cfg.RetentionInterval); err != nil {
+				l.WithError(err).Fatal("retention setup failed")
+			}
+
 			api := router.PathPrefix("/api/v1").Subrouter()
 			api.Use(sharedauth.Middleware(l, authValidator))
 

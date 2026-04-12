@@ -17,6 +17,7 @@ use (
 	./shared/go/http
 	./shared/go/logging
 	./shared/go/model
+	./shared/go/retention
 	./shared/go/server
 	./shared/go/tenant
 	./shared/go/testing

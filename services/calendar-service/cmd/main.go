@@ -13,6 +13,7 @@ import (
 	"github.com/jtumidanski/home-hub/services/calendar-service/internal/event"
 	"github.com/jtumidanski/home-hub/services/calendar-service/internal/googlecal"
 	"github.com/jtumidanski/home-hub/services/calendar-service/internal/oauthstate"
+	calendarretention "github.com/jtumidanski/home-hub/services/calendar-service/internal/retention"
 	"github.com/jtumidanski/home-hub/services/calendar-service/internal/source"
 	calendarsync "github.com/jtumidanski/home-hub/services/calendar-service/internal/sync"
 	sharedauth "github.com/jtumidanski/home-hub/shared/go/auth"
@@ -79,6 +80,10 @@ func main() {
 	server.New(l).
 		WithAddr(":" + cfg.Port).
 		AddRouteInitializer(func(router *mux.Router) {
+			if _, err := calendarretention.Setup(ctx, l, db, router, cfg.AccountServiceURL, cfg.InternalToken, cfg.RetentionInterval); err != nil {
+				l.WithError(err).Fatal("retention setup failed")
+			}
+
 			// Public routes (no JWT required) — must be registered first
 			publicAPI := router.PathPrefix("/api/v1").Subrouter()
 			connection.InitializePublicRoutes(db, gcClient, enc, cfg, syncTrigger)(l, si, publicAPI)
