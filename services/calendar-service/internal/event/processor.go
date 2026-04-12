@@ -17,6 +17,15 @@ import (
 	"gorm.io/gorm"
 )
 
+type ConnectionProcessor interface {
+	ByIDProvider(id uuid.UUID) model.Provider[connection.Model]
+	GetOrRefreshAccessToken(conn connection.Model, gcClient *googlecal.Client, enc *crypto.Encryptor) (string, error)
+}
+
+type SourceProcessor interface {
+	ByIDProvider(id uuid.UUID) model.Provider[source.Model]
+}
+
 var (
 	ErrRangeTooLarge      = errors.New("query range exceeds 90 days")
 	ErrConnectionNotFound = errors.New("connection not found")
@@ -35,13 +44,19 @@ type SyncConnectionFunc func(conn connection.Model)
 const maxQueryRange = 90 * 24 * time.Hour
 
 type Processor struct {
-	l   logrus.FieldLogger
-	ctx context.Context
-	db  *gorm.DB
+	l        logrus.FieldLogger
+	ctx      context.Context
+	db       *gorm.DB
+	connProc ConnectionProcessor
+	srcProc  SourceProcessor
 }
 
 func NewProcessor(l logrus.FieldLogger, ctx context.Context, db *gorm.DB) *Processor {
 	return &Processor{l: l, ctx: ctx, db: db}
+}
+
+func NewMutationProcessor(l logrus.FieldLogger, ctx context.Context, db *gorm.DB, connProc ConnectionProcessor, srcProc SourceProcessor) *Processor {
+	return &Processor{l: l, ctx: ctx, db: db, connProc: connProc, srcProc: srcProc}
 }
 
 func (p *Processor) ByID(id uuid.UUID) (Model, error) {
@@ -149,8 +164,7 @@ func (p *Processor) UpdateOnGoogle(gcClient *googlecal.Client, accessToken strin
 }
 
 func (p *Processor) validateConnectionForWrite(connID, userID uuid.UUID, gcClient *googlecal.Client, enc *crypto.Encryptor) (connection.Model, string, error) {
-	connProc := connection.NewProcessor(p.l, p.ctx, p.db)
-	conn, err := connProc.ByIDProvider(connID)()
+	conn, err := p.connProc.ByIDProvider(connID)()
 	if err != nil {
 		return connection.Model{}, "", ErrConnectionNotFound
 	}
@@ -160,7 +174,7 @@ func (p *Processor) validateConnectionForWrite(connID, userID uuid.UUID, gcClien
 	if !conn.WriteAccess() {
 		return connection.Model{}, "", ErrNoWriteAccess
 	}
-	accessToken, err := connProc.GetOrRefreshAccessToken(conn, gcClient, enc)
+	accessToken, err := p.connProc.GetOrRefreshAccessToken(conn, gcClient, enc)
 	if err != nil {
 		return connection.Model{}, "", ErrAuthFailed
 	}
@@ -173,8 +187,7 @@ func (p *Processor) CreateEventOnGoogle(connID, calID, userID uuid.UUID, input C
 		return err
 	}
 
-	srcProc := source.NewProcessor(p.l, p.ctx, p.db)
-	src, err := srcProc.ByIDProvider(calID)()
+	src, err := p.srcProc.ByIDProvider(calID)()
 	if err != nil {
 		return ErrSourceNotFound
 	}
