@@ -237,8 +237,8 @@ export function SettingsPage() {
           <CardDescription>Configure how long Home Hub keeps each kind of data.</CardDescription>
         </CardHeader>
         <CardContent>
-          <Button variant="outline" asChild>
-            <a href="/app/settings/data-retention">Open data retention settings</a>
+          <Button variant="outline" render={<a href="/app/settings/data-retention" />}>
+            Open data retention settings
           </Button>
         </CardContent>
       </Card>
