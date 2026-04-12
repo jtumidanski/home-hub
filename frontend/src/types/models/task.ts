@@ -1,3 +1,5 @@
+import { getLocalTodayStr } from "@/lib/date-utils";
+
 export interface TaskAttributes {
   title: string;
   notes?: string;
@@ -47,15 +49,10 @@ export function isTaskOverdue(task: Task): boolean {
   if (status !== "pending" || !dueOn) {
     return false;
   }
-  const match = /^(\d{4})-(\d{2})-(\d{2})$/.exec(dueOn);
-  if (!match) {
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(dueOn)) {
     return false;
   }
-  const [, yearStr, monthStr, dayStr] = match;
-  const dueDate = new Date(Number(yearStr), Number(monthStr) - 1, Number(dayStr));
-  const today = new Date();
-  today.setHours(0, 0, 0, 0);
-  return dueDate < today;
+  return dueOn < getLocalTodayStr();
 }
 
 export function isTaskCompleted(task: Task): boolean {

@@ -5,17 +5,13 @@ import { TrackerSetup } from "@/components/features/tracker/tracker-setup";
 import { TodayView } from "@/components/features/tracker/today-view";
 import { CalendarGrid } from "@/components/features/tracker/calendar-grid";
 import { MonthReport } from "@/components/features/tracker/month-report";
+import { getLocalMonth } from "@/lib/date-utils";
 
 type View = "today" | "calendar" | "setup" | "report";
 
-function getCurrentMonth() {
-  const now = new Date();
-  return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}`;
-}
-
 export function TrackerPage() {
   const [view, setView] = useState<View>("today");
-  const [month, setMonth] = useState(getCurrentMonth);
+  const [month, setMonth] = useState(getLocalMonth);
 
   const widthClass =
     view === "calendar" ? "max-w-none" :

@@ -184,14 +184,13 @@ export function layoutOverlappingEvents(events: CalendarEvent[]): PositionedEven
   return positioned;
 }
 
-export function getEventsForDay(events: CalendarEvent[], day: Date, _timezone?: string): { allDay: CalendarEvent[]; timed: CalendarEvent[] } { // eslint-disable-line @typescript-eslint/no-unused-vars
-  const dayStart = new Date(day);
-  dayStart.setHours(0, 0, 0, 0);
-  const dayEnd = new Date(day);
-  dayEnd.setHours(23, 59, 59, 999);
+export function getEventsForDay(events: CalendarEvent[], day: Date, timezone?: string): { allDay: CalendarEvent[]; timed: CalendarEvent[] } {
+  const { year, month, day: d } = getDateInZone(day, timezone);
+  const dayStart = new Date(year, month - 1, d, 0, 0, 0, 0);
+  const dayEnd = new Date(year, month - 1, d, 23, 59, 59, 999);
 
   // For date-only comparison of all-day events (YYYY-MM-DD)
-  const dayDateStr = `${day.getFullYear()}-${String(day.getMonth() + 1).padStart(2, "0")}-${String(day.getDate()).padStart(2, "0")}`;
+  const dayDateStr = `${year}-${String(month).padStart(2, "0")}-${String(d).padStart(2, "0")}`;
 
   const allDay: CalendarEvent[] = [];
   const timed: CalendarEvent[] = [];

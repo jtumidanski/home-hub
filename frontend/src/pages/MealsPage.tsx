@@ -26,18 +26,9 @@ import {
 import { useShoppingLists, useImportMealPlan, useCreateShoppingList } from "@/lib/hooks/api/use-shopping";
 import { shoppingService } from "@/services/api/shopping";
 import { useTenant } from "@/context/tenant-context";
+import { getLocalWeekStart } from "@/lib/date-utils";
 import type { Slot, PlanItemAttributes } from "@/types/models/meal-plan";
 import type { RecipeListItem } from "@/types/models/recipe";
-
-function getMonday(): Date {
-  const today = new Date();
-  const day = today.getDay();
-  const diff = day === 0 ? -6 : 1 - day;
-  const monday = new Date(today);
-  monday.setDate(today.getDate() + diff);
-  monday.setHours(0, 0, 0, 0);
-  return monday;
-}
 
 function formatDateStr(d: Date): string {
   const year = d.getFullYear();
@@ -60,7 +51,7 @@ function getWeekDays(startsOn: Date) {
 }
 
 export function MealsPage() {
-  const [startsOn, setStartsOn] = useState<Date>(getMonday);
+  const [startsOn, setStartsOn] = useState<Date>(getLocalWeekStart);
   const startsOnStr = formatDateStr(startsOn);
 
   // Find existing plan for this week
