@@ -11,9 +11,9 @@ require (
 	github.com/jtumidanski/home-hub/shared/go/logging v0.0.0
 	github.com/jtumidanski/home-hub/shared/go/model v0.0.0
 	github.com/jtumidanski/home-hub/shared/go/server v0.0.0
-	github.com/sirupsen/logrus v1.9.3
+	github.com/sirupsen/logrus v1.9.4
 	gorm.io/driver/sqlite v1.6.0
-	gorm.io/gorm v1.30.0
+	gorm.io/gorm v1.31.1
 )
 
 require (
