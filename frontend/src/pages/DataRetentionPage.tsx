@@ -147,7 +147,7 @@ export function DataRetentionPage() {
           estimate: preview.data?.attributes?.deleted ?? 0,
         });
         return;
-      } catch (e) {
+      } catch {
         // If preview fails, still let the user opt in via the modal with no estimate.
         setShrinkWarning({ category, scope, days, estimate: null });
         return;

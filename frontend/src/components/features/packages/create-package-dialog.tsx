@@ -43,6 +43,7 @@ export function CreatePackageDialog({ open, onClose }: CreatePackageDialogProps)
     defaultValues: packageFormDefaults,
   });
 
+  // eslint-disable-next-line react-hooks/incompatible-library -- form.watch() returns unmemoizable values; library-level React Compiler limitation
   const trackingNumber = watch("trackingNumber");
 
   useEffect(() => {

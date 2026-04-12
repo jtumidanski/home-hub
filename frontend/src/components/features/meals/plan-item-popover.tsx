@@ -209,6 +209,7 @@ function AddModeForm({
     }
   };
 
+  // eslint-disable-next-line react-hooks/incompatible-library -- form.watch() returns unmemoizable values; library-level React Compiler limitation
   const selectedDays = form.watch("days");
 
   return (

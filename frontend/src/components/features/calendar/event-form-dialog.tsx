@@ -85,6 +85,7 @@ export function EventFormDialog({
     }
   }, [open, defaults, isEdit, defaultConnection, sources, form]);
 
+  // eslint-disable-next-line react-hooks/incompatible-library -- form.watch() returns unmemoizable values; library-level React Compiler limitation
   const allDay = form.watch("allDay");
 
   const handleOpenChange = (next: boolean) => {

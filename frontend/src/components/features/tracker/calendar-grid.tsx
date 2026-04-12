@@ -76,9 +76,8 @@ export function CalendarGrid({ month, onMonthChange, onViewReport }: Props) {
 
   const summary = data?.data?.attributes;
   const items: MonthItemInfo[] = data?.data?.relationships?.items?.data ?? [];
-  const entries: TrackerEntry[] = data?.data?.relationships?.entries?.data ?? [];
-
   const entryMap = useMemo(() => {
+    const entries: TrackerEntry[] = data?.data?.relationships?.entries?.data ?? [];
     const m = new Map<string, TrackerEntry>();
     entries.forEach((e) => {
       const attrs = e.attributes ?? e as unknown as TrackerEntry["attributes"];
@@ -86,7 +85,7 @@ export function CalendarGrid({ month, onMonthChange, onViewReport }: Props) {
       m.set(key, e);
     });
     return m;
-  }, [entries]);
+  }, [data?.data?.relationships?.entries?.data]);
 
   const daysInMonth = getDaysInMonth(month);
   const today = getLocalTodayStr();
@@ -357,7 +356,10 @@ function CellContent({ itemId, date, scaleType, scaleConfig, scheduled, entry, i
 function RangeEditor({ itemId, date, min, max, initial, onCommit }: { itemId: string; date: string; min: number; max: number; initial: number | undefined; onCommit: (n: number) => void }) {
   const [local, setLocal] = useState<number>(initial ?? Math.round((min + max) / 2));
   const [touched, setTouched] = useState(initial !== undefined);
-  useEffect(() => {
+  const resetKey = `${itemId}:${date}:${initial}:${min}:${max}`;
+  const [prevResetKey, setPrevResetKey] = useState(resetKey);
+  if (resetKey !== prevResetKey) {
+    setPrevResetKey(resetKey);
     if (initial !== undefined) {
       setLocal(initial);
       setTouched(true);
@@ -365,7 +367,7 @@ function RangeEditor({ itemId, date, min, max, initial, onCommit }: { itemId: st
       setLocal(Math.round((min + max) / 2));
       setTouched(false);
     }
-  }, [itemId, date, initial, min, max]);
+  }
   const handleCommit = (n: number) => { setTouched(true); onCommit(n); };
   return (
     <div className="space-y-1">

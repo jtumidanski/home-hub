@@ -83,6 +83,7 @@ export function EditPackageDialog({ pkg, open, onClose }: EditPackageDialogProps
           <div className="space-y-2">
             <Label htmlFor="edit-carrier">Carrier</Label>
             <Select
+              // eslint-disable-next-line react-hooks/incompatible-library -- form.watch() returns unmemoizable values; library-level React Compiler limitation
               value={watch("carrier")}
               onValueChange={(v) => setValue("carrier", v as "usps" | "ups" | "fedex")}
             >
