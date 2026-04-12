@@ -14,7 +14,7 @@ func getByID(id uuid.UUID) database.EntityProvider[Entity] {
 
 func getAll() database.EntityProvider[[]Entity] {
 	return database.SliceQuery[Entity](func(db *gorm.DB) *gorm.DB {
-		return db
+		return db.Order("last_dismissed_at IS NULL DESC").Order("scheduled_for ASC")
 	})
 }
 
