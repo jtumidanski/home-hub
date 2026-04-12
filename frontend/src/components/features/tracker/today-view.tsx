@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { Check } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -167,7 +167,10 @@ function RangeInput({ itemId, date, config, currentValue, putEntry }: { itemId: 
   const max = config?.max ?? 100;
   const [local, setLocal] = useState<number>(currentValue ?? Math.round((min + max) / 2));
   const [touched, setTouched] = useState(currentValue !== undefined);
-  useEffect(() => {
+  const resetKey = `${itemId}:${date}:${currentValue}:${min}:${max}`;
+  const [prevResetKey, setPrevResetKey] = useState(resetKey);
+  if (resetKey !== prevResetKey) {
+    setPrevResetKey(resetKey);
     if (currentValue !== undefined) {
       setLocal(currentValue);
       setTouched(true);
@@ -175,7 +178,7 @@ function RangeInput({ itemId, date, config, currentValue, putEntry }: { itemId: 
       setLocal(Math.round((min + max) / 2));
       setTouched(false);
     }
-  }, [itemId, date, currentValue, min, max]);
+  }
   const commit = (n: number) => putEntry.mutate({ itemId, date, value: { value: n } });
   return (
     <div className="flex items-center gap-2">

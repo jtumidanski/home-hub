@@ -30,6 +30,7 @@ export function CreateTrackerDialog({ open, onClose }: Props) {
     defaultValues: trackerFormDefaults,
   });
 
+  // eslint-disable-next-line react-hooks/incompatible-library -- form.watch() returns unmemoizable values; library-level React Compiler limitation
   const scaleType = watch("scale_type");
 
   useEffect(() => {

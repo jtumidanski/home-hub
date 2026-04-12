@@ -39,6 +39,7 @@ export function RecipeFormPage() {
     defaultValues: recipeFormDefaults,
   });
 
+  // eslint-disable-next-line react-hooks/incompatible-library -- form.watch() returns unmemoizable values; library-level React Compiler limitation
   const sourceValue = form.watch("source");
   const preview = useCooklangPreview(sourceValue ?? "");
 

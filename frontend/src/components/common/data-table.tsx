@@ -24,6 +24,7 @@ export function DataTable<TData>({
   onRowClick,
   skeletonRows = 4,
 }: DataTableProps<TData>) {
+  // eslint-disable-next-line react-hooks/incompatible-library -- useReactTable returns unmemoizable functions; library-level React Compiler limitation
   const table = useReactTable({
     data,
     columns,
