@@ -22,8 +22,8 @@ jobs:
       frontend: ${{ steps.changes.outputs.frontend }}
       shared: ${{ steps.changes.outputs.shared }}
     steps:
-      - uses: actions/checkout@v4
-      - uses: dorny/paths-filter@v3
+      - uses: actions/checkout@v6
+      - uses: dorny/paths-filter@v4
         id: changes
         with:
           filters: |
@@ -70,8 +70,8 @@ jobs:
     if: needs.detect-changes.outputs.auth == 'true'
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-go@v5
+      - uses: actions/checkout@v6
+      - uses: actions/setup-go@v6
         with:
           go-version: '1.26'
       - name: Build
@@ -86,8 +86,8 @@ jobs:
     if: needs.detect-changes.outputs.account == 'true'
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-go@v5
+      - uses: actions/checkout@v6
+      - uses: actions/setup-go@v6
         with:
           go-version: '1.26'
       - name: Build
@@ -102,8 +102,8 @@ jobs:
     if: needs.detect-changes.outputs.calendar == 'true'
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-go@v5
+      - uses: actions/checkout@v6
+      - uses: actions/setup-go@v6
         with:
           go-version: '1.26'
       - name: Build
@@ -118,8 +118,8 @@ jobs:
     if: needs.detect-changes.outputs.productivity == 'true'
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-go@v5
+      - uses: actions/checkout@v6
+      - uses: actions/setup-go@v6
         with:
           go-version: '1.26'
       - name: Build
@@ -134,8 +134,8 @@ jobs:
     if: needs.detect-changes.outputs.weather == 'true'
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-go@v5
+      - uses: actions/checkout@v6
+      - uses: actions/setup-go@v6
         with:
           go-version: '1.26'
       - name: Build
@@ -150,8 +150,8 @@ jobs:
     if: needs.detect-changes.outputs.recipe == 'true'
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-go@v5
+      - uses: actions/checkout@v6
+      - uses: actions/setup-go@v6
         with:
           go-version: '1.26'
       - name: Build
@@ -166,8 +166,8 @@ jobs:
     if: needs.detect-changes.outputs.category == 'true'
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-go@v5
+      - uses: actions/checkout@v6
+      - uses: actions/setup-go@v6
         with:
           go-version: '1.26'
       - name: Build
@@ -182,8 +182,8 @@ jobs:
     if: needs.detect-changes.outputs.shopping == 'true'
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-go@v5
+      - uses: actions/checkout@v6
+      - uses: actions/setup-go@v6
         with:
           go-version: '1.26'
       - name: Build
@@ -198,8 +198,8 @@ jobs:
     if: needs.detect-changes.outputs.package == 'true'
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-go@v5
+      - uses: actions/checkout@v6
+      - uses: actions/setup-go@v6
         with:
           go-version: '1.26'
       - name: Build
@@ -214,8 +214,8 @@ jobs:
     if: needs.detect-changes.outputs.tracker == 'true'
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-go@v5
+      - uses: actions/checkout@v6
+      - uses: actions/setup-go@v6
         with:
           go-version: '1.26'
       - name: Build
@@ -230,8 +230,8 @@ jobs:
     if: needs.detect-changes.outputs.workout == 'true'
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-go@v5
+      - uses: actions/checkout@v6
+      - uses: actions/setup-go@v6
         with:
           go-version: '1.26'
       - name: Build
@@ -246,8 +246,8 @@ jobs:
     if: needs.detect-changes.outputs.shared == 'true'
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-go@v5
+      - uses: actions/checkout@v6
+      - uses: actions/setup-go@v6
         with:
           go-version: '1.26'
       - name: Build shared modules
@@ -270,8 +270,8 @@ jobs:
     if: needs.detect-changes.outputs.frontend == 'true'
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@v6
+      - uses: actions/setup-node@v6
         with:
           node-version: '24'
           cache: 'npm'
@@ -338,7 +338,7 @@ jobs:
             dockerfile: frontend/Dockerfile
             changed: frontend
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
         if: needs.detect-changes.outputs[matrix.changed] == 'true'
       - name: Build Docker image
         if: needs.detect-changes.outputs[matrix.changed] == 'true'
