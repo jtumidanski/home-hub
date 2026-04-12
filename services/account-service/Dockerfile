@@ -9,6 +9,7 @@ COPY shared/go/logging/ shared/go/logging/
 COPY shared/go/database/ shared/go/database/
 COPY shared/go/server/ shared/go/server/
 COPY shared/go/auth/ shared/go/auth/
+COPY shared/go/retention/ shared/go/retention/
 
 # Copy service
 COPY services/account-service/ services/account-service/
