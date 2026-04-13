@@ -14,6 +14,19 @@ import type {
 } from "@/types/models/workout";
 import type { ApiListResponse, ApiResponse } from "@/types/api/responses";
 
+/** Flatten a nested `planned` object into the `plannedXxx` keys the backend expects. */
+function flattenPlanned(planned: Record<string, unknown>): Record<string, unknown> {
+  const out: Record<string, unknown> = {};
+  if (planned.sets != null) out.plannedSets = planned.sets;
+  if (planned.reps != null) out.plannedReps = planned.reps;
+  if (planned.weight != null) out.plannedWeight = planned.weight;
+  if (planned.weightUnit != null) out.plannedWeightUnit = planned.weightUnit;
+  if (planned.durationSeconds != null) out.plannedDurationSeconds = planned.durationSeconds;
+  if (planned.distance != null) out.plannedDistance = planned.distance;
+  if (planned.distanceUnit != null) out.plannedDistanceUnit = planned.distanceUnit;
+  return out;
+}
+
 class WorkoutService extends BaseService {
   constructor() {
     super("/workouts");
@@ -149,8 +162,10 @@ class WorkoutService extends BaseService {
     }
   ): Promise<WeekDocument> {
     this.setTenant(tenant);
+    const { planned, ...rest } = attrs;
+    const flat = { ...rest, ...(planned ? flattenPlanned(planned) : {}) };
     return api.post<WeekDocument>(`/workouts/weeks/${weekStart}/items`, {
-      data: { type: "planned-items", attributes: attrs },
+      data: { type: "planned-items", attributes: flat },
     });
   }
   updatePlannedItem(
@@ -160,8 +175,10 @@ class WorkoutService extends BaseService {
     attrs: Record<string, unknown>
   ): Promise<WeekDocument> {
     this.setTenant(tenant);
+    const { planned, ...rest } = attrs;
+    const flat = { ...rest, ...(planned ? flattenPlanned(planned as Record<string, unknown>) : {}) };
     return api.patch<WeekDocument>(`/workouts/weeks/${weekStart}/items/${itemId}`, {
-      data: { type: "planned-items", attributes: attrs },
+      data: { type: "planned-items", attributes: flat },
     });
   }
   deletePlannedItem(tenant: { id: string }, weekStart: string, itemId: string): Promise<void> {
