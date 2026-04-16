@@ -1,13 +1,14 @@
 import { useState, useEffect, useRef } from "react";
 import { recipeService } from "@/services/api/recipe";
 import { useTenant } from "@/context/tenant-context";
-import type { Ingredient, Step, ParseError, RecipeMetadata, NormalizationStatus } from "@/types/models/recipe";
+import type { Ingredient, Step, ParseError, RecipeMetadata, NormalizationStatus, PositionalNote } from "@/types/models/recipe";
 
 interface CooklangPreview {
   ingredients: Ingredient[];
   steps: Step[];
   errors: ParseError[];
   metadata: RecipeMetadata | null;
+  notes: PositionalNote[];
   normalization: NormalizationStatus[] | null;
   isLoading: boolean;
 }
@@ -18,6 +19,7 @@ export function useCooklangPreview(source: string, debounceMs = 300): CooklangPr
   const [steps, setSteps] = useState<Step[]>([]);
   const [errors, setErrors] = useState<ParseError[]>([]);
   const [metadata, setMetadata] = useState<RecipeMetadata | null>(null);
+  const [notes, setNotes] = useState<PositionalNote[]>([]);
   const [normalization, setNormalization] = useState<NormalizationStatus[] | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const cancelledRef = useRef(false);
@@ -34,6 +36,7 @@ export function useCooklangPreview(source: string, debounceMs = 300): CooklangPr
       setSteps([]);
       setErrors([]);
       setMetadata(null);
+      setNotes([]);
       setNormalization(null);
       setIsLoading(false);
       return;
@@ -51,6 +54,7 @@ export function useCooklangPreview(source: string, debounceMs = 300): CooklangPr
         setSteps(attrs.steps ?? []);
         setErrors(attrs.errors ?? []);
         setMetadata(attrs.metadata ?? null);
+        setNotes(attrs.notes ?? []);
         setNormalization(attrs.normalization ?? null);
       } catch {
         // Silently ignore errors from cancelled/failed requests
@@ -69,5 +73,5 @@ export function useCooklangPreview(source: string, debounceMs = 300): CooklangPr
     };
   }, [source, tenant, debounceMs]);
 
-  return { ingredients, steps, errors, metadata, normalization, isLoading };
+  return { ingredients, steps, errors, metadata, notes, normalization, isLoading };
 }

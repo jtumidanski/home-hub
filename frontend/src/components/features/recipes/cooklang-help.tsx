@@ -40,7 +40,9 @@ export function CooklangHelp() {
           <div className="space-y-1.5">
             <p className="font-semibold">Structure:</p>
             <p><code className="bg-muted px-1 rounded">= Section Name</code> — section header</p>
-            <p><code className="bg-muted px-1 rounded">&gt; Note text</code> — note (not a step)</p>
+            <p><code className="bg-muted px-1 rounded">==Section==</code> or <code className="bg-muted px-1 rounded">=== Section ===</code> — extra <code>=</code> chars are cosmetic</p>
+            <p><code className="bg-muted px-1 rounded">==</code> alone — clears the active section</p>
+            <p><code className="bg-muted px-1 rounded">&gt; Note text</code> — note rendered between steps at its position in the source</p>
             <p><code className="bg-muted px-1 rounded">--</code> — line comment</p>
             <p>Blank lines separate steps.</p>
           </div>

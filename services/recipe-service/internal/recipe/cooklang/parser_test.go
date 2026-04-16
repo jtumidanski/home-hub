@@ -247,8 +247,9 @@ Cook @rice{200%g}.`
 
 	result := Parse(source)
 	require.Len(t, result.Steps, 1)
-	require.Len(t, result.Metadata.Notes, 1)
-	assert.Equal(t, "These freeze well. Double the batch.", result.Metadata.Notes[0])
+	require.Len(t, result.Notes, 1)
+	assert.Equal(t, "These freeze well. Double the batch.", result.Notes[0].Text)
+	assert.Equal(t, 0, result.Notes[0].Position)
 }
 
 func TestParse_RecipeReference(t *testing.T) {
@@ -398,7 +399,7 @@ Serve with @./Sauces/Salsa Verde{}.`
 	assert.Equal(t, "20 minutes", result.Metadata.PrepTime)
 	assert.Equal(t, "35 minutes", result.Metadata.CookTime)
 	require.Len(t, result.Metadata.Tags, 2)
-	require.Len(t, result.Metadata.Notes, 1)
+	require.Len(t, result.Notes, 1)
 
 	// Steps — should NOT include metadata, blockquote, or section headers
 	require.Len(t, result.Steps, 7)
@@ -445,4 +446,80 @@ func TestValidate_UnclosedBrace(t *testing.T) {
 func TestValidate_EmptySource(t *testing.T) {
 	errs := Validate("")
 	assert.Empty(t, errs)
+}
+
+func TestParse_SectionVariants(t *testing.T) {
+	cases := []string{
+		"= Filling",
+		"==Filling==",
+		"== Filling",
+		"== Filling ==",
+		"=== Filling ===",
+		"=  Filling  =",
+	}
+	for _, header := range cases {
+		t.Run(header, func(t *testing.T) {
+			source := header + "\n\nCook @rice{200%g}."
+			result := Parse(source)
+			require.Len(t, result.Steps, 1, "header: %q", header)
+			assert.Equal(t, "Filling", result.Steps[0].Section, "header: %q", header)
+			for _, seg := range result.Steps[0].Segments {
+				assert.NotContains(t, seg.Value, "==")
+			}
+		})
+	}
+}
+
+func TestParse_SectionInlineWithStep(t *testing.T) {
+	source := "==Dough==\nMix @flour{500%g}"
+	result := Parse(source)
+	require.Len(t, result.Steps, 1)
+	assert.Equal(t, "Dough", result.Steps[0].Section)
+	for _, seg := range result.Steps[0].Segments {
+		assert.NotContains(t, seg.Value, "==")
+	}
+}
+
+func TestParse_BareSectionClearsActive(t *testing.T) {
+	source := "= Filling\n\nCook @rice{200%g}.\n\n==\n\nServe."
+	result := Parse(source)
+	require.Len(t, result.Steps, 2)
+	assert.Equal(t, "Filling", result.Steps[0].Section)
+	assert.Equal(t, "", result.Steps[1].Section)
+}
+
+func TestParse_NotePositions(t *testing.T) {
+	t.Run("before first step", func(t *testing.T) {
+		source := "> First note\n\nStep one.\n\nStep two."
+		result := Parse(source)
+		require.Len(t, result.Steps, 2)
+		require.Len(t, result.Notes, 1)
+		assert.Equal(t, 0, result.Notes[0].Position)
+		assert.Equal(t, "First note", result.Notes[0].Text)
+	})
+
+	t.Run("between steps", func(t *testing.T) {
+		source := "Step one.\n\n> Middle note\n\nStep two."
+		result := Parse(source)
+		require.Len(t, result.Steps, 2)
+		require.Len(t, result.Notes, 1)
+		assert.Equal(t, 1, result.Notes[0].Position)
+	})
+
+	t.Run("after last step", func(t *testing.T) {
+		source := "Step one.\n\nStep two.\n\n> Trailing note"
+		result := Parse(source)
+		require.Len(t, result.Steps, 2)
+		require.Len(t, result.Notes, 1)
+		assert.Equal(t, 2, result.Notes[0].Position)
+	})
+
+	t.Run("after section header before any step", func(t *testing.T) {
+		source := "Step one.\n\n= Filling\n\n> Section note\n\nCook @rice{200%g}."
+		result := Parse(source)
+		require.Len(t, result.Steps, 2)
+		require.Len(t, result.Notes, 1)
+		assert.Equal(t, 1, result.Notes[0].Position)
+		assert.Equal(t, "Filling", result.Steps[1].Section)
+	})
 }

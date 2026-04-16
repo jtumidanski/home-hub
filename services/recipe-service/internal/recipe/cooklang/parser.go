@@ -19,7 +19,7 @@ func Parse(source string) ParseResult {
 
 	metadata, body := extractMetadata(source)
 	body = stripComments(body)
-	body = stripNotes(body, &metadata)
+	body, notes := stripNotesPositional(body)
 	blocks := splitSteps(body)
 
 	var steps []Step
@@ -33,9 +33,8 @@ func Parse(source string) ParseResult {
 			continue
 		}
 
-		// Section header: = Filling
-		if strings.HasPrefix(text, "= ") || text == "=" {
-			currentSection = strings.TrimSpace(text[1:])
+		if name, ok := matchSection(text); ok {
+			currentSection = name
 			continue
 		}
 
@@ -69,7 +68,25 @@ func Parse(source string) ParseResult {
 		Ingredients: ingredients,
 		Steps:       steps,
 		Metadata:    metadata,
+		Notes:       notes,
 	}
+}
+
+var sectionRe = regexp.MustCompile(`^=+\s*(.*?)\s*=*\s*$`)
+
+// matchSection returns the section name (possibly empty to clear the active
+// section) if the line is a section header. Recognizes any number of leading
+// `=` characters with optional trailing `=` characters: `= Foo`, `==Foo==`,
+// `=== Foo ===`, `==`, etc.
+func matchSection(trimmed string) (string, bool) {
+	if !strings.HasPrefix(trimmed, "=") {
+		return "", false
+	}
+	m := sectionRe.FindStringSubmatch(trimmed)
+	if m == nil {
+		return "", false
+	}
+	return strings.TrimSpace(m[1]), true
 }
 
 // extractMetadata strips metadata blocks (--- ... ---) from the source
@@ -147,22 +164,45 @@ func extractMetadata(source string) (Metadata, string) {
 	return meta, remaining
 }
 
-// stripNotes removes blockquote lines (> ...) and collects them as notes in metadata.
-func stripNotes(source string, meta *Metadata) string {
+// stripNotesPositional removes blockquote lines (> ...) from the source and
+// returns them as PositionalNote values whose Position is the index of the
+// step block that follows the note (mirrors splitSteps block counting:
+// section-header lines and blank lines do not advance the index).
+func stripNotesPositional(source string) (string, []PositionalNote) {
 	lines := strings.Split(source, "\n")
-	var result []string
+	var resultLines []string
+	var notes []PositionalNote
+	blockIndex := 0
+	inBlock := false
 	for _, line := range lines {
 		trimmed := strings.TrimSpace(line)
 		if strings.HasPrefix(trimmed, ">") {
-			note := strings.TrimSpace(strings.TrimPrefix(trimmed, ">"))
-			if note != "" {
-				meta.Notes = append(meta.Notes, note)
+			text := strings.TrimSpace(strings.TrimPrefix(trimmed, ">"))
+			if text != "" {
+				notes = append(notes, PositionalNote{Position: blockIndex, Text: text})
 			}
-		} else {
-			result = append(result, line)
+			continue
 		}
+		if trimmed == "" {
+			if inBlock {
+				blockIndex++
+				inBlock = false
+			}
+			resultLines = append(resultLines, line)
+			continue
+		}
+		if _, isSection := matchSection(trimmed); isSection {
+			if inBlock {
+				blockIndex++
+				inBlock = false
+			}
+			resultLines = append(resultLines, line)
+			continue
+		}
+		inBlock = true
+		resultLines = append(resultLines, line)
 	}
-	return strings.Join(result, "\n")
+	return strings.Join(resultLines, "\n"), notes
 }
 
 // Validate checks Cooklang source for syntax errors without fully parsing.
@@ -195,7 +235,10 @@ func Validate(source string) []ParseError {
 
 		// Skip notes and section headers
 		trimmed := strings.TrimSpace(line)
-		if strings.HasPrefix(trimmed, ">") || strings.HasPrefix(trimmed, "= ") {
+		if strings.HasPrefix(trimmed, ">") {
+			continue
+		}
+		if _, isSection := matchSection(trimmed); isSection {
 			continue
 		}
 
@@ -277,30 +320,29 @@ func splitSteps(source string) []string {
 	lines := strings.Split(source, "\n")
 	var blocks []string
 	var current strings.Builder
-
+	flush := func() {
+		if current.Len() > 0 {
+			blocks = append(blocks, current.String())
+			current.Reset()
+		}
+	}
 	for _, line := range lines {
 		trimmed := strings.TrimSpace(line)
 		if trimmed == "" {
-			if current.Len() > 0 {
-				blocks = append(blocks, current.String())
-				current.Reset()
-			}
-		} else {
-			if current.Len() > 0 {
-				// Section headers get their own block
-				if strings.HasPrefix(trimmed, "= ") || trimmed == "=" {
-					blocks = append(blocks, current.String())
-					current.Reset()
-				} else {
-					current.WriteString(" ")
-				}
-			}
-			current.WriteString(trimmed)
+			flush()
+			continue
 		}
+		if _, isSection := matchSection(trimmed); isSection {
+			flush()
+			blocks = append(blocks, trimmed)
+			continue
+		}
+		if current.Len() > 0 {
+			current.WriteString(" ")
+		}
+		current.WriteString(trimmed)
 	}
-	if current.Len() > 0 {
-		blocks = append(blocks, current.String())
-	}
+	flush()
 	return blocks
 }
 

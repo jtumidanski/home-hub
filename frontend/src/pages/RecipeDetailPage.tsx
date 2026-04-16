@@ -167,7 +167,7 @@ export function RecipeDetailPage() {
 
         <div>
           <h2 className="text-lg font-semibold mb-3">Instructions</h2>
-          <RecipeSteps steps={attrs.steps} />
+          <RecipeSteps steps={attrs.steps} notes={attrs.notes} />
         </div>
       </div>
 

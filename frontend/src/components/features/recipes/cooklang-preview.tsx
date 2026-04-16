@@ -1,16 +1,17 @@
 import { Loader2 } from "lucide-react";
 import { RecipeIngredients } from "./recipe-ingredients";
 import { RecipeSteps } from "./recipe-steps";
-import type { Ingredient, Step, ParseError } from "@/types/models/recipe";
+import type { Ingredient, Step, ParseError, PositionalNote } from "@/types/models/recipe";
 
 interface CooklangPreviewProps {
   ingredients: Ingredient[];
   steps: Step[];
   errors: ParseError[];
+  notes?: PositionalNote[] | undefined;
   isLoading: boolean;
 }
 
-export function CooklangPreview({ ingredients, steps, errors, isLoading }: CooklangPreviewProps) {
+export function CooklangPreview({ ingredients, steps, errors, notes, isLoading }: CooklangPreviewProps) {
   const isEmpty = ingredients.length === 0 && steps.length === 0 && errors.length === 0;
 
   return (
@@ -47,7 +48,7 @@ export function CooklangPreview({ ingredients, steps, errors, isLoading }: Cookl
       {steps.length > 0 && (
         <div>
           <h3 className="text-base font-semibold mb-2">Steps</h3>
-          <RecipeSteps steps={steps} />
+          <RecipeSteps steps={steps} notes={notes} />
         </div>
       )}
     </div>
