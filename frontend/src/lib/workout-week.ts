@@ -3,11 +3,15 @@
 // still needs a Monday for the URL when no `:weekStart` parameter is supplied.
 
 export function isoMondayOf(date: Date): string {
-  const d = new Date(Date.UTC(date.getUTCFullYear(), date.getUTCMonth(), date.getUTCDate()));
+  // Use local calendar date so the week doesn't flip at UTC midnight.
+  const d = new Date(date.getFullYear(), date.getMonth(), date.getDate());
   // Sunday=0..Saturday=6 in JS; convert to Mon=0..Sun=6 then subtract.
-  const iso = (d.getUTCDay() + 6) % 7;
-  d.setUTCDate(d.getUTCDate() - iso);
-  return d.toISOString().slice(0, 10);
+  const iso = (d.getDay() + 6) % 7;
+  d.setDate(d.getDate() - iso);
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, "0");
+  const day = String(d.getDate()).padStart(2, "0");
+  return `${y}-${m}-${day}`;
 }
 
 export function addDays(weekStart: string, days: number): string {

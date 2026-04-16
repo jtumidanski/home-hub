@@ -81,7 +81,7 @@ func TestTaskSummary(t *testing.T) {
 
 			l, _ := test.NewNullLogger()
 			proc := NewProcessor(l, context.Background(), db)
-			s, err := proc.TaskSummary()
+			s, err := proc.TaskSummary(time.Now())
 			require.NoError(t, err)
 			require.Equal(t, tc.expectPending, s.PendingCount)
 		})
