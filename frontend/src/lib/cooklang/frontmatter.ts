@@ -5,7 +5,7 @@ export function ensureFrontmatter(source: string, title: string, description: st
   const trimmed = source.trimStart();
   const match = FM_BLOCK.exec(trimmed);
   if (match) {
-    const block = match[1];
+    const block = match[1] ?? "";
     const additions: string[] = [];
     if (!HAS_KEY("title").test(block) && title) additions.push(`title: ${title}`);
     if (!HAS_KEY("description").test(block) && description) additions.push(`description: ${description}`);
