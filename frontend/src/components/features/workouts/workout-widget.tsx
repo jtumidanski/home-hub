@@ -2,7 +2,7 @@ import { Link } from "react-router-dom";
 import { useWorkoutToday } from "@/lib/hooks/api/use-workouts";
 import { Card, CardAction, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Dumbbell, BedDouble, Check, Circle, ChevronRight } from "lucide-react";
+import { Dumbbell, BedDouble, Check, Circle, CircleDot, SkipForward, ChevronRight } from "lucide-react";
 
 export function WorkoutWidget() {
   const { data, isLoading, isError } = useWorkoutToday();
@@ -58,15 +58,20 @@ export function WorkoutWidget() {
           ) : (
             <div className="space-y-2">
               {items.map((item) => {
-                const done = item.performance?.status === "done";
+                const status = item.performance?.status;
+                const resolved = status === "done" || status === "skipped";
                 return (
                   <div key={item.id} className="flex items-center gap-2">
-                    {done ? (
-                      <Check className="h-4 w-4 text-green-600 shrink-0" />
+                    {status === "done" ? (
+                      <Check className="h-4 w-4 text-green-600 shrink-0" aria-label="Completed" />
+                    ) : status === "skipped" ? (
+                      <SkipForward className="h-4 w-4 text-muted-foreground shrink-0" aria-label="Skipped" />
+                    ) : status === "partial" ? (
+                      <CircleDot className="h-4 w-4 text-yellow-600 shrink-0" aria-label="Partially completed" />
                     ) : (
-                      <Circle className="h-4 w-4 text-muted-foreground shrink-0" />
+                      <Circle className="h-4 w-4 text-muted-foreground shrink-0" aria-label="Pending" />
                     )}
-                    <span className={`text-sm truncate ${done ? "text-muted-foreground line-through" : ""}`}>
+                    <span className={`text-sm truncate ${resolved ? "text-muted-foreground line-through" : ""}`}>
                       {item.exerciseName}
                     </span>
                   </div>
