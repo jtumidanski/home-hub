@@ -1,5 +1,6 @@
 import { Link } from "react-router-dom";
 import { usePlans, usePlan } from "@/lib/hooks/api/use-meals";
+import { useTenant } from "@/context/tenant-context";
 import { Card, CardAction, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { UtensilsCrossed, ChevronRight } from "lucide-react";
@@ -15,9 +16,11 @@ const SLOT_LABELS: Record<Slot, string> = {
 };
 
 export function MealPlanWidget() {
-  const monday = getLocalWeekStart();
+  const { household } = useTenant();
+  const timezone = household?.attributes.timezone;
+  const monday = getLocalWeekStart(timezone);
   const weekStart = `${monday.getFullYear()}-${String(monday.getMonth() + 1).padStart(2, "0")}-${String(monday.getDate()).padStart(2, "0")}`;
-  const todayStr = getLocalTodayStr();
+  const todayStr = getLocalTodayStr(timezone);
 
   const { data: plansData, isLoading: plansLoading, isError: plansError } = usePlans({
     starts_on: weekStart,

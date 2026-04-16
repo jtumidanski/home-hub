@@ -7,6 +7,7 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useMonthSummary, usePutEntry, useDeleteEntry, useSkipEntry } from "@/lib/hooks/api/use-trackers";
+import { useTenant } from "@/context/tenant-context";
 import { cn } from "@/lib/utils";
 import { getLocalTodayStr, getLocalMonth } from "@/lib/date-utils";
 import type { MonthItemInfo, TrackerEntry, SentimentValue, NumericValue, RangeValue } from "@/types/models/tracker";
@@ -69,6 +70,8 @@ interface Props {
 }
 
 export function CalendarGrid({ month, onMonthChange, onViewReport }: Props) {
+  const { household } = useTenant();
+  const timezone = household?.attributes.timezone;
   const { data, isLoading } = useMonthSummary(month);
   const putEntry = usePutEntry();
   const deleteEntry = useDeleteEntry();
@@ -88,11 +91,11 @@ export function CalendarGrid({ month, onMonthChange, onViewReport }: Props) {
   }, [data?.data?.relationships?.entries?.data]);
 
   const daysInMonth = getDaysInMonth(month);
-  const today = getLocalTodayStr();
+  const today = getLocalTodayStr(timezone);
   const parts = month.split("-");
   const y = parts[0] ?? "2026";
   const m = parts[1] ?? "01";
-  const currentMonth = getLocalMonth();
+  const currentMonth = getLocalMonth(timezone);
 
   const prevMonth = () => {
     const d = new Date(parseInt(y), parseInt(m) - 2);
@@ -134,6 +137,7 @@ export function CalendarGrid({ month, onMonthChange, onViewReport }: Props) {
           putEntry={putEntry}
           deleteEntry={deleteEntry}
           skipEntry={skipEntry}
+          timezone={timezone}
         />
       </div>
 
@@ -198,15 +202,16 @@ export function CalendarGrid({ month, onMonthChange, onViewReport }: Props) {
   );
 }
 
-function MobileDayView({ month, items, entryMap, putEntry, deleteEntry, skipEntry }: {
+function MobileDayView({ month, items, entryMap, putEntry, deleteEntry, skipEntry, timezone }: {
   month: string;
   items: MonthItemInfo[];
   entryMap: Map<string, TrackerEntry>;
   putEntry: ReturnType<typeof usePutEntry>;
   deleteEntry: ReturnType<typeof useDeleteEntry>;
   skipEntry: ReturnType<typeof useSkipEntry>;
+  timezone: string | undefined;
 }) {
-  const today = getLocalTodayStr();
+  const today = getLocalTodayStr(timezone);
   const daysInMonth = getDaysInMonth(month);
   const [y, m] = splitMonth(month);
   const monthKey = `${y}-${m}`;

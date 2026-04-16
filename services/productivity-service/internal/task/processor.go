@@ -82,10 +82,10 @@ func (p *Processor) PendingCount() (int64, error) {
 	return countByStatus(p.db.WithContext(p.ctx), "pending")
 }
 
-func (p *Processor) CompletedTodayCount() (int64, error) {
-	return countCompletedToday(p.db.WithContext(p.ctx))
+func (p *Processor) CompletedTodayCount(now time.Time) (int64, error) {
+	return countCompletedToday(p.db.WithContext(p.ctx), now)
 }
 
-func (p *Processor) OverdueCount() (int64, error) {
-	return countOverdue(p.db.WithContext(p.ctx))
+func (p *Processor) OverdueCount(now time.Time) (int64, error) {
+	return countOverdue(p.db.WithContext(p.ctx), now)
 }
