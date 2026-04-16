@@ -224,6 +224,7 @@ export function RecipeFormPage() {
                   ingredients={preview.ingredients}
                   steps={preview.steps}
                   errors={preview.errors}
+                  notes={preview.notes}
                   isLoading={preview.isLoading}
                 />
 

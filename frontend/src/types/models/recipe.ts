@@ -73,11 +73,17 @@ export interface RecipeListAttributes {
   updatedAt: string;
 }
 
+export interface PositionalNote {
+  position: number;
+  text: string;
+}
+
 export interface RecipeDetailAttributes extends RecipeListAttributes {
   sourceUrl?: string;
   source: string;
   ingredients: RecipeIngredient[];
   steps: Step[];
+  notes?: PositionalNote[];
   plannerConfig?: PlannerConfig;
   plannerIssues: string[];
 }
@@ -134,7 +140,6 @@ export interface RecipeMetadata {
   servings?: string;
   prepTime?: string;
   cookTime?: string;
-  notes?: string[];
   extra?: Record<string, string>;
 }
 
@@ -145,6 +150,7 @@ export interface RecipeParseResult {
     ingredients: Ingredient[];
     steps: Step[];
     metadata: RecipeMetadata;
+    notes?: PositionalNote[];
     errors?: ParseError[];
     normalization?: NormalizationStatus[];
   };

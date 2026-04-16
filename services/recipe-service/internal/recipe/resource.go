@@ -53,6 +53,7 @@ func parseHandler(db *gorm.DB) server.InputHandler[ParseRequest] {
 				Ingredients: result.Ingredients,
 				Steps:       result.Steps,
 				Metadata:    result.Metadata,
+				Notes:       result.Notes,
 				Errors:      result.Errors,
 			}
 			if rest.Ingredients == nil {
@@ -60,6 +61,9 @@ func parseHandler(db *gorm.DB) server.InputHandler[ParseRequest] {
 			}
 			if rest.Steps == nil {
 				rest.Steps = []cooklang.Step{}
+			}
+			if rest.Notes == nil {
+				rest.Notes = []cooklang.PositionalNote{}
 			}
 
 			// Add normalization preview

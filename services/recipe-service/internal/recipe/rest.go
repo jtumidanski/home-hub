@@ -54,6 +54,7 @@ type RestDetailModel struct {
 	Source          string                             `json:"source"`
 	Ingredients     []normalization.RestIngredientModel `json:"ingredients"`
 	Steps           []cooklang.Step                    `json:"steps"`
+	Notes           []cooklang.PositionalNote          `json:"notes"`
 	PlannerConfig   *RestPlannerConfigModel            `json:"plannerConfig,omitempty"`
 	PlannerReady    bool                               `json:"plannerReady"`
 	PlannerIssues   []string                           `json:"plannerIssues"`
@@ -117,11 +118,15 @@ func TransformDetail(m Model, parsed cooklang.ParseResult, enrichment DetailEnri
 	if steps == nil {
 		steps = []cooklang.Step{}
 	}
+	notes := parsed.Notes
+	if notes == nil {
+		notes = []cooklang.PositionalNote{}
+	}
 	return RestDetailModel{
 		Id: m.Id(), Title: m.Title(), Description: m.Description(),
 		Servings: m.Servings(), PrepTimeMinutes: m.PrepTimeMinutes(), CookTimeMinutes: m.CookTimeMinutes(),
 		SourceURL: m.SourceURL(), Tags: tags, Source: m.Source(),
-		Ingredients: ingredients, Steps: steps,
+		Ingredients: ingredients, Steps: steps, Notes: notes,
 		PlannerConfig: enrichment.PlannerConfig, PlannerReady: enrichment.Readiness.Ready, PlannerIssues: enrichment.Readiness.Issues,
 		CreatedAt: m.CreatedAt(), UpdatedAt: m.UpdatedAt(),
 	}
@@ -139,11 +144,12 @@ func (r *RestTagModel) SetID(id string) error { r.Tag = id; return nil }
 
 // RestParseModel is the JSON:API representation for a parse result.
 type RestParseModel struct {
-	Ingredients   []cooklang.Ingredient             `json:"ingredients"`
-	Steps         []cooklang.Step                   `json:"steps"`
-	Metadata      cooklang.Metadata                 `json:"metadata"`
-	Errors        []cooklang.ParseError             `json:"errors,omitempty"`
-	Normalization []normalization.PreviewResult      `json:"normalization,omitempty"`
+	Ingredients   []cooklang.Ingredient        `json:"ingredients"`
+	Steps         []cooklang.Step              `json:"steps"`
+	Metadata      cooklang.Metadata            `json:"metadata"`
+	Notes         []cooklang.PositionalNote    `json:"notes"`
+	Errors        []cooklang.ParseError        `json:"errors,omitempty"`
+	Normalization []normalization.PreviewResult `json:"normalization,omitempty"`
 }
 
 func (r RestParseModel) GetName() string       { return "recipe-parse" }

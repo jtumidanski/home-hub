@@ -32,21 +32,26 @@ type Ingredient struct {
 }
 
 type Metadata struct {
-	Tags            []string          `json:"tags,omitempty"`
-	Source          string            `json:"source,omitempty"`
-	Title           string            `json:"title,omitempty"`
-	Servings        string            `json:"servings,omitempty"`
-	PrepTime        string            `json:"prepTime,omitempty"`
-	CookTime        string            `json:"cookTime,omitempty"`
-	Notes           []string          `json:"notes,omitempty"`
-	Extra           map[string]string `json:"extra,omitempty"`
+	Tags     []string          `json:"tags,omitempty"`
+	Source   string            `json:"source,omitempty"`
+	Title    string            `json:"title,omitempty"`
+	Servings string            `json:"servings,omitempty"`
+	PrepTime string            `json:"prepTime,omitempty"`
+	CookTime string            `json:"cookTime,omitempty"`
+	Extra    map[string]string `json:"extra,omitempty"`
+}
+
+type PositionalNote struct {
+	Position int    `json:"position"`
+	Text     string `json:"text"`
 }
 
 type ParseResult struct {
-	Ingredients []Ingredient `json:"ingredients"`
-	Steps       []Step       `json:"steps"`
-	Metadata    Metadata     `json:"metadata"`
-	Errors      []ParseError `json:"errors,omitempty"`
+	Ingredients []Ingredient     `json:"ingredients"`
+	Steps       []Step           `json:"steps"`
+	Metadata    Metadata         `json:"metadata"`
+	Notes       []PositionalNote `json:"notes,omitempty"`
+	Errors      []ParseError     `json:"errors,omitempty"`
 }
 
 type ParseError struct {
