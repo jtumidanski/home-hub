@@ -32,13 +32,14 @@ type Ingredient struct {
 }
 
 type Metadata struct {
-	Tags     []string          `json:"tags,omitempty"`
-	Source   string            `json:"source,omitempty"`
-	Title    string            `json:"title,omitempty"`
-	Servings string            `json:"servings,omitempty"`
-	PrepTime string            `json:"prepTime,omitempty"`
-	CookTime string            `json:"cookTime,omitempty"`
-	Extra    map[string]string `json:"extra,omitempty"`
+	Tags        []string          `json:"tags,omitempty"`
+	Source      string            `json:"source,omitempty"`
+	Title       string            `json:"title,omitempty"`
+	Description string            `json:"description,omitempty"`
+	Servings    string            `json:"servings,omitempty"`
+	PrepTime    string            `json:"prepTime,omitempty"`
+	CookTime    string            `json:"cookTime,omitempty"`
+	Extra       map[string]string `json:"extra,omitempty"`
 }
 
 type PositionalNote struct {

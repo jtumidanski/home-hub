@@ -137,6 +137,7 @@ export interface RecipeMetadata {
   tags?: string[];
   source?: string;
   title?: string;
+  description?: string;
   servings?: string;
   prepTime?: string;
   cookTime?: string;

@@ -14,12 +14,12 @@ import { PlannerConfigForm } from "@/components/features/recipes/planner-config-
 import { RecipeIngredients } from "@/components/features/recipes/recipe-ingredients";
 import { useMobile } from "@/lib/hooks/use-mobile";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { createErrorFromUnknown } from "@/lib/api/errors";
 import { extractClassification } from "@/lib/constants/recipe";
+import { ensureFrontmatter } from "@/lib/cooklang/frontmatter";
 import type { PlannerConfig } from "@/types/models/recipe";
 
 export function RecipeFormPage() {
@@ -43,14 +43,14 @@ export function RecipeFormPage() {
   const sourceValue = form.watch("source");
   const preview = useCooklangPreview(sourceValue ?? "");
 
-  // Populate form for edit mode
+  // Populate form for edit mode. For legacy recipes whose source lacks
+  // title/description in frontmatter, inject them from the DB columns so the
+  // user sees and edits the values in the cooklang editor.
   useEffect(() => {
     if (isEditing && existingData?.data) {
       const attrs = existingData.data.attributes;
       form.reset({
-        title: attrs.title,
-        description: attrs.description ?? "",
-        source: attrs.source,
+        source: ensureFrontmatter(attrs.source, attrs.title, attrs.description ?? ""),
       });
       if (attrs.plannerConfig) {
         setPlannerConfig(attrs.plannerConfig);
@@ -58,10 +58,23 @@ export function RecipeFormPage() {
     }
   }, [isEditing, existingData, form]);
 
+  // Derived metadata from the Cooklang source preview
+  const meta = preview.metadata;
+  const derivedTitle = meta?.title?.trim() ?? "";
+  const derivedDescription = meta?.description?.trim() ?? "";
+  const derivedTags = meta?.tags ?? [];
+  const derivedSource = meta?.source ?? "";
+  const derivedServings = meta?.servings ?? "";
+  const derivedPrepTime = meta?.prepTime ?? "";
+  const derivedCookTime = meta?.cookTime ?? "";
+
   const onSubmit = async (values: RecipeFormData) => {
-    // Derive classification from cooklang tags
+    if (!derivedTitle) {
+      toast.error("Add a `title:` line to the recipe frontmatter");
+      return;
+    }
+
     const classification = extractClassification(derivedTags);
-    // Derive servingsYield from cooklang metadata
     const parsedServings = derivedServings ? parseInt(derivedServings, 10) : undefined;
     const servingsYield = parsedServings && !isNaN(parsedServings) ? parsedServings : undefined;
 
@@ -74,8 +87,8 @@ export function RecipeFormPage() {
     };
     const hasPlanner = mergedConfig.classification || mergedConfig.servingsYield || mergedConfig.eatWithinDays || mergedConfig.minGapDays || mergedConfig.maxConsecutiveDays;
     const attrs = {
-      title: values.title,
-      description: values.description || undefined,
+      title: derivedTitle,
+      description: derivedDescription || undefined,
       source: values.source,
       plannerConfig: hasPlanner ? mergedConfig : undefined,
     };
@@ -95,15 +108,6 @@ export function RecipeFormPage() {
     }
   };
 
-  // Derived metadata from the Cooklang source preview
-  const meta = preview.metadata;
-  const derivedTags = meta?.tags ?? [];
-  const derivedSource = meta?.source ?? "";
-  const derivedServings = meta?.servings ?? "";
-  const derivedPrepTime = meta?.prepTime ?? "";
-  const derivedCookTime = meta?.cookTime ?? "";
-
-  // Existing normalized ingredients (edit mode only)
   const existingIngredients = existingData?.data?.attributes?.ingredients ?? [];
 
   return (
@@ -116,40 +120,8 @@ export function RecipeFormPage() {
 
       <Form {...form}>
         <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-          {/* Title and description */}
-          <div className="space-y-4">
-            <FormField
-              control={form.control}
-              name="title"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Title</FormLabel>
-                  <FormControl>
-                    <Input placeholder="Recipe title" {...field} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-            <FormField
-              control={form.control}
-              name="description"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Description</FormLabel>
-                  <FormControl>
-                    <Input placeholder="Brief description (optional)" {...field} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-          </div>
-
-          {/* Planner settings */}
           <PlannerConfigForm value={plannerConfig} onChange={setPlannerConfig} />
 
-          {/* Cooklang editor + preview */}
           <div className={isMobile ? "space-y-4" : "grid grid-cols-2 gap-6"}>
             <div className="space-y-2">
               <FormField
@@ -160,7 +132,7 @@ export function RecipeFormPage() {
                     <FormLabel>Recipe (Cooklang)</FormLabel>
                     <FormControl>
                       <Textarea
-                        placeholder={"---\nsource: https://example.com\ntags: italian, pasta\nservings: 4\nprep time: 10 minutes\ncook time: 20 minutes\n---\n\nBring @water{2%l} to a boil in a #large pot{}.\n\nCook @spaghetti{400%g} until al dente."}
+                        placeholder={"---\ntitle: My Recipe\ndescription: A short summary\nsource: https://example.com\ntags: italian, pasta\nservings: 4\nprep time: 10 minutes\ncook time: 20 minutes\n---\n\nBring @water{2%l} to a boil in a #large pot{}.\n\nCook @spaghetti{400%g} until al dente."}
                         className="min-h-[400px] font-mono text-sm"
                         {...field}
                       />
@@ -175,7 +147,19 @@ export function RecipeFormPage() {
             <div className="space-y-2">
               <label className="text-sm font-medium leading-none">Preview</label>
               <div className="rounded-md border p-4 bg-muted/30 min-h-[400px] space-y-4">
-                {/* Show derived metadata from Cooklang source */}
+                {(derivedTitle || derivedDescription) && (
+                  <div className="space-y-1 border-b pb-3">
+                    {derivedTitle ? (
+                      <h2 className="text-lg font-semibold leading-tight">{derivedTitle}</h2>
+                    ) : (
+                      <p className="text-sm italic text-muted-foreground">Missing title — add `title:` to frontmatter</p>
+                    )}
+                    {derivedDescription && (
+                      <p className="text-sm text-muted-foreground">{derivedDescription}</p>
+                    )}
+                  </div>
+                )}
+
                 {(derivedTags.length > 0 || derivedSource || derivedServings || derivedPrepTime || derivedCookTime) && (
                   <div className="space-y-2 border-b pb-3">
                     <div className="space-y-1 text-xs text-muted-foreground">
@@ -228,7 +212,6 @@ export function RecipeFormPage() {
                   isLoading={preview.isLoading}
                 />
 
-                {/* Normalization status in preview */}
                 {preview.normalization && preview.normalization.length > 0 && (
                   <div className="border-t pt-3">
                     <h4 className="text-xs font-medium text-muted-foreground mb-2">Normalization Preview</h4>
@@ -251,7 +234,6 @@ export function RecipeFormPage() {
             </div>
           </div>
 
-          {/* Normalization review (edit mode) */}
           {isEditing && existingIngredients.length > 0 && (
             <div>
               <h3 className="text-sm font-medium mb-2">Ingredient Normalization</h3>

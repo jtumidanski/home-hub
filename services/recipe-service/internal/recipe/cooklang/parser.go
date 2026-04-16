@@ -146,6 +146,8 @@ func extractMetadata(source string) (Metadata, string) {
 				meta.Source = value
 			case "title":
 				meta.Title = value
+			case "description":
+				meta.Description = value
 			case "servings":
 				meta.Servings = value
 			case "prep time":

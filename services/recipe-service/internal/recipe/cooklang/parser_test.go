@@ -294,6 +294,20 @@ Stuff @bell peppers{4}.`
 	require.Len(t, result.Steps, 1)
 }
 
+func TestParse_MetadataDescription(t *testing.T) {
+	source := `---
+title: Stuffed Peppers
+description: A weeknight favorite that freezes well.
+---
+
+Stuff @bell peppers{4}.`
+
+	result := Parse(source)
+	assert.Equal(t, "Stuffed Peppers", result.Metadata.Title)
+	assert.Equal(t, "A weeknight favorite that freezes well.", result.Metadata.Description)
+	assert.NotContains(t, result.Metadata.Extra, "description")
+}
+
 func TestParse_TagsBracketFormat(t *testing.T) {
 	source := `---
 tags: [dinner, vegetarian]
