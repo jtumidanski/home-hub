@@ -138,12 +138,6 @@ class ApiClient {
     if (this.householdId && !options?.skipTenantHeaders) {
       headers["X-Household-ID"] = this.householdId;
     }
-    try {
-      const tz = Intl.DateTimeFormat().resolvedOptions().timeZone;
-      if (tz) headers["X-Timezone"] = tz;
-    } catch {
-      // Intl unavailable (very old runtime); backend falls back to UTC.
-    }
     if (options?.headers) {
       Object.assign(headers, options.headers);
     }

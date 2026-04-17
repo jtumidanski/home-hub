@@ -4,6 +4,7 @@ import { useQueryClient } from "@tanstack/react-query";
 import { useTaskSummary } from "@/lib/hooks/api/use-tasks";
 import { useReminderSummary } from "@/lib/hooks/api/use-reminders";
 import { useTenant } from "@/context/tenant-context";
+import { useLocalDate } from "@/lib/hooks/use-local-date";
 import { mealKeys } from "@/lib/hooks/api/use-meals";
 import { calendarKeys } from "@/lib/hooks/api/use-calendar";
 import { trackerKeys } from "@/lib/hooks/api/use-trackers";
@@ -53,7 +54,8 @@ export function DashboardPage() {
   const queryClient = useQueryClient();
   const { tenant, household } = useTenant();
 
-  const { data: taskData, isLoading: taskLoading, isError: taskError, refetch: refetchTasks } = useTaskSummary();
+  const today = useLocalDate(household?.attributes.timezone);
+  const { data: taskData, isLoading: taskLoading, isError: taskError, refetch: refetchTasks } = useTaskSummary(today);
   const { data: reminderData, isLoading: reminderLoading, isError: reminderError, refetch: refetchReminders } = useReminderSummary();
 
   // Invalidate widget queries on mount so navigating back always shows fresh data
@@ -61,8 +63,8 @@ export function DashboardPage() {
     queryClient.invalidateQueries({ queryKey: packageKeys.summary(tenant, household) });
     queryClient.invalidateQueries({ queryKey: mealKeys.plans(tenant, household) });
     queryClient.invalidateQueries({ queryKey: calendarKeys.all(tenant, household) });
-    queryClient.invalidateQueries({ queryKey: trackerKeys.today(tenant, household) });
-    queryClient.invalidateQueries({ queryKey: workoutKeys.today(tenant, household) });
+    queryClient.invalidateQueries({ queryKey: trackerKeys.todayAll(tenant, household) });
+    queryClient.invalidateQueries({ queryKey: workoutKeys.todayAll(tenant, household) });
   }, [queryClient, tenant, household]);
 
   const isLoading = taskLoading || reminderLoading;
@@ -76,8 +78,8 @@ export function DashboardPage() {
       queryClient.invalidateQueries({ queryKey: packageKeys.summary(tenant, household) }),
       queryClient.invalidateQueries({ queryKey: mealKeys.plans(tenant, household) }),
       queryClient.invalidateQueries({ queryKey: calendarKeys.all(tenant, household) }),
-      queryClient.invalidateQueries({ queryKey: trackerKeys.today(tenant, household) }),
-      queryClient.invalidateQueries({ queryKey: workoutKeys.today(tenant, household) }),
+      queryClient.invalidateQueries({ queryKey: trackerKeys.todayAll(tenant, household) }),
+      queryClient.invalidateQueries({ queryKey: workoutKeys.todayAll(tenant, household) }),
     ]);
   }, [refetchTasks, refetchReminders, queryClient, tenant, household]);
 

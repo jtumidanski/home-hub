@@ -72,7 +72,8 @@ interface Props {
 export function CalendarGrid({ month, onMonthChange, onViewReport }: Props) {
   const { household } = useTenant();
   const timezone = household?.attributes.timezone;
-  const { data, isLoading } = useMonthSummary(month);
+  const today = getLocalTodayStr(timezone);
+  const { data, isLoading } = useMonthSummary(month, today);
   const putEntry = usePutEntry();
   const deleteEntry = useDeleteEntry();
   const skipEntry = useSkipEntry();
@@ -91,7 +92,6 @@ export function CalendarGrid({ month, onMonthChange, onViewReport }: Props) {
   }, [data?.data?.relationships?.entries?.data]);
 
   const daysInMonth = getDaysInMonth(month);
-  const today = getLocalTodayStr(timezone);
   const parts = month.split("-");
   const y = parts[0] ?? "2026";
   const m = parts[1] ?? "01";
@@ -138,6 +138,7 @@ export function CalendarGrid({ month, onMonthChange, onViewReport }: Props) {
           deleteEntry={deleteEntry}
           skipEntry={skipEntry}
           timezone={timezone}
+          today={today}
         />
       </div>
 
@@ -175,6 +176,7 @@ export function CalendarGrid({ month, onMonthChange, onViewReport }: Props) {
                       <CellContent
                         itemId={item.id}
                         date={dateStr}
+                        today={today}
                         scaleType={item.scale_type}
                         scaleConfig={item.scale_config}
                         scheduled={scheduled}
@@ -202,7 +204,7 @@ export function CalendarGrid({ month, onMonthChange, onViewReport }: Props) {
   );
 }
 
-function MobileDayView({ month, items, entryMap, putEntry, deleteEntry, skipEntry, timezone }: {
+function MobileDayView({ month, items, entryMap, putEntry, deleteEntry, skipEntry, timezone, today }: {
   month: string;
   items: MonthItemInfo[];
   entryMap: Map<string, TrackerEntry>;
@@ -210,8 +212,9 @@ function MobileDayView({ month, items, entryMap, putEntry, deleteEntry, skipEntr
   deleteEntry: ReturnType<typeof useDeleteEntry>;
   skipEntry: ReturnType<typeof useSkipEntry>;
   timezone: string | undefined;
+  today: string;
 }) {
-  const today = getLocalTodayStr(timezone);
+  void timezone;
   const daysInMonth = getDaysInMonth(month);
   const [y, m] = splitMonth(month);
   const monthKey = `${y}-${m}`;
@@ -280,6 +283,7 @@ function MobileDayView({ month, items, entryMap, putEntry, deleteEntry, skipEntr
                 <CellEditor
                   itemId={item.id}
                   date={dateStr}
+                  today={today}
                   scaleType={item.scale_type}
                   scaleConfig={item.scale_config}
                   scheduled={scheduled}
@@ -298,8 +302,8 @@ function MobileDayView({ month, items, entryMap, putEntry, deleteEntry, skipEntr
   );
 }
 
-function CellContent({ itemId, date, scaleType, scaleConfig, scheduled, entry, isFuture, color, itemName, putEntry, deleteEntry, skipEntry }: {
-  itemId: string; date: string; scaleType: string; scaleConfig: { min: number; max: number } | null;
+function CellContent({ itemId, date, today, scaleType, scaleConfig, scheduled, entry, isFuture, color, itemName, putEntry, deleteEntry, skipEntry }: {
+  itemId: string; date: string; today: string; scaleType: string; scaleConfig: { min: number; max: number } | null;
   scheduled: boolean; entry: TrackerEntry["attributes"] | undefined; isFuture: boolean; color: string; itemName: string;
   putEntry: ReturnType<typeof usePutEntry>; deleteEntry: ReturnType<typeof useDeleteEntry>; skipEntry: ReturnType<typeof useSkipEntry>;
 }) {
@@ -349,7 +353,7 @@ function CellContent({ itemId, date, scaleType, scaleConfig, scheduled, entry, i
       <PopoverContent className="w-48 p-2" align="center">
         <p className="text-xs font-medium mb-2">{itemName} — {new Date(date + "T12:00:00").toLocaleDateString("en-US", { month: "short", day: "numeric" })}</p>
         <CellEditor
-          itemId={itemId} date={date} scaleType={scaleType} scaleConfig={scaleConfig}
+          itemId={itemId} date={date} today={today} scaleType={scaleType} scaleConfig={scaleConfig}
           scheduled={scheduled} entry={entry} putEntry={putEntry} deleteEntry={deleteEntry}
           skipEntry={skipEntry} onDone={() => setOpen(false)}
         />
@@ -387,8 +391,8 @@ function RangeEditor({ itemId, date, min, max, initial, onCommit }: { itemId: st
   );
 }
 
-function CellEditor({ itemId, date, scaleType, scaleConfig, scheduled, entry, putEntry, deleteEntry, skipEntry, onDone }: {
-  itemId: string; date: string; scaleType: string; scaleConfig: { min: number; max: number } | null;
+function CellEditor({ itemId, date, today, scaleType, scaleConfig, scheduled, entry, putEntry, deleteEntry, skipEntry, onDone }: {
+  itemId: string; date: string; today: string; scaleType: string; scaleConfig: { min: number; max: number } | null;
   scheduled: boolean; entry: TrackerEntry["attributes"] | undefined;
   putEntry: ReturnType<typeof usePutEntry>; deleteEntry: ReturnType<typeof useDeleteEntry>;
   skipEntry: ReturnType<typeof useSkipEntry>; onDone: () => void;
@@ -396,7 +400,7 @@ function CellEditor({ itemId, date, scaleType, scaleConfig, scheduled, entry, pu
   const [note, setNote] = useState(entry?.note ?? "");
 
   const save = (value: unknown) => {
-    putEntry.mutate({ itemId, date, value, note: note || null }, { onSuccess: onDone });
+    putEntry.mutate({ itemId, date, today, value, note: note || null }, { onSuccess: onDone });
   };
 
   return (
@@ -432,9 +436,9 @@ function CellEditor({ itemId, date, scaleType, scaleConfig, scheduled, entry, pu
         />
       )}
       <Input placeholder="Note..." className="text-xs h-7" value={note} onChange={(e) => setNote(e.target.value)}
-        onBlur={() => { if (entry?.value) putEntry.mutate({ itemId, date, value: entry.value, note: note || null }); }} />
+        onBlur={() => { if (entry?.value) putEntry.mutate({ itemId, date, today, value: entry.value, note: note || null }); }} />
       <div className="flex gap-1">
-        {scheduled && <Button variant="ghost" size="sm" className="text-xs flex-1" onClick={() => { skipEntry.mutate({ itemId, date }); onDone(); }}>Skip</Button>}
+        {scheduled && <Button variant="ghost" size="sm" className="text-xs flex-1" onClick={() => { skipEntry.mutate({ itemId, date, today }); onDone(); }}>Skip</Button>}
         <Button variant="ghost" size="sm" className="text-xs flex-1" onClick={() => { deleteEntry.mutate({ itemId, date }); onDone(); }}>Clear</Button>
       </div>
     </div>

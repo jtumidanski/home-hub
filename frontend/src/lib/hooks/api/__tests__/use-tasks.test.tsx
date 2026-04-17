@@ -53,7 +53,11 @@ describe("taskKeys", () => {
   });
 
   it("generates summary key", () => {
-    expect(taskKeys.summary(t("t-1"), h("hh-1"))).toEqual(["tasks", "t-1", "hh-1", "summary"]);
+    expect(taskKeys.summary(t("t-1"), h("hh-1"), "2026-04-16")).toEqual(["tasks", "t-1", "hh-1", "summary", "2026-04-16"]);
+  });
+
+  it("generates summaryAll prefix key", () => {
+    expect(taskKeys.summaryAll(t("t-1"), h("hh-1"))).toEqual(["tasks", "t-1", "hh-1", "summary"]);
   });
 
   it("returns readonly tuple arrays", () => {
@@ -109,7 +113,7 @@ describe("useTasks hook", () => {
     });
 
     const { useTaskSummary } = await import("../use-tasks");
-    const { result } = renderHook(() => useTaskSummary(), { wrapper: createWrapper() });
+    const { result } = renderHook(() => useTaskSummary("2026-04-16"), { wrapper: createWrapper() });
 
     await waitFor(() => expect(result.current.isSuccess).toBe(true));
     expect(result.current.data?.data.attributes.pendingCount).toBe(5);
@@ -314,9 +318,9 @@ describe("usePrefetchTasks", () => {
     const { usePrefetchTasks } = await import("../use-tasks");
     const { result } = renderHook(() => usePrefetchTasks(), { wrapper: createWrapper() });
 
-    result.current.prefetchSummary();
+    result.current.prefetchSummary("2026-04-16");
     expect(spy).toHaveBeenCalledWith(
-      expect.objectContaining({ queryKey: ["tasks", "tenant-1", "household-1", "summary"] }),
+      expect.objectContaining({ queryKey: ["tasks", "tenant-1", "household-1", "summary", "2026-04-16"] }),
     );
   });
 });

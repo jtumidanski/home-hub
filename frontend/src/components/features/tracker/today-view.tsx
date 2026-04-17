@@ -6,6 +6,8 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useTrackerToday, usePutEntry, useSkipEntry } from "@/lib/hooks/api/use-trackers";
+import { useTenant } from "@/context/tenant-context";
+import { useLocalDate } from "@/lib/hooks/use-local-date";
 import { cn } from "@/lib/utils";
 import type { TrackerEntry, RangeConfig } from "@/types/models/tracker";
 
@@ -33,7 +35,9 @@ interface TodayItem {
 }
 
 export function TodayView() {
-  const { data, isLoading } = useTrackerToday();
+  const { household } = useTenant();
+  const today = useLocalDate(household?.attributes.timezone);
+  const { data, isLoading } = useTrackerToday(today);
   const putEntry = usePutEntry();
   const skipEntry = useSkipEntry();
   const [notes, setNotes] = useState<Record<string, string>>({});
@@ -96,13 +100,13 @@ export function TodayView() {
               </div>
 
               {item.scale_type === "sentiment" && (
-                <SentimentInput itemId={item.id} date={todayDate} currentRating={(entryAttrs?.value as { rating?: string })?.rating} putEntry={putEntry} />
+                <SentimentInput itemId={item.id} date={todayDate} today={today} currentRating={(entryAttrs?.value as { rating?: string })?.rating} putEntry={putEntry} />
               )}
               {item.scale_type === "numeric" && (
-                <NumericInput itemId={item.id} date={todayDate} currentCount={(entryAttrs?.value as { count?: number })?.count} putEntry={putEntry} />
+                <NumericInput itemId={item.id} date={todayDate} today={today} currentCount={(entryAttrs?.value as { count?: number })?.count} putEntry={putEntry} />
               )}
               {item.scale_type === "range" && (
-                <RangeInput itemId={item.id} date={todayDate} config={item.scale_config} currentValue={(entryAttrs?.value as { value?: number })?.value} putEntry={putEntry} />
+                <RangeInput itemId={item.id} date={todayDate} today={today} config={item.scale_config} currentValue={(entryAttrs?.value as { value?: number })?.value} putEntry={putEntry} />
               )}
 
               <div className="flex items-center gap-2">
@@ -114,12 +118,12 @@ export function TodayView() {
                   onBlur={() => {
                     const note = notes[item.id];
                     if (note !== undefined && entryAttrs?.value) {
-                      putEntry.mutate({ itemId: item.id, date: todayDate, value: entryAttrs.value, note: note || null });
+                      putEntry.mutate({ itemId: item.id, date: todayDate, today, value: entryAttrs.value, note: note || null });
                     }
                   }}
                 />
                 <Button variant="ghost" size="sm" className="text-xs"
-                  onClick={() => skipEntry.mutate({ itemId: item.id, date: todayDate })}
+                  onClick={() => skipEntry.mutate({ itemId: item.id, date: todayDate, today })}
                 >Skip</Button>
               </div>
             </CardContent>
@@ -133,7 +137,7 @@ export function TodayView() {
   );
 }
 
-function SentimentInput({ itemId, date, currentRating, putEntry }: { itemId: string; date: string; currentRating?: string | undefined; putEntry: ReturnType<typeof usePutEntry> }) {
+function SentimentInput({ itemId, date, today, currentRating, putEntry }: { itemId: string; date: string; today: string; currentRating?: string | undefined; putEntry: ReturnType<typeof usePutEntry> }) {
   const ratings = [
     { value: "positive", emoji: "😊" },
     { value: "neutral", emoji: "😐" },
@@ -143,26 +147,26 @@ function SentimentInput({ itemId, date, currentRating, putEntry }: { itemId: str
     <div className="flex gap-2">
       {ratings.map((r) => (
         <Button key={r.value} variant={currentRating === r.value ? "default" : "outline"} size="sm"
-          onClick={() => putEntry.mutate({ itemId, date, value: { rating: r.value } })}
+          onClick={() => putEntry.mutate({ itemId, date, today, value: { rating: r.value } })}
         >{r.emoji}</Button>
       ))}
     </div>
   );
 }
 
-function NumericInput({ itemId, date, currentCount, putEntry }: { itemId: string; date: string; currentCount?: number | undefined; putEntry: ReturnType<typeof usePutEntry> }) {
+function NumericInput({ itemId, date, today, currentCount, putEntry }: { itemId: string; date: string; today: string; currentCount?: number | undefined; putEntry: ReturnType<typeof usePutEntry> }) {
   const isSet = currentCount !== undefined;
   const count = currentCount ?? 0;
   return (
     <div className="flex items-center gap-2">
-      <Button variant="outline" size="sm" onClick={() => putEntry.mutate({ itemId, date, value: { count: Math.max(0, count - 1) } })}>-</Button>
+      <Button variant="outline" size="sm" onClick={() => putEntry.mutate({ itemId, date, today, value: { count: Math.max(0, count - 1) } })}>-</Button>
       <span className={cn("w-8 text-center font-mono", !isSet && "text-muted-foreground")}>{count}</span>
-      <Button variant="outline" size="sm" onClick={() => putEntry.mutate({ itemId, date, value: { count: count + 1 } })}>+</Button>
+      <Button variant="outline" size="sm" onClick={() => putEntry.mutate({ itemId, date, today, value: { count: count + 1 } })}>+</Button>
     </div>
   );
 }
 
-function RangeInput({ itemId, date, config, currentValue, putEntry }: { itemId: string; date: string; config: RangeConfig | null; currentValue?: number | undefined; putEntry: ReturnType<typeof usePutEntry> }) {
+function RangeInput({ itemId, date, today, config, currentValue, putEntry }: { itemId: string; date: string; today: string; config: RangeConfig | null; currentValue?: number | undefined; putEntry: ReturnType<typeof usePutEntry> }) {
   const min = config?.min ?? 0;
   const max = config?.max ?? 100;
   const [local, setLocal] = useState<number>(currentValue ?? Math.round((min + max) / 2));
@@ -179,7 +183,7 @@ function RangeInput({ itemId, date, config, currentValue, putEntry }: { itemId: 
       setTouched(false);
     }
   }
-  const commit = (n: number) => putEntry.mutate({ itemId, date, value: { value: n } });
+  const commit = (n: number) => putEntry.mutate({ itemId, date, today, value: { value: n } });
   return (
     <div className="flex items-center gap-2">
       <input type="range" min={min} max={max} value={local} className="flex-1"

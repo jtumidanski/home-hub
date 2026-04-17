@@ -24,8 +24,10 @@ export const workoutKeys = {
     [...workoutKeys.all(tenant, household), "exercises", themeId ?? "all", regionId ?? "all"] as const,
   week: (tenant: Tenant | null, household: Household | null, weekStart: string) =>
     [...workoutKeys.all(tenant, household), "week", weekStart] as const,
-  today: (tenant: Tenant | null, household: Household | null) =>
+  todayAll: (tenant: Tenant | null, household: Household | null) =>
     [...workoutKeys.all(tenant, household), "today"] as const,
+  today: (tenant: Tenant | null, household: Household | null, date: string) =>
+    [...workoutKeys.all(tenant, household), "today", date] as const,
   summary: (tenant: Tenant | null, household: Household | null, weekStart: string) =>
     [...workoutKeys.all(tenant, household), "summary", weekStart] as const,
 };
@@ -223,7 +225,7 @@ export function useAddPlannedItem() {
     }) => workoutService.addPlannedItem(tenant!, weekStart, attrs),
     onSuccess: (_data, vars) => {
       qc.invalidateQueries({ queryKey: workoutKeys.week(tenant, household, vars.weekStart) });
-      qc.invalidateQueries({ queryKey: workoutKeys.today(tenant, household) });
+      qc.invalidateQueries({ queryKey: workoutKeys.todayAll(tenant, household) });
     },
   });
 }
@@ -243,7 +245,7 @@ export function useUpdatePlannedItem() {
     }) => workoutService.updatePlannedItem(tenant!, weekStart, itemId, attrs),
     onSuccess: (_data, vars) => {
       qc.invalidateQueries({ queryKey: workoutKeys.week(tenant, household, vars.weekStart) });
-      qc.invalidateQueries({ queryKey: workoutKeys.today(tenant, household) });
+      qc.invalidateQueries({ queryKey: workoutKeys.todayAll(tenant, household) });
     },
   });
 }
@@ -256,7 +258,7 @@ export function useDeletePlannedItem() {
       workoutService.deletePlannedItem(tenant!, weekStart, itemId),
     onSuccess: (_data, vars) => {
       qc.invalidateQueries({ queryKey: workoutKeys.week(tenant, household, vars.weekStart) });
-      qc.invalidateQueries({ queryKey: workoutKeys.today(tenant, household) });
+      qc.invalidateQueries({ queryKey: workoutKeys.todayAll(tenant, household) });
     },
   });
 }
@@ -277,7 +279,7 @@ export function useReorderPlannedItems() {
     }) => workoutService.reorderPlannedItems(tenant!, weekStart, items),
     onSuccess: (_data, vars) => {
       qc.invalidateQueries({ queryKey: workoutKeys.week(tenant, household, vars.weekStart) });
-      qc.invalidateQueries({ queryKey: workoutKeys.today(tenant, household) });
+      qc.invalidateQueries({ queryKey: workoutKeys.todayAll(tenant, household) });
     },
   });
 }
@@ -307,17 +309,17 @@ export function usePatchPerformance() {
     }) => workoutService.patchPerformance(tenant!, weekStart, itemId, attrs),
     onSuccess: (_data, vars) => {
       qc.invalidateQueries({ queryKey: workoutKeys.week(tenant, household, vars.weekStart) });
-      qc.invalidateQueries({ queryKey: workoutKeys.today(tenant, household) });
+      qc.invalidateQueries({ queryKey: workoutKeys.todayAll(tenant, household) });
     },
   });
 }
 
-export function useWorkoutToday() {
+export function useWorkoutToday(date: string) {
   const { tenant, household } = useTenant();
   return useQuery({
-    queryKey: workoutKeys.today(tenant, household),
-    queryFn: () => workoutService.getToday(tenant!),
-    enabled: !!tenant?.id,
+    queryKey: workoutKeys.today(tenant, household, date),
+    queryFn: () => workoutService.getToday(tenant!, date),
+    enabled: !!tenant?.id && !!date,
     staleTime: 30 * 1000,
   });
 }

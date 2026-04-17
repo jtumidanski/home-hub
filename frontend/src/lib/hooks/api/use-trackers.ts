@@ -13,12 +13,14 @@ export const trackerKeys = {
     [...trackerKeys.all(tenant, household), "list"] as const,
   detail: (tenant: Tenant | null, household: Household | null, id: string) =>
     [...trackerKeys.all(tenant, household), "detail", id] as const,
-  today: (tenant: Tenant | null, household: Household | null) =>
+  todayAll: (tenant: Tenant | null, household: Household | null) =>
     [...trackerKeys.all(tenant, household), "today"] as const,
-  month: (tenant: Tenant | null, household: Household | null, month: string) =>
-    [...trackerKeys.all(tenant, household), "month", month] as const,
-  report: (tenant: Tenant | null, household: Household | null, month: string) =>
-    [...trackerKeys.all(tenant, household), "report", month] as const,
+  today: (tenant: Tenant | null, household: Household | null, date: string) =>
+    [...trackerKeys.all(tenant, household), "today", date] as const,
+  month: (tenant: Tenant | null, household: Household | null, month: string, today: string) =>
+    [...trackerKeys.all(tenant, household), "month", month, today] as const,
+  report: (tenant: Tenant | null, household: Household | null, month: string, today: string) =>
+    [...trackerKeys.all(tenant, household), "report", month, today] as const,
   entries: (tenant: Tenant | null, household: Household | null, month: string) =>
     [...trackerKeys.all(tenant, household), "entries", month] as const,
 };
@@ -43,32 +45,32 @@ export function useTracker(id: string | null) {
   });
 }
 
-export function useTrackerToday() {
+export function useTrackerToday(date: string) {
   const { tenant, household } = useTenant();
   return useQuery({
-    queryKey: trackerKeys.today(tenant, household),
-    queryFn: () => trackerService.getToday(tenant!),
-    enabled: !!tenant?.id,
+    queryKey: trackerKeys.today(tenant, household, date),
+    queryFn: () => trackerService.getToday(tenant!, date),
+    enabled: !!tenant?.id && !!date,
     staleTime: 30 * 1000,
   });
 }
 
-export function useMonthSummary(month: string) {
+export function useMonthSummary(month: string, today: string) {
   const { tenant, household } = useTenant();
   return useQuery({
-    queryKey: trackerKeys.month(tenant, household, month),
-    queryFn: () => trackerService.getMonthSummary(tenant!, month),
-    enabled: !!tenant?.id && !!month,
+    queryKey: trackerKeys.month(tenant, household, month, today),
+    queryFn: () => trackerService.getMonthSummary(tenant!, month, today),
+    enabled: !!tenant?.id && !!month && !!today,
     staleTime: 30 * 1000,
   });
 }
 
-export function useMonthReport(month: string, enabled: boolean) {
+export function useMonthReport(month: string, today: string, enabled: boolean) {
   const { tenant, household } = useTenant();
   return useQuery({
-    queryKey: trackerKeys.report(tenant, household, month),
-    queryFn: () => trackerService.getMonthReport(tenant!, month),
-    enabled: !!tenant?.id && !!month && enabled,
+    queryKey: trackerKeys.report(tenant, household, month, today),
+    queryFn: () => trackerService.getMonthReport(tenant!, month, today),
+    enabled: !!tenant?.id && !!month && !!today && enabled,
     staleTime: 60 * 1000,
   });
 }
@@ -146,12 +148,13 @@ export function usePutEntry() {
   const qc = useQueryClient();
   const { tenant, household } = useTenant();
   return useMutation({
-    mutationFn: ({ itemId, date, value, note }: {
+    mutationFn: ({ itemId, date, today, value, note }: {
       itemId: string;
       date: string;
+      today: string;
       value: unknown;
       note?: string | null;
-    }) => trackerService.putEntry(tenant!, itemId, date, value, note),
+    }) => trackerService.putEntry(tenant!, itemId, date, today, value, note),
     onSettled: () => {
       qc.invalidateQueries({ queryKey: trackerKeys.all(tenant, household) });
     },
@@ -177,8 +180,8 @@ export function useSkipEntry() {
   const qc = useQueryClient();
   const { tenant, household } = useTenant();
   return useMutation({
-    mutationFn: ({ itemId, date }: { itemId: string; date: string }) =>
-      trackerService.skipEntry(tenant!, itemId, date),
+    mutationFn: ({ itemId, date, today }: { itemId: string; date: string; today: string }) =>
+      trackerService.skipEntry(tenant!, itemId, date, today),
     onSettled: () => {
       qc.invalidateQueries({ queryKey: trackerKeys.all(tenant, household) });
     },

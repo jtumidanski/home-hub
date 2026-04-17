@@ -20,7 +20,7 @@ vi.mock("@/components/providers/auth-provider", () => ({
 }));
 
 vi.mock("@/context/tenant-context", () => ({
-  useTenant: () => ({ tenant: { id: "t1" }, household: { id: "h1" } }),
+  useTenant: () => ({ tenant: { id: "t1" }, household: { id: "h1", attributes: { timezone: "America/New_York" } } }),
 }));
 
 vi.mock("@/components/features/weather/weather-widget", () => ({

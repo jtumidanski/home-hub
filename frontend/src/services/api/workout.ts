@@ -238,9 +238,9 @@ class WorkoutService extends BaseService {
 
   // --- composite reads -------------------------------------------------------
 
-  getToday(tenant: { id: string }): Promise<TodayDocument> {
+  getToday(tenant: { id: string }, date: string): Promise<TodayDocument> {
     this.setTenant(tenant);
-    return api.get<TodayDocument>("/workouts/today");
+    return api.get<TodayDocument>(`/workouts/today?date=${encodeURIComponent(date)}`);
   }
   getWeekSummary(tenant: { id: string }, weekStart: string): Promise<SummaryDocument> {
     this.setTenant(tenant);
