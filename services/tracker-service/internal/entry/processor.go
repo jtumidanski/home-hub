@@ -44,13 +44,12 @@ func NewProcessor(l logrus.FieldLogger, ctx context.Context, db *gorm.DB) *Proce
 // Returns the resulting entry, a "created" flag (true on insert, false on
 // update), and a "scheduled" flag computed from the item's effective schedule
 // snapshot for the entry date.
-func (p *Processor) CreateOrUpdate(tenantID, userID, itemID uuid.UUID, dateStr string, value json.RawMessage, note *string) (Model, bool, bool, error) {
+func (p *Processor) CreateOrUpdate(tenantID, userID, itemID uuid.UUID, dateStr string, today time.Time, value json.RawMessage, note *string) (Model, bool, bool, error) {
 	date, err := time.Parse("2006-01-02", dateStr)
 	if err != nil {
 		return Model{}, false, false, ErrDateRequired
 	}
 
-	today := time.Now().UTC().Truncate(24 * time.Hour)
 	if date.After(today) {
 		return Model{}, false, false, ErrFutureDate
 	}
@@ -114,13 +113,12 @@ func (p *Processor) Delete(itemID uuid.UUID, dateStr string) error {
 // Skip marks the entry for the given item/date as skipped. The processor
 // verifies the tracking item exists and that the date falls on the item's
 // effective schedule — only scheduled days may be skipped.
-func (p *Processor) Skip(tenantID, userID, itemID uuid.UUID, dateStr string) (Model, error) {
+func (p *Processor) Skip(tenantID, userID, itemID uuid.UUID, dateStr string, today time.Time) (Model, error) {
 	date, err := time.Parse("2006-01-02", dateStr)
 	if err != nil {
 		return Model{}, ErrDateRequired
 	}
 
-	today := time.Now().UTC().Truncate(24 * time.Hour)
 	if date.After(today) {
 		return Model{}, ErrFutureDate
 	}

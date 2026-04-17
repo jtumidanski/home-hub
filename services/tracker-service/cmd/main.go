@@ -49,7 +49,7 @@ func main() {
 			api.Use(sharedauth.Middleware(l, authValidator))
 
 			// Order matters: more specific routes first
-			today.InitializeRoutes(db, cfg.AccountBaseURL)(l, si, api)
+			today.InitializeRoutes(db)(l, si, api)
 			month.InitializeRoutes(db)(l, si, api)
 			entry.InitializeRoutes(db)(l, si, api)
 			trackingitem.InitializeRoutes(db)(l, si, api)

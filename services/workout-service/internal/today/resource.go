@@ -2,17 +2,17 @@
 // landing view that returns the current day's planned items + embedded
 // performances.
 //
-// The projection itself lives in processor.go; this file only registers the
-// route and writes the JSON envelope.
+// The "current day" is supplied by the client as a `?date=YYYY-MM-DD` query
+// parameter. The server does not resolve a timezone — the client knows its
+// own local date.
 package today
 
 import (
 	"net/http"
-	"time"
 
 	"github.com/gorilla/mux"
 	"github.com/jtumidanski/api2go/jsonapi"
-	"github.com/jtumidanski/home-hub/services/workout-service/internal/tz"
+	httpparams "github.com/jtumidanski/home-hub/shared/go/http"
 	"github.com/jtumidanski/home-hub/services/workout-service/internal/weekview"
 	"github.com/jtumidanski/home-hub/shared/go/server"
 	tenantctx "github.com/jtumidanski/home-hub/shared/go/tenant"
@@ -20,10 +20,10 @@ import (
 	"gorm.io/gorm"
 )
 
-func InitializeRoutes(db *gorm.DB, accountBaseURL string) func(l logrus.FieldLogger, si jsonapi.ServerInformation, api *mux.Router) {
+func InitializeRoutes(db *gorm.DB) func(l logrus.FieldLogger, si jsonapi.ServerInformation, api *mux.Router) {
 	return func(l logrus.FieldLogger, si jsonapi.ServerInformation, api *mux.Router) {
 		rh := server.RegisterHandler(l)(si)
-		api.HandleFunc("/workouts/today", rh("GetWorkoutsToday", todayHandler(db, accountBaseURL))).Methods(http.MethodGet)
+		api.HandleFunc("/workouts/today", rh("GetWorkoutsToday", todayHandler(db))).Methods(http.MethodGet)
 	}
 }
 
@@ -40,7 +40,7 @@ type RestModel struct {
 
 func (r RestModel) GetName() string         { return "today" }
 func (r RestModel) GetID() string           { return r.Id }
-func (r *RestModel) SetID(id string) error { r.Id = id; return nil }
+func (r *RestModel) SetID(id string) error  { r.Id = id; return nil }
 
 func transform(res Result) RestModel {
 	items := res.Items
@@ -58,14 +58,17 @@ func transform(res Result) RestModel {
 	}
 }
 
-func todayHandler(db *gorm.DB, accountBaseURL string) server.GetHandler {
+func todayHandler(db *gorm.DB) server.GetHandler {
 	return func(d *server.HandlerDependency, c *server.HandlerContext) http.HandlerFunc {
 		return func(w http.ResponseWriter, r *http.Request) {
+			date, err := httpparams.ParseDateParam(r, "date")
+			if err != nil {
+				server.WriteError(w, http.StatusBadRequest, "Invalid request", err.Error())
+				return
+			}
+
 			t := tenantctx.MustFromContext(r.Context())
-			lookup := tz.NewAccountHouseholdLookup(accountBaseURL, r.Header.Get("Authorization"))
-			loc := tz.Resolve(r.Context(), d.Logger(), r.Header, t.HouseholdId(), lookup)
-			ctx := tz.WithLocation(r.Context(), loc)
-			res, err := NewProcessor(d.Logger(), ctx, db).Today(t.UserId(), time.Now().In(loc))
+			res, err := NewProcessor(d.Logger(), r.Context(), db).Today(t.UserId(), date)
 			if err != nil {
 				d.Logger().WithError(err).Error("Failed to load today")
 				server.WriteError(w, http.StatusInternalServerError, "Error", "")

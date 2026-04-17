@@ -42,8 +42,8 @@ type SummaryDetail struct {
 	SnapshotsByItem map[uuid.UUID][]schedule.Model
 }
 
-func (p *Processor) ComputeMonthSummaryDetail(userID uuid.UUID, monthStr string) (SummaryDetail, error) {
-	summary, items, entries, snapshots, err := p.computeMonthSummary(userID, monthStr)
+func (p *Processor) ComputeMonthSummaryDetail(userID uuid.UUID, monthStr string, today time.Time) (SummaryDetail, error) {
+	summary, items, entries, snapshots, err := p.computeMonthSummary(userID, monthStr, today)
 	if err != nil {
 		return SummaryDetail{}, err
 	}
@@ -57,18 +57,17 @@ func (p *Processor) ComputeMonthSummaryDetail(userID uuid.UUID, monthStr string)
 
 // ComputeMonthSummary preserves the original 4-tuple return for tests and
 // internal callers that don't need the snapshot map.
-func (p *Processor) ComputeMonthSummary(userID uuid.UUID, monthStr string) (MonthSummary, []trackingitem.Model, []entry.Model, error) {
-	summary, items, entries, _, err := p.computeMonthSummary(userID, monthStr)
+func (p *Processor) ComputeMonthSummary(userID uuid.UUID, monthStr string, today time.Time) (MonthSummary, []trackingitem.Model, []entry.Model, error) {
+	summary, items, entries, _, err := p.computeMonthSummary(userID, monthStr, today)
 	return summary, items, entries, err
 }
 
-func (p *Processor) computeMonthSummary(userID uuid.UUID, monthStr string) (MonthSummary, []trackingitem.Model, []entry.Model, map[uuid.UUID][]schedule.Model, error) {
+func (p *Processor) computeMonthSummary(userID uuid.UUID, monthStr string, today time.Time) (MonthSummary, []trackingitem.Model, []entry.Model, map[uuid.UUID][]schedule.Model, error) {
 	monthStart, err := time.Parse("2006-01", monthStr)
 	if err != nil {
 		return MonthSummary{}, nil, nil, nil, ErrInvalidMonth
 	}
 	monthEnd := monthStart.AddDate(0, 1, -1)
-	today := time.Now().UTC().Truncate(24 * time.Hour)
 
 	items, err := trackingitem.GetAllByUserIncludeDeleted(userID)(p.db.WithContext(p.ctx))()
 	if err != nil {
@@ -183,8 +182,8 @@ func (p *Processor) computeMonthSummary(userID uuid.UUID, monthStr string) (Mont
 	}, activeItems, entryModels, snapshotsByItem, nil
 }
 
-func (p *Processor) ComputeReport(userID uuid.UUID, monthStr string) (Report, error) {
-	summary, activeItems, entryModels, snapshotsByItem, err := p.computeMonthSummary(userID, monthStr)
+func (p *Processor) ComputeReport(userID uuid.UUID, monthStr string, today time.Time) (Report, error) {
+	summary, activeItems, entryModels, snapshotsByItem, err := p.computeMonthSummary(userID, monthStr, today)
 	if err != nil {
 		return Report{}, err
 	}

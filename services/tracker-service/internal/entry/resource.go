@@ -7,6 +7,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/gorilla/mux"
 	"github.com/jtumidanski/api2go/jsonapi"
+	httpparams "github.com/jtumidanski/home-hub/shared/go/http"
 	"github.com/jtumidanski/home-hub/shared/go/server"
 	tenantctx "github.com/jtumidanski/home-hub/shared/go/tenant"
 	"github.com/sirupsen/logrus"
@@ -49,11 +50,17 @@ func createOrUpdateHandler(db *gorm.DB) server.InputHandler[EntryRequest] {
 	return func(d *server.HandlerDependency, c *server.HandlerContext, input EntryRequest) http.HandlerFunc {
 		return server.ParseID("id", func(itemID uuid.UUID) http.HandlerFunc {
 			return func(w http.ResponseWriter, r *http.Request) {
+				today, err := httpparams.ParseDateParam(r, "today")
+				if err != nil {
+					server.WriteError(w, http.StatusBadRequest, "Invalid request", err.Error())
+					return
+				}
+
 				t := tenantctx.MustFromContext(r.Context())
 				dateStr := mux.Vars(r)["date"]
 
 				proc := NewProcessor(d.Logger(), r.Context(), db)
-				m, created, scheduled, err := proc.CreateOrUpdate(t.Id(), t.UserId(), itemID, dateStr, input.Value, input.Note)
+				m, created, scheduled, err := proc.CreateOrUpdate(t.Id(), t.UserId(), itemID, dateStr, today, input.Value, input.Note)
 				if err != nil {
 					if writeValidationError(w, err) {
 						return
@@ -96,11 +103,17 @@ func skipHandler(db *gorm.DB) server.GetHandler {
 	return func(d *server.HandlerDependency, c *server.HandlerContext) http.HandlerFunc {
 		return server.ParseID("id", func(itemID uuid.UUID) http.HandlerFunc {
 			return func(w http.ResponseWriter, r *http.Request) {
+				today, err := httpparams.ParseDateParam(r, "today")
+				if err != nil {
+					server.WriteError(w, http.StatusBadRequest, "Invalid request", err.Error())
+					return
+				}
+
 				t := tenantctx.MustFromContext(r.Context())
 				dateStr := mux.Vars(r)["date"]
 
 				proc := NewProcessor(d.Logger(), r.Context(), db)
-				m, err := proc.Skip(t.Id(), t.UserId(), itemID, dateStr)
+				m, err := proc.Skip(t.Id(), t.UserId(), itemID, dateStr, today)
 				if err != nil {
 					if writeValidationError(w, err) {
 						return

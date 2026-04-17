@@ -79,6 +79,10 @@ func tomorrow() string {
 	return time.Now().UTC().Add(24 * time.Hour).Format("2006-01-02")
 }
 
+func todayUTC() time.Time {
+	return time.Now().UTC().Truncate(24 * time.Hour)
+}
+
 // scheduleEverydayFor inserts a snapshot effective today so the entry
 // processor's "scheduled" lookup treats every day as scheduled.
 func scheduleEverydayFor(t *testing.T, db *gorm.DB, itemID uuid.UUID) {
@@ -92,7 +96,7 @@ func TestProcessor_CreateOrUpdate_Insert(t *testing.T) {
 	p := newTestProcessor(t, db)
 
 	itemID := makeItem(t, db, "sentiment", nil)
-	m, created, _, err := p.CreateOrUpdate(uuid.New(), uuid.New(), itemID, yesterday(), sentimentValue("positive"), nil)
+	m, created, _, err := p.CreateOrUpdate(uuid.New(), uuid.New(), itemID, yesterday(), todayUTC(), sentimentValue("positive"), nil)
 	require.NoError(t, err)
 	assert.True(t, created)
 	assert.Equal(t, itemID, m.TrackingItemID())
@@ -107,10 +111,10 @@ func TestProcessor_CreateOrUpdate_UpdatePreservesIDClearsSkip(t *testing.T) {
 	userID := uuid.New()
 	itemID := makeItem(t, db, "numeric", nil)
 
-	first, _, _, err := p.CreateOrUpdate(tenantID, userID, itemID, yesterday(), numericValue(1), nil)
+	first, _, _, err := p.CreateOrUpdate(tenantID, userID, itemID, yesterday(), todayUTC(), numericValue(1), nil)
 	require.NoError(t, err)
 
-	second, created, _, err := p.CreateOrUpdate(tenantID, userID, itemID, yesterday(), numericValue(5), nil)
+	second, created, _, err := p.CreateOrUpdate(tenantID, userID, itemID, yesterday(), todayUTC(), numericValue(5), nil)
 	require.NoError(t, err)
 	assert.False(t, created, "second call must update, not insert")
 	assert.Equal(t, first.Id(), second.Id())
@@ -121,7 +125,7 @@ func TestProcessor_CreateOrUpdate_RejectsFutureDate(t *testing.T) {
 	p := newTestProcessor(t, db)
 
 	itemID := makeItem(t, db, "numeric", nil)
-	_, _, _, err := p.CreateOrUpdate(uuid.New(), uuid.New(), itemID, tomorrow(), numericValue(1), nil)
+	_, _, _, err := p.CreateOrUpdate(uuid.New(), uuid.New(), itemID, tomorrow(), todayUTC(), numericValue(1), nil)
 	assert.ErrorIs(t, err, ErrFutureDate)
 }
 
@@ -129,7 +133,7 @@ func TestProcessor_CreateOrUpdate_RejectsMissingItem(t *testing.T) {
 	db := setupTestDB(t)
 	p := newTestProcessor(t, db)
 
-	_, _, _, err := p.CreateOrUpdate(uuid.New(), uuid.New(), uuid.New(), yesterday(), numericValue(1), nil)
+	_, _, _, err := p.CreateOrUpdate(uuid.New(), uuid.New(), uuid.New(), yesterday(), todayUTC(), numericValue(1), nil)
 	assert.ErrorIs(t, err, ErrItemNotFound)
 }
 
@@ -157,7 +161,7 @@ func TestProcessor_CreateOrUpdate_ValidatesValuePerScaleType(t *testing.T) {
 			p := newTestProcessor(t, db)
 			itemID := makeItem(t, db, tc.scaleType, tc.cfg)
 
-			_, _, _, err := p.CreateOrUpdate(uuid.New(), uuid.New(), itemID, yesterday(), tc.value, nil)
+			_, _, _, err := p.CreateOrUpdate(uuid.New(), uuid.New(), itemID, yesterday(), todayUTC(), tc.value, nil)
 			if tc.wantErr == nil {
 				assert.NoError(t, err)
 			} else {
@@ -178,7 +182,7 @@ func TestProcessor_CreateOrUpdate_NoteTooLong(t *testing.T) {
 	}
 	note := string(long)
 
-	_, _, _, err := p.CreateOrUpdate(uuid.New(), uuid.New(), itemID, yesterday(), numericValue(1), &note)
+	_, _, _, err := p.CreateOrUpdate(uuid.New(), uuid.New(), itemID, yesterday(), todayUTC(), numericValue(1), &note)
 	assert.ErrorIs(t, err, ErrNoteTooLong)
 }
 
@@ -193,7 +197,7 @@ func TestProcessor_Skip_RequiresScheduledDay(t *testing.T) {
 	_, err := schedule.CreateSnapshot(db, itemID, []int{otherDow}, time.Now().UTC().AddDate(0, -1, 0))
 	require.NoError(t, err)
 
-	_, err = p.Skip(uuid.New(), uuid.New(), itemID, yesterday())
+	_, err = p.Skip(uuid.New(), uuid.New(), itemID, yesterday(), todayUTC())
 	assert.ErrorIs(t, err, ErrNotScheduled)
 }
 
@@ -207,10 +211,10 @@ func TestProcessor_Skip_ClearsValueAndNote(t *testing.T) {
 	scheduleEverydayFor(t, db, itemID)
 	note := "had a long day"
 
-	_, _, _, err := p.CreateOrUpdate(tenantID, userID, itemID, yesterday(), numericValue(7), &note)
+	_, _, _, err := p.CreateOrUpdate(tenantID, userID, itemID, yesterday(), todayUTC(), numericValue(7), &note)
 	require.NoError(t, err)
 
-	skipped, err := p.Skip(tenantID, userID, itemID, yesterday())
+	skipped, err := p.Skip(tenantID, userID, itemID, yesterday(), todayUTC())
 	require.NoError(t, err)
 	assert.True(t, skipped.Skipped())
 	assert.Nil(t, skipped.Note())
@@ -226,7 +230,7 @@ func TestProcessor_RemoveSkip_DeletesSkippedEntry(t *testing.T) {
 	itemID := makeItem(t, db, "numeric", nil)
 	scheduleEverydayFor(t, db, itemID)
 
-	_, err := p.Skip(tenantID, userID, itemID, yesterday())
+	_, err := p.Skip(tenantID, userID, itemID, yesterday(), todayUTC())
 	require.NoError(t, err)
 
 	require.NoError(t, p.RemoveSkip(itemID, yesterday()))
@@ -254,9 +258,9 @@ func TestProcessor_ListByMonth_OnlyReturnsRequestedUserAndMonth(t *testing.T) {
 	item1 := makeItem(t, db, "numeric", nil)
 	item2 := makeItem(t, db, "numeric", nil)
 
-	_, _, _, err := p.CreateOrUpdate(uuid.New(), user1, item1, yesterday(), numericValue(1), nil)
+	_, _, _, err := p.CreateOrUpdate(uuid.New(), user1, item1, yesterday(), todayUTC(), numericValue(1), nil)
 	require.NoError(t, err)
-	_, _, _, err = p.CreateOrUpdate(uuid.New(), user2, item2, yesterday(), numericValue(2), nil)
+	_, _, _, err = p.CreateOrUpdate(uuid.New(), user2, item2, yesterday(), todayUTC(), numericValue(2), nil)
 	require.NoError(t, err)
 
 	month := time.Now().UTC().Format("2006-01")
@@ -282,9 +286,9 @@ func TestProcessor_ListByMonthWithScheduled_PairsScheduleProjection(t *testing.T
 	_, err := schedule.CreateSnapshot(db, unscheduledItem, []int{otherDow}, time.Now().UTC().AddDate(0, -1, 0))
 	require.NoError(t, err)
 
-	_, _, _, err = p.CreateOrUpdate(uuid.New(), userID, scheduledItem, yesterday(), numericValue(1), nil)
+	_, _, _, err = p.CreateOrUpdate(uuid.New(), userID, scheduledItem, yesterday(), todayUTC(), numericValue(1), nil)
 	require.NoError(t, err)
-	_, _, _, err = p.CreateOrUpdate(uuid.New(), userID, unscheduledItem, yesterday(), numericValue(2), nil)
+	_, _, _, err = p.CreateOrUpdate(uuid.New(), userID, unscheduledItem, yesterday(), todayUTC(), numericValue(2), nil)
 	require.NoError(t, err)
 
 	results, err := p.ListByMonthWithScheduled(userID, time.Now().UTC().Format("2006-01"))

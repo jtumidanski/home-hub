@@ -138,14 +138,22 @@ Toggles a Google Calendar's visibility on the household calendar.
 
 Returns calendar events for the household within a time range. Merges events from all connected users. Privacy masking applied server-side.
 
+The client computes both bounds from its local timezone and sends them as required RFC 3339 timestamps. The server does not infer a default range from a header or its own clock.
+
 **Parameters:**
 
-| Name  | In    | Type   | Required | Default               |
-|-------|-------|--------|----------|-----------------------|
-| start | query | string | no       | Start of current day  |
-| end   | query | string | no       | 7 days from start     |
+| Name  | In    | Type   | Required | Format    |
+|-------|-------|--------|----------|-----------|
+| start | query | string | yes      | RFC 3339  |
+| end   | query | string | yes      | RFC 3339  |
 
-**Constraints:** Maximum range between start and end is 90 days.
+**Constraints:** `end` must be strictly after `start`. Maximum range between start and end is 90 days.
+
+**Error Conditions:**
+
+| Status | Condition                                                       |
+|--------|-----------------------------------------------------------------|
+| 400    | Missing, empty, malformed `start`/`end`; `end` not after `start` |
 
 **Response:** JSON:API array of `calendar-events` resources.
 

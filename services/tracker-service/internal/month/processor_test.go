@@ -127,7 +127,7 @@ func TestComputeMonthSummary_AllFilledMarksComplete(t *testing.T) {
 		seedEntry(t, db, item, d, numericValue(1), false)
 	}
 
-	summary, items, entries, err := p.ComputeMonthSummary(userID, testMonth)
+	summary, items, entries, err := p.ComputeMonthSummary(userID, testMonth, time.Now().UTC())
 	require.NoError(t, err)
 	assert.True(t, summary.Complete)
 	assert.Equal(t, 31, summary.Completion.Expected)
@@ -152,7 +152,7 @@ func TestComputeMonthSummary_PartialNotComplete(t *testing.T) {
 		seedEntry(t, db, item, monthStart.AddDate(0, 0, i), nil, true)
 	}
 
-	summary, _, _, err := p.ComputeMonthSummary(userID, testMonth)
+	summary, _, _, err := p.ComputeMonthSummary(userID, testMonth, time.Now().UTC())
 	require.NoError(t, err)
 	assert.False(t, summary.Complete)
 	assert.Equal(t, 31, summary.Completion.Expected)
@@ -170,7 +170,7 @@ func TestComputeMonthSummary_MidMonthCreateLimitsExpectedRange(t *testing.T) {
 	createdAt := time.Date(2025, 1, 15, 0, 0, 0, 0, time.UTC)
 	seedItem(t, db, userID, "Mid-month", "numeric", nil, []int{}, createdAt, nil, createdAt)
 
-	summary, _, _, err := p.ComputeMonthSummary(userID, testMonth)
+	summary, _, _, err := p.ComputeMonthSummary(userID, testMonth, time.Now().UTC())
 	require.NoError(t, err)
 	assert.Equal(t, 17, summary.Completion.Expected)
 }
@@ -189,7 +189,7 @@ func TestComputeMonthSummary_MidMonthDeleteCapsExpectedRange(t *testing.T) {
 	// drop the ghost row — see the no-entries test below).
 	seedEntry(t, db, item, time.Date(2025, 1, 5, 0, 0, 0, 0, time.UTC), numericValue(1), false)
 
-	summary, items, _, err := p.ComputeMonthSummary(userID, testMonth)
+	summary, items, _, err := p.ComputeMonthSummary(userID, testMonth, time.Now().UTC())
 	require.NoError(t, err)
 	assert.Equal(t, 15, summary.Completion.Expected)
 	assert.Len(t, items, 1, "soft-deleted items with historical entries this month must still appear")
@@ -206,7 +206,7 @@ func TestComputeMonthSummary_DeletedItemWithoutEntriesIsDropped(t *testing.T) {
 	deletedAt := time.Date(2025, 1, 15, 0, 0, 0, 0, time.UTC)
 	seedItem(t, db, userID, "Deleted, no entries", "numeric", nil, []int{}, createdAt, &deletedAt, createdAt)
 
-	summary, items, _, err := p.ComputeMonthSummary(userID, testMonth)
+	summary, items, _, err := p.ComputeMonthSummary(userID, testMonth, time.Now().UTC())
 	require.NoError(t, err)
 	assert.Empty(t, items, "soft-deleted items with no entries this month must be dropped")
 	assert.Equal(t, 0, summary.Completion.Expected)
@@ -224,7 +224,7 @@ func TestComputeMonthSummary_ScheduleChangeUsesPriorSnapshotForEarlierDays(t *te
 	// Snapshot 2: Sundays only, effective Jan 15 2025.
 	addSnapshot(t, db, item.Id, []int{0}, time.Date(2025, 1, 15, 0, 0, 0, 0, time.UTC))
 
-	summary, _, _, err := p.ComputeMonthSummary(userID, testMonth)
+	summary, _, _, err := p.ComputeMonthSummary(userID, testMonth, time.Now().UTC())
 	require.NoError(t, err)
 	// Jan 1..14 = 14 days under "every day" snapshot.
 	// Jan 15..31 with Sunday-only: Jan 19, Jan 26 = 2 days.
@@ -235,7 +235,7 @@ func TestComputeMonthSummary_InvalidMonthFormat(t *testing.T) {
 	db := setupTestDB(t)
 	p := newTestProcessor(t, db)
 
-	_, _, _, err := p.ComputeMonthSummary(uuid.New(), "not-a-month")
+	_, _, _, err := p.ComputeMonthSummary(uuid.New(), "not-a-month", time.Now().UTC())
 	assert.ErrorIs(t, err, ErrInvalidMonth)
 }
 
@@ -248,7 +248,7 @@ func TestComputeReport_RejectsIncompleteMonth(t *testing.T) {
 	item := seedItem(t, db, userID, "Daily", "numeric", nil, []int{}, monthStart.AddDate(0, 0, -7), nil, monthStart.AddDate(0, 0, -7))
 	seedEntry(t, db, item, monthStart, numericValue(1), false)
 
-	_, err := p.ComputeReport(userID, testMonth)
+	_, err := p.ComputeReport(userID, testMonth, time.Now().UTC())
 	assert.ErrorIs(t, err, ErrMonthIncomplete)
 }
 
@@ -267,7 +267,7 @@ func TestComputeReport_NumericStats(t *testing.T) {
 		seedEntry(t, db, item, monthStart.AddDate(0, 0, i), numericValue(count), false)
 	}
 
-	report, err := p.ComputeReport(userID, testMonth)
+	report, err := p.ComputeReport(userID, testMonth, time.Now().UTC())
 	require.NoError(t, err)
 	require.Len(t, report.Items, 1)
 
@@ -301,7 +301,7 @@ func TestComputeReport_SentimentStats(t *testing.T) {
 		seedEntry(t, db, item, monthStart.AddDate(0, 0, i), sentimentValue("negative"), false)
 	}
 
-	report, err := p.ComputeReport(userID, testMonth)
+	report, err := p.ComputeReport(userID, testMonth, time.Now().UTC())
 	require.NoError(t, err)
 	require.Len(t, report.Items, 1)
 
@@ -325,7 +325,7 @@ func TestComputeReport_RangeStats(t *testing.T) {
 		seedEntry(t, db, item, monthStart.AddDate(0, 0, i), rangeValue(70+i), false)
 	}
 
-	report, err := p.ComputeReport(userID, testMonth)
+	report, err := p.ComputeReport(userID, testMonth, time.Now().UTC())
 	require.NoError(t, err)
 	require.Len(t, report.Items, 1)
 
@@ -352,7 +352,7 @@ func TestComputeReport_SoftDeletedItemAppearsInHistoricalReport(t *testing.T) {
 		seedEntry(t, db, item, monthStart.AddDate(0, 0, i), numericValue(1), false)
 	}
 
-	report, err := p.ComputeReport(userID, testMonth)
+	report, err := p.ComputeReport(userID, testMonth, time.Now().UTC())
 	require.NoError(t, err)
 	require.Len(t, report.Items, 1)
 	assert.Equal(t, "Old habit", report.Items[0].Name)

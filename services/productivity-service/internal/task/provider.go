@@ -35,17 +35,17 @@ func countByStatus(db *gorm.DB, status string) (int64, error) {
 	return count, err
 }
 
-func countOverdue(db *gorm.DB, now time.Time) (int64, error) {
-	todayDate := now.Format("2006-01-02")
+func countOverdue(db *gorm.DB, date time.Time) (int64, error) {
+	dateStr := date.Format("2006-01-02")
 	var count int64
 	err := db.Model(&Entity{}).
-		Where("status = ? AND deleted_at IS NULL AND due_on < ?", "pending", todayDate).
+		Where("status = ? AND deleted_at IS NULL AND due_on < ?", "pending", dateStr).
 		Count(&count).Error
 	return count, err
 }
 
-func countCompletedToday(db *gorm.DB, now time.Time) (int64, error) {
-	startOfDay := time.Date(now.Year(), now.Month(), now.Day(), 0, 0, 0, 0, now.Location()).UTC()
+func countCompletedToday(db *gorm.DB, date time.Time) (int64, error) {
+	startOfDay := time.Date(date.Year(), date.Month(), date.Day(), 0, 0, 0, 0, time.UTC)
 	var count int64
 	err := db.Model(&Entity{}).
 		Where("status = ? AND deleted_at IS NULL AND completed_at >= ?", "completed", startOfDay).
