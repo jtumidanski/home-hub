@@ -12,17 +12,16 @@ import (
 	"github.com/jtumidanski/home-hub/services/calendar-service/internal/crypto"
 	"github.com/jtumidanski/home-hub/services/calendar-service/internal/googlecal"
 	"github.com/jtumidanski/home-hub/services/calendar-service/internal/source"
-	"github.com/jtumidanski/home-hub/services/calendar-service/internal/tz"
 	"github.com/jtumidanski/home-hub/shared/go/server"
 	tenantctx "github.com/jtumidanski/home-hub/shared/go/tenant"
 	"github.com/sirupsen/logrus"
 	"gorm.io/gorm"
 )
 
-func InitializeRoutes(db *gorm.DB, accountBaseURL string) func(l logrus.FieldLogger, si jsonapi.ServerInformation, api *mux.Router) {
+func InitializeRoutes(db *gorm.DB) func(l logrus.FieldLogger, si jsonapi.ServerInformation, api *mux.Router) {
 	return func(l logrus.FieldLogger, si jsonapi.ServerInformation, api *mux.Router) {
 		rh := server.RegisterHandler(l)(si)
-		api.HandleFunc("/calendar/events", rh("ListEvents", listEventsHandler(db, accountBaseURL))).Methods(http.MethodGet)
+		api.HandleFunc("/calendar/events", rh("ListEvents", listEventsHandler(db))).Methods(http.MethodGet)
 	}
 }
 
@@ -38,39 +37,32 @@ func InitializeMutationRoutes(db *gorm.DB, gcClient *googlecal.Client, enc *cryp
 	}
 }
 
-func listEventsHandler(db *gorm.DB, accountBaseURL string) server.GetHandler {
+func listEventsHandler(db *gorm.DB) server.GetHandler {
 	return func(d *server.HandlerDependency, c *server.HandlerContext) http.HandlerFunc {
 		return func(w http.ResponseWriter, r *http.Request) {
 			t := tenantctx.MustFromContext(r.Context())
 
-			lookup := tz.NewAccountHouseholdLookup(accountBaseURL, r.Header.Get("Authorization"))
-			loc := tz.Resolve(r.Context(), d.Logger(), r.Header, t.HouseholdId(), lookup)
-
-			now := time.Now().In(loc)
 			startStr := r.URL.Query().Get("start")
 			endStr := r.URL.Query().Get("end")
 
-			var start, end time.Time
-			var err error
-
-			if startStr != "" {
-				start, err = time.Parse(time.RFC3339, startStr)
-				if err != nil {
-					server.WriteError(w, http.StatusBadRequest, "Invalid Parameter", "Invalid start date format, use ISO 8601")
-					return
-				}
-			} else {
-				start = time.Date(now.Year(), now.Month(), now.Day(), 0, 0, 0, 0, loc)
+			if startStr == "" || endStr == "" {
+				server.WriteError(w, http.StatusBadRequest, "Invalid Parameter", "start and end are required (RFC 3339)")
+				return
 			}
 
-			if endStr != "" {
-				end, err = time.Parse(time.RFC3339, endStr)
-				if err != nil {
-					server.WriteError(w, http.StatusBadRequest, "Invalid Parameter", "Invalid end date format, use ISO 8601")
-					return
-				}
-			} else {
-				end = start.AddDate(0, 0, 7)
+			start, err := time.Parse(time.RFC3339, startStr)
+			if err != nil {
+				server.WriteError(w, http.StatusBadRequest, "Invalid Parameter", "Invalid start date format, use ISO 8601")
+				return
+			}
+			end, err := time.Parse(time.RFC3339, endStr)
+			if err != nil {
+				server.WriteError(w, http.StatusBadRequest, "Invalid Parameter", "Invalid end date format, use ISO 8601")
+				return
+			}
+			if !end.After(start) {
+				server.WriteError(w, http.StatusBadRequest, "Invalid Parameter", "end must be after start")
+				return
 			}
 
 			proc := NewProcessor(d.Logger(), r.Context(), db)

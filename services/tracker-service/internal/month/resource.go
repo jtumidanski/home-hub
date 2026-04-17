@@ -6,6 +6,7 @@ import (
 
 	"github.com/gorilla/mux"
 	"github.com/jtumidanski/api2go/jsonapi"
+	httpparams "github.com/jtumidanski/home-hub/shared/go/http"
 	"github.com/jtumidanski/home-hub/shared/go/server"
 	tenantctx "github.com/jtumidanski/home-hub/shared/go/tenant"
 	"github.com/sirupsen/logrus"
@@ -24,11 +25,17 @@ func InitializeRoutes(db *gorm.DB) func(l logrus.FieldLogger, si jsonapi.ServerI
 func monthSummaryHandler(db *gorm.DB) server.GetHandler {
 	return func(d *server.HandlerDependency, c *server.HandlerContext) http.HandlerFunc {
 		return func(w http.ResponseWriter, r *http.Request) {
+			today, err := httpparams.ParseDateParam(r, "today")
+			if err != nil {
+				server.WriteError(w, http.StatusBadRequest, "Invalid request", err.Error())
+				return
+			}
+
 			t := tenantctx.MustFromContext(r.Context())
 			monthStr := mux.Vars(r)["month"]
 
 			proc := NewProcessor(d.Logger(), r.Context(), db)
-			detail, err := proc.ComputeMonthSummaryDetail(t.UserId(), monthStr)
+			detail, err := proc.ComputeMonthSummaryDetail(t.UserId(), monthStr, today)
 			if err != nil {
 				if errors.Is(err, ErrInvalidMonth) {
 					server.WriteError(w, http.StatusBadRequest, "Validation Failed", err.Error())
@@ -58,11 +65,17 @@ func monthSummaryHandler(db *gorm.DB) server.GetHandler {
 func monthReportHandler(db *gorm.DB) server.GetHandler {
 	return func(d *server.HandlerDependency, c *server.HandlerContext) http.HandlerFunc {
 		return func(w http.ResponseWriter, r *http.Request) {
+			today, err := httpparams.ParseDateParam(r, "today")
+			if err != nil {
+				server.WriteError(w, http.StatusBadRequest, "Invalid request", err.Error())
+				return
+			}
+
 			t := tenantctx.MustFromContext(r.Context())
 			monthStr := mux.Vars(r)["month"]
 
 			proc := NewProcessor(d.Logger(), r.Context(), db)
-			report, err := proc.ComputeReport(t.UserId(), monthStr)
+			report, err := proc.ComputeReport(t.UserId(), monthStr, today)
 			if err != nil {
 				if errors.Is(err, ErrInvalidMonth) {
 					server.WriteError(w, http.StatusBadRequest, "Validation Failed", err.Error())

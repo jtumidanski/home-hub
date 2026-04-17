@@ -20,18 +20,18 @@ func NewProcessor(l logrus.FieldLogger, ctx context.Context, db *gorm.DB) *Proce
 	return &Processor{l: l, ctx: ctx, db: db}
 }
 
-func (p *Processor) TaskSummary(now time.Time) (TaskSummary, error) {
+func (p *Processor) TaskSummary(date time.Time) (TaskSummary, error) {
 	taskProc := task.NewProcessor(p.l, p.ctx, p.db)
 
 	pending, err := taskProc.PendingCount()
 	if err != nil {
 		return TaskSummary{}, err
 	}
-	completed, err := taskProc.CompletedTodayCount(now)
+	completed, err := taskProc.CompletedTodayCount(date)
 	if err != nil {
 		return TaskSummary{}, err
 	}
-	overdue, err := taskProc.OverdueCount(now)
+	overdue, err := taskProc.OverdueCount(date)
 	if err != nil {
 		return TaskSummary{}, err
 	}

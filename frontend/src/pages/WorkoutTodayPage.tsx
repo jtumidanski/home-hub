@@ -12,11 +12,15 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { useWorkoutToday, usePatchPerformance } from "@/lib/hooks/api/use-workouts";
+import { useTenant } from "@/context/tenant-context";
+import { useLocalDate } from "@/lib/hooks/use-local-date";
 import type { WeekItem, WeightUnit } from "@/types/models/workout";
 import { toast } from "sonner";
 
 export function WorkoutTodayPage() {
-  const { data, isLoading, error } = useWorkoutToday();
+  const { household } = useTenant();
+  const today = useLocalDate(household?.attributes.timezone);
+  const { data, isLoading, error } = useWorkoutToday(today);
 
   if (isLoading) return <p className="text-muted-foreground">Loading…</p>;
   if (error) return <p className="text-destructive">Failed to load today's workout.</p>;

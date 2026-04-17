@@ -7,6 +7,7 @@ COPY shared/go/model/ shared/go/model/
 COPY shared/go/tenant/ shared/go/tenant/
 COPY shared/go/logging/ shared/go/logging/
 COPY shared/go/database/ shared/go/database/
+COPY shared/go/http/ shared/go/http/
 COPY shared/go/server/ shared/go/server/
 COPY shared/go/auth/ shared/go/auth/
 COPY shared/go/retention/ shared/go/retention/

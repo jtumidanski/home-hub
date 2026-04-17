@@ -65,28 +65,32 @@ class TrackerService extends BaseService {
     return this.remove(tenant, `/trackers/${id}`);
   }
 
-  getToday(tenant: { id: string }): Promise<TodayResponse> {
+  getToday(tenant: { id: string }, date: string): Promise<TodayResponse> {
     this.setTenant(tenant);
-    return api.get<TodayResponse>("/trackers/today");
+    return api.get<TodayResponse>(`/trackers/today?date=${encodeURIComponent(date)}`);
   }
 
   putEntry(
     tenant: { id: string },
     itemId: string,
     date: string,
+    today: string,
     value: unknown,
     note?: string | null
   ): Promise<ApiResponse<TrackerEntry>> {
     this.setTenant(tenant);
-    return api.put<ApiResponse<TrackerEntry>>(`/trackers/${itemId}/entries/${date}`, {
-      data: {
-        type: "tracker-entries",
-        attributes: {
-          value,
-          ...(note !== undefined ? { note } : {}),
+    return api.put<ApiResponse<TrackerEntry>>(
+      `/trackers/${itemId}/entries/${date}?today=${encodeURIComponent(today)}`,
+      {
+        data: {
+          type: "tracker-entries",
+          attributes: {
+            value,
+            ...(note !== undefined ? { note } : {}),
+          },
         },
       },
-    });
+    );
   }
 
   deleteEntry(tenant: { id: string }, itemId: string, date: string) {
@@ -96,10 +100,14 @@ class TrackerService extends BaseService {
   skipEntry(
     tenant: { id: string },
     itemId: string,
-    date: string
+    date: string,
+    today: string,
   ): Promise<ApiResponse<TrackerEntry>> {
     this.setTenant(tenant);
-    return api.put<ApiResponse<TrackerEntry>>(`/trackers/${itemId}/entries/${date}/skip`, {});
+    return api.put<ApiResponse<TrackerEntry>>(
+      `/trackers/${itemId}/entries/${date}/skip?today=${encodeURIComponent(today)}`,
+      {},
+    );
   }
 
   removeSkip(tenant: { id: string }, itemId: string, date: string) {
@@ -111,14 +119,18 @@ class TrackerService extends BaseService {
     return api.get<ApiListResponse<TrackerEntry>>(`/trackers/entries?month=${month}`);
   }
 
-  getMonthSummary(tenant: { id: string }, month: string): Promise<MonthSummaryResponse> {
+  getMonthSummary(tenant: { id: string }, month: string, today: string): Promise<MonthSummaryResponse> {
     this.setTenant(tenant);
-    return api.get<MonthSummaryResponse>(`/trackers/months/${month}`);
+    return api.get<MonthSummaryResponse>(
+      `/trackers/months/${month}?today=${encodeURIComponent(today)}`,
+    );
   }
 
-  getMonthReport(tenant: { id: string }, month: string): Promise<MonthReportResponse> {
+  getMonthReport(tenant: { id: string }, month: string, today: string): Promise<MonthReportResponse> {
     this.setTenant(tenant);
-    return api.get<MonthReportResponse>(`/trackers/months/${month}/report`);
+    return api.get<MonthReportResponse>(
+      `/trackers/months/${month}/report?today=${encodeURIComponent(today)}`,
+    );
   }
 }
 

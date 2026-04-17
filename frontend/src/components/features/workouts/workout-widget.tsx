@@ -1,11 +1,15 @@
 import { Link } from "react-router-dom";
 import { useWorkoutToday } from "@/lib/hooks/api/use-workouts";
+import { useTenant } from "@/context/tenant-context";
+import { useLocalDate } from "@/lib/hooks/use-local-date";
 import { Card, CardAction, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Dumbbell, BedDouble, Check, Circle, CircleDot, SkipForward, ChevronRight } from "lucide-react";
 
 export function WorkoutWidget() {
-  const { data, isLoading, isError } = useWorkoutToday();
+  const { household } = useTenant();
+  const today = useLocalDate(household?.attributes.timezone);
+  const { data, isLoading, isError } = useWorkoutToday(today);
 
   if (isLoading) {
     return (

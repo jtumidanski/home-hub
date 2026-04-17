@@ -120,24 +120,46 @@ Soft-deletes a tracking item. Existing entries and historical reports continue t
 
 ---
 
-### GET /api/v1/trackers/today
+### GET /api/v1/trackers/today?date=YYYY-MM-DD
 
-Returns the items scheduled for the current day (UTC) along with any entries the user has already logged today.
+Returns the items scheduled for the supplied calendar day along with any entries the user has logged on that date.
+
+The client computes `date` from the household's local timezone and sends it as a required query parameter. The server does not infer "today" from a header or its own clock.
+
+**Parameters:**
+
+| Name | In    | Type   | Required | Format     |
+|------|-------|--------|----------|------------|
+| date | query | string | yes      | YYYY-MM-DD |
 
 **Response:** A `tracker-today` resource with two relationships:
 
 - `items` — array of `trackers` summaries (id, name, scale_type, scale_config, color, sort_order)
 - `entries` — array of `tracker-entries` for the same items, where present
 
-Top-level attribute: `date` (today, `YYYY-MM-DD`).
+Top-level attribute: `date` (the supplied date, `YYYY-MM-DD`).
 
-If the user has no scheduled items today, both arrays are empty.
+If the user has no scheduled items on the supplied date, both arrays are empty.
+
+**Error Conditions:**
+
+| Status | Condition                                          |
+|--------|----------------------------------------------------|
+| 400    | Missing, empty, or malformed `date` parameter       |
 
 ---
 
-### PUT /api/v1/trackers/{id}/entries/{date}
+### PUT /api/v1/trackers/{id}/entries/{date}?today=YYYY-MM-DD
 
 Creates or updates an entry for the given item on the given date. If a prior entry exists for the same `(id, date)`, it is updated and any prior `skipped` flag is cleared.
+
+The `today` query parameter is required: it carries the client's local "today" so the server can reject future-dated entries without resolving a timezone.
+
+**Parameters:**
+
+| Name  | In    | Type   | Required | Format     |
+|-------|-------|--------|----------|------------|
+| today | query | string | yes      | YYYY-MM-DD |
 
 **Request:** JSON:API `tracker-entries` resource.
 
@@ -184,9 +206,17 @@ Deletes the entry for the given item and date. Idempotent — returns 204 even w
 
 ---
 
-### PUT /api/v1/trackers/{id}/entries/{date}/skip
+### PUT /api/v1/trackers/{id}/entries/{date}/skip?today=YYYY-MM-DD
 
 Marks a scheduled day as skipped. The skip counts toward month completion. Only allowed on dates that fall on the item's effective schedule.
+
+The `today` query parameter is required so the server can reject skip attempts for future dates.
+
+**Parameters:**
+
+| Name  | In    | Type   | Required | Format     |
+|-------|-------|--------|----------|------------|
+| today | query | string | yes      | YYYY-MM-DD |
 
 **Response:** JSON:API `tracker-entries` resource with `skipped: true` and `value: null`.
 
@@ -227,9 +257,17 @@ Lists all entries for the current user across all items for the given month.
 
 ---
 
-### GET /api/v1/trackers/months/{YYYY-MM}
+### GET /api/v1/trackers/months/{YYYY-MM}?today=YYYY-MM-DD
 
 Returns the month summary: active items, entries, and completion status.
+
+The `today` query parameter is required and is used to gate past/future cells in the month view.
+
+**Parameters:**
+
+| Name  | In    | Type   | Required | Format     |
+|-------|-------|--------|----------|------------|
+| today | query | string | yes      | YYYY-MM-DD |
 
 **Response:** A `tracker-months` resource. Top-level attributes:
 
@@ -254,9 +292,15 @@ The response also embeds:
 
 ---
 
-### GET /api/v1/trackers/months/{YYYY-MM}/report
+### GET /api/v1/trackers/months/{YYYY-MM}/report?today=YYYY-MM-DD
 
-Returns the computed dashboard report for a completed month. Refuses to compute for in-progress months.
+Returns the computed dashboard report for a completed month. Refuses to compute for in-progress months. Requires `today` to determine month completion against the client's local date.
+
+**Parameters:**
+
+| Name  | In    | Type   | Required | Format     |
+|-------|-------|--------|----------|------------|
+| today | query | string | yes      | YYYY-MM-DD |
 
 **Response:** A `tracker-reports` resource.
 

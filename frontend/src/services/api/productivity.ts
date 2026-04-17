@@ -94,16 +94,16 @@ class ProductivityService extends BaseService {
 
   // Summaries
 
-  getTaskSummary(tenant: Tenant) {
-    return this.getOne<TaskSummary>(tenant, "/summary/tasks");
+  getTaskSummary(tenant: Tenant, date: string) {
+    return this.getOne<TaskSummary>(tenant, `/summary/tasks?date=${encodeURIComponent(date)}`);
   }
 
   getReminderSummary(tenant: Tenant) {
     return this.getOne<ReminderSummary>(tenant, "/summary/reminders");
   }
 
-  getDashboardSummary(tenant: Tenant) {
-    return this.getOne<DashboardSummary>(tenant, "/summary/dashboard");
+  getDashboardSummary(tenant: Tenant, date: string) {
+    return this.getOne<DashboardSummary>(tenant, `/summary/dashboard?date=${encodeURIComponent(date)}`);
   }
 }
 

@@ -1,11 +1,15 @@
 import { Link } from "react-router-dom";
 import { useTrackerToday } from "@/lib/hooks/api/use-trackers";
+import { useTenant } from "@/context/tenant-context";
+import { useLocalDate } from "@/lib/hooks/use-local-date";
 import { Card, CardAction, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { ListChecks, Check, Circle, SkipForward, ChevronRight } from "lucide-react";
 
 export function HabitsWidget() {
-  const { data, isLoading, isError } = useTrackerToday();
+  const { household } = useTenant();
+  const today = useLocalDate(household?.attributes.timezone);
+  const { data, isLoading, isError } = useTrackerToday(today);
 
   if (isLoading) {
     return (

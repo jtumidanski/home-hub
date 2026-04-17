@@ -18,8 +18,10 @@ export const taskKeys = {
     [...taskKeys.all(tenant, household), "detail"] as const,
   detail: (tenant: Tenant | null, household: Household | null, id: string) =>
     [...taskKeys.details(tenant, household), id] as const,
-  summary: (tenant: Tenant | null, household: Household | null) =>
+  summaryAll: (tenant: Tenant | null, household: Household | null) =>
     [...taskKeys.all(tenant, household), "summary"] as const,
+  summary: (tenant: Tenant | null, household: Household | null, date: string) =>
+    [...taskKeys.all(tenant, household), "summary", date] as const,
 };
 
 // --- Query hooks ---
@@ -35,12 +37,12 @@ export function useTasks() {
   });
 }
 
-export function useTaskSummary() {
+export function useTaskSummary(date: string) {
   const { tenant, household } = useTenant();
   return useQuery({
-    queryKey: taskKeys.summary(tenant, household),
-    queryFn: () => productivityService.getTaskSummary(tenant!),
-    enabled: !!tenant?.id && !!household?.id,
+    queryKey: taskKeys.summary(tenant, household, date),
+    queryFn: () => productivityService.getTaskSummary(tenant!, date),
+    enabled: !!tenant?.id && !!household?.id && !!date,
     staleTime: 60 * 1000,
     gcTime: 5 * 60 * 1000,
   });
@@ -56,7 +58,7 @@ export function useCreateTask() {
       productivityService.createTask(tenant!, attrs),
     onSettled: () => {
       qc.invalidateQueries({ queryKey: taskKeys.lists(tenant, household) });
-      qc.invalidateQueries({ queryKey: taskKeys.summary(tenant, household) });
+      qc.invalidateQueries({ queryKey: taskKeys.summaryAll(tenant, household) });
     },
     onError: (error) => {
       toast.error(getErrorMessage(error, "Failed to create task"));
@@ -72,7 +74,7 @@ export function useUpdateTask() {
       productivityService.updateTask(tenant!, id, attrs),
     onSettled: () => {
       qc.invalidateQueries({ queryKey: taskKeys.lists(tenant, household) });
-      qc.invalidateQueries({ queryKey: taskKeys.summary(tenant, household) });
+      qc.invalidateQueries({ queryKey: taskKeys.summaryAll(tenant, household) });
     },
     onError: (error) => {
       toast.error(getErrorMessage(error, "Failed to update task"));
@@ -106,7 +108,7 @@ export function useDeleteTask() {
     },
     onSettled: () => {
       qc.invalidateQueries({ queryKey: taskKeys.lists(tenant, household) });
-      qc.invalidateQueries({ queryKey: taskKeys.summary(tenant, household) });
+      qc.invalidateQueries({ queryKey: taskKeys.summaryAll(tenant, household) });
     },
   });
 }
@@ -118,7 +120,7 @@ export function useRestoreTask() {
     mutationFn: (taskId: string) => productivityService.restoreTask(tenant!, taskId),
     onSettled: () => {
       qc.invalidateQueries({ queryKey: taskKeys.lists(tenant, household) });
-      qc.invalidateQueries({ queryKey: taskKeys.summary(tenant, household) });
+      qc.invalidateQueries({ queryKey: taskKeys.summaryAll(tenant, household) });
     },
     onError: (error) => {
       toast.error(getErrorMessage(error, "Failed to restore task"));
@@ -138,7 +140,7 @@ export function useInvalidateTasks() {
     invalidateLists: () =>
       qc.invalidateQueries({ queryKey: taskKeys.lists(tenant, household) }),
     invalidateSummary: () =>
-      qc.invalidateQueries({ queryKey: taskKeys.summary(tenant, household) }),
+      qc.invalidateQueries({ queryKey: taskKeys.summaryAll(tenant, household) }),
     invalidateTask: (id: string) =>
       qc.invalidateQueries({ queryKey: taskKeys.detail(tenant, household, id) }),
   };
@@ -159,11 +161,11 @@ export function usePrefetchTasks() {
         staleTime: 5 * 60 * 1000,
       });
     },
-    prefetchSummary: () => {
-      if (!tenant || !household) return;
+    prefetchSummary: (date: string) => {
+      if (!tenant || !household || !date) return;
       qc.prefetchQuery({
-        queryKey: taskKeys.summary(tenant, household),
-        queryFn: () => productivityService.getTaskSummary(tenant),
+        queryKey: taskKeys.summary(tenant, household, date),
+        queryFn: () => productivityService.getTaskSummary(tenant, date),
         staleTime: 60 * 1000,
       });
     },

@@ -364,11 +364,15 @@ Allowed values for durationMinutes: 10, 30, 60.
 
 ---
 
-### GET /api/v1/summary/tasks
+### GET /api/v1/summary/tasks?date=YYYY-MM-DD
 
-Returns aggregated task counts.
+Returns aggregated task counts. The client computes "today" in its local timezone and supplies it as `date`; the server uses it to compute the `completedTodayCount` and `overdueCount` boundaries.
 
-**Parameters:** None
+**Parameters:**
+
+| Name | In    | Type   | Required | Format     |
+|------|-------|--------|----------|------------|
+| date | query | string | yes      | YYYY-MM-DD |
 
 **Response:** JSON:API `task-summaries` resource with ID "current".
 
@@ -380,9 +384,10 @@ Returns aggregated task counts.
 
 **Error Conditions:**
 
-| Status | Condition    |
-|--------|--------------|
-| 500    | Query failed |
+| Status | Condition                                     |
+|--------|-----------------------------------------------|
+| 400    | Missing, empty, or malformed `date` parameter |
+| 500    | Query failed                                  |
 
 ---
 
@@ -408,11 +413,15 @@ Returns aggregated reminder counts.
 
 ---
 
-### GET /api/v1/summary/dashboard
+### GET /api/v1/summary/dashboard?date=YYYY-MM-DD
 
-Returns a combined dashboard summary.
+Returns a combined dashboard summary. Same `date` semantics as `/summary/tasks`.
 
-**Parameters:** None
+**Parameters:**
+
+| Name | In    | Type   | Required | Format     |
+|------|-------|--------|----------|------------|
+| date | query | string | yes      | YYYY-MM-DD |
 
 **Response:** JSON:API `dashboard-summaries` resource with ID "current".
 
@@ -421,6 +430,13 @@ Returns a combined dashboard summary.
 | pendingTaskCount | int    |
 | dueReminderCount | int    |
 | generatedAt      | string |
+
+**Error Conditions:**
+
+| Status | Condition                                     |
+|--------|-----------------------------------------------|
+| 400    | Missing, empty, or malformed `date` parameter |
+| 500    | Query failed                                  |
 
 **Error Conditions:**
 

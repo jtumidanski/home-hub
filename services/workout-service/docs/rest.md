@@ -53,7 +53,7 @@ Default region list is installed on first request.
 
 ## Composite reads
 
-- `GET    /api/v1/workouts/today` — the current day in UTC, with embedded items + performances
+- `GET    /api/v1/workouts/today?date=YYYY-MM-DD` — the supplied calendar day, with embedded items + performances. The `date` query parameter is required; the server does not infer "today" from a header or its own clock. Returns 400 on missing or malformed `date`.
 - `GET    /api/v1/workouts/weeks/{weekStart}/summary` — per-day, per-theme, per-primary-region totals
 
 ## Error mapping

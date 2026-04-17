@@ -2,6 +2,8 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useMonthReport } from "@/lib/hooks/api/use-trackers";
+import { useTenant } from "@/context/tenant-context";
+import { getLocalTodayStr } from "@/lib/date-utils";
 import type { SentimentStats, NumericStats, RangeStats, ReportItem } from "@/types/models/tracker";
 
 interface Props {
@@ -16,7 +18,9 @@ function formatMonth(month: string) {
 }
 
 export function MonthReport({ month, onBackToCalendar }: Props) {
-  const { data, isLoading, error } = useMonthReport(month, true);
+  const { household } = useTenant();
+  const today = getLocalTodayStr(household?.attributes.timezone);
+  const { data, isLoading, error } = useMonthReport(month, today, true);
 
   if (isLoading) return <Skeleton className="h-96 w-full" />;
   if (error) return <p className="text-sm text-muted-foreground">Report not available for this month.</p>;
