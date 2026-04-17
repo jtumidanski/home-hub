@@ -2,7 +2,9 @@
   "$schema": "https://docs.renovatebot.com/renovate-schema.json",
   "extends": ["config:base"],
   "enabledManagers": ["gomod", "npm", "github-actions", "dockerfile"],
-  "automerge": false,
+  "automerge": true,
+  "automergeType": "pr",
+  "platformAutomerge": true,
   "labels": ["dependencies"],
   "packageRules": [
     {
