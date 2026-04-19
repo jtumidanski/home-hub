@@ -115,6 +115,15 @@ func (p *Processor) Patch(tenantID, userID uuid.UUID, plannedItemID uuid.UUID, i
 		e.Status = deriveStatusFromActuals(prev)
 	}
 
+	// When the final status is `done` in summary mode, fill any nil actual
+	// fields from the planned values. Captures the "I did what was planned"
+	// intent of a bare Done click so consumers (review page, dashboards) can
+	// treat the actuals as authoritative without re-implementing the fallback.
+	// Pre-existing actuals are preserved.
+	if e.Status == StatusDone && e.Mode == ModeSummary {
+		backfillActualsFromPlanned(&e, pi)
+	}
+
 	// Validate the merged state through the builder so unit/numeric/status
 	// invariants are enforced even when the patch arrived in slices.
 	m, err := Make(e)
@@ -182,6 +191,41 @@ func deriveStatusFromActuals(prev string) string {
 func hasAnyActuals(e Entity) bool {
 	return e.ActualSets != nil || e.ActualReps != nil || e.ActualWeight != nil ||
 		e.ActualDurationSeconds != nil || e.ActualDistance != nil
+}
+
+// backfillActualsFromPlanned fills nil actual fields on `e` from the matching
+// planned fields on `pi`. Only nil fields are touched; fields the user already
+// supplied are preserved. Units follow the values: the planned weight unit is
+// copied alongside a weight backfill, and likewise for distance.
+func backfillActualsFromPlanned(e *Entity, pi planneditem.Entity) {
+	if e.ActualSets == nil && pi.PlannedSets != nil {
+		v := *pi.PlannedSets
+		e.ActualSets = &v
+	}
+	if e.ActualReps == nil && pi.PlannedReps != nil {
+		v := *pi.PlannedReps
+		e.ActualReps = &v
+	}
+	if e.ActualWeight == nil && pi.PlannedWeight != nil {
+		v := *pi.PlannedWeight
+		e.ActualWeight = &v
+		if e.WeightUnit == nil && pi.PlannedWeightUnit != nil {
+			u := *pi.PlannedWeightUnit
+			e.WeightUnit = &u
+		}
+	}
+	if e.ActualDurationSeconds == nil && pi.PlannedDurationSeconds != nil {
+		v := *pi.PlannedDurationSeconds
+		e.ActualDurationSeconds = &v
+	}
+	if e.ActualDistance == nil && pi.PlannedDistance != nil {
+		v := *pi.PlannedDistance
+		e.ActualDistance = &v
+		if e.ActualDistanceUnit == nil && pi.PlannedDistanceUnit != nil {
+			u := *pi.PlannedDistanceUnit
+			e.ActualDistanceUnit = &u
+		}
+	}
 }
 
 func (p *Processor) findOrEmpty(tenantID, userID, plannedItemID uuid.UUID) (Entity, bool) {
