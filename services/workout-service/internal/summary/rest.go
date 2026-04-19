@@ -38,6 +38,7 @@ type regionGroup struct {
 type dayItem struct {
 	ItemID        uuid.UUID `json:"itemId"`
 	ExerciseName  string    `json:"exerciseName"`
+	Kind          string    `json:"kind"`
 	Status        string    `json:"status"`
 	Planned       any       `json:"planned"`
 	ActualSummary any       `json:"actualSummary"`
@@ -53,15 +54,17 @@ type dayBlock struct {
 // The id is the week's ISO start date so the URL identifier and the resource
 // identifier match (the URL is `/weeks/{weekStart}/summary`).
 type RestModel struct {
-	Id                  string        `json:"-"`
-	WeekStartDate       string        `json:"weekStartDate"`
-	RestDayFlags        []int         `json:"restDayFlags"`
-	TotalPlannedItems   int           `json:"totalPlannedItems"`
-	TotalPerformedItems int           `json:"totalPerformedItems"`
-	TotalSkippedItems   int           `json:"totalSkippedItems"`
-	ByDay               []dayBlock    `json:"byDay"`
-	ByTheme             []themeGroup  `json:"byTheme"`
-	ByRegion            []regionGroup `json:"byRegion"`
+	Id                    string        `json:"-"`
+	WeekStartDate         string        `json:"weekStartDate"`
+	RestDayFlags          []int         `json:"restDayFlags"`
+	TotalPlannedItems     int           `json:"totalPlannedItems"`
+	TotalPerformedItems   int           `json:"totalPerformedItems"`
+	TotalSkippedItems     int           `json:"totalSkippedItems"`
+	PreviousPopulatedWeek *string       `json:"previousPopulatedWeek"`
+	NextPopulatedWeek     *string       `json:"nextPopulatedWeek"`
+	ByDay                 []dayBlock    `json:"byDay"`
+	ByTheme               []themeGroup  `json:"byTheme"`
+	ByRegion              []regionGroup `json:"byRegion"`
 }
 
 func (r RestModel) GetName() string         { return "week-summaries" }

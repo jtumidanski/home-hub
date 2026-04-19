@@ -3,13 +3,13 @@ import { CalendarDays, Dumbbell, ListChecks, Tag, BarChart3 } from "lucide-react
 import { cn } from "@/lib/utils";
 
 // Shared chrome for the Workout section. Today / Week / Exercises / Taxonomy /
-// Summary tabs map to nested routes; the rendered page sits inside <Outlet />.
+// Review tabs map to nested routes; the rendered page sits inside <Outlet />.
 const tabs = [
   { to: "/app/workouts/today", icon: ListChecks, label: "Today" },
   { to: "/app/workouts/week", icon: CalendarDays, label: "Week" },
   { to: "/app/workouts/exercises", icon: Dumbbell, label: "Exercises" },
   { to: "/app/workouts/taxonomy", icon: Tag, label: "Taxonomy" },
-  { to: "/app/workouts/summary", icon: BarChart3, label: "Summary" },
+  { to: "/app/workouts/review", icon: BarChart3, label: "Review" },
 ];
 
 export function WorkoutShell() {

@@ -7,6 +7,8 @@ package summary
 
 import (
 	"context"
+	"errors"
+	"time"
 
 	"github.com/google/uuid"
 	"github.com/jtumidanski/home-hub/services/workout-service/internal/exercise"
@@ -90,6 +92,7 @@ func (p *Processor) Build(wk week.Model) (RestModel, error) {
 		byDay[it.DayOfWeek] = append(byDay[it.DayOfWeek], dayItem{
 			ItemID:        it.Id,
 			ExerciseName:  ex.Name,
+			Kind:          ex.Kind,
 			Status:        status,
 			Planned:       buildPlannedShape(it, ex.Kind),
 			ActualSummary: buildActualSummary(perf, setMap[performanceID(perf, hasPerf)], ex.Kind),
@@ -136,17 +139,42 @@ func (p *Processor) Build(wk week.Model) (RestModel, error) {
 	if flags == nil {
 		flags = []int{}
 	}
+
+	prev, next := p.loadNavPointers(db, wk.UserID(), wk.WeekStartDate())
+
 	return RestModel{
-		Id:                  wk.WeekStartDate().Format("2006-01-02"),
-		WeekStartDate:       wk.WeekStartDate().Format("2006-01-02"),
-		RestDayFlags:        flags,
-		TotalPlannedItems:   totals.planned,
-		TotalPerformedItems: totals.performed,
-		TotalSkippedItems:   totals.skipped,
-		ByDay:               dayList,
-		ByTheme:             themes,
-		ByRegion:            regions,
+		Id:                    wk.WeekStartDate().Format("2006-01-02"),
+		WeekStartDate:         wk.WeekStartDate().Format("2006-01-02"),
+		RestDayFlags:          flags,
+		TotalPlannedItems:     totals.planned,
+		TotalPerformedItems:   totals.performed,
+		TotalSkippedItems:     totals.skipped,
+		PreviousPopulatedWeek: prev,
+		NextPopulatedWeek:     next,
+		ByDay:                 dayList,
+		ByTheme:               themes,
+		ByRegion:              regions,
 	}, nil
+}
+
+// loadNavPointers fetches the adjacent populated weeks for the Review page's
+// "jump to previous/next populated" affordance. Query errors other than
+// "no row" are logged and coerced to nil — the navigation hint is optional.
+func (p *Processor) loadNavPointers(db *gorm.DB, userID uuid.UUID, weekStart time.Time) (*string, *string) {
+	var prev, next *string
+	if e, err := week.GetMostRecentPriorWithItems(db, userID, weekStart); err == nil {
+		s := e.WeekStartDate.Format("2006-01-02")
+		prev = &s
+	} else if !errors.Is(err, gorm.ErrRecordNotFound) {
+		p.l.WithError(err).Warn("Failed to load previous populated week for summary")
+	}
+	if e, err := week.GetSoonestNextWithItems(db, userID, weekStart); err == nil {
+		s := e.WeekStartDate.Format("2006-01-02")
+		next = &s
+	} else if !errors.Is(err, gorm.ErrRecordNotFound) {
+		p.l.WithError(err).Warn("Failed to load next populated week for summary")
+	}
+	return prev, next
 }
 
 // --- catalog & unit-selection helpers ------------------------------------
@@ -488,6 +516,7 @@ func buildActualSummary(p performance.Entity, sets []performance.SetEntity, kind
 		count := len(sets)
 		maxReps := 0
 		var maxWeight float64
+		rows := make([]map[string]any, 0, count)
 		for _, s := range sets {
 			if s.Reps > maxReps {
 				maxReps = s.Reps
@@ -495,12 +524,18 @@ func buildActualSummary(p performance.Entity, sets []performance.SetEntity, kind
 			if s.Weight > maxWeight {
 				maxWeight = s.Weight
 			}
+			rows = append(rows, map[string]any{
+				"setNumber": s.SetNumber,
+				"reps":      s.Reps,
+				"weight":    s.Weight,
+			})
 		}
 		return map[string]any{
 			"sets":       count,
 			"reps":       maxReps,
 			"weight":     maxWeight,
 			"weightUnit": p.WeightUnit,
+			"setRows":    rows,
 		}
 	}
 	switch kind {

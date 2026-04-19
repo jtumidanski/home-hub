@@ -2,6 +2,7 @@ import { api } from "@/lib/api/client";
 import { BaseService } from "./base";
 import type {
   Exercise,
+  NearestPointerDocument,
   PerformanceStatus,
   Region,
   SummaryDocument,
@@ -245,6 +246,15 @@ class WorkoutService extends BaseService {
   getWeekSummary(tenant: { id: string }, weekStart: string): Promise<SummaryDocument> {
     this.setTenant(tenant);
     return api.get<SummaryDocument>(`/workouts/weeks/${weekStart}/summary`);
+  }
+  getNearestPopulatedWeek(
+    tenant: { id: string },
+    reference: string,
+    direction: "prev" | "next",
+  ): Promise<NearestPointerDocument> {
+    this.setTenant(tenant);
+    const qs = new URLSearchParams({ reference, direction }).toString();
+    return api.get<NearestPointerDocument>(`/workouts/weeks/nearest?${qs}`);
   }
 }
 
