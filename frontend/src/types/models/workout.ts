@@ -142,6 +142,39 @@ export interface TodayDocument {
   };
 }
 
+// SummaryActual mirrors the kind-shaped `actualSummary` map emitted by the
+// backend. All fields optional; presence depends on kind and performance mode.
+// `setRows` is present only when the underlying performance is in per_set mode.
+export interface SummaryActual {
+  sets?: number | null;
+  reps?: number | null;
+  weight?: number | null;
+  weightUnit?: WeightUnit | null;
+  durationSeconds?: number | null;
+  distance?: number | null;
+  distanceUnit?: DistanceUnit | null;
+  setRows?: Array<{ setNumber: number; reps: number; weight: number }>;
+}
+
+export interface SummaryPlanned {
+  sets?: number | null;
+  reps?: number | null;
+  weight?: number | null;
+  weightUnit?: WeightUnit | null;
+  durationSeconds?: number | null;
+  distance?: number | null;
+  distanceUnit?: DistanceUnit | null;
+}
+
+export interface SummaryItem {
+  itemId: string;
+  exerciseName: string;
+  kind: WorkoutKind;
+  status: PerformanceStatus;
+  planned: SummaryPlanned;
+  actualSummary: SummaryActual | null;
+}
+
 export interface SummaryDocument {
   data: {
     type: "week-summaries";
@@ -152,16 +185,12 @@ export interface SummaryDocument {
       totalPlannedItems: number;
       totalPerformedItems: number;
       totalSkippedItems: number;
+      previousPopulatedWeek: string | null;
+      nextPopulatedWeek: string | null;
       byDay: Array<{
         dayOfWeek: number;
         isRestDay: boolean;
-        items: Array<{
-          itemId: string;
-          exerciseName: string;
-          status: PerformanceStatus;
-          planned: Record<string, unknown>;
-          actualSummary: Record<string, unknown> | null;
-        }>;
+        items: SummaryItem[];
       }>;
       byTheme: Array<{
         themeId: string;
@@ -177,6 +206,18 @@ export interface SummaryDocument {
         strengthVolume: { value: number; unit: WeightUnit } | null;
         cardio: { totalDurationSeconds: number; totalDistance: { value: number; unit: DistanceUnit } } | null;
       }>;
+    };
+  };
+}
+
+// NearestPointerDocument is the JSON:API envelope returned by
+// GET /workouts/weeks/nearest. The attributes carry a single weekStartDate.
+export interface NearestPointerDocument {
+  data: {
+    type: "workoutWeekPointer";
+    id: string;
+    attributes: {
+      weekStartDate: string;
     };
   };
 }

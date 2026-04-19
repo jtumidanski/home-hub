@@ -34,7 +34,11 @@ func InitializeRoutes(db *gorm.DB) func(l logrus.FieldLogger, si jsonapi.ServerI
 		rihUpdate := server.RegisterInputHandler[UpdatePlannedItemRequest](l)(si)
 
 		// Order: more specific paths first so the weekStart-only routes don't
-		// swallow the items/* and items/{itemId} variants.
+		// swallow the items/* and items/{itemId} variants. The `/nearest`
+		// literal also needs to register ahead of `{weekStart}` so the router
+		// matches the helper endpoint rather than trying to parse "nearest"
+		// as a date.
+		api.HandleFunc("/workouts/weeks/nearest", rh("GetNearestPopulatedWeek", nearestHandler(db))).Methods(http.MethodGet)
 		api.HandleFunc("/workouts/weeks/{weekStart}/copy", rihCopy("CopyWeek", copyHandler(db))).Methods(http.MethodPost)
 		api.HandleFunc("/workouts/weeks/{weekStart}/items/bulk", rihBulk("BulkAddPlannedItems", bulkAddHandler(db))).Methods(http.MethodPost)
 		api.HandleFunc("/workouts/weeks/{weekStart}/items/reorder", rihReorder("ReorderPlannedItems", reorderHandler(db))).Methods(http.MethodPost)

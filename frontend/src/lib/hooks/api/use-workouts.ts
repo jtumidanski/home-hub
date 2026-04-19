@@ -30,6 +30,12 @@ export const workoutKeys = {
     [...workoutKeys.all(tenant, household), "today", date] as const,
   summary: (tenant: Tenant | null, household: Household | null, weekStart: string) =>
     [...workoutKeys.all(tenant, household), "summary", weekStart] as const,
+  nearestPopulated: (
+    tenant: Tenant | null,
+    household: Household | null,
+    reference: string,
+    direction: "prev" | "next",
+  ) => [...workoutKeys.all(tenant, household), "nearest", reference, direction] as const,
 };
 
 // --- themes -----------------------------------------------------------------
@@ -330,6 +336,35 @@ export function useWorkoutWeekSummary(weekStart: string) {
     queryKey: workoutKeys.summary(tenant, household, weekStart),
     queryFn: () => workoutService.getWeekSummary(tenant!, weekStart),
     enabled: !!tenant?.id && !!weekStart,
+    retry: false,
+    staleTime: 30 * 1000,
+  });
+}
+
+// useWorkoutNearestPopulatedWeek queries the /weeks/nearest helper used by
+// the Review page to surface "jump to previous/next populated week" controls.
+// Returns `null` when no populated week exists in the requested direction
+// (the backend emits a 404, surfaced as an error but mapped here for the
+// empty-week flow that fires this hook speculatively).
+export function useWorkoutNearestPopulatedWeek(
+  reference: string,
+  direction: "prev" | "next",
+  enabled: boolean = true,
+) {
+  const { tenant, household } = useTenant();
+  return useQuery({
+    queryKey: workoutKeys.nearestPopulated(tenant, household, reference, direction),
+    queryFn: async () => {
+      try {
+        return await workoutService.getNearestPopulatedWeek(tenant!, reference, direction);
+      } catch {
+        // 404 is the "no populated week in that direction" signal; normalize
+        // to `null` so the caller can treat it as a data value instead of an
+        // error state.
+        return null;
+      }
+    },
+    enabled: enabled && !!tenant?.id && !!reference,
     retry: false,
     staleTime: 30 * 1000,
   });

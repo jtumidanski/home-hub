@@ -1,4 +1,4 @@
-import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
+import { BrowserRouter, Routes, Route, Navigate, useParams } from "react-router-dom";
 import { Toaster } from "sonner";
 import { QueryProvider } from "@/components/providers/query-provider";
 import { ThemeProvider } from "@/components/providers/theme-provider";
@@ -33,8 +33,17 @@ import { WorkoutTodayPage } from "@/pages/WorkoutTodayPage";
 import { WorkoutWeekPage } from "@/pages/WorkoutWeekPage";
 import { WorkoutExercisesPage } from "@/pages/WorkoutExercisesPage";
 import { WorkoutTaxonomyPage } from "@/pages/WorkoutTaxonomyPage";
-import { WorkoutSummaryPage } from "@/pages/WorkoutSummaryPage";
+import { WorkoutReviewPage } from "@/pages/WorkoutReviewPage";
 import { Error404Page } from "@/components/common/error-page";
+
+// RedirectSummaryToReview preserves the `:weekStart` path param while
+// rewriting the legacy `/summary/:weekStart` URL to the canonical
+// `/review/:weekStart` path.
+function RedirectSummaryToReview() {
+  const { weekStart } = useParams<{ weekStart?: string }>();
+  const target = weekStart ? `/app/workouts/review/${weekStart}` : "/app/workouts/review";
+  return <Navigate to={target} replace />;
+}
 
 export function App() {
   return (
@@ -70,8 +79,10 @@ export function App() {
                     <Route path="week/:weekStart" element={<WorkoutWeekPage />} />
                     <Route path="exercises" element={<WorkoutExercisesPage />} />
                     <Route path="taxonomy" element={<WorkoutTaxonomyPage />} />
-                    <Route path="summary" element={<WorkoutSummaryPage />} />
-                    <Route path="summary/:weekStart" element={<WorkoutSummaryPage />} />
+                    <Route path="review" element={<WorkoutReviewPage />} />
+                    <Route path="review/:weekStart" element={<WorkoutReviewPage />} />
+                    <Route path="summary" element={<Navigate to="/app/workouts/review" replace />} />
+                    <Route path="summary/:weekStart" element={<RedirectSummaryToReview />} />
                   </Route>
                   <Route path="settings" element={<SettingsPage />} />
                   <Route path="settings/data-retention" element={<DataRetentionPage />} />
