@@ -316,3 +316,16 @@ jobs:
       - uses: actions/checkout@v6
       - name: Build Docker image
         run: docker build -f ${{ matrix.dockerfile }} -t home-hub-${{ matrix.service }}:pr ${{ matrix.context }}
+
+  docker-build-result:
+    needs: [docker-build]
+    if: always()
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check result
+        run: |
+          result="${{ needs.docker-build.result }}"
+          echo "docker-build result: $result"
+          if [[ "$result" == "failure" || "$result" == "cancelled" ]]; then
+            exit 1
+          fi
