@@ -21,6 +21,7 @@ jobs:
       workout: ${{ steps.changes.outputs.workout }}
       frontend: ${{ steps.changes.outputs.frontend }}
       shared: ${{ steps.changes.outputs.shared }}
+      docker-matrix: ${{ steps.matrix.outputs.matrix }}
     steps:
       - uses: actions/checkout@v6
       - uses: dorny/paths-filter@v4
@@ -64,6 +65,27 @@ jobs:
               - 'frontend/**'
             shared:
               - 'shared/go/**'
+      - name: Compute docker matrix
+        id: matrix
+        env:
+          CHANGES: ${{ steps.changes.outputs.changes }}
+        run: |
+          ALL='[
+            {"service":"auth-service","context":".","dockerfile":"services/auth-service/Dockerfile","changed":"auth"},
+            {"service":"account-service","context":".","dockerfile":"services/account-service/Dockerfile","changed":"account"},
+            {"service":"calendar-service","context":".","dockerfile":"services/calendar-service/Dockerfile","changed":"calendar"},
+            {"service":"productivity-service","context":".","dockerfile":"services/productivity-service/Dockerfile","changed":"productivity"},
+            {"service":"weather-service","context":".","dockerfile":"services/weather-service/Dockerfile","changed":"weather"},
+            {"service":"recipe-service","context":".","dockerfile":"services/recipe-service/Dockerfile","changed":"recipe"},
+            {"service":"category-service","context":".","dockerfile":"services/category-service/Dockerfile","changed":"category"},
+            {"service":"shopping-service","context":".","dockerfile":"services/shopping-service/Dockerfile","changed":"shopping"},
+            {"service":"package-service","context":".","dockerfile":"services/package-service/Dockerfile","changed":"package"},
+            {"service":"tracker-service","context":".","dockerfile":"services/tracker-service/Dockerfile","changed":"tracker"},
+            {"service":"workout-service","context":".","dockerfile":"services/workout-service/Dockerfile","changed":"workout"},
+            {"service":"frontend","context":"frontend","dockerfile":"frontend/Dockerfile","changed":"frontend"}
+          ]'
+          MATRIX=$(echo "$ALL" | jq -c --argjson changes "$CHANGES" 'map(select(.changed as $c | $changes | index($c)))')
+          echo "matrix=$MATRIX" >> "$GITHUB_OUTPUT"
 
   build-auth:
     needs: detect-changes
@@ -285,61 +307,25 @@ jobs:
 
   docker-build:
     needs: [detect-changes]
+    if: needs.detect-changes.outputs.docker-matrix != '' && needs.detect-changes.outputs.docker-matrix != '[]'
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        include:
-          - service: auth-service
-            context: .
-            dockerfile: services/auth-service/Dockerfile
-            changed: auth
-          - service: account-service
-            context: .
-            dockerfile: services/account-service/Dockerfile
-            changed: account
-          - service: calendar-service
-            context: .
-            dockerfile: services/calendar-service/Dockerfile
-            changed: calendar
-          - service: productivity-service
-            context: .
-            dockerfile: services/productivity-service/Dockerfile
-            changed: productivity
-          - service: weather-service
-            context: .
-            dockerfile: services/weather-service/Dockerfile
-            changed: weather
-          - service: recipe-service
-            context: .
-            dockerfile: services/recipe-service/Dockerfile
-            changed: recipe
-          - service: category-service
-            context: .
-            dockerfile: services/category-service/Dockerfile
-            changed: category
-          - service: shopping-service
-            context: .
-            dockerfile: services/shopping-service/Dockerfile
-            changed: shopping
-          - service: package-service
-            context: .
-            dockerfile: services/package-service/Dockerfile
-            changed: package
-          - service: tracker-service
-            context: .
-            dockerfile: services/tracker-service/Dockerfile
-            changed: tracker
-          - service: workout-service
-            context: .
-            dockerfile: services/workout-service/Dockerfile
-            changed: workout
-          - service: frontend
-            context: frontend
-            dockerfile: frontend/Dockerfile
-            changed: frontend
+        include: ${{ fromJSON(needs.detect-changes.outputs.docker-matrix) }}
     steps:
       - uses: actions/checkout@v6
-        if: needs.detect-changes.outputs[matrix.changed] == 'true'
       - name: Build Docker image
-        if: needs.detect-changes.outputs[matrix.changed] == 'true'
         run: docker build -f ${{ matrix.dockerfile }} -t home-hub-${{ matrix.service }}:pr ${{ matrix.context }}
+
+  docker-build-result:
+    needs: [docker-build]
+    if: always()
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check result
+        run: |
+          result="${{ needs.docker-build.result }}"
+          echo "docker-build result: $result"
+          if [[ "$result" == "failure" || "$result" == "cancelled" ]]; then
+            exit 1
+          fi
