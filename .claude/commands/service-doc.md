@@ -1,35 +1,8 @@
-# Command: Document Home Hub Service
+---
+description: Generate or update documentation for one Home Hub service — dispatches the service-documentation agent
+argument-hint: Service name or path (e.g., "auth-service" or "services/auth-service")
+---
 
-## Purpose
-Generate or update service documentation using the Home Hub Documentation Agent, following `DOCS.md` and the architectural constraints in `CLAUDE.md`.
+Dispatch the `service-documentation` agent against: **$ARGUMENTS**.
 
-This command operates on exactly one service at a time.
-
-## Inputs
-- `CLAUDE.md` (repo root)
-- `DOCS.md` (repo root)
-- `.claude/agents/documentation.md` (repo root)
-
-## Instructions
-
-Use the Home Hub Documentation Agent.
-
-Authoritative inputs:
-- CLAUDE.md
-- DOCS.md
-- agents/documentation.md
-- The source code for the specified service
-
-Task:
-Generate or update documentation for the $ARGUMENTS service.
-
-Scope:
-- Operate only within the service directory
-- Create missing required documentation files if necessary
-- Update existing documentation to match current code
-- Do not modify any code
-
-Output requirements:
-- Output updated documentation files only
-- No commentary, no analysis, no recommendations
-- If a required doc file cannot be produced from the available code, ask a single targeted question and stop
+The agent treats code as the single source of truth, follows `DOCS.md`, and operates only within the target service directory. It outputs only updated doc files — no commentary, no analysis.
