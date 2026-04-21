@@ -285,6 +285,7 @@ jobs:
 
   docker-build:
     needs: [detect-changes]
+    if: needs.detect-changes.outputs[matrix.changed] == 'true'
     runs-on: ubuntu-latest
     strategy:
       matrix:
@@ -339,7 +340,5 @@ jobs:
             changed: frontend
     steps:
       - uses: actions/checkout@v6
-        if: needs.detect-changes.outputs[matrix.changed] == 'true'
       - name: Build Docker image
-        if: needs.detect-changes.outputs[matrix.changed] == 'true'
         run: docker build -f ${{ matrix.dockerfile }} -t home-hub-${{ matrix.service }}:pr ${{ matrix.context }}
