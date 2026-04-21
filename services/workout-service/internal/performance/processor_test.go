@@ -192,6 +192,111 @@ func TestProcessor_Patch_RejectsCrossUserPlannedItem(t *testing.T) {
 	assert.ErrorIs(t, err, ErrPlannedItemNotFound, "cross-user access must surface as 404")
 }
 
+// seedStrengthPlanned seeds a strength item with explicit planned values so
+// the backfill tests can assert the auto-copy.
+func seedStrengthPlanned(t *testing.T, db *gorm.DB, tenantID, userID uuid.UUID, sets, reps int, weight float64, unit string) uuid.UUID {
+	t.Helper()
+	exerciseID := uuid.New()
+	require.NoError(t, db.Create(&exercise.Entity{
+		Id:                 exerciseID,
+		TenantId:           tenantID,
+		UserId:             userID,
+		Name:               "Bench " + exerciseID.String()[:8],
+		Kind:               exercise.KindStrength,
+		WeightType:         exercise.WeightTypeFree,
+		ThemeId:            uuid.New(),
+		RegionId:           uuid.New(),
+		SecondaryRegionIds: json.RawMessage("[]"),
+		CreatedAt:          time.Now().UTC(),
+		UpdatedAt:          time.Now().UTC(),
+	}).Error)
+	itemID := uuid.New()
+	u := unit
+	require.NoError(t, db.Create(&planneditem.Entity{
+		Id:                itemID,
+		TenantId:          tenantID,
+		UserId:            userID,
+		WeekId:            uuid.New(),
+		ExerciseId:        exerciseID,
+		DayOfWeek:         0,
+		Position:          0,
+		PlannedSets:       &sets,
+		PlannedReps:       &reps,
+		PlannedWeight:     &weight,
+		PlannedWeightUnit: &u,
+		CreatedAt:         time.Now().UTC(),
+		UpdatedAt:         time.Now().UTC(),
+	}).Error)
+	return itemID
+}
+
+// Bare "done" with no actuals must backfill planned → actual so downstream
+// consumers (Review page, dashboards) see authoritative numbers instead of a
+// status-only row. This is the bug fix for the "?x?" display on Review.
+func TestProcessor_Patch_BareDone_BackfillsActualsFromPlanned(t *testing.T) {
+	db := setupTestDB(t)
+	p := newProcessor(t, db)
+	tenantID, userID := uuid.New(), uuid.New()
+	itemID := seedStrengthPlanned(t, db, tenantID, userID, 3, 8, 135, "lb")
+
+	done := StatusDone
+	m, _, err := p.Patch(tenantID, userID, itemID, PatchInput{Status: &done})
+	require.NoError(t, err)
+
+	assert.Equal(t, StatusDone, m.Status())
+	require.NotNil(t, m.ActualSets())
+	assert.Equal(t, 3, *m.ActualSets())
+	require.NotNil(t, m.ActualReps())
+	assert.Equal(t, 8, *m.ActualReps())
+	require.NotNil(t, m.ActualWeight())
+	assert.Equal(t, 135.0, *m.ActualWeight())
+	require.NotNil(t, m.WeightUnit())
+	assert.Equal(t, "lb", *m.WeightUnit())
+}
+
+// When the client supplies some actuals alongside `done`, the user-supplied
+// values win; only the remaining nil fields are filled from planned.
+func TestProcessor_Patch_DoneWithPartialActuals_PreservesUserValues(t *testing.T) {
+	db := setupTestDB(t)
+	p := newProcessor(t, db)
+	tenantID, userID := uuid.New(), uuid.New()
+	itemID := seedStrengthPlanned(t, db, tenantID, userID, 3, 8, 135, "lb")
+
+	done := StatusDone
+	reps := 10 // user overrides reps; sets/weight fall back to planned
+	m, _, err := p.Patch(tenantID, userID, itemID, PatchInput{Status: &done, ActualReps: &reps})
+	require.NoError(t, err)
+
+	require.NotNil(t, m.ActualReps())
+	assert.Equal(t, 10, *m.ActualReps(), "user-supplied reps must not be overwritten by planned")
+	require.NotNil(t, m.ActualSets())
+	assert.Equal(t, 3, *m.ActualSets())
+	require.NotNil(t, m.ActualWeight())
+	assert.Equal(t, 135.0, *m.ActualWeight())
+}
+
+// The backfill only fires in summary mode. A per-set performance with a bare
+// `done` patch keeps its set rows as the source of truth — no summary actuals
+// get written.
+func TestProcessor_Patch_BareDone_NoBackfillInPerSetMode(t *testing.T) {
+	db := setupTestDB(t)
+	p := newProcessor(t, db)
+	tenantID, userID := uuid.New(), uuid.New()
+	itemID := seedStrengthPlanned(t, db, tenantID, userID, 3, 8, 135, "lb")
+
+	_, _, err := p.ReplaceSets(tenantID, userID, itemID, "lb", []SetInput{{Reps: 5, Weight: 100}})
+	require.NoError(t, err)
+
+	done := StatusDone
+	m, _, err := p.Patch(tenantID, userID, itemID, PatchInput{Status: &done})
+	require.NoError(t, err)
+
+	assert.Equal(t, ModePerSet, m.Mode())
+	assert.Nil(t, m.ActualSets(), "per-set mode must not gain summary actuals from backfill")
+	assert.Nil(t, m.ActualReps())
+	assert.Nil(t, m.ActualWeight())
+}
+
 func TestProcessor_CollapseSets_RoundTripsPerSetThroughCollapse(t *testing.T) {
 	db := setupTestDB(t)
 	p := newProcessor(t, db)
