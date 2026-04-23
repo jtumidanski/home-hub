@@ -65,6 +65,16 @@ func Validate(raw json.RawMessage) (Layout, error) {
 		return Layout{}, ValidationError{Code: CodeUnsupportedSchemaVersion, Pointer: "/data/attributes/layout/version",
 			Message: fmt.Sprintf("expected version %d, got %d", shared.LayoutSchemaVersion, out.Version)}
 	}
-	// Widget validations are added in later tasks.
+	if len(out.Widgets) > shared.MaxWidgets {
+		return Layout{}, ValidationError{Code: CodeWidgetCountExceeded, Pointer: "/data/attributes/layout/widgets",
+			Message: fmt.Sprintf("at most %d widgets allowed", shared.MaxWidgets)}
+	}
+	for i, w := range out.Widgets {
+		ptr := func(f string) string { return fmt.Sprintf("/data/attributes/layout/widgets/%d/%s", i, f) }
+		if !shared.IsKnownWidgetType(w.Type) {
+			return Layout{}, ValidationError{Code: CodeWidgetUnknownType, Pointer: ptr("type"),
+				Message: fmt.Sprintf("widget type %q is not in the registry", w.Type)}
+		}
+	}
 	return out, nil
 }
