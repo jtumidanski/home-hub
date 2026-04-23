@@ -4,6 +4,8 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"sync"
+	"sync/atomic"
 	"testing"
 
 	"github.com/google/uuid"
@@ -330,4 +332,52 @@ func TestProcessorDeleteHouseholdAllowsAnyMember(t *testing.T) {
 
 	_, err = p.GetByID(m.Id(), tid, hid, creator)
 	require.ErrorIs(t, err, ErrNotFound)
+}
+
+func TestProcessorSeedIdempotent(t *testing.T) {
+	db := setupTestDB(t)
+	p := newTestProcessor(t, db)
+	tid, hid, uid := uuid.New(), uuid.New(), uuid.New()
+	layoutJSON := json.RawMessage(`{"version":1,"widgets":[]}`)
+
+	first, err := p.Seed(tid, hid, uid, "Home", layoutJSON)
+	require.NoError(t, err)
+	require.True(t, first.Created)
+	require.Equal(t, "Home", first.Dashboard.Name())
+	require.True(t, first.Dashboard.IsHouseholdScoped())
+
+	second, err := p.Seed(tid, hid, uid, "Home", layoutJSON)
+	require.NoError(t, err)
+	require.False(t, second.Created, "second seed must not create a new row")
+	require.Len(t, second.Existing, 1)
+	require.Equal(t, first.Dashboard.Id(), second.Existing[0].Id())
+}
+
+func TestProcessorSeedRace(t *testing.T) {
+	db := setupTestDB(t)
+	if db.Dialector.Name() != "postgres" {
+		t.Skip("sqlite does not provide pg_advisory_xact_lock; race covered by production dialect")
+	}
+	p := newTestProcessor(t, db)
+	tid, hid, uid := uuid.New(), uuid.New(), uuid.New()
+	layoutJSON := json.RawMessage(`{"version":1,"widgets":[]}`)
+
+	var wg sync.WaitGroup
+	var createdCount int32
+	wg.Add(2)
+	for i := 0; i < 2; i++ {
+		go func() {
+			defer wg.Done()
+			res, err := p.Seed(tid, hid, uid, "Home", layoutJSON)
+			if err != nil {
+				t.Error(err)
+				return
+			}
+			if res.Created {
+				atomic.AddInt32(&createdCount, 1)
+			}
+		}()
+	}
+	wg.Wait()
+	require.Equal(t, int32(1), atomic.LoadInt32(&createdCount), "expected exactly one create")
 }

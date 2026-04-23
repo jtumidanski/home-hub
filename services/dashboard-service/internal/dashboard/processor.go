@@ -2,6 +2,8 @@ package dashboard
 
 import (
 	"context"
+	"crypto/sha256"
+	"encoding/binary"
 	"encoding/json"
 	"errors"
 	"strings"
@@ -91,6 +93,97 @@ func (p *Processor) CopyToMine(id, tenantID, householdID, callerUserID uuid.UUID
 		return Model{}, err
 	}
 	return Make(saved)
+}
+
+// SeedResult reports whether Seed created a new row. When Created is false,
+// Existing holds the dashboards visible to the caller.
+type SeedResult struct {
+	Created   bool
+	Dashboard Model
+	Existing  []Model
+}
+
+// Seed ensures at least one household-scoped dashboard exists for the given
+// (tenant, household). It is idempotent and race-safe: concurrent Seed calls
+// across replicas are serialized via a Postgres advisory xact lock keyed on
+// tenant+household. On non-Postgres dialects (sqlite in tests), the transaction
+// itself is relied on to serialize.
+func (p *Processor) Seed(tenantID, householdID, callerUserID uuid.UUID, name string, layoutJSON json.RawMessage) (SeedResult, error) {
+	name = trimName(name)
+	if err := validateNameLen(name); err != nil {
+		return SeedResult{}, err
+	}
+	if _, err := layout.Validate(layoutJSON); err != nil {
+		return SeedResult{}, err
+	}
+
+	var out SeedResult
+	err := p.db.WithContext(p.ctx).Transaction(func(tx *gorm.DB) error {
+		if err := p.acquireSeedLock(tx, tenantID, householdID); err != nil {
+			return err
+		}
+		count, err := countHouseholdScoped(tx, tenantID, householdID)
+		if err != nil {
+			return err
+		}
+		if count > 0 {
+			list, err := visibleToCaller(tenantID, householdID, callerUserID)(tx)()
+			if err != nil {
+				return err
+			}
+			for _, e := range list {
+				m, err := Make(e)
+				if err != nil {
+					return err
+				}
+				out.Existing = append(out.Existing, m)
+			}
+			out.Created = false
+			return nil
+		}
+		e := Entity{
+			TenantId:      tenantID,
+			HouseholdId:   householdID,
+			UserId:        nil,
+			Name:          name,
+			SortOrder:     0,
+			Layout:        datatypes.JSON(layoutJSON),
+			SchemaVersion: 1,
+		}
+		saved, err := insert(tx, e)
+		if err != nil {
+			return err
+		}
+		m, err := Make(saved)
+		if err != nil {
+			return err
+		}
+		out.Dashboard = m
+		out.Created = true
+		return nil
+	})
+	return out, err
+}
+
+// acquireSeedLock takes a Postgres transaction-scoped advisory lock so
+// concurrent seeders serialize on the same (tenant, household) key. On other
+// dialects (sqlite in tests) this is a no-op; production always runs Postgres.
+func (p *Processor) acquireSeedLock(tx *gorm.DB, tenantID, householdID uuid.UUID) error {
+	if tx.Dialector.Name() != "postgres" {
+		return nil
+	}
+	key := seedLockKey(tenantID, householdID)
+	return tx.Exec("SELECT pg_advisory_xact_lock(?)", key).Error
+}
+
+// seedLockKey derives a deterministic int64 lock key from tenant+household so
+// every replica hashes to the same advisory-lock slot.
+func seedLockKey(tenantID, householdID uuid.UUID) int64 {
+	var combined [32]byte
+	copy(combined[:16], tenantID[:])
+	copy(combined[16:], householdID[:])
+	sum := sha256.Sum256(combined[:])
+	return int64(binary.BigEndian.Uint64(sum[:8]))
 }
 
 // regenerateWidgetIDs assigns a fresh UUID to every widget in the layout
