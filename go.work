@@ -5,6 +5,7 @@ use (
 	./services/auth-service
 	./services/calendar-service
 	./services/category-service
+	./services/dashboard-service
 	./services/package-service
 	./services/productivity-service
 	./services/recipe-service

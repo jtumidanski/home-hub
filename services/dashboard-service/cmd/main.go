@@ -1,0 +1,42 @@
+package main
+
+import (
+	"context"
+
+	"github.com/gorilla/mux"
+	"github.com/jtumidanski/home-hub/services/dashboard-service/internal/config"
+	sharedauth "github.com/jtumidanski/home-hub/shared/go/auth"
+	"github.com/jtumidanski/home-hub/shared/go/database"
+	"github.com/jtumidanski/home-hub/shared/go/logging"
+	"github.com/jtumidanski/home-hub/shared/go/server"
+)
+
+func main() {
+	l := logging.NewLogger()
+	cfg := config.Load()
+
+	shutdownTracing := logging.InitTracing(l, "dashboard-service")
+	defer shutdownTracing(context.Background())
+
+	db := database.Connect(l, cfg.DB) // migrations added in later phases
+
+	authValidator := sharedauth.NewValidator(l, cfg.JWKSURL)
+	si := server.GetServerInformation()
+
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+
+	server.New(l).
+		WithAddr(":" + cfg.Port).
+		AddRouteInitializer(func(router *mux.Router) {
+			api := router.PathPrefix("/api/v1").Subrouter()
+			api.Use(sharedauth.Middleware(l, authValidator))
+
+			// Route registrations added in later tasks.
+			_ = api
+			_ = si
+			_ = ctx
+			_ = db
+		}).
+		Run()
+}
