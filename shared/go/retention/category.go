@@ -24,6 +24,7 @@ const (
 	CatPackageArchiveWindow                  Category = "package.archive_window"
 	CatPackageArchivedDeleteWindow           Category = "package.archived_delete_window"
 	CatSystemRetentionAudit                  Category = "system.retention_audit"
+	CatDashboardDashboards                   Category = "dashboard.dashboards"
 )
 
 // ScopeKind is the kind of entity a retention category applies to.
@@ -49,6 +50,7 @@ var Defaults = map[Category]int{
 	CatPackageArchiveWindow:                  7,
 	CatPackageArchivedDeleteWindow:           30,
 	CatSystemRetentionAudit:                  180,
+	CatDashboardDashboards:                   0, // v1: never auto-purge; plumbing only
 }
 
 // scopeKindOf maps each category to the entity scope it applies to.
@@ -65,6 +67,7 @@ var scopeKindOf = map[Category]ScopeKind{
 	CatPackageArchiveWindow:                  ScopeHousehold,
 	CatPackageArchivedDeleteWindow:           ScopeHousehold,
 	CatSystemRetentionAudit:                  ScopeHousehold,
+	CatDashboardDashboards:                   ScopeHousehold,
 }
 
 // Errors returned by Category methods.
