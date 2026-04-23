@@ -6,10 +6,13 @@ package consumer
 
 import (
 	"context"
+	"time"
 
 	"github.com/segmentio/kafka-go"
 	"github.com/sirupsen/logrus"
 )
+
+const fetchErrorBackoff = 500 * time.Millisecond
 
 type Reader interface {
 	FetchMessage(ctx context.Context) (kafka.Message, error)
@@ -51,10 +54,18 @@ func (m *Manager) Run(ctx context.Context) {
 				return
 			}
 			m.logger.WithError(err).Warn("kafka fetch failed")
+			select {
+			case <-ctx.Done():
+				return
+			case <-time.After(fetchErrorBackoff):
+			}
 			continue
 		}
 		if err := m.handler(ctx, msg); err != nil {
 			m.logger.WithError(err).WithField("topic", msg.Topic).Error("kafka handler failed; skipping commit")
+			// kafka-go's Reader advances its offset internally on FetchMessage, so skipping
+			// commit does not redeliver within the same session — redelivery requires
+			// consumer restart or group rebalance.
 			continue
 		}
 		if err := m.reader.CommitMessages(ctx, msg); err != nil {

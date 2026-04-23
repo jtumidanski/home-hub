@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"testing"
+	"time"
 
 	"github.com/segmentio/kafka-go"
 	"github.com/sirupsen/logrus"
@@ -24,7 +25,7 @@ func (s *stubWriter) Close() error { return nil }
 func TestProduceWritesMessage(t *testing.T) {
 	sw := &stubWriter{}
 	l := logrus.New()
-	p := &Producer{writer: sw, logger: l}
+	p := NewWithWriter(sw, l, 0, 0)
 	err := p.Produce(context.Background(), "topic", []byte("k"), []byte(`{"x":1}`), nil)
 	if err != nil {
 		t.Fatal(err)
@@ -37,7 +38,7 @@ func TestProduceWritesMessage(t *testing.T) {
 func TestProduceRetriesThenFails(t *testing.T) {
 	sw := &stubWriter{err: errors.New("boom")}
 	l := logrus.New()
-	p := &Producer{writer: sw, logger: l, maxAttempts: 3}
+	p := NewWithWriter(sw, l, 3, time.Millisecond)
 	err := p.Produce(context.Background(), "topic", []byte("k"), []byte("v"), nil)
 	if err == nil {
 		t.Fatal("expected error")

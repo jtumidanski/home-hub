@@ -46,6 +46,18 @@ func New(cfg Config, logger logrus.FieldLogger) *Producer {
 	return &Producer{writer: w, logger: logger, maxAttempts: cfg.MaxAttempts, backoff: cfg.Backoff}
 }
 
+// NewWithWriter is for tests and for callers that want to configure the underlying
+// Writer themselves. Production code should use New.
+func NewWithWriter(w Writer, logger logrus.FieldLogger, maxAttempts int, backoff time.Duration) *Producer {
+	if maxAttempts <= 0 {
+		maxAttempts = 3
+	}
+	if backoff <= 0 {
+		backoff = 250 * time.Millisecond
+	}
+	return &Producer{writer: w, logger: logger, maxAttempts: maxAttempts, backoff: backoff}
+}
+
 func (p *Producer) Produce(ctx context.Context, topic string, key, value []byte, headers map[string]string) error {
 	msg := kafka.Message{Topic: topic, Key: key, Value: value}
 	for k, v := range headers {
@@ -53,9 +65,6 @@ func (p *Producer) Produce(ctx context.Context, topic string, key, value []byte,
 	}
 	var err error
 	attempts := p.maxAttempts
-	if attempts <= 0 {
-		attempts = 1
-	}
 	for i := 0; i < attempts; i++ {
 		err = p.writer.WriteMessages(ctx, msg)
 		if err == nil {
@@ -63,7 +72,11 @@ func (p *Producer) Produce(ctx context.Context, topic string, key, value []byte,
 		}
 		p.logger.WithError(err).WithField("topic", topic).WithField("attempt", i+1).Warn("kafka produce failed")
 		if i < attempts-1 && p.backoff > 0 {
-			time.Sleep(p.backoff)
+			select {
+			case <-ctx.Done():
+				return ctx.Err()
+			case <-time.After(p.backoff):
+			}
 		}
 	}
 	return err
