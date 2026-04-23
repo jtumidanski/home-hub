@@ -49,3 +49,49 @@ func TestProcessorCreateHousehold(t *testing.T) {
 	require.Equal(t, hid, m.HouseholdID())
 	require.Equal(t, 0, m.SortOrder())
 }
+
+func TestProcessorListScopesVisibility(t *testing.T) {
+	db := setupTestDB(t)
+	p := newTestProcessor(t, db)
+	tid, hid := uuid.New(), uuid.New()
+	callerUID := uuid.New()
+	otherUID := uuid.New()
+	layoutJSON := json.RawMessage(`{"version":1,"widgets":[]}`)
+
+	_, err := p.Create(tid, hid, callerUID, CreateAttrs{Name: "Shared", Scope: "household", Layout: layoutJSON})
+	require.NoError(t, err)
+	_, err = p.Create(tid, hid, callerUID, CreateAttrs{Name: "Mine", Scope: "user", Layout: layoutJSON})
+	require.NoError(t, err)
+	_, err = p.Create(tid, hid, otherUID, CreateAttrs{Name: "Theirs", Scope: "user", Layout: layoutJSON})
+	require.NoError(t, err)
+
+	list, err := p.List(tid, hid, callerUID)
+	require.NoError(t, err)
+	require.Len(t, list, 2)
+
+	names := map[string]bool{}
+	for _, m := range list {
+		names[m.Name()] = true
+	}
+	require.True(t, names["Shared"])
+	require.True(t, names["Mine"])
+	require.False(t, names["Theirs"])
+}
+
+func TestProcessorGetBlocksInvisibleRow(t *testing.T) {
+	db := setupTestDB(t)
+	p := newTestProcessor(t, db)
+	tid, hid := uuid.New(), uuid.New()
+	callerUID := uuid.New()
+	otherUID := uuid.New()
+
+	m, err := p.Create(tid, hid, otherUID, CreateAttrs{
+		Name:   "Theirs",
+		Scope:  "user",
+		Layout: json.RawMessage(`{"version":1,"widgets":[]}`),
+	})
+	require.NoError(t, err)
+
+	_, err = p.GetByID(m.Id(), tid, hid, callerUID)
+	require.ErrorIs(t, err, ErrNotFound)
+}

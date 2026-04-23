@@ -27,6 +27,43 @@ func NewProcessor(l logrus.FieldLogger, ctx context.Context, db *gorm.DB) *Proce
 // ErrInvalidScope is returned when a caller provides a scope outside {household, user}.
 var ErrInvalidScope = errors.New("invalid scope")
 
+// ErrNotFound is returned when a dashboard row is missing or invisible to the caller.
+var ErrNotFound = errors.New("not found")
+
+// List returns dashboards visible to the caller (household-scoped + caller's own
+// user-scoped rows) ordered by sort_order then created_at.
+func (p *Processor) List(tenantID, householdID, callerUserID uuid.UUID) ([]Model, error) {
+	rows, err := visibleToCaller(tenantID, householdID, callerUserID)(p.db.WithContext(p.ctx))()
+	if err != nil {
+		return nil, err
+	}
+	out := make([]Model, 0, len(rows))
+	for _, e := range rows {
+		m, err := Make(e)
+		if err != nil {
+			return nil, err
+		}
+		out = append(out, m)
+	}
+	return out, nil
+}
+
+// GetByID returns the dashboard if it's visible to the caller. Rows in a
+// different tenant/household, or owned by another user, surface as ErrNotFound.
+func (p *Processor) GetByID(id, tenantID, householdID, callerUserID uuid.UUID) (Model, error) {
+	row, err := getByID(id)(p.db.WithContext(p.ctx))()
+	if err != nil {
+		return Model{}, ErrNotFound
+	}
+	if row.TenantId != tenantID || row.HouseholdId != householdID {
+		return Model{}, ErrNotFound
+	}
+	if row.UserId != nil && *row.UserId != callerUserID {
+		return Model{}, ErrNotFound
+	}
+	return Make(row)
+}
+
 // CreateAttrs carries Create inputs for a dashboard.
 type CreateAttrs struct {
 	Name      string
