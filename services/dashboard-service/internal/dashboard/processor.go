@@ -34,6 +34,77 @@ var ErrNotFound = errors.New("not found")
 // owned by someone else.
 var ErrForbidden = errors.New("forbidden")
 
+// ErrMixedScope is returned when a Reorder batch mixes household- and user-scoped
+// dashboards; the UI renders these in separate sections so reorder runs one
+// scope at a time.
+var ErrMixedScope = errors.New("reorder requires single scope")
+
+// ReorderPair maps a dashboard id to its desired sort_order in the new order.
+type ReorderPair struct {
+	ID        uuid.UUID
+	SortOrder int
+}
+
+// Reorder applies the new sort_order values to the specified dashboards in a
+// single transaction. All ids must be visible to the caller and share a single
+// scope (all household or all user-owned by caller).
+func (p *Processor) Reorder(tenantID, householdID, callerUserID uuid.UUID, pairs []ReorderPair) ([]Model, error) {
+	if len(pairs) == 0 {
+		return []Model{}, nil
+	}
+	ids := make([]uuid.UUID, 0, len(pairs))
+	for _, pr := range pairs {
+		ids = append(ids, pr.ID)
+	}
+	var rows []Entity
+	if err := p.db.WithContext(p.ctx).Where("id IN ?", ids).Find(&rows).Error; err != nil {
+		return nil, err
+	}
+	if len(rows) != len(pairs) {
+		return nil, ErrNotFound
+	}
+	var scope string
+	for _, r := range rows {
+		if r.TenantId != tenantID || r.HouseholdId != householdID {
+			return nil, ErrNotFound
+		}
+		var rowScope string
+		if r.UserId == nil {
+			rowScope = "household"
+		} else {
+			if *r.UserId != callerUserID {
+				return nil, ErrNotFound
+			}
+			rowScope = "user"
+		}
+		if scope == "" {
+			scope = rowScope
+		} else if scope != rowScope {
+			return nil, ErrMixedScope
+		}
+	}
+	upd := map[uuid.UUID]int{}
+	for _, pr := range pairs {
+		upd[pr.ID] = pr.SortOrder
+	}
+	if err := updateSortOrders(p.db.WithContext(p.ctx), upd); err != nil {
+		return nil, err
+	}
+	list, err := visibleToCaller(tenantID, householdID, callerUserID)(p.db.WithContext(p.ctx))()
+	if err != nil {
+		return nil, err
+	}
+	out := make([]Model, 0, len(list))
+	for _, e := range list {
+		m, err := Make(e)
+		if err != nil {
+			return nil, err
+		}
+		out = append(out, m)
+	}
+	return out, nil
+}
+
 // UpdateAttrs carries optional edits for Update.
 type UpdateAttrs struct {
 	Name      *string

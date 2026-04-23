@@ -141,6 +141,79 @@ func TestProcessorDeleteUserScopedRejectsNonOwner(t *testing.T) {
 	require.ErrorIs(t, err, ErrForbidden)
 }
 
+func TestProcessorReorderSingleScope(t *testing.T) {
+	db := setupTestDB(t)
+	p := newTestProcessor(t, db)
+	tid, hid, uid := uuid.New(), uuid.New(), uuid.New()
+	layoutJSON := json.RawMessage(`{"version":1,"widgets":[]}`)
+
+	a, err := p.Create(tid, hid, uid, CreateAttrs{Name: "A", Scope: "household", Layout: layoutJSON})
+	require.NoError(t, err)
+	b, err := p.Create(tid, hid, uid, CreateAttrs{Name: "B", Scope: "household", Layout: layoutJSON})
+	require.NoError(t, err)
+
+	_, err = p.Reorder(tid, hid, uid, []ReorderPair{
+		{ID: a.Id(), SortOrder: 10},
+		{ID: b.Id(), SortOrder: 5},
+	})
+	require.NoError(t, err)
+
+	got, err := p.GetByID(a.Id(), tid, hid, uid)
+	require.NoError(t, err)
+	require.Equal(t, 10, got.SortOrder())
+	got, err = p.GetByID(b.Id(), tid, hid, uid)
+	require.NoError(t, err)
+	require.Equal(t, 5, got.SortOrder())
+}
+
+func TestProcessorReorderMixedScopeFails(t *testing.T) {
+	db := setupTestDB(t)
+	p := newTestProcessor(t, db)
+	tid, hid, uid := uuid.New(), uuid.New(), uuid.New()
+	layoutJSON := json.RawMessage(`{"version":1,"widgets":[]}`)
+
+	hh, err := p.Create(tid, hid, uid, CreateAttrs{Name: "HH", Scope: "household", Layout: layoutJSON})
+	require.NoError(t, err)
+	mine, err := p.Create(tid, hid, uid, CreateAttrs{Name: "Mine", Scope: "user", Layout: layoutJSON})
+	require.NoError(t, err)
+
+	_, err = p.Reorder(tid, hid, uid, []ReorderPair{
+		{ID: hh.Id(), SortOrder: 0},
+		{ID: mine.Id(), SortOrder: 1},
+	})
+	require.ErrorIs(t, err, ErrMixedScope)
+}
+
+func TestProcessorReorderUnknownIDFails(t *testing.T) {
+	db := setupTestDB(t)
+	p := newTestProcessor(t, db)
+	tid, hid, uid := uuid.New(), uuid.New(), uuid.New()
+	layoutJSON := json.RawMessage(`{"version":1,"widgets":[]}`)
+
+	hh, err := p.Create(tid, hid, uid, CreateAttrs{Name: "HH", Scope: "household", Layout: layoutJSON})
+	require.NoError(t, err)
+
+	_, err = p.Reorder(tid, hid, uid, []ReorderPair{
+		{ID: hh.Id(), SortOrder: 0},
+		{ID: uuid.New(), SortOrder: 1},
+	})
+	require.ErrorIs(t, err, ErrNotFound)
+}
+
+func TestProcessorReorderInvisibleIDFails(t *testing.T) {
+	db := setupTestDB(t)
+	p := newTestProcessor(t, db)
+	tid, hid := uuid.New(), uuid.New()
+	caller, other := uuid.New(), uuid.New()
+	layoutJSON := json.RawMessage(`{"version":1,"widgets":[]}`)
+
+	theirs, err := p.Create(tid, hid, other, CreateAttrs{Name: "Theirs", Scope: "user", Layout: layoutJSON})
+	require.NoError(t, err)
+
+	_, err = p.Reorder(tid, hid, caller, []ReorderPair{{ID: theirs.Id(), SortOrder: 0}})
+	require.ErrorIs(t, err, ErrNotFound)
+}
+
 func TestProcessorDeleteHouseholdAllowsAnyMember(t *testing.T) {
 	db := setupTestDB(t)
 	p := newTestProcessor(t, db)
