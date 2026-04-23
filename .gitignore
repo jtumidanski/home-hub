@@ -1,3 +1,6 @@
+# Worktrees
+.worktrees/
+
 # Go binaries
 *.exe
 *.exe~
