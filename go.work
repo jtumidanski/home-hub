@@ -13,6 +13,7 @@ use (
 	./services/weather-service
 	./services/workout-service
 	./shared/go/auth
+	./shared/go/dashboard
 	./shared/go/database
 	./shared/go/http
 	./shared/go/logging
