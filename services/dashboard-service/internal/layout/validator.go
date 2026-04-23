@@ -86,6 +86,60 @@ func Validate(raw json.RawMessage) (Layout, error) {
 			return Layout{}, ValidationError{Code: CodeWidgetDuplicateID, Pointer: ptr("id"), Message: "widget id is duplicated"}
 		}
 		seen[w.ID] = struct{}{}
+		if code, msg := validateConfig(w.Config); code != "" {
+			return Layout{}, ValidationError{Code: code, Pointer: ptr("config"), Message: msg}
+		}
 	}
 	return out, nil
+}
+
+func validateConfig(raw json.RawMessage) (Code, string) {
+	if len(raw) == 0 {
+		return "", ""
+	}
+	if len(raw) > shared.MaxWidgetConfigBytes {
+		return CodeConfigTooLarge, fmt.Sprintf("config exceeds %d bytes", shared.MaxWidgetConfigBytes)
+	}
+	trimmed := bytesTrimSpace(raw)
+	if len(trimmed) == 0 || trimmed[0] != '{' {
+		return CodeConfigNotObject, "config must be a JSON object"
+	}
+	var generic any
+	if err := json.Unmarshal(raw, &generic); err != nil {
+		return CodeMalformed, err.Error()
+	}
+	if depth(generic, 0) > shared.MaxWidgetConfigDepth {
+		return CodeConfigTooDeep, fmt.Sprintf("config depth exceeds %d", shared.MaxWidgetConfigDepth)
+	}
+	return "", ""
+}
+
+func bytesTrimSpace(b []byte) []byte {
+	for len(b) > 0 && (b[0] == ' ' || b[0] == '\t' || b[0] == '\n' || b[0] == '\r') {
+		b = b[1:]
+	}
+	return b
+}
+
+func depth(v any, current int) int {
+	switch t := v.(type) {
+	case map[string]any:
+		max := current
+		for _, c := range t {
+			if d := depth(c, current+1); d > max {
+				max = d
+			}
+		}
+		return max
+	case []any:
+		max := current
+		for _, c := range t {
+			if d := depth(c, current+1); d > max {
+				max = d
+			}
+		}
+		return max
+	default:
+		return current
+	}
 }

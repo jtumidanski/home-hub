@@ -2,6 +2,7 @@ package layout
 
 import (
 	"encoding/json"
+	"fmt"
 	"testing"
 
 	"github.com/google/uuid"
@@ -107,6 +108,47 @@ func TestValidateRejectsDuplicateID(t *testing.T) {
 	_, err := Validate(raw)
 	ve, ok := err.(ValidationError)
 	if !ok || ve.Code != CodeWidgetDuplicateID {
+		t.Fatalf("got %v", err)
+	}
+}
+
+func TestValidateRejectsNonObjectConfig(t *testing.T) {
+	raw := mustJSON(map[string]any{"version": 1, "widgets": []any{
+		map[string]any{"id": uuid.New().String(), "type": "weather", "x": 0, "y": 0, "w": 1, "h": 1, "config": []any{1, 2, 3}},
+	}})
+	_, err := Validate(raw)
+	ve, _ := err.(ValidationError)
+	if ve.Code != CodeConfigNotObject {
+		t.Fatalf("got %v", err)
+	}
+}
+
+func TestValidateRejectsOversizedConfig(t *testing.T) {
+	big := make(map[string]string)
+	for i := 0; i < 500; i++ {
+		big[fmt.Sprintf("k%d", i)] = "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
+	}
+	raw := mustJSON(map[string]any{"version": 1, "widgets": []any{
+		map[string]any{"id": uuid.New().String(), "type": "weather", "x": 0, "y": 0, "w": 1, "h": 1, "config": big},
+	}})
+	_, err := Validate(raw)
+	ve, _ := err.(ValidationError)
+	if ve.Code != CodeConfigTooLarge {
+		t.Fatalf("got %v", err)
+	}
+}
+
+func TestValidateRejectsDeepConfig(t *testing.T) {
+	var nest any = "leaf"
+	for i := 0; i < 10; i++ {
+		nest = map[string]any{"x": nest}
+	}
+	raw := mustJSON(map[string]any{"version": 1, "widgets": []any{
+		map[string]any{"id": uuid.New().String(), "type": "weather", "x": 0, "y": 0, "w": 1, "h": 1, "config": nest},
+	}})
+	_, err := Validate(raw)
+	ve, _ := err.(ValidationError)
+	if ve.Code != CodeConfigTooDeep {
 		t.Fatalf("got %v", err)
 	}
 }
