@@ -17,6 +17,7 @@ use (
 	./shared/go/database
 	./shared/go/events
 	./shared/go/http
+	./shared/go/kafka
 	./shared/go/logging
 	./shared/go/model
 	./shared/go/retention
