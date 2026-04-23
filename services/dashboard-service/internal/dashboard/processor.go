@@ -30,6 +30,77 @@ var ErrInvalidScope = errors.New("invalid scope")
 // ErrNotFound is returned when a dashboard row is missing or invisible to the caller.
 var ErrNotFound = errors.New("not found")
 
+// ErrForbidden is returned when a caller attempts to edit a user-scoped dashboard
+// owned by someone else.
+var ErrForbidden = errors.New("forbidden")
+
+// UpdateAttrs carries optional edits for Update.
+type UpdateAttrs struct {
+	Name      *string
+	Layout    *json.RawMessage
+	SortOrder *int
+}
+
+// Update applies the given attrs and returns the refreshed row. Household rows
+// are editable by any household member; user rows only by the owner.
+func (p *Processor) Update(id, tenantID, householdID, callerUserID uuid.UUID, attrs UpdateAttrs) (Model, error) {
+	row, err := p.requireEditable(id, tenantID, householdID, callerUserID)
+	if err != nil {
+		return Model{}, err
+	}
+	fields := map[string]any{}
+	if attrs.Name != nil {
+		name := trimName(*attrs.Name)
+		if err := validateNameLen(name); err != nil {
+			return Model{}, err
+		}
+		fields["name"] = name
+	}
+	if attrs.Layout != nil {
+		if _, err := layout.Validate(*attrs.Layout); err != nil {
+			return Model{}, err
+		}
+		fields["layout"] = datatypes.JSON(*attrs.Layout)
+	}
+	if attrs.SortOrder != nil {
+		fields["sort_order"] = *attrs.SortOrder
+	}
+	if len(fields) == 0 {
+		return Make(row)
+	}
+	updated, err := updateFields(p.db.WithContext(p.ctx), id, fields)
+	if err != nil {
+		return Model{}, err
+	}
+	return Make(updated)
+}
+
+// Delete removes the dashboard if the caller has edit rights under the same
+// scope rules as Update.
+func (p *Processor) Delete(id, tenantID, householdID, callerUserID uuid.UUID) error {
+	if _, err := p.requireEditable(id, tenantID, householdID, callerUserID); err != nil {
+		return err
+	}
+	return deleteByID(p.db.WithContext(p.ctx), id)
+}
+
+// requireEditable enforces the PRD §4.10 edit rules: household rows are editable
+// by any member of the household; user rows only by the owner. Cross-tenant /
+// cross-household rows are hidden as ErrNotFound.
+func (p *Processor) requireEditable(id, tenantID, householdID, callerUserID uuid.UUID) (Entity, error) {
+	row, err := getByID(id)(p.db.WithContext(p.ctx))()
+	if err != nil {
+		return Entity{}, ErrNotFound
+	}
+	if row.TenantId != tenantID || row.HouseholdId != householdID {
+		return Entity{}, ErrNotFound
+	}
+	if row.UserId != nil && *row.UserId != callerUserID {
+		return Entity{}, ErrForbidden
+	}
+	return row, nil
+}
+
 // List returns dashboards visible to the caller (household-scoped + caller's own
 // user-scoped rows) ordered by sort_order then created_at.
 func (p *Processor) List(tenantID, householdID, callerUserID uuid.UUID) ([]Model, error) {

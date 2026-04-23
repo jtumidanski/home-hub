@@ -95,3 +95,65 @@ func TestProcessorGetBlocksInvisibleRow(t *testing.T) {
 	_, err = p.GetByID(m.Id(), tid, hid, callerUID)
 	require.ErrorIs(t, err, ErrNotFound)
 }
+
+func TestProcessorUpdateHouseholdAllowsAnyMember(t *testing.T) {
+	db := setupTestDB(t)
+	p := newTestProcessor(t, db)
+	tid, hid := uuid.New(), uuid.New()
+	creator, other := uuid.New(), uuid.New()
+	layoutJSON := json.RawMessage(`{"version":1,"widgets":[]}`)
+
+	m, err := p.Create(tid, hid, creator, CreateAttrs{Name: "Home", Scope: "household", Layout: layoutJSON})
+	require.NoError(t, err)
+
+	newName := "Household Home"
+	updated, err := p.Update(m.Id(), tid, hid, other, UpdateAttrs{Name: &newName})
+	require.NoError(t, err)
+	require.Equal(t, "Household Home", updated.Name())
+}
+
+func TestProcessorUpdateUserScopedRejectsNonOwner(t *testing.T) {
+	db := setupTestDB(t)
+	p := newTestProcessor(t, db)
+	tid, hid := uuid.New(), uuid.New()
+	owner, other := uuid.New(), uuid.New()
+	layoutJSON := json.RawMessage(`{"version":1,"widgets":[]}`)
+
+	m, err := p.Create(tid, hid, owner, CreateAttrs{Name: "Mine", Scope: "user", Layout: layoutJSON})
+	require.NoError(t, err)
+
+	newName := "Hacked"
+	_, err = p.Update(m.Id(), tid, hid, other, UpdateAttrs{Name: &newName})
+	require.ErrorIs(t, err, ErrForbidden)
+}
+
+func TestProcessorDeleteUserScopedRejectsNonOwner(t *testing.T) {
+	db := setupTestDB(t)
+	p := newTestProcessor(t, db)
+	tid, hid := uuid.New(), uuid.New()
+	owner, other := uuid.New(), uuid.New()
+	layoutJSON := json.RawMessage(`{"version":1,"widgets":[]}`)
+
+	mine, err := p.Create(tid, hid, owner, CreateAttrs{Name: "Mine", Scope: "user", Layout: layoutJSON})
+	require.NoError(t, err)
+
+	err = p.Delete(mine.Id(), tid, hid, other)
+	require.ErrorIs(t, err, ErrForbidden)
+}
+
+func TestProcessorDeleteHouseholdAllowsAnyMember(t *testing.T) {
+	db := setupTestDB(t)
+	p := newTestProcessor(t, db)
+	tid, hid := uuid.New(), uuid.New()
+	creator, other := uuid.New(), uuid.New()
+	layoutJSON := json.RawMessage(`{"version":1,"widgets":[]}`)
+
+	m, err := p.Create(tid, hid, creator, CreateAttrs{Name: "Home", Scope: "household", Layout: layoutJSON})
+	require.NoError(t, err)
+
+	err = p.Delete(m.Id(), tid, hid, other)
+	require.NoError(t, err)
+
+	_, err = p.GetByID(m.Id(), tid, hid, creator)
+	require.ErrorIs(t, err, ErrNotFound)
+}
