@@ -214,6 +214,48 @@ func TestProcessorReorderInvisibleIDFails(t *testing.T) {
 	require.ErrorIs(t, err, ErrNotFound)
 }
 
+func TestProcessorPromoteOwnerSucceeds(t *testing.T) {
+	db := setupTestDB(t)
+	p := newTestProcessor(t, db)
+	tid, hid, uid := uuid.New(), uuid.New(), uuid.New()
+	layoutJSON := json.RawMessage(`{"version":1,"widgets":[]}`)
+
+	m, err := p.Create(tid, hid, uid, CreateAttrs{Name: "Mine", Scope: "user", Layout: layoutJSON})
+	require.NoError(t, err)
+
+	promoted, err := p.Promote(m.Id(), tid, hid, uid)
+	require.NoError(t, err)
+	require.Nil(t, promoted.UserID(), "promoted dashboard should have no user id")
+	require.True(t, promoted.IsHouseholdScoped())
+}
+
+func TestProcessorPromoteNonOwnerForbidden(t *testing.T) {
+	db := setupTestDB(t)
+	p := newTestProcessor(t, db)
+	tid, hid := uuid.New(), uuid.New()
+	owner, other := uuid.New(), uuid.New()
+	layoutJSON := json.RawMessage(`{"version":1,"widgets":[]}`)
+
+	m, err := p.Create(tid, hid, owner, CreateAttrs{Name: "Mine", Scope: "user", Layout: layoutJSON})
+	require.NoError(t, err)
+
+	_, err = p.Promote(m.Id(), tid, hid, other)
+	require.ErrorIs(t, err, ErrForbidden)
+}
+
+func TestProcessorPromoteAlreadyHousehold(t *testing.T) {
+	db := setupTestDB(t)
+	p := newTestProcessor(t, db)
+	tid, hid, uid := uuid.New(), uuid.New(), uuid.New()
+	layoutJSON := json.RawMessage(`{"version":1,"widgets":[]}`)
+
+	m, err := p.Create(tid, hid, uid, CreateAttrs{Name: "Home", Scope: "household", Layout: layoutJSON})
+	require.NoError(t, err)
+
+	_, err = p.Promote(m.Id(), tid, hid, uid)
+	require.ErrorIs(t, err, ErrAlreadyHousehold)
+}
+
 func TestProcessorDeleteHouseholdAllowsAnyMember(t *testing.T) {
 	db := setupTestDB(t)
 	p := newTestProcessor(t, db)

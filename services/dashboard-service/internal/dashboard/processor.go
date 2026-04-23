@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"errors"
 	"strings"
+	"time"
 
 	"github.com/google/uuid"
 	"github.com/jtumidanski/home-hub/services/dashboard-service/internal/layout"
@@ -12,6 +13,8 @@ import (
 	"gorm.io/datatypes"
 	"gorm.io/gorm"
 )
+
+func nowUTC() time.Time { return time.Now().UTC() }
 
 // Processor orchestrates dashboard CRUD with scope/visibility rules.
 type Processor struct {
@@ -38,6 +41,35 @@ var ErrForbidden = errors.New("forbidden")
 // dashboards; the UI renders these in separate sections so reorder runs one
 // scope at a time.
 var ErrMixedScope = errors.New("reorder requires single scope")
+
+// ErrAlreadyHousehold is returned by Promote when the target row is already
+// household-scoped.
+var ErrAlreadyHousehold = errors.New("dashboard already household-scoped")
+
+// Promote turns a user-scoped dashboard into a household-scoped one by clearing
+// its user_id. Only the owner may promote.
+func (p *Processor) Promote(id, tenantID, householdID, callerUserID uuid.UUID) (Model, error) {
+	row, err := p.requireEditable(id, tenantID, householdID, callerUserID)
+	if err != nil {
+		return Model{}, err
+	}
+	if row.UserId == nil {
+		return Model{}, ErrAlreadyHousehold
+	}
+	// GORM's Updates skips zero-value map entries with nil; use a raw UPDATE
+	// so user_id reliably becomes NULL across dialects (Postgres + sqlite).
+	if err := p.db.WithContext(p.ctx).Exec(
+		"UPDATE dashboards SET user_id = NULL, updated_at = ? WHERE id = ?",
+		nowUTC(), id,
+	).Error; err != nil {
+		return Model{}, err
+	}
+	updated, err := getByID(id)(p.db.WithContext(p.ctx))()
+	if err != nil {
+		return Model{}, err
+	}
+	return Make(updated)
+}
 
 // ReorderPair maps a dashboard id to its desired sort_order in the new order.
 type ReorderPair struct {
