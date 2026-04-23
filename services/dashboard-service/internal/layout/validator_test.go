@@ -61,3 +61,52 @@ func TestValidateRejectsUnknownWidgetType(t *testing.T) {
 		t.Fatalf("got %v", err)
 	}
 }
+
+func TestValidateRejectsBadGeometry(t *testing.T) {
+	cases := []struct {
+		name       string
+		x, y, w, h int
+	}{
+		{"negative x", -1, 0, 1, 1},
+		{"negative y", 0, -1, 1, 1},
+		{"zero w", 0, 0, 0, 1},
+		{"zero h", 0, 0, 1, 0},
+		{"overflows grid", 10, 0, 4, 1},
+	}
+	for _, c := range cases {
+		t.Run(c.name, func(t *testing.T) {
+			raw := mustJSON(map[string]any{"version": 1, "widgets": []any{
+				map[string]any{"id": uuid.New().String(), "type": "weather", "x": c.x, "y": c.y, "w": c.w, "h": c.h, "config": map[string]any{}},
+			}})
+			_, err := Validate(raw)
+			ve, ok := err.(ValidationError)
+			if !ok || ve.Code != CodeWidgetBadGeometry {
+				t.Fatalf("%s: got %v", c.name, err)
+			}
+		})
+	}
+}
+
+func TestValidateRejectsBadID(t *testing.T) {
+	raw := mustJSON(map[string]any{"version": 1, "widgets": []any{
+		map[string]any{"id": "not-a-uuid", "type": "weather", "x": 0, "y": 0, "w": 1, "h": 1, "config": map[string]any{}},
+	}})
+	_, err := Validate(raw)
+	ve, ok := err.(ValidationError)
+	if !ok || (ve.Code != CodeWidgetBadID && ve.Code != CodeMalformed) {
+		t.Fatalf("got %v", err)
+	}
+}
+
+func TestValidateRejectsDuplicateID(t *testing.T) {
+	id := uuid.New().String()
+	raw := mustJSON(map[string]any{"version": 1, "widgets": []any{
+		map[string]any{"id": id, "type": "weather", "x": 0, "y": 0, "w": 1, "h": 1, "config": map[string]any{}},
+		map[string]any{"id": id, "type": "weather", "x": 0, "y": 1, "w": 1, "h": 1, "config": map[string]any{}},
+	}})
+	_, err := Validate(raw)
+	ve, ok := err.(ValidationError)
+	if !ok || ve.Code != CodeWidgetDuplicateID {
+		t.Fatalf("got %v", err)
+	}
+}

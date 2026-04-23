@@ -69,12 +69,23 @@ func Validate(raw json.RawMessage) (Layout, error) {
 		return Layout{}, ValidationError{Code: CodeWidgetCountExceeded, Pointer: "/data/attributes/layout/widgets",
 			Message: fmt.Sprintf("at most %d widgets allowed", shared.MaxWidgets)}
 	}
+	seen := make(map[uuid.UUID]struct{}, len(out.Widgets))
 	for i, w := range out.Widgets {
 		ptr := func(f string) string { return fmt.Sprintf("/data/attributes/layout/widgets/%d/%s", i, f) }
 		if !shared.IsKnownWidgetType(w.Type) {
 			return Layout{}, ValidationError{Code: CodeWidgetUnknownType, Pointer: ptr("type"),
 				Message: fmt.Sprintf("widget type %q is not in the registry", w.Type)}
 		}
+		if w.X < 0 || w.Y < 0 || w.W < 1 || w.H < 1 || w.X+w.W > shared.GridColumns {
+			return Layout{}, ValidationError{Code: CodeWidgetBadGeometry, Pointer: ptr(""), Message: "widget geometry out of grid"}
+		}
+		if w.ID == uuid.Nil {
+			return Layout{}, ValidationError{Code: CodeWidgetBadID, Pointer: ptr("id"), Message: "widget id is required and must be a uuid"}
+		}
+		if _, dup := seen[w.ID]; dup {
+			return Layout{}, ValidationError{Code: CodeWidgetDuplicateID, Pointer: ptr("id"), Message: "widget id is duplicated"}
+		}
+		seen[w.ID] = struct{}{}
 	}
 	return out, nil
 }
