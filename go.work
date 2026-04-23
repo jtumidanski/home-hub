@@ -15,6 +15,7 @@ use (
 	./shared/go/auth
 	./shared/go/dashboard
 	./shared/go/database
+	./shared/go/events
 	./shared/go/http
 	./shared/go/logging
 	./shared/go/model
