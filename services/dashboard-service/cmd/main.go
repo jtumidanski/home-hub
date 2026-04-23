@@ -5,6 +5,7 @@ import (
 
 	"github.com/gorilla/mux"
 	"github.com/jtumidanski/home-hub/services/dashboard-service/internal/config"
+	"github.com/jtumidanski/home-hub/services/dashboard-service/internal/dashboard"
 	sharedauth "github.com/jtumidanski/home-hub/shared/go/auth"
 	"github.com/jtumidanski/home-hub/shared/go/database"
 	"github.com/jtumidanski/home-hub/shared/go/logging"
@@ -18,7 +19,9 @@ func main() {
 	shutdownTracing := logging.InitTracing(l, "dashboard-service")
 	defer shutdownTracing(context.Background())
 
-	db := database.Connect(l, cfg.DB) // migrations added in later phases
+	db := database.Connect(l, cfg.DB,
+		database.SetMigrations(dashboard.Migration),
+	)
 
 	authValidator := sharedauth.NewValidator(l, cfg.JWKSURL)
 	si := server.GetServerInformation()
