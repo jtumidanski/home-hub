@@ -3,9 +3,11 @@ package layout
 import (
 	"encoding/json"
 	"fmt"
+	"strings"
 	"testing"
 
 	"github.com/google/uuid"
+	shared "github.com/jtumidanski/home-hub/shared/go/dashboard"
 )
 
 func mustJSON(v any) json.RawMessage {
@@ -149,6 +151,19 @@ func TestValidateRejectsDeepConfig(t *testing.T) {
 	_, err := Validate(raw)
 	ve, _ := err.(ValidationError)
 	if ve.Code != CodeConfigTooDeep {
+		t.Fatalf("got %v", err)
+	}
+}
+
+func TestValidateRejectsOversizedPayload(t *testing.T) {
+	big := strings.Repeat("x", shared.MaxLayoutBytes+10)
+	raw := mustJSON(map[string]any{"version": 1, "widgets": []any{
+		map[string]any{"id": uuid.New().String(), "type": "weather", "x": 0, "y": 0, "w": 1, "h": 1,
+			"config": map[string]any{"location": map[string]any{"label": big}}},
+	}})
+	_, err := Validate(raw)
+	ve, _ := err.(ValidationError)
+	if ve.Code != CodePayloadTooLarge {
 		t.Fatalf("got %v", err)
 	}
 }
