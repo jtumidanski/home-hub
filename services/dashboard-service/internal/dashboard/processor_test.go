@@ -3,6 +3,7 @@ package dashboard
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"testing"
 
 	"github.com/google/uuid"
@@ -254,6 +255,64 @@ func TestProcessorPromoteAlreadyHousehold(t *testing.T) {
 
 	_, err = p.Promote(m.Id(), tid, hid, uid)
 	require.ErrorIs(t, err, ErrAlreadyHousehold)
+}
+
+func TestProcessorCopyToMineDeepCopies(t *testing.T) {
+	db := setupTestDB(t)
+	p := newTestProcessor(t, db)
+	tid, hid, uid := uuid.New(), uuid.New(), uuid.New()
+
+	w1ID := uuid.New()
+	w2ID := uuid.New()
+	layoutJSON := json.RawMessage(fmt.Sprintf(
+		`{"version":1,"widgets":[`+
+			`{"id":"%s","type":"weather","x":0,"y":0,"w":4,"h":3,"config":{"unit":"F"}},`+
+			`{"id":"%s","type":"tasks-summary","x":4,"y":0,"w":4,"h":3,"config":{}}`+
+			`]}`, w1ID, w2ID))
+
+	src, err := p.Create(tid, hid, uid, CreateAttrs{Name: "Shared", Scope: "household", Layout: layoutJSON})
+	require.NoError(t, err)
+
+	// Pre-existing user-scoped dashboards so we can assert sort_order = max+1.
+	pre, err := p.Create(tid, hid, uid, CreateAttrs{Name: "Pre", Scope: "user", Layout: json.RawMessage(`{"version":1,"widgets":[]}`)})
+	require.NoError(t, err)
+
+	copied, err := p.CopyToMine(src.Id(), tid, hid, uid)
+	require.NoError(t, err)
+
+	require.NotEqual(t, src.Id(), copied.Id(), "copy must have fresh id")
+	require.NotNil(t, copied.UserID())
+	require.Equal(t, uid, *copied.UserID())
+	require.Equal(t, pre.SortOrder()+1, copied.SortOrder())
+
+	var doc struct {
+		Version int `json:"version"`
+		Widgets []struct {
+			ID string `json:"id"`
+		} `json:"widgets"`
+	}
+	require.NoError(t, json.Unmarshal([]byte(copied.Layout()), &doc))
+	require.Len(t, doc.Widgets, 2)
+
+	for _, w := range doc.Widgets {
+		parsed, err := uuid.Parse(w.ID)
+		require.NoError(t, err, "widget id must be a uuid")
+		require.NotEqual(t, w1ID, parsed, "widget id must be regenerated")
+		require.NotEqual(t, w2ID, parsed, "widget id must be regenerated")
+	}
+	require.NotEqual(t, doc.Widgets[0].ID, doc.Widgets[1].ID, "regenerated widget ids must be distinct")
+}
+
+func TestProcessorCopyToMineRejectsUserScoped(t *testing.T) {
+	db := setupTestDB(t)
+	p := newTestProcessor(t, db)
+	tid, hid, uid := uuid.New(), uuid.New(), uuid.New()
+
+	mine, err := p.Create(tid, hid, uid, CreateAttrs{Name: "Mine", Scope: "user", Layout: json.RawMessage(`{"version":1,"widgets":[]}`)})
+	require.NoError(t, err)
+
+	_, err = p.CopyToMine(mine.Id(), tid, hid, uid)
+	require.ErrorIs(t, err, ErrNotCopyable)
 }
 
 func TestProcessorDeleteHouseholdAllowsAnyMember(t *testing.T) {

@@ -46,6 +46,69 @@ var ErrMixedScope = errors.New("reorder requires single scope")
 // household-scoped.
 var ErrAlreadyHousehold = errors.New("dashboard already household-scoped")
 
+// ErrNotCopyable is returned by CopyToMine when asked to copy a user-scoped
+// dashboard. Only household dashboards are copyable.
+var ErrNotCopyable = errors.New("only household dashboards can be copied to mine")
+
+// CopyToMine deep-copies a household dashboard into the caller's user scope,
+// regenerating widget ids so the two rows are independent.
+func (p *Processor) CopyToMine(id, tenantID, householdID, callerUserID uuid.UUID) (Model, error) {
+	row, err := getByID(id)(p.db.WithContext(p.ctx))()
+	if err != nil || row.TenantId != tenantID || row.HouseholdId != householdID {
+		return Model{}, ErrNotFound
+	}
+	if row.UserId != nil {
+		return Model{}, ErrNotCopyable
+	}
+
+	regenerated, err := regenerateWidgetIDs([]byte(row.Layout))
+	if err != nil {
+		return Model{}, err
+	}
+
+	ownerID := callerUserID
+	max, err := maxSortOrderInScope(p.db.WithContext(p.ctx), tenantID, householdID, &ownerID)
+	if err != nil {
+		return Model{}, err
+	}
+
+	copyName := row.Name + " (mine)"
+	if len(copyName) > 80 {
+		copyName = copyName[:80]
+	}
+
+	newRow := Entity{
+		TenantId:      tenantID,
+		HouseholdId:   householdID,
+		UserId:        &ownerID,
+		Name:          copyName,
+		SortOrder:     max + 1,
+		Layout:        datatypes.JSON(regenerated),
+		SchemaVersion: row.SchemaVersion,
+	}
+	saved, err := insert(p.db.WithContext(p.ctx), newRow)
+	if err != nil {
+		return Model{}, err
+	}
+	return Make(saved)
+}
+
+// regenerateWidgetIDs assigns a fresh UUID to every widget in the layout
+// document, preserving all other fields.
+func regenerateWidgetIDs(raw []byte) ([]byte, error) {
+	var doc struct {
+		Version int              `json:"version"`
+		Widgets []map[string]any `json:"widgets"`
+	}
+	if err := json.Unmarshal(raw, &doc); err != nil {
+		return nil, err
+	}
+	for i := range doc.Widgets {
+		doc.Widgets[i]["id"] = uuid.New().String()
+	}
+	return json.Marshal(doc)
+}
+
 // Promote turns a user-scoped dashboard into a household-scoped one by clearing
 // its user_id. Only the owner may promote.
 func (p *Processor) Promote(id, tenantID, householdID, callerUserID uuid.UUID) (Model, error) {
