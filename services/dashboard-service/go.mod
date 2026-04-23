@@ -3,8 +3,10 @@ module github.com/jtumidanski/home-hub/services/dashboard-service
 go 1.26.1
 
 require (
+	github.com/google/uuid v1.6.0
 	github.com/gorilla/mux v1.8.1
 	github.com/jtumidanski/home-hub/shared/go/auth v0.0.0-00010101000000-000000000000
+	github.com/jtumidanski/home-hub/shared/go/dashboard v0.0.0-00010101000000-000000000000
 	github.com/jtumidanski/home-hub/shared/go/database v0.0.0
 	github.com/jtumidanski/home-hub/shared/go/logging v0.0.0
 	github.com/jtumidanski/home-hub/shared/go/server v0.0.0
@@ -17,7 +19,6 @@ require (
 	github.com/go-logr/logr v1.4.3 // indirect
 	github.com/go-logr/stdr v1.2.2 // indirect
 	github.com/golang-jwt/jwt/v5 v5.3.1 // indirect
-	github.com/google/uuid v1.6.0 // indirect
 	github.com/grpc-ecosystem/grpc-gateway/v2 v2.28.0 // indirect
 	github.com/jackc/pgpassfile v1.0.0 // indirect
 	github.com/jackc/pgservicefile v0.0.0-20240606120523-5a60cdf6a761 // indirect
