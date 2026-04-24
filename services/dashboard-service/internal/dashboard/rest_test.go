@@ -215,6 +215,53 @@ func TestUpdateNonOwnerReturns403(t *testing.T) {
 	require.Equal(t, http.StatusForbidden, rec.Code, rec.Body.String())
 }
 
+func TestReorderSingleScopeReturns200(t *testing.T) {
+	db := setupTestDB(t)
+	tid, hid, uid := uuid.New(), uuid.New(), uuid.New()
+	proc := newTestProcessor(t, db)
+	layoutJSON := json.RawMessage(`{"version":1,"widgets":[]}`)
+	a, err := proc.Create(tid, hid, uid, CreateAttrs{Name: "A", Scope: "household", Layout: layoutJSON})
+	require.NoError(t, err)
+	b, err := proc.Create(tid, hid, uid, CreateAttrs{Name: "B", Scope: "household", Layout: layoutJSON})
+	require.NoError(t, err)
+
+	h := newTestServer(t, db, tenantctx.New(tid, hid, uid))
+	body := ReorderRequest{Entries: []ReorderEntry{
+		{ID: a.Id().String(), SortOrder: 5},
+		{ID: b.Id().String(), SortOrder: 3},
+	}}
+	rec := doRequest(t, h, http.MethodPatch, "/api/v1/dashboards/order", body)
+	require.Equal(t, http.StatusOK, rec.Code, rec.Body.String())
+
+	var doc jsonapiSlice
+	require.NoError(t, json.Unmarshal(rec.Body.Bytes(), &doc))
+	require.Len(t, doc.Data, 2)
+}
+
+func TestReorderMixedScopeReturns400(t *testing.T) {
+	db := setupTestDB(t)
+	tid, hid, uid := uuid.New(), uuid.New(), uuid.New()
+	proc := newTestProcessor(t, db)
+	layoutJSON := json.RawMessage(`{"version":1,"widgets":[]}`)
+	hh, err := proc.Create(tid, hid, uid, CreateAttrs{Name: "H", Scope: "household", Layout: layoutJSON})
+	require.NoError(t, err)
+	uu, err := proc.Create(tid, hid, uid, CreateAttrs{Name: "U", Scope: "user", Layout: layoutJSON})
+	require.NoError(t, err)
+
+	h := newTestServer(t, db, tenantctx.New(tid, hid, uid))
+	body := ReorderRequest{Entries: []ReorderEntry{
+		{ID: hh.Id().String(), SortOrder: 1},
+		{ID: uu.Id().String(), SortOrder: 2},
+	}}
+	rec := doRequest(t, h, http.MethodPatch, "/api/v1/dashboards/order", body)
+	require.Equal(t, http.StatusBadRequest, rec.Code, rec.Body.String())
+
+	var doc jsonapiErrorDoc
+	require.NoError(t, json.Unmarshal(rec.Body.Bytes(), &doc))
+	require.Len(t, doc.Errors, 1)
+	require.Equal(t, "dashboard.mixed_scope", doc.Errors[0].Code)
+}
+
 func TestDeleteHouseholdAnyMemberReturns204(t *testing.T) {
 	db := setupTestDB(t)
 	tid, hid := uuid.New(), uuid.New()

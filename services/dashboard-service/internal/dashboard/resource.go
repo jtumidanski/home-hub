@@ -1,6 +1,7 @@
 package dashboard
 
 import (
+	"encoding/json"
 	"errors"
 	"net/http"
 
@@ -199,10 +200,54 @@ func deleteHandler(db *gorm.DB) server.GetHandler {
 	}
 }
 
-func reorderHandler(_ *gorm.DB) server.GetHandler {
+func reorderHandler(db *gorm.DB) server.GetHandler {
 	return func(d *server.HandlerDependency, c *server.HandlerContext) http.HandlerFunc {
 		return func(w http.ResponseWriter, r *http.Request) {
-			http.NotFound(w, r)
+			t := tenantctx.MustFromContext(r.Context())
+
+			// Reorder uses a plain JSON body, not JSON:API-wrapped, since it is a
+			// bulk action rather than a single-resource mutation.
+			var req ReorderRequest
+			if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+				server.WriteError(w, http.StatusBadRequest, "Invalid Request", "could not parse reorder body")
+				return
+			}
+
+			pairs := make([]ReorderPair, 0, len(req.Entries))
+			for _, e := range req.Entries {
+				id, err := uuid.Parse(e.ID)
+				if err != nil {
+					server.WriteError(w, http.StatusBadRequest, "Invalid ID", "reorder entry has invalid uuid")
+					return
+				}
+				pairs = append(pairs, ReorderPair{ID: id, SortOrder: e.SortOrder})
+			}
+
+			proc := NewProcessor(d.Logger(), r.Context(), db)
+			list, err := proc.Reorder(t.Id(), t.HouseholdId(), t.UserId(), pairs)
+			if err != nil {
+				if errors.Is(err, ErrMixedScope) {
+					server.WriteJSONAPIError(w, http.StatusBadRequest, "dashboard.mixed_scope", "Mixed scope", err.Error(), "")
+					return
+				}
+				if errors.Is(err, ErrNotFound) {
+					server.WriteError(w, http.StatusNotFound, "Not Found", "")
+					return
+				}
+				d.Logger().WithError(err).Error("reorder dashboards")
+				server.WriteError(w, http.StatusInternalServerError, "Internal Error", "")
+				return
+			}
+			out := make([]RestModel, 0, len(list))
+			for _, m := range list {
+				rest, err := Transform(m)
+				if err != nil {
+					server.WriteError(w, http.StatusInternalServerError, "Internal Error", "")
+					return
+				}
+				out = append(out, rest)
+			}
+			server.MarshalSliceResponse[RestModel](d.Logger())(w)(c.ServerInformation())(out)
 		}
 	}
 }
