@@ -159,8 +159,8 @@ describe("DashboardRenderer", () => {
     const grid = container.querySelector("[data-testid=dashboard-renderer-grid]") as HTMLElement;
     const slots = Array.from(grid.querySelectorAll("[data-testid^=widget-slot-]"));
     // Expect weather first (y=0), then tasks (y=3,x=0), then unknown (y=3,x=4)
-    expect(slots[0].getAttribute("data-testid")).toBe("widget-slot-w-weather");
-    expect(slots[1].getAttribute("data-testid")).toBe("widget-slot-w-tasks");
-    expect(slots[2].getAttribute("data-testid")).toBe("widget-slot-w-unknown");
+    expect(slots[0]?.getAttribute("data-testid")).toBe("widget-slot-w-weather");
+    expect(slots[1]?.getAttribute("data-testid")).toBe("widget-slot-w-tasks");
+    expect(slots[2]?.getAttribute("data-testid")).toBe("widget-slot-w-unknown");
   });
 });

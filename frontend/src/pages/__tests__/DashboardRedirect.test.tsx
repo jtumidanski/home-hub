@@ -116,7 +116,11 @@ describe("DashboardRedirect", () => {
 
     renderIt();
     await waitFor(() => expect(mutateMock).toHaveBeenCalledTimes(1));
-    expect(mutateMock.mock.calls[0][0]).toMatchObject({ name: "Home" });
-    expect(mutateMock.mock.calls[0][0].layout.widgets.length).toBeGreaterThan(0);
+    const firstArg = mutateMock.mock.calls[0]?.[0] as {
+      name: string;
+      layout: { widgets: unknown[] };
+    };
+    expect(firstArg).toMatchObject({ name: "Home" });
+    expect(firstArg.layout.widgets.length).toBeGreaterThan(0);
   });
 });
