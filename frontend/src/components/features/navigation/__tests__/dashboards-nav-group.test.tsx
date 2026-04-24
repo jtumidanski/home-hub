@@ -23,9 +23,20 @@ function dash(overrides: Partial<Dashboard["attributes"]> & { id: string }): Das
 }
 
 const mockUseDashboards = vi.fn();
+const mockUseHouseholdPreferences = vi.fn();
 
 vi.mock("@/lib/hooks/api/use-dashboards", () => ({
   useDashboards: () => mockUseDashboards(),
+  useCreateDashboard: () => ({ mutateAsync: vi.fn(), isPending: false }),
+  useCopyDashboardToMine: () => ({ mutate: vi.fn(), mutateAsync: vi.fn(), isPending: false }),
+  useUpdateDashboard: () => ({ mutate: vi.fn(), isPending: false }),
+  useDeleteDashboard: () => ({ mutate: vi.fn(), isPending: false }),
+  usePromoteDashboard: () => ({ mutate: vi.fn() }),
+}));
+
+vi.mock("@/lib/hooks/api/use-household-preferences", () => ({
+  useHouseholdPreferences: () => mockUseHouseholdPreferences(),
+  useUpdateHouseholdPreferences: () => ({ mutate: vi.fn() }),
 }));
 
 import { DashboardsNavGroup } from "../dashboards-nav-group";
@@ -44,6 +55,9 @@ describe("sortDashboards", () => {
 describe("DashboardsNavGroup", () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    mockUseHouseholdPreferences.mockReturnValue({
+      data: { data: { id: "prefs-1", type: "householdPreferences", attributes: { defaultDashboardId: null, createdAt: "", updatedAt: "" } } },
+    });
   });
 
   function renderIt() {
