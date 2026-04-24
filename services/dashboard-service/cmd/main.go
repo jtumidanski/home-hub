@@ -6,9 +6,11 @@ import (
 	"github.com/gorilla/mux"
 	"github.com/jtumidanski/home-hub/services/dashboard-service/internal/config"
 	"github.com/jtumidanski/home-hub/services/dashboard-service/internal/dashboard"
+	"github.com/jtumidanski/home-hub/services/dashboard-service/internal/events"
 	"github.com/jtumidanski/home-hub/services/dashboard-service/internal/retention"
 	sharedauth "github.com/jtumidanski/home-hub/shared/go/auth"
 	"github.com/jtumidanski/home-hub/shared/go/database"
+	kcons "github.com/jtumidanski/home-hub/shared/go/kafka/consumer"
 	"github.com/jtumidanski/home-hub/shared/go/logging"
 	"github.com/jtumidanski/home-hub/shared/go/server"
 )
@@ -29,6 +31,15 @@ func main() {
 
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
+
+	kafkaHandler := events.NewHandler(l, db)
+	kafkaMgr := kcons.New(kcons.Config{
+		Brokers: cfg.KafkaBrokers,
+		Topic:   cfg.TopicUserLifecycle,
+		GroupID: cfg.KafkaConsumerGroup,
+	}, kafkaHandler.Dispatch, l)
+	go kafkaMgr.Run(ctx)
+	defer kafkaMgr.Close()
 
 	server.New(l).
 		WithAddr(":" + cfg.Port).

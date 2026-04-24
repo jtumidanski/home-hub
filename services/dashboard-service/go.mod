@@ -10,6 +10,7 @@ require (
 	github.com/jtumidanski/home-hub/shared/go/dashboard v0.0.0-00010101000000-000000000000
 	github.com/jtumidanski/home-hub/shared/go/database v0.0.0
 	github.com/jtumidanski/home-hub/shared/go/events v0.0.0-00010101000000-000000000000
+	github.com/jtumidanski/home-hub/shared/go/kafka v0.0.0-00010101000000-000000000000
 	github.com/jtumidanski/home-hub/shared/go/logging v0.0.0
 	github.com/jtumidanski/home-hub/shared/go/retention v0.0.0-00010101000000-000000000000
 	github.com/jtumidanski/home-hub/shared/go/server v0.0.0
