@@ -1,8 +1,13 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { render, screen, fireEvent } from "@testing-library/react";
 import { MemoryRouter, Routes, Route, Outlet } from "react-router-dom";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { seedLayout } from "@/lib/dashboard/seed-layout";
 import type { Dashboard } from "@/types/models/dashboard";
+
+vi.mock("@/context/tenant-context", () => ({
+  useTenant: () => ({ tenant: { id: "t1" }, household: { id: "h1" } }),
+}));
 
 // Stub widget components — none of them should actually fetch during this
 // high-level designer-render test.
@@ -63,14 +68,17 @@ function makeDashboard(): Dashboard {
 }
 
 function renderDesigner(dashboard: Dashboard = makeDashboard()) {
+  const qc = new QueryClient({ defaultOptions: { queries: { retry: false } } });
   return render(
-    <MemoryRouter initialEntries={["/edit"]}>
-      <Routes>
-        <Route element={<ShellOutlet dashboard={dashboard} />}>
-          <Route path="/edit" element={<DashboardDesigner />} />
-        </Route>
-      </Routes>
-    </MemoryRouter>,
+    <QueryClientProvider client={qc}>
+      <MemoryRouter initialEntries={["/edit"]}>
+        <Routes>
+          <Route element={<ShellOutlet dashboard={dashboard} />}>
+            <Route path="/edit" element={<DashboardDesigner />} />
+          </Route>
+        </Routes>
+      </MemoryRouter>
+    </QueryClientProvider>,
   );
 }
 

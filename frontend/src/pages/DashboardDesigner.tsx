@@ -1,22 +1,70 @@
-import { useReducer } from "react";
-import { useOutletContext } from "react-router-dom";
+import { useReducer, useState } from "react";
+import { useNavigate, useOutletContext } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import type { Dashboard } from "@/types/models/dashboard";
+import { useUpdateDashboard } from "@/lib/hooks/api/use-dashboards";
 import { draftReducer, fromServer } from "@/pages/dashboard-designer/state";
 import { DesignerGrid } from "@/pages/dashboard-designer/designer-grid";
 import { PaletteDrawer } from "@/pages/dashboard-designer/palette-drawer";
 import { ConfigPanel } from "@/pages/dashboard-designer/config-panel";
+import { useUnsavedGuard } from "@/pages/dashboard-designer/use-unsaved-guard";
 
 /**
  * The dashboard designer. Reads the server-fetched dashboard from the
  * parent `<DashboardShell>` outlet context and drives the editor via the
- * `draftReducer`. Palette, config panel, save/discard, and below-tablet
- * blocker all land in subsequent tasks.
+ * `draftReducer`. Save persists to the API; Discard returns to view mode
+ * after confirming on a dirty draft. The dirty guard blocks in-app and
+ * browser-level navigation while changes are unsaved.
  */
 export default function DashboardDesigner() {
   const { dashboard } = useOutletContext<{ dashboard: Dashboard }>();
   const [state, dispatch] = useReducer(draftReducer, dashboard, fromServer);
+  const navigate = useNavigate();
+  const updateDashboard = useUpdateDashboard();
+
+  useUnsavedGuard(state.dirty);
+  const [discardConfirmOpen, setDiscardConfirmOpen] = useState(false);
+
+  const onSave = () => {
+    updateDashboard.mutate(
+      { id: dashboard.id, attrs: { name: state.name, layout: state.layout } },
+      {
+        onSuccess: (res) => {
+          dispatch({ type: "saved", server: res.data });
+          navigate("..");
+        },
+      },
+    );
+  };
+
+  const onDiscardClick = () => {
+    if (state.dirty) {
+      setDiscardConfirmOpen(true);
+      return;
+    }
+    navigate("..");
+  };
+
+  const confirmDiscard = () => {
+    setDiscardConfirmOpen(false);
+    // Reset draft so the unsaved guard doesn't fire on the subsequent
+    // navigation.
+    dispatch({ type: "reset", server: dashboard });
+    navigate("..");
+  };
+
+  const cancelDiscard = () => {
+    setDiscardConfirmOpen(false);
+  };
 
   return (
     <div className="flex flex-col" data-testid="dashboard-designer">
@@ -42,11 +90,23 @@ export default function DashboardDesigner() {
           >
             Add widget
           </Button>
-          <Button type="button" variant="outline" size="sm" data-testid="designer-discard">
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            onClick={onDiscardClick}
+            data-testid="designer-discard"
+          >
             Discard
           </Button>
-          <Button type="button" size="sm" data-testid="designer-save">
-            Save
+          <Button
+            type="button"
+            size="sm"
+            onClick={onSave}
+            disabled={updateDashboard.isPending}
+            data-testid="designer-save"
+          >
+            {updateDashboard.isPending ? "Saving…" : "Save"}
           </Button>
         </div>
       </div>
@@ -66,6 +126,25 @@ export default function DashboardDesigner() {
         }
         dispatch={dispatch}
       />
+
+      <Dialog open={discardConfirmOpen} onOpenChange={setDiscardConfirmOpen}>
+        <DialogContent data-testid="discard-confirm">
+          <DialogHeader>
+            <DialogTitle>Discard unsaved changes?</DialogTitle>
+            <DialogDescription>
+              Your edits to this dashboard will be lost. This cannot be undone.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button variant="outline" onClick={cancelDiscard} data-testid="discard-cancel">
+              Keep editing
+            </Button>
+            <Button onClick={confirmDiscard} data-testid="discard-confirm-button">
+              Discard
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

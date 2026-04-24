@@ -1,4 +1,4 @@
-import { useMemo, type Dispatch } from "react";
+import { useMemo, useRef, type Dispatch } from "react";
 import RGL, { WidthProvider } from "react-grid-layout/legacy";
 
 // react-grid-layout v2's ESM `/legacy` entrypoint preserves the classic
@@ -43,7 +43,24 @@ function mergeLayout(widgets: WidgetInstance[], next: RglLayout[]): WidgetInstan
   });
 }
 
+/**
+ * Checks whether two RGL layouts differ in any cell position/size. Used to
+ * avoid dispatching `move-or-resize` for RGL's initial synthetic callback
+ * (which would mark the draft dirty on mount).
+ */
+function layoutsEqual(widgets: WidgetInstance[], next: RglLayout[]): boolean {
+  if (widgets.length !== next.length) return false;
+  const byId = new Map(next.map((l) => [l.i, l] as const));
+  for (const w of widgets) {
+    const l = byId.get(w.id);
+    if (!l) return false;
+    if (l.x !== w.x || l.y !== w.y || l.w !== w.w || l.h !== w.h) return false;
+  }
+  return true;
+}
+
 export function DesignerGrid({ widgets, dispatch }: DesignerGridProps) {
+  const sawFirstCallback = useRef(false);
   // Build data-grid per item from the registry (min/max sizing) + current position.
   const items = useMemo(() => {
     return widgets.map((w) => {
@@ -72,9 +89,16 @@ export function DesignerGrid({ widgets, dispatch }: DesignerGridProps) {
       compactType="vertical"
       isBounded
       draggableHandle=".widget-drag-handle"
-      onLayoutChange={(next: RglLayout[]) =>
-        dispatch({ type: "move-or-resize", widgets: mergeLayout(widgets, next) })
-      }
+      onLayoutChange={(next: RglLayout[]) => {
+        // RGL fires onLayoutChange synchronously on mount; ignore the first
+        // callback if the layout hasn't actually changed, otherwise every
+        // mount would flip the designer into a "dirty" state.
+        if (!sawFirstCallback.current) {
+          sawFirstCallback.current = true;
+          if (layoutsEqual(widgets, next)) return;
+        }
+        dispatch({ type: "move-or-resize", widgets: mergeLayout(widgets, next) });
+      }}
     >
       {items.map(({ widget, dataGrid }) => {
         const def = findWidget(widget.type);
