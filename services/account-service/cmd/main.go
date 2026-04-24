@@ -54,6 +54,7 @@ func main() {
 			household.InitializeRoutes(db)(l, si, api)
 			membership.InitializeRoutes(db)(l, si, api)
 			preference.InitializeRoutes(db)(l, si, api)
+			householdpreference.InitializeRoutes(db)(l, si, api)
 			invitation.InitializeRoutes(db)(l, si, api)
 			appcontext.InitializeRoutes(db)(l, si, api)
 			retention.InitializeRoutes(db, fan)(l, si, api)
