@@ -15,6 +15,7 @@ services:
       - recipe-service
       - calendar-service
       - package-service
+      - dashboard-service
       - category-service
       - shopping-service
       - tracker-service
@@ -64,6 +65,9 @@ services:
       - DB_NAME=${DB_NAME:-home_hub}
       - PORT=8080
       - JWKS_URL=http://auth-service:8080/api/v1/auth/.well-known/jwks.json
+      - INTERNAL_SERVICE_TOKEN=${INTERNAL_SERVICE_TOKEN}
+      - BOOTSTRAP_SERVERS=${BOOTSTRAP_SERVERS:-kafka-broker.kafka.svc.cluster.local:9092}
+      - EVENT_TOPIC_USER_LIFECYCLE=${EVENT_TOPIC_USER_LIFECYCLE:-home-hub.user.lifecycle}
 
   productivity-service:
     container_name: hh-productivity
@@ -144,6 +148,28 @@ services:
       - PACKAGE_TOKEN_ENCRYPTION_KEY=${PACKAGE_TOKEN_ENCRYPTION_KEY}
       - PACKAGE_POLL_INTERVAL_MINUTES=${PACKAGE_POLL_INTERVAL_MINUTES:-30}
       - PACKAGE_MAX_ACTIVE_PER_HOUSEHOLD=${PACKAGE_MAX_ACTIVE_PER_HOUSEHOLD:-25}
+
+  dashboard-service:
+    container_name: hh-dashboard
+    build:
+      context: ../..
+      dockerfile: services/dashboard-service/Dockerfile
+    expose:
+      - "8080"
+    environment:
+      - DB_HOST=${DB_HOST:-postgres.home}
+      - DB_PORT=${DB_PORT:-5432}
+      - DB_USER=${DB_USER:-home_hub}
+      - DB_PASSWORD=${DB_PASSWORD}
+      - DB_NAME=${DB_NAME:-home_hub}
+      - PORT=8080
+      - JWKS_URL=http://auth-service:8080/api/v1/auth/.well-known/jwks.json
+      - ACCOUNT_SERVICE_URL=http://account-service:8080
+      - INTERNAL_SERVICE_TOKEN=${INTERNAL_SERVICE_TOKEN}
+      - BOOTSTRAP_SERVERS=${BOOTSTRAP_SERVERS:-kafka-broker.kafka.svc.cluster.local:9092}
+      - EVENT_TOPIC_USER_LIFECYCLE=${EVENT_TOPIC_USER_LIFECYCLE:-home-hub.user.lifecycle}
+      - KAFKA_CONSUMER_GROUP=dashboard-service
+      - RETENTION_INTERVAL=${RETENTION_INTERVAL:-6h}
 
   recipe-service:
     container_name: hh-recipe
