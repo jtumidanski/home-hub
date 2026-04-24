@@ -35,11 +35,9 @@ func main() {
 			api := router.PathPrefix("/api/v1").Subrouter()
 			api.Use(sharedauth.Middleware(l, authValidator))
 
-			// Route registrations added in later tasks.
-			_ = api
-			_ = si
+			dashboard.InitializeRoutes(db)(l, si, api)
+
 			_ = ctx
-			_ = db
 		}).
 		Run()
 }
