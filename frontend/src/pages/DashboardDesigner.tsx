@@ -6,6 +6,7 @@ import type { Dashboard } from "@/types/models/dashboard";
 import { draftReducer, fromServer } from "@/pages/dashboard-designer/state";
 import { DesignerGrid } from "@/pages/dashboard-designer/designer-grid";
 import { PaletteDrawer } from "@/pages/dashboard-designer/palette-drawer";
+import { ConfigPanel } from "@/pages/dashboard-designer/config-panel";
 
 /**
  * The dashboard designer. Reads the server-fetched dashboard from the
@@ -55,6 +56,14 @@ export default function DashboardDesigner() {
       <PaletteDrawer
         open={state.paletteOpen}
         onOpenChange={(open) => dispatch({ type: "toggle-palette", open })}
+        dispatch={dispatch}
+      />
+      <ConfigPanel
+        widget={
+          state.selectedWidgetId
+            ? state.layout.widgets.find((w) => w.id === state.selectedWidgetId) ?? null
+            : null
+        }
         dispatch={dispatch}
       />
     </div>
