@@ -27,6 +27,7 @@ func (m Model) UserID() *uuid.UUID       { return m.userID }
 func (m Model) Name() string             { return m.name }
 func (m Model) SortOrder() int           { return m.sortOrder }
 func (m Model) Layout() datatypes.JSON   { return m.layout }
+func (m Model) LayoutJSON() []byte       { return []byte(m.layout) }
 func (m Model) SchemaVersion() int       { return m.schemaVersion }
 func (m Model) CreatedAt() time.Time     { return m.createdAt }
 func (m Model) UpdatedAt() time.Time     { return m.updatedAt }
