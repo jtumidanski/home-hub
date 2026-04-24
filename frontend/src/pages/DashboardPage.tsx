@@ -13,8 +13,8 @@ import { packageKeys } from "@/lib/hooks/api/use-packages";
 
 import { PullToRefresh } from "@/components/common/pull-to-refresh";
 import { ErrorCard } from "@/components/common/error-card";
+import { DashboardSkeleton } from "@/components/common/dashboard-skeleton";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Skeleton } from "@/components/ui/skeleton";
 import { CheckSquare, Bell, AlertTriangle } from "lucide-react";
 import { WeatherWidget } from "@/components/features/weather/weather-widget";
 import { PackageSummaryWidget } from "@/components/features/packages/package-summary-widget";
@@ -22,33 +22,6 @@ import { MealPlanWidget } from "@/components/features/meals/meal-plan-widget";
 import { CalendarWidget } from "@/components/features/calendar/calendar-widget";
 import { HabitsWidget } from "@/components/features/trackers/habits-widget";
 import { WorkoutWidget } from "@/components/features/workouts/workout-widget";
-
-function DashboardSkeleton() {
-  return (
-    <div className="p-4 md:p-6 space-y-6" role="status" aria-label="Loading">
-      <div>
-        <Skeleton className="h-8 w-40" />
-        <Skeleton className="mt-1 h-4 w-32" />
-      </div>
-      <Skeleton className="h-48" />
-      <div className="grid gap-6 md:gap-4 grid-cols-1 md:grid-cols-3">
-        {Array.from({ length: 3 }).map((_, i) => (
-          <Skeleton key={i} className="h-28" />
-        ))}
-      </div>
-      <div className="grid gap-6 md:gap-4 grid-cols-1 md:grid-cols-3">
-        {Array.from({ length: 3 }).map((_, i) => (
-          <Skeleton key={i} className="h-36" />
-        ))}
-      </div>
-      <div className="grid gap-6 md:gap-4 grid-cols-1 md:grid-cols-2">
-        {Array.from({ length: 2 }).map((_, i) => (
-          <Skeleton key={i} className="h-36" />
-        ))}
-      </div>
-    </div>
-  );
-}
 
 export function DashboardPage() {
   const queryClient = useQueryClient();
