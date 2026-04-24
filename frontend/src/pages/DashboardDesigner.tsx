@@ -5,6 +5,7 @@ import { Input } from "@/components/ui/input";
 import type { Dashboard } from "@/types/models/dashboard";
 import { draftReducer, fromServer } from "@/pages/dashboard-designer/state";
 import { DesignerGrid } from "@/pages/dashboard-designer/designer-grid";
+import { PaletteDrawer } from "@/pages/dashboard-designer/palette-drawer";
 
 /**
  * The dashboard designer. Reads the server-fetched dashboard from the
@@ -51,6 +52,11 @@ export default function DashboardDesigner() {
       <div className="p-2 md:p-4">
         <DesignerGrid widgets={state.layout.widgets} dispatch={dispatch} />
       </div>
+      <PaletteDrawer
+        open={state.paletteOpen}
+        onOpenChange={(open) => dispatch({ type: "toggle-palette", open })}
+        dispatch={dispatch}
+      />
     </div>
   );
 }
