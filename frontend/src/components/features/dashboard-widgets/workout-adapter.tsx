@@ -1,7 +1,7 @@
 import { WorkoutWidget } from "@/components/features/workouts/workout-widget";
 
 export interface WorkoutAdapterConfig {
-  title?: string;
+  title?: string | undefined;
 }
 
 // eslint-disable-next-line @typescript-eslint/no-unused-vars

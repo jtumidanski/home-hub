@@ -53,6 +53,7 @@ export function computeReorderEntries(
   if (fromIdx < 0 || toIdx < 0) return null;
   const next = [...sorted];
   const [moved] = next.splice(fromIdx, 1);
+  if (!moved) return null;
   next.splice(toIdx, 0, moved);
   return next.map((d, i) => ({ id: d.id, sortOrder: i }));
 }
@@ -132,7 +133,7 @@ export function DashboardsNavGroup({ isOpen, onToggle }: DashboardsNavGroupProps
     return { householdList: household, userList: user };
   }, [dashboards]);
 
-  const defaultDashboardId = prefsData?.data?.attributes.defaultDashboardId ?? null;
+  const defaultDashboardId = prefsData?.data?.[0]?.attributes.defaultDashboardId ?? null;
 
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 4 } }),

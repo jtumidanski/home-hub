@@ -46,7 +46,7 @@ describe("PaletteDrawer", () => {
     render(<PaletteDrawer open onOpenChange={onOpenChange} dispatch={dispatch} />);
     fireEvent.click(screen.getByTestId("palette-add-tasks-summary"));
     expect(dispatch).toHaveBeenCalledTimes(1);
-    const call = dispatch.mock.calls[0][0];
+    const call = dispatch.mock.calls[0]![0];
     expect(call.type).toBe("add");
     expect(call.widget.type).toBe("tasks-summary");
     expect(call.widget.id).toBeTruthy();

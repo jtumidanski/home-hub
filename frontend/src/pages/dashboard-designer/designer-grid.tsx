@@ -11,6 +11,10 @@ type RglLayout = {
   y: number;
   w: number;
   h: number;
+  minW?: number;
+  minH?: number;
+  maxW?: number;
+  maxH?: number;
 };
 import "react-grid-layout/css/styles.css";
 import "react-resizable/css/styles.css";
@@ -34,7 +38,7 @@ interface DesignerGridProps {
  * Merges an RGL Layout[] feedback array onto the current WidgetInstance[]
  * preserving type/config/etc. that RGL doesn't track.
  */
-function mergeLayout(widgets: WidgetInstance[], next: RglLayout[]): WidgetInstance[] {
+function mergeLayout(widgets: WidgetInstance[], next: ReadonlyArray<RglLayout>): WidgetInstance[] {
   const byId = new Map(next.map((l) => [l.i, l] as const));
   return widgets.map((w) => {
     const l = byId.get(w.id);
@@ -48,7 +52,7 @@ function mergeLayout(widgets: WidgetInstance[], next: RglLayout[]): WidgetInstan
  * avoid dispatching `move-or-resize` for RGL's initial synthetic callback
  * (which would mark the draft dirty on mount).
  */
-function layoutsEqual(widgets: WidgetInstance[], next: RglLayout[]): boolean {
+function layoutsEqual(widgets: WidgetInstance[], next: ReadonlyArray<RglLayout>): boolean {
   if (widgets.length !== next.length) return false;
   const byId = new Map(next.map((l) => [l.i, l] as const));
   for (const w of widgets) {
@@ -71,10 +75,10 @@ export function DesignerGrid({ widgets, dispatch }: DesignerGridProps) {
         y: w.y,
         w: w.w,
         h: w.h,
-        minW: def?.minSize.w,
-        minH: def?.minSize.h,
-        maxW: def?.maxSize.w,
-        maxH: def?.maxSize.h,
+        ...(def?.minSize.w !== undefined ? { minW: def.minSize.w } : {}),
+        ...(def?.minSize.h !== undefined ? { minH: def.minSize.h } : {}),
+        ...(def?.maxSize.w !== undefined ? { maxW: def.maxSize.w } : {}),
+        ...(def?.maxSize.h !== undefined ? { maxH: def.maxSize.h } : {}),
       };
       return { widget: w, dataGrid };
     });
@@ -89,7 +93,7 @@ export function DesignerGrid({ widgets, dispatch }: DesignerGridProps) {
       compactType="vertical"
       isBounded
       draggableHandle=".widget-drag-handle"
-      onLayoutChange={(next: RglLayout[]) => {
+      onLayoutChange={(next: ReadonlyArray<RglLayout>) => {
         // RGL fires onLayoutChange synchronously on mount; ignore the first
         // callback if the layout hasn't actually changed, otherwise every
         // mount would flip the designer into a "dirty" state.

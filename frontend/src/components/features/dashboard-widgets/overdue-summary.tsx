@@ -1,7 +1,7 @@
 import { TasksSummaryWidget } from "@/components/features/dashboard-widgets/tasks-summary";
 
 export interface OverdueSummaryConfig {
-  title?: string;
+  title?: string | undefined;
 }
 
 /**
@@ -14,7 +14,7 @@ export function OverdueSummaryWidget({ config }: { config: OverdueSummaryConfig 
     <TasksSummaryWidget
       config={{
         status: "overdue",
-        title: config.title,
+        ...(config.title !== undefined ? { title: config.title } : {}),
       }}
     />
   );

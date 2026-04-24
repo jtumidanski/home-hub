@@ -2,6 +2,7 @@ import { useEffect, type Dispatch } from "react";
 import { useForm } from "react-hook-form";
 import { Dialog as DialogPrimitive } from "@base-ui/react/dialog";
 import { XIcon } from "lucide-react";
+import type { z } from "zod";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { findWidget } from "@/lib/dashboard/widget-registry";
@@ -114,7 +115,10 @@ export function ConfigPanel({ widget, dispatch }: ConfigPanelProps) {
             className="flex flex-1 flex-col gap-3 overflow-y-auto"
             data-testid="config-form"
           >
-            <ZodFormFields schema={def.configSchema} form={form} />
+            <ZodFormFields
+              schema={def.configSchema as unknown as z.ZodType<Record<string, unknown>>}
+              form={form}
+            />
             <div className="mt-auto flex flex-col gap-2 border-t border-border pt-2 sm:flex-row sm:justify-end">
               <Button
                 type="button"

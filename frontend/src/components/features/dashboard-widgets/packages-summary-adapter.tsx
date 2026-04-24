@@ -1,7 +1,7 @@
 import { PackageSummaryWidget } from "@/components/features/packages/package-summary-widget";
 
 export interface PackagesSummaryAdapterConfig {
-  title?: string;
+  title?: string | undefined;
 }
 
 // eslint-disable-next-line @typescript-eslint/no-unused-vars

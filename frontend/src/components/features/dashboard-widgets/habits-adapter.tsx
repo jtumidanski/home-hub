@@ -1,7 +1,7 @@
 import { HabitsWidget } from "@/components/features/trackers/habits-widget";
 
 export interface HabitsAdapterConfig {
-  title?: string;
+  title?: string | undefined;
 }
 
 // eslint-disable-next-line @typescript-eslint/no-unused-vars

@@ -6,7 +6,7 @@ import { Bell } from "lucide-react";
 
 export interface RemindersSummaryConfig {
   filter: "active" | "snoozed" | "upcoming";
-  title?: string;
+  title?: string | undefined;
 }
 
 const DEFAULT_TITLES: Record<RemindersSummaryConfig["filter"], string> = {

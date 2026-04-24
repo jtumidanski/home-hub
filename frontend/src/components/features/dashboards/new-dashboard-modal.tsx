@@ -159,7 +159,7 @@ export function NewDashboardModal({ open, onOpenChange }: NewDashboardModalProps
             <Label htmlFor="copyOf">Copy from (optional)</Label>
             <Select
               value={copyOf ?? NONE_VALUE}
-              onValueChange={(v) => setValue("copyOf", v)}
+              onValueChange={(v) => setValue("copyOf", v ?? NONE_VALUE)}
             >
               <SelectTrigger className="w-full">
                 <SelectValue placeholder="None (start blank)" />

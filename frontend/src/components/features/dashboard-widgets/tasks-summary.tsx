@@ -8,7 +8,7 @@ import { CheckSquare, AlertTriangle } from "lucide-react";
 
 export interface TasksSummaryConfig {
   status: "pending" | "overdue" | "completed";
-  title?: string;
+  title?: string | undefined;
 }
 
 const DEFAULT_TITLES: Record<TasksSummaryConfig["status"], string> = {

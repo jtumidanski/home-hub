@@ -18,7 +18,7 @@ export function WeatherWidgetAdapter({ config }: { config: WeatherAdapterConfig 
   return (
     <WeatherWidget
       units={config.units}
-      locationOverride={config.location ?? undefined}
+      {...(config.location !== null ? { locationOverride: config.location } : {})}
     />
   );
 }

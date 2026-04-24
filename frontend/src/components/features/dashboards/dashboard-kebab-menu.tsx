@@ -53,7 +53,7 @@ export function DashboardKebabMenu({ dashboard, isDefault }: DashboardKebabMenuP
   const isHouseholdScope = dashboard.attributes.scope === "household";
 
   const handleSetDefault = () => {
-    const prefs = prefsData?.data;
+    const prefs = prefsData?.data?.[0];
     if (!prefs) return;
     updatePrefsMutation.mutate({
       id: prefs.id,
