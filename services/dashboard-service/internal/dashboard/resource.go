@@ -252,21 +252,67 @@ func reorderHandler(db *gorm.DB) server.GetHandler {
 	}
 }
 
-func promoteHandler(_ *gorm.DB) server.GetHandler {
+func promoteHandler(db *gorm.DB) server.GetHandler {
 	return func(d *server.HandlerDependency, c *server.HandlerContext) http.HandlerFunc {
 		return server.ParseID("id", func(id uuid.UUID) http.HandlerFunc {
 			return func(w http.ResponseWriter, r *http.Request) {
-				http.NotFound(w, r)
+				t := tenantctx.MustFromContext(r.Context())
+				proc := NewProcessor(d.Logger(), r.Context(), db)
+				m, err := proc.Promote(id, t.Id(), t.HouseholdId(), t.UserId())
+				if err != nil {
+					if errors.Is(err, ErrAlreadyHousehold) {
+						server.WriteJSONAPIError(w, http.StatusConflict, "dashboard.already_household", "Already household-scoped", err.Error(), "")
+						return
+					}
+					if errors.Is(err, ErrForbidden) {
+						server.WriteError(w, http.StatusForbidden, "Forbidden", err.Error())
+						return
+					}
+					if errors.Is(err, ErrNotFound) {
+						server.WriteError(w, http.StatusNotFound, "Not Found", "")
+						return
+					}
+					d.Logger().WithError(err).Error("promote dashboard")
+					server.WriteError(w, http.StatusInternalServerError, "Internal Error", "")
+					return
+				}
+				rest, err := Transform(m)
+				if err != nil {
+					server.WriteError(w, http.StatusInternalServerError, "Internal Error", "")
+					return
+				}
+				server.MarshalResponse[RestModel](d.Logger())(w)(c.ServerInformation())(map[string][]string{})(rest)
 			}
 		})
 	}
 }
 
-func copyToMineHandler(_ *gorm.DB) server.GetHandler {
+func copyToMineHandler(db *gorm.DB) server.GetHandler {
 	return func(d *server.HandlerDependency, c *server.HandlerContext) http.HandlerFunc {
 		return server.ParseID("id", func(id uuid.UUID) http.HandlerFunc {
 			return func(w http.ResponseWriter, r *http.Request) {
-				http.NotFound(w, r)
+				t := tenantctx.MustFromContext(r.Context())
+				proc := NewProcessor(d.Logger(), r.Context(), db)
+				m, err := proc.CopyToMine(id, t.Id(), t.HouseholdId(), t.UserId())
+				if err != nil {
+					if errors.Is(err, ErrNotCopyable) {
+						server.WriteJSONAPIError(w, http.StatusBadRequest, "dashboard.not_copyable", "Not copyable", err.Error(), "")
+						return
+					}
+					if errors.Is(err, ErrNotFound) {
+						server.WriteError(w, http.StatusNotFound, "Not Found", "")
+						return
+					}
+					d.Logger().WithError(err).Error("copy dashboard to mine")
+					server.WriteError(w, http.StatusInternalServerError, "Internal Error", "")
+					return
+				}
+				rest, err := Transform(m)
+				if err != nil {
+					server.WriteError(w, http.StatusInternalServerError, "Internal Error", "")
+					return
+				}
+				server.MarshalCreatedResponse[RestModel](d.Logger())(w)(c.ServerInformation())(rest)
 			}
 		})
 	}

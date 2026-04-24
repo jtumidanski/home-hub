@@ -262,6 +262,71 @@ func TestReorderMixedScopeReturns400(t *testing.T) {
 	require.Equal(t, "dashboard.mixed_scope", doc.Errors[0].Code)
 }
 
+func TestPromoteSucceeds(t *testing.T) {
+	db := setupTestDB(t)
+	tid, hid, uid := uuid.New(), uuid.New(), uuid.New()
+	proc := newTestProcessor(t, db)
+	m, err := proc.Create(tid, hid, uid, CreateAttrs{
+		Name:   "Mine",
+		Scope:  "user",
+		Layout: json.RawMessage(`{"version":1,"widgets":[]}`),
+	})
+	require.NoError(t, err)
+
+	h := newTestServer(t, db, tenantctx.New(tid, hid, uid))
+	rec := doRequest(t, h, http.MethodPost, "/api/v1/dashboards/"+m.Id().String()+"/promote", nil)
+	require.Equal(t, http.StatusOK, rec.Code, rec.Body.String())
+
+	var doc jsonapiDoc
+	require.NoError(t, json.Unmarshal(rec.Body.Bytes(), &doc))
+	require.Equal(t, "household", doc.Data.Attributes.Scope)
+}
+
+func TestPromoteAlreadyHouseholdReturns409(t *testing.T) {
+	db := setupTestDB(t)
+	tid, hid, uid := uuid.New(), uuid.New(), uuid.New()
+	proc := newTestProcessor(t, db)
+	m, err := proc.Create(tid, hid, uid, CreateAttrs{
+		Name:   "Shared",
+		Scope:  "household",
+		Layout: json.RawMessage(`{"version":1,"widgets":[]}`),
+	})
+	require.NoError(t, err)
+
+	h := newTestServer(t, db, tenantctx.New(tid, hid, uid))
+	rec := doRequest(t, h, http.MethodPost, "/api/v1/dashboards/"+m.Id().String()+"/promote", nil)
+	require.Equal(t, http.StatusConflict, rec.Code, rec.Body.String())
+
+	var doc jsonapiErrorDoc
+	require.NoError(t, json.Unmarshal(rec.Body.Bytes(), &doc))
+	require.Equal(t, "dashboard.already_household", doc.Errors[0].Code)
+}
+
+func TestCopyToMineReturns201WithMaxSortOrder(t *testing.T) {
+	db := setupTestDB(t)
+	tid, hid, uid := uuid.New(), uuid.New(), uuid.New()
+	proc := newTestProcessor(t, db)
+	layoutJSON := json.RawMessage(`{"version":1,"widgets":[]}`)
+
+	// Source: a household dashboard to copy.
+	src, err := proc.Create(tid, hid, uid, CreateAttrs{Name: "Home", Scope: "household", Layout: layoutJSON})
+	require.NoError(t, err)
+
+	// An existing user-scoped row (sort_order=0 by default auto-max+1 of empty=0)
+	// establishes a baseline max in the user scope so the copy gets max+1.
+	existing, err := proc.Create(tid, hid, uid, CreateAttrs{Name: "Pre", Scope: "user", Layout: layoutJSON})
+	require.NoError(t, err)
+
+	h := newTestServer(t, db, tenantctx.New(tid, hid, uid))
+	rec := doRequest(t, h, http.MethodPost, "/api/v1/dashboards/"+src.Id().String()+"/copy-to-mine", nil)
+	require.Equal(t, http.StatusCreated, rec.Code, rec.Body.String())
+
+	var doc jsonapiDoc
+	require.NoError(t, json.Unmarshal(rec.Body.Bytes(), &doc))
+	require.Equal(t, "user", doc.Data.Attributes.Scope)
+	require.Equal(t, existing.SortOrder()+1, doc.Data.Attributes.SortOrder)
+}
+
 func TestDeleteHouseholdAnyMemberReturns204(t *testing.T) {
 	db := setupTestDB(t)
 	tid, hid := uuid.New(), uuid.New()
