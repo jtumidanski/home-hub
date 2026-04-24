@@ -9,7 +9,6 @@ import { ProtectedRoute } from "@/components/features/navigation/protected-route
 import { AppShell } from "@/components/features/navigation/app-shell";
 import { LoginPage } from "@/pages/LoginPage";
 import { OnboardingPage } from "@/pages/OnboardingPage";
-import { DashboardPage } from "@/pages/DashboardPage";
 import { DashboardShell } from "@/pages/DashboardShell";
 import { DashboardRenderer } from "@/pages/DashboardRenderer";
 import { DashboardRedirect } from "@/pages/DashboardRedirect";
@@ -72,7 +71,7 @@ export function App() {
                     </ProtectedRoute>
                   }
                 >
-                  <Route index element={<DashboardPage />} />
+                  <Route index element={<DashboardRedirect />} />
                   <Route path="dashboard" element={<DashboardRedirect />} />
                   <Route path="dashboards" element={<DashboardsIndexRedirect />} />
                   <Route path="dashboards/:dashboardId" element={<DashboardShell />}>

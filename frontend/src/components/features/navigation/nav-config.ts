@@ -16,13 +16,6 @@ export interface NavGroup {
 
 export const navGroups: NavGroup[] = [
   {
-    key: "home",
-    label: "Home",
-    items: [
-      { to: "/app", icon: Home, label: "Dashboard", end: true },
-    ],
-  },
-  {
     key: "productivity",
     label: "Productivity",
     items: [
