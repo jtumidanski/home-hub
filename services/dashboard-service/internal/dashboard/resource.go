@@ -318,10 +318,45 @@ func copyToMineHandler(db *gorm.DB) server.GetHandler {
 	}
 }
 
-func seedHandler(_ *gorm.DB) server.InputHandler[SeedRequest] {
+func seedHandler(db *gorm.DB) server.InputHandler[SeedRequest] {
 	return func(d *server.HandlerDependency, c *server.HandlerContext, input SeedRequest) http.HandlerFunc {
 		return func(w http.ResponseWriter, r *http.Request) {
-			http.NotFound(w, r)
+			t := tenantctx.MustFromContext(r.Context())
+			proc := NewProcessor(d.Logger(), r.Context(), db)
+			res, err := proc.Seed(t.Id(), t.HouseholdId(), t.UserId(), input.Name, input.Layout)
+			if err != nil {
+				var ve layout.ValidationError
+				if errors.As(err, &ve) {
+					writeLayoutError(w, ve)
+					return
+				}
+				if errors.Is(err, ErrNameRequired) || errors.Is(err, ErrNameTooLong) {
+					server.WriteJSONAPIError(w, http.StatusUnprocessableEntity, "dashboard.name_invalid", "Invalid name", err.Error(), "/data/attributes/name")
+					return
+				}
+				d.Logger().WithError(err).Error("seed dashboard")
+				server.WriteError(w, http.StatusInternalServerError, "Internal Error", "")
+				return
+			}
+			if res.Created {
+				rest, err := Transform(res.Dashboard)
+				if err != nil {
+					server.WriteError(w, http.StatusInternalServerError, "Internal Error", "")
+					return
+				}
+				server.MarshalCreatedResponse[RestModel](d.Logger())(w)(c.ServerInformation())(rest)
+				return
+			}
+			out := make([]RestModel, 0, len(res.Existing))
+			for _, m := range res.Existing {
+				rest, err := Transform(m)
+				if err != nil {
+					server.WriteError(w, http.StatusInternalServerError, "Internal Error", "")
+					return
+				}
+				out = append(out, rest)
+			}
+			server.MarshalSliceResponse[RestModel](d.Logger())(w)(c.ServerInformation())(out)
 		}
 	}
 }

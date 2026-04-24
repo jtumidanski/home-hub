@@ -327,6 +327,44 @@ func TestCopyToMineReturns201WithMaxSortOrder(t *testing.T) {
 	require.Equal(t, existing.SortOrder()+1, doc.Data.Attributes.SortOrder)
 }
 
+func TestSeedFirstCallReturns201(t *testing.T) {
+	db := setupTestDB(t)
+	tid, hid, uid := uuid.New(), uuid.New(), uuid.New()
+	h := newTestServer(t, db, tenantctx.New(tid, hid, uid))
+
+	body := jsonapiBody("dashboards", map[string]any{
+		"name":   "Home",
+		"layout": map[string]any{"version": 1, "widgets": []any{}},
+	})
+	rec := doRequest(t, h, http.MethodPost, "/api/v1/dashboards/seed", body)
+	require.Equal(t, http.StatusCreated, rec.Code, rec.Body.String())
+
+	var doc jsonapiDoc
+	require.NoError(t, json.Unmarshal(rec.Body.Bytes(), &doc))
+	require.Equal(t, "Home", doc.Data.Attributes.Name)
+	require.Equal(t, "household", doc.Data.Attributes.Scope)
+}
+
+func TestSeedSecondCallReturns200Slice(t *testing.T) {
+	db := setupTestDB(t)
+	tid, hid, uid := uuid.New(), uuid.New(), uuid.New()
+	h := newTestServer(t, db, tenantctx.New(tid, hid, uid))
+
+	body := jsonapiBody("dashboards", map[string]any{
+		"name":   "Home",
+		"layout": map[string]any{"version": 1, "widgets": []any{}},
+	})
+	rec1 := doRequest(t, h, http.MethodPost, "/api/v1/dashboards/seed", body)
+	require.Equal(t, http.StatusCreated, rec1.Code, rec1.Body.String())
+
+	rec2 := doRequest(t, h, http.MethodPost, "/api/v1/dashboards/seed", body)
+	require.Equal(t, http.StatusOK, rec2.Code, rec2.Body.String())
+
+	var doc jsonapiSlice
+	require.NoError(t, json.Unmarshal(rec2.Body.Bytes(), &doc))
+	require.GreaterOrEqual(t, len(doc.Data), 1)
+}
+
 func TestDeleteHouseholdAnyMemberReturns204(t *testing.T) {
 	db := setupTestDB(t)
 	tid, hid := uuid.New(), uuid.New()
