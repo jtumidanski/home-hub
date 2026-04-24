@@ -112,3 +112,123 @@ func TestListHandlerScopesVisibility(t *testing.T) {
 	require.True(t, names["Mine"])
 	require.False(t, names["Theirs"])
 }
+
+// jsonapiBody wraps an attribute payload into the {"data":{"type":"dashboards","attributes":...}}
+// shape that api2go's Unmarshal expects.
+func jsonapiBody(resourceType string, attrs any) map[string]any {
+	return map[string]any{
+		"data": map[string]any{
+			"type":       resourceType,
+			"attributes": attrs,
+		},
+	}
+}
+
+func TestCreateHouseholdReturns201(t *testing.T) {
+	db := setupTestDB(t)
+	tid, hid, uid := uuid.New(), uuid.New(), uuid.New()
+	h := newTestServer(t, db, tenantctx.New(tid, hid, uid))
+
+	body := jsonapiBody("dashboards", map[string]any{
+		"name":   "Home",
+		"scope":  "household",
+		"layout": map[string]any{"version": 1, "widgets": []any{}},
+	})
+	rec := doRequest(t, h, http.MethodPost, "/api/v1/dashboards", body)
+	require.Equal(t, http.StatusCreated, rec.Code, rec.Body.String())
+
+	var doc jsonapiDoc
+	require.NoError(t, json.Unmarshal(rec.Body.Bytes(), &doc))
+	require.Equal(t, "Home", doc.Data.Attributes.Name)
+	require.Equal(t, "household", doc.Data.Attributes.Scope)
+}
+
+func TestCreateUserScopeReturnsUserScope(t *testing.T) {
+	db := setupTestDB(t)
+	tid, hid, uid := uuid.New(), uuid.New(), uuid.New()
+	h := newTestServer(t, db, tenantctx.New(tid, hid, uid))
+
+	body := jsonapiBody("dashboards", map[string]any{
+		"name":   "Mine",
+		"scope":  "user",
+		"layout": map[string]any{"version": 1, "widgets": []any{}},
+	})
+	rec := doRequest(t, h, http.MethodPost, "/api/v1/dashboards", body)
+	require.Equal(t, http.StatusCreated, rec.Code, rec.Body.String())
+
+	var doc jsonapiDoc
+	require.NoError(t, json.Unmarshal(rec.Body.Bytes(), &doc))
+	require.Equal(t, "user", doc.Data.Attributes.Scope)
+}
+
+func TestCreateWithInvalidLayoutReturns422(t *testing.T) {
+	db := setupTestDB(t)
+	tid, hid, uid := uuid.New(), uuid.New(), uuid.New()
+	h := newTestServer(t, db, tenantctx.New(tid, hid, uid))
+
+	// Widget missing an id → layout.widget_bad_id.
+	body := jsonapiBody("dashboards", map[string]any{
+		"name":  "Bad",
+		"scope": "household",
+		"layout": map[string]any{
+			"version": 1,
+			"widgets": []any{
+				map[string]any{
+					"type":   "weather",
+					"x":      0,
+					"y":      0,
+					"w":      1,
+					"h":      1,
+					"config": map[string]any{},
+				},
+			},
+		},
+	})
+	rec := doRequest(t, h, http.MethodPost, "/api/v1/dashboards", body)
+	require.Equal(t, http.StatusUnprocessableEntity, rec.Code, rec.Body.String())
+
+	var doc jsonapiErrorDoc
+	require.NoError(t, json.Unmarshal(rec.Body.Bytes(), &doc))
+	require.Len(t, doc.Errors, 1)
+	require.Equal(t, "layout.widget_bad_id", doc.Errors[0].Code)
+	require.NotNil(t, doc.Errors[0].Source)
+	require.Contains(t, doc.Errors[0].Source.Pointer, "/data/attributes/layout/widgets/0/id")
+}
+
+func TestUpdateNonOwnerReturns403(t *testing.T) {
+	db := setupTestDB(t)
+	tid, hid := uuid.New(), uuid.New()
+	userA, userB := uuid.New(), uuid.New()
+
+	proc := newTestProcessor(t, db)
+	m, err := proc.Create(tid, hid, userA, CreateAttrs{
+		Name:   "A's Board",
+		Scope:  "user",
+		Layout: json.RawMessage(`{"version":1,"widgets":[]}`),
+	})
+	require.NoError(t, err)
+
+	// userB attempts to rename userA's user-scoped dashboard.
+	h := newTestServer(t, db, tenantctx.New(tid, hid, userB))
+	body := jsonapiBody("dashboards", map[string]any{"name": "Hacked"})
+	rec := doRequest(t, h, http.MethodPatch, "/api/v1/dashboards/"+m.Id().String(), body)
+	require.Equal(t, http.StatusForbidden, rec.Code, rec.Body.String())
+}
+
+func TestDeleteHouseholdAnyMemberReturns204(t *testing.T) {
+	db := setupTestDB(t)
+	tid, hid := uuid.New(), uuid.New()
+	creator, other := uuid.New(), uuid.New()
+
+	proc := newTestProcessor(t, db)
+	m, err := proc.Create(tid, hid, creator, CreateAttrs{
+		Name:   "Family",
+		Scope:  "household",
+		Layout: json.RawMessage(`{"version":1,"widgets":[]}`),
+	})
+	require.NoError(t, err)
+
+	h := newTestServer(t, db, tenantctx.New(tid, hid, other))
+	rec := doRequest(t, h, http.MethodDelete, "/api/v1/dashboards/"+m.Id().String(), nil)
+	require.Equal(t, http.StatusNoContent, rec.Code, rec.Body.String())
+}

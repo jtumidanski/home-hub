@@ -7,11 +7,19 @@ import (
 	"github.com/google/uuid"
 	"github.com/gorilla/mux"
 	"github.com/jtumidanski/api2go/jsonapi"
+	"github.com/jtumidanski/home-hub/services/dashboard-service/internal/layout"
 	"github.com/jtumidanski/home-hub/shared/go/server"
 	tenantctx "github.com/jtumidanski/home-hub/shared/go/tenant"
 	"github.com/sirupsen/logrus"
 	"gorm.io/gorm"
 )
+
+// writeLayoutError maps a layout.ValidationError onto a JSON:API 422 with the
+// stable layout code + source pointer so the UI can highlight the offending
+// widget/field.
+func writeLayoutError(w http.ResponseWriter, ve layout.ValidationError) {
+	server.WriteJSONAPIError(w, http.StatusUnprocessableEntity, string(ve.Code), "Layout validation failed", ve.Message, ve.Pointer)
+}
 
 func InitializeRoutes(db *gorm.DB) func(l logrus.FieldLogger, si jsonapi.ServerInformation, api *mux.Router) {
 	return func(l logrus.FieldLogger, si jsonapi.ServerInformation, api *mux.Router) {
@@ -83,31 +91,109 @@ func getHandler(db *gorm.DB) server.GetHandler {
 	}
 }
 
-// --- Stubs: fleshed out in later tasks (Task 27-30). ---
-
-func createHandler(_ *gorm.DB) server.InputHandler[CreateRequest] {
+func createHandler(db *gorm.DB) server.InputHandler[CreateRequest] {
 	return func(d *server.HandlerDependency, c *server.HandlerContext, input CreateRequest) http.HandlerFunc {
 		return func(w http.ResponseWriter, r *http.Request) {
-			http.NotFound(w, r)
+			t := tenantctx.MustFromContext(r.Context())
+			proc := NewProcessor(d.Logger(), r.Context(), db)
+			m, err := proc.Create(t.Id(), t.HouseholdId(), t.UserId(), CreateAttrs{
+				Name:      input.Name,
+				Scope:     input.Scope,
+				Layout:    input.Layout,
+				SortOrder: input.SortOrder,
+			})
+			if err != nil {
+				var ve layout.ValidationError
+				if errors.As(err, &ve) {
+					writeLayoutError(w, ve)
+					return
+				}
+				if errors.Is(err, ErrInvalidScope) {
+					server.WriteJSONAPIError(w, http.StatusBadRequest, "dashboard.invalid_scope", "Invalid scope", err.Error(), "/data/attributes/scope")
+					return
+				}
+				if errors.Is(err, ErrNameRequired) || errors.Is(err, ErrNameTooLong) {
+					server.WriteJSONAPIError(w, http.StatusUnprocessableEntity, "dashboard.name_invalid", "Invalid name", err.Error(), "/data/attributes/name")
+					return
+				}
+				d.Logger().WithError(err).Error("create dashboard")
+				server.WriteError(w, http.StatusInternalServerError, "Internal Error", "")
+				return
+			}
+			rest, err := Transform(m)
+			if err != nil {
+				server.WriteError(w, http.StatusInternalServerError, "Internal Error", "")
+				return
+			}
+			server.MarshalCreatedResponse[RestModel](d.Logger())(w)(c.ServerInformation())(rest)
 		}
 	}
 }
 
-func updateHandler(_ *gorm.DB) server.InputHandler[UpdateRequest] {
+func updateHandler(db *gorm.DB) server.InputHandler[UpdateRequest] {
 	return func(d *server.HandlerDependency, c *server.HandlerContext, input UpdateRequest) http.HandlerFunc {
 		return server.ParseID("id", func(id uuid.UUID) http.HandlerFunc {
 			return func(w http.ResponseWriter, r *http.Request) {
-				http.NotFound(w, r)
+				t := tenantctx.MustFromContext(r.Context())
+				proc := NewProcessor(d.Logger(), r.Context(), db)
+				m, err := proc.Update(id, t.Id(), t.HouseholdId(), t.UserId(), UpdateAttrs{
+					Name:      input.Name,
+					Layout:    input.Layout,
+					SortOrder: input.SortOrder,
+				})
+				if err != nil {
+					var ve layout.ValidationError
+					if errors.As(err, &ve) {
+						writeLayoutError(w, ve)
+						return
+					}
+					if errors.Is(err, ErrNotFound) {
+						server.WriteError(w, http.StatusNotFound, "Not Found", "")
+						return
+					}
+					if errors.Is(err, ErrForbidden) {
+						server.WriteError(w, http.StatusForbidden, "Forbidden", err.Error())
+						return
+					}
+					if errors.Is(err, ErrNameRequired) || errors.Is(err, ErrNameTooLong) {
+						server.WriteJSONAPIError(w, http.StatusUnprocessableEntity, "dashboard.name_invalid", "Invalid name", err.Error(), "/data/attributes/name")
+						return
+					}
+					d.Logger().WithError(err).Error("update dashboard")
+					server.WriteError(w, http.StatusInternalServerError, "Internal Error", "")
+					return
+				}
+				rest, err := Transform(m)
+				if err != nil {
+					server.WriteError(w, http.StatusInternalServerError, "Internal Error", "")
+					return
+				}
+				server.MarshalResponse[RestModel](d.Logger())(w)(c.ServerInformation())(map[string][]string{})(rest)
 			}
 		})
 	}
 }
 
-func deleteHandler(_ *gorm.DB) server.GetHandler {
+func deleteHandler(db *gorm.DB) server.GetHandler {
 	return func(d *server.HandlerDependency, c *server.HandlerContext) http.HandlerFunc {
 		return server.ParseID("id", func(id uuid.UUID) http.HandlerFunc {
 			return func(w http.ResponseWriter, r *http.Request) {
-				http.NotFound(w, r)
+				t := tenantctx.MustFromContext(r.Context())
+				proc := NewProcessor(d.Logger(), r.Context(), db)
+				if err := proc.Delete(id, t.Id(), t.HouseholdId(), t.UserId()); err != nil {
+					if errors.Is(err, ErrNotFound) {
+						server.WriteError(w, http.StatusNotFound, "Not Found", "")
+						return
+					}
+					if errors.Is(err, ErrForbidden) {
+						server.WriteError(w, http.StatusForbidden, "Forbidden", err.Error())
+						return
+					}
+					d.Logger().WithError(err).Error("delete dashboard")
+					server.WriteError(w, http.StatusInternalServerError, "Internal Error", "")
+					return
+				}
+				w.WriteHeader(http.StatusNoContent)
 			}
 		})
 	}

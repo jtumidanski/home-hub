@@ -35,6 +35,31 @@ func WriteError(w http.ResponseWriter, status int, title string, detail string) 
 	})
 }
 
+// WriteJSONAPIError writes a single JSON:API error object with an optional
+// stable error code and source pointer. Use this when the caller needs to
+// machine-distinguish validation failures (e.g., UI widget highlighting).
+func WriteJSONAPIError(w http.ResponseWriter, status int, code, title, detail, pointer string) {
+	w.Header().Set("Content-Type", "application/vnd.api+json")
+	w.WriteHeader(status)
+	type sourceObj struct {
+		Pointer string `json:"pointer,omitempty"`
+	}
+	type detailed struct {
+		Status string     `json:"status"`
+		Code   string     `json:"code,omitempty"`
+		Title  string     `json:"title"`
+		Detail string     `json:"detail,omitempty"`
+		Source *sourceObj `json:"source,omitempty"`
+	}
+	body := struct {
+		Errors []detailed `json:"errors"`
+	}{Errors: []detailed{{Status: http.StatusText(status), Code: code, Title: title, Detail: detail}}}
+	if pointer != "" {
+		body.Errors[0].Source = &sourceObj{Pointer: pointer}
+	}
+	json.NewEncoder(w).Encode(body)
+}
+
 // MarshalResponse marshals a single resource using api2go and writes the response.
 // The curried signature matches the guidelines pattern:
 //
