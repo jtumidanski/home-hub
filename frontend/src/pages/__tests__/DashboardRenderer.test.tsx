@@ -1,8 +1,16 @@
 import { describe, it, expect, vi } from "vitest";
 import { render, screen } from "@testing-library/react";
 import { MemoryRouter, Route, Routes, Outlet } from "react-router-dom";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { z } from "zod";
 import type { Dashboard } from "@/types/models/dashboard";
+
+vi.mock("@/context/tenant-context", () => ({
+  useTenant: () => ({
+    tenant: { id: "t1" },
+    household: { id: "h1", attributes: { timezone: "UTC" } },
+  }),
+}));
 
 // Stub the registry so the renderer mounts simple marker components
 // without pulling in each adapter's data hooks.
@@ -96,14 +104,17 @@ function TestShell({ dashboard }: { dashboard: Dashboard }) {
 }
 
 function renderRenderer(dashboard: Dashboard) {
+  const qc = new QueryClient({ defaultOptions: { queries: { retry: false } } });
   return render(
-    <MemoryRouter initialEntries={["/"]}>
-      <Routes>
-        <Route path="/" element={<TestShell dashboard={dashboard} />}>
-          <Route index element={<DashboardRenderer />} />
-        </Route>
-      </Routes>
-    </MemoryRouter>,
+    <QueryClientProvider client={qc}>
+      <MemoryRouter initialEntries={["/"]}>
+        <Routes>
+          <Route path="/" element={<TestShell dashboard={dashboard} />}>
+            <Route index element={<DashboardRenderer />} />
+          </Route>
+        </Routes>
+      </MemoryRouter>
+    </QueryClientProvider>,
   );
 }
 
