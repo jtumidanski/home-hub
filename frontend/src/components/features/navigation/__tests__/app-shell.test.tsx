@@ -23,6 +23,10 @@ vi.mock("@/lib/hooks/api/use-packages", () => ({
   usePackageSummary: () => ({ data: null }),
 }));
 
+vi.mock("@/components/features/navigation/dashboards-nav-group", () => ({
+  DashboardsNavGroup: () => <div data-testid="dashboards-nav-group">Dashboards</div>,
+}));
+
 vi.mock("@/components/features/households/household-switcher", () => ({
   HouseholdSwitcher: () => <div data-testid="household-switcher">Switcher</div>,
 }));

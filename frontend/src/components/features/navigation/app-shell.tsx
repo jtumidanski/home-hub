@@ -6,6 +6,7 @@ import { HouseholdSwitcher } from "@/components/features/households/household-sw
 import { MobileHeader } from "@/components/features/navigation/mobile-header";
 import { MobileDrawer } from "@/components/features/navigation/mobile-drawer";
 import { NavGroup } from "@/components/features/navigation/nav-group";
+import { DashboardsNavGroup } from "@/components/features/navigation/dashboards-nav-group";
 import { UserMenu } from "@/components/features/navigation/user-menu";
 import { navGroups, settingsNavItem } from "@/components/features/navigation/nav-config";
 import { useNavGroupState } from "@/lib/hooks/use-nav-group-state";
@@ -36,6 +37,10 @@ export function AppShell() {
         </div>
 
         <nav className="flex-1 space-y-3 overflow-y-auto p-2">
+          <DashboardsNavGroup
+            isOpen={isGroupOpen("dashboards", true)}
+            onToggle={() => toggleGroup("dashboards")}
+          />
           {navGroups.map((group) => (
             <NavGroup
               key={group.key}
