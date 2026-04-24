@@ -63,7 +63,24 @@ function CurrentDayColumn({ icon, summary, temp, tempUnit, high, low }: {
   );
 }
 
-export function WeatherWidget() {
+export interface WeatherWidgetProps {
+  /**
+   * Units for temperature display. Currently informational — the underlying
+   * weather API hook is driven by household settings. Config plumbing will
+   * be wired in a later task; accepting the prop now preserves the widget
+   * registry shape without breaking existing callers.
+   */
+  units?: "imperial" | "metric";
+  /**
+   * Per-widget location override. Same caveat as `units`: accepted on the
+   * prop contract but not yet wired through `useCurrentWeather`; the widget
+   * still reads from the household.
+   */
+  locationOverride?: { lat: number; lon: number; label: string };
+}
+
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+export function WeatherWidget(_props: WeatherWidgetProps = {}) {
   const navigate = useNavigate();
   const { household } = useTenant();
   const locationSet = household && hasLocation(household);
