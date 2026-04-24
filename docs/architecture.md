@@ -579,7 +579,34 @@ Cascades are application-level inside a single transaction per parent (no DB `ON
 
 The frontend `DataRetentionPage` (route `/app/settings/data-retention`) lists each category, shows its current effective value with a `default` / `household` / `user` source badge, and lets the operator edit the days field. Lowering a window triggers a `dry_run: true` purge call, displays the would-have-deleted count in a confirmation modal, and only sends the `PATCH` after explicit confirmation. Per-category "Purge now" buttons call the public purge endpoint and surface 429 rate-limit responses.
 
-## 20. Design Principles
+## 20. Event Bus (Kafka)
+
+Services exchange cross-boundary lifecycle events over an externally-managed Kafka broker. The broker is not part of Docker Compose; each service connects using the `BOOTSTRAP_SERVERS` env var. Topics are auto-created by the broker on first use.
+
+Shared libraries under `shared/go`:
+
+| Module                  | Purpose                                                                      |
+|-------------------------|------------------------------------------------------------------------------|
+| `shared/go/events`      | Versioned `Envelope{Type, Version, Payload}` + typed events (e.g. `UserDeletedEvent`) |
+| `shared/go/kafka/producer` | Retry-wrapped write-side helper                                           |
+| `shared/go/kafka/consumer` | Single-handler `Manager` that decodes envelopes and dispatches by type   |
+
+Current flow:
+
+```
+account-service (producer)
+  └── POST /internal/users/{id}/deleted
+         └── topic: home-hub.user.lifecycle
+                └── dashboard-service (consumer group: dashboard-service)
+```
+
+Pattern for a new consumer:
+
+1. Define a `Handler.Dispatch(ctx, msg)` in the service's `internal/events/` package; decode the envelope, switch on `env.Type`, and silently ignore unknown types so the consumer commits and advances.
+2. In `cmd/main.go`, build `consumer.Manager` with `Config{Brokers, Topic, GroupID}` — each service uses its own `GroupID` so every consumer receives every event.
+3. Run the manager on a background goroutine and close it on shutdown.
+
+## 21. Design Principles
 
 - strict service boundaries
 - versioned APIs
