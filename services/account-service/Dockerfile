@@ -10,6 +10,8 @@ COPY shared/go/database/ shared/go/database/
 COPY shared/go/server/ shared/go/server/
 COPY shared/go/auth/ shared/go/auth/
 COPY shared/go/retention/ shared/go/retention/
+COPY shared/go/events/ shared/go/events/
+COPY shared/go/kafka/ shared/go/kafka/
 
 # Copy service
 COPY services/account-service/ services/account-service/
