@@ -1,5 +1,6 @@
 import { useReducer, useState } from "react";
-import { useNavigate, useOutletContext } from "react-router-dom";
+import { Link, useNavigate, useOutletContext } from "react-router-dom";
+import { useMobile } from "@/lib/hooks/use-mobile";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -30,6 +31,27 @@ export default function DashboardDesigner() {
   const [state, dispatch] = useReducer(draftReducer, dashboard, fromServer);
   const navigate = useNavigate();
   const updateDashboard = useUpdateDashboard();
+  const isMobile = useMobile();
+
+  if (isMobile) {
+    return (
+      <div
+        className="flex min-h-[40vh] items-center justify-center p-6 text-center"
+        data-testid="designer-mobile-blocker"
+      >
+        <div className="max-w-md space-y-3">
+          <h2 className="text-lg font-semibold">Editing needs a larger screen</h2>
+          <p className="text-sm text-muted-foreground">
+            The dashboard designer is only available on tablet-or-wider screens.
+            Switch to a larger device to make changes.
+          </p>
+          <Button render={<Link to=".." />} variant="outline" size="sm">
+            View only
+          </Button>
+        </div>
+      </div>
+    );
+  }
 
   useUnsavedGuard(state.dirty);
   const [discardConfirmOpen, setDiscardConfirmOpen] = useState(false);
