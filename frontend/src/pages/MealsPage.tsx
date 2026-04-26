@@ -239,6 +239,7 @@ export function MealsPage() {
           </CardHeader>
           <CardContent>
             <RecipeSelector
+              key={selectorSlot}
               autoClassification={selectorSlot}
               onSelectRecipe={handleSelectRecipe}
             />
