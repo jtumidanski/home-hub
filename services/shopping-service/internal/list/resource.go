@@ -468,7 +468,7 @@ func importHandler(db *gorm.DB, catClient *categoryclient.Client, recipeClient *
 				}
 
 				proc := NewProcessor(d.Logger(), r.Context(), db, catClient, recipeClient)
-				m, items, err := proc.ImportFromMealPlan(listID, input.PlanId, accessTokenCookie(r))
+				m, items, importedCount, err := proc.ImportFromMealPlan(listID, input.PlanId, accessTokenCookie(r))
 				if err != nil {
 					if errors.Is(err, ErrNotFound) {
 						server.WriteError(w, http.StatusNotFound, "Not Found", "Shopping list not found")
@@ -484,7 +484,7 @@ func importHandler(db *gorm.DB, catClient *categoryclient.Client, recipeClient *
 				}
 
 				restItems := item.TransformNestedSlice(items)
-				rest, err := TransformWithItems(m, restItems)
+				rest, err := TransformImported(m, restItems, importedCount)
 				if err != nil {
 					d.Logger().WithError(err).Error("Creating REST model.")
 					server.WriteError(w, http.StatusInternalServerError, "Error", "")

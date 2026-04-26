@@ -192,10 +192,14 @@ export function useImportMealPlan(listId: string) {
   return useMutation({
     mutationFn: (planId: string) => shoppingService.importMealPlan(tenant!, listId, planId),
     onSuccess: (data) => {
-      const count = data.data.attributes.item_count;
+      const count = data.data.attributes.imported_count ?? 0;
       qc.invalidateQueries({ queryKey: shoppingKeys.detail(tenant, household, listId) });
       qc.invalidateQueries({ queryKey: shoppingKeys.lists(tenant, household, "active") });
-      toast.success(`Imported ${count} items from meal plan`);
+      if (count === 0) {
+        toast.success("Meal plan had no ingredients to import");
+      } else {
+        toast.success(`Added ${count} ${count === 1 ? "item" : "items"} from meal plan`);
+      }
     },
     onError: (error) => {
       toast.error(getErrorMessage(error, "Failed to import from meal plan"));

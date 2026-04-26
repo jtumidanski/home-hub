@@ -247,16 +247,16 @@ func (p *Processor) UncheckAllItems(listID uuid.UUID) (Model, []item.Model, erro
 	return p.GetWithItems(listID)
 }
 
-func (p *Processor) ImportFromMealPlan(listID uuid.UUID, planID uuid.UUID, accessToken string) (Model, []item.Model, error) {
+func (p *Processor) ImportFromMealPlan(listID uuid.UUID, planID uuid.UUID, accessToken string) (Model, []item.Model, int, error) {
 	if err := p.validateListModifiable(listID); err != nil {
-		return Model{}, nil, err
+		return Model{}, nil, 0, err
 	}
 
 	tenantID, householdID := p.tenantHeaders()
 
 	ingredients, err := p.recipeClient.GetPlanIngredients(planID, accessToken, tenantID, householdID)
 	if err != nil {
-		return Model{}, nil, err
+		return Model{}, nil, 0, err
 	}
 
 	categoryMap := make(map[string]categoryclient.Category)
@@ -275,6 +275,7 @@ func (p *Processor) ImportFromMealPlan(listID uuid.UUID, planID uuid.UUID, acces
 	}
 
 	itemProc := item.NewProcessor(p.l, p.ctx, p.db)
+	addedCount := 0
 	for _, ing := range ingredients {
 		qtyStr := recipeclient.FormatQuantityString(ing.Quantity, ing.Unit)
 
@@ -296,6 +297,8 @@ func (p *Processor) ImportFromMealPlan(listID uuid.UUID, planID uuid.UUID, acces
 
 		if _, err := itemProc.Add(addInput); err != nil {
 			p.l.WithError(err).Warn("Failed to add imported item")
+		} else {
+			addedCount++
 		}
 
 		for _, eq := range ing.ExtraQuantities {
@@ -312,10 +315,16 @@ func (p *Processor) ImportFromMealPlan(listID uuid.UUID, planID uuid.UUID, acces
 			}
 			if _, err := itemProc.Add(eqInput); err != nil {
 				p.l.WithError(err).Warn("Failed to add imported item")
+			} else {
+				addedCount++
 			}
 		}
 	}
-	return p.GetWithItems(listID)
+	m, items, err := p.GetWithItems(listID)
+	if err != nil {
+		return Model{}, nil, 0, err
+	}
+	return m, items, addedCount, nil
 }
 
 func (p *Processor) Unarchive(id uuid.UUID) (Model, error) {
