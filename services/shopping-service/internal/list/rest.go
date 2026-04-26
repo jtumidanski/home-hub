@@ -8,15 +8,16 @@ import (
 )
 
 type RestModel struct {
-	Id           uuid.UUID             `json:"-"`
-	Name         string                `json:"name"`
-	Status       string                `json:"status"`
-	ItemCount    int                   `json:"item_count"`
-	CheckedCount int                   `json:"checked_count"`
-	ArchivedAt   *time.Time            `json:"archived_at"`
-	Items        []item.NestedRestModel `json:"items,omitempty"`
-	CreatedAt    time.Time             `json:"created_at"`
-	UpdatedAt    time.Time             `json:"updated_at"`
+	Id            uuid.UUID              `json:"-"`
+	Name          string                 `json:"name"`
+	Status        string                 `json:"status"`
+	ItemCount     int                    `json:"item_count"`
+	CheckedCount  int                    `json:"checked_count"`
+	ArchivedAt    *time.Time             `json:"archived_at"`
+	Items         []item.NestedRestModel `json:"items,omitempty"`
+	ImportedCount *int                   `json:"imported_count,omitempty"`
+	CreatedAt     time.Time              `json:"created_at"`
+	UpdatedAt     time.Time              `json:"updated_at"`
 }
 
 func (r RestModel) GetName() string       { return "shopping-lists" }
@@ -128,6 +129,15 @@ func TransformWithItems(m Model, items []item.NestedRestModel) (RestModel, error
 		return RestModel{}, err
 	}
 	r.Items = items
+	return r, nil
+}
+
+func TransformImported(m Model, items []item.NestedRestModel, importedCount int) (RestModel, error) {
+	r, err := TransformWithItems(m, items)
+	if err != nil {
+		return RestModel{}, err
+	}
+	r.ImportedCount = &importedCount
 	return r, nil
 }
 

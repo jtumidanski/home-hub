@@ -12,6 +12,7 @@ export interface ShoppingListAttributes {
   checked_count: number;
   archived_at: string | null;
   items?: NestedShoppingItem[];
+  imported_count?: number;
   created_at: string;
   updated_at: string;
 }
