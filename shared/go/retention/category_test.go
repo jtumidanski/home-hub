@@ -42,6 +42,18 @@ func TestCategoryScope(t *testing.T) {
 	}
 }
 
+func TestDashboardCategory(t *testing.T) {
+	if !CatDashboardDashboards.IsKnown() {
+		t.Fatal("CatDashboardDashboards should be known")
+	}
+	if !CatDashboardDashboards.IsHouseholdScoped() {
+		t.Fatal("dashboards should be household-scoped")
+	}
+	if Defaults[CatDashboardDashboards] != 0 {
+		t.Fatalf("default for dashboards should be 0 (never auto-purge), got %d", Defaults[CatDashboardDashboards])
+	}
+}
+
 func TestDefaultsCoverage(t *testing.T) {
 	for _, c := range All() {
 		if _, ok := Defaults[c]; !ok {

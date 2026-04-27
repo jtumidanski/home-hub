@@ -2,16 +2,19 @@ package config
 
 import (
 	"os"
+	"strings"
 
 	"github.com/jtumidanski/home-hub/shared/go/database"
 )
 
 type Config struct {
-	DB            database.Config
-	Port          string
-	JWKSURL       string
-	InternalToken string
-	ServiceURLs   map[string]string
+	DB                 database.Config
+	Port               string
+	JWKSURL            string
+	InternalToken      string
+	ServiceURLs        map[string]string
+	KafkaBrokers       []string
+	TopicUserLifecycle string
 }
 
 func Load() Config {
@@ -35,6 +38,8 @@ func Load() Config {
 			"calendar-service":     envOrDefault("CALENDAR_URL", "http://calendar-service:8080"),
 			"package-service":      envOrDefault("PACKAGE_URL", "http://package-service:8080"),
 		},
+		KafkaBrokers:       splitCSV(envOrDefault("BOOTSTRAP_SERVERS", "kafka-broker.kafka.svc.cluster.local:9092")),
+		TopicUserLifecycle: envOrDefault("EVENT_TOPIC_USER_LIFECYCLE", "home-hub.user.lifecycle"),
 	}
 }
 
@@ -43,4 +48,22 @@ func envOrDefault(key, fallback string) string {
 		return v
 	}
 	return fallback
+}
+
+// splitCSV splits a comma-separated list, trimming whitespace and dropping
+// empty entries. Returns nil for an empty input so callers can distinguish
+// "unset" from "set but empty" behavior if they wish.
+func splitCSV(raw string) []string {
+	if raw == "" {
+		return nil
+	}
+	parts := strings.Split(raw, ",")
+	out := make([]string, 0, len(parts))
+	for _, p := range parts {
+		p = strings.TrimSpace(p)
+		if p != "" {
+			out = append(out, p)
+		}
+	}
+	return out
 }

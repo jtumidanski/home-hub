@@ -21,7 +21,22 @@ function sortEvents(events: CalendarEvent[]): CalendarEvent[] {
   });
 }
 
-export function CalendarWidget() {
+export interface CalendarWidgetProps {
+  /**
+   * Optional planning horizon for future dashboard configurability. Accepted
+   * on the prop contract so the widget registry can pass config through,
+   * but not yet wired through the existing today-only query range.
+   */
+  horizonDays?: 1 | 3 | 7;
+  /**
+   * Optional all-day event filter. Accepted but not yet wired — all-day
+   * events are always included in the current rendering.
+   */
+  includeAllDay?: boolean;
+}
+
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+export function CalendarWidget(_props: CalendarWidgetProps = {}) {
   const { household } = useTenant();
   const timezone = household?.attributes.timezone;
   const { start, end } = useMemo(() => getLocalTodayRange(timezone), [timezone]);

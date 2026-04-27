@@ -5,6 +5,7 @@ use (
 	./services/auth-service
 	./services/calendar-service
 	./services/category-service
+	./services/dashboard-service
 	./services/package-service
 	./services/productivity-service
 	./services/recipe-service
@@ -13,8 +14,11 @@ use (
 	./services/weather-service
 	./services/workout-service
 	./shared/go/auth
+	./shared/go/dashboard
 	./shared/go/database
+	./shared/go/events
 	./shared/go/http
+	./shared/go/kafka
 	./shared/go/logging
 	./shared/go/model
 	./shared/go/retention

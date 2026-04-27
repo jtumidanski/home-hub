@@ -23,6 +23,10 @@ vi.mock("@/lib/hooks/api/use-packages", () => ({
   usePackageSummary: () => ({ data: null }),
 }));
 
+vi.mock("@/components/features/navigation/dashboards-nav-group", () => ({
+  DashboardsNavGroup: () => <div data-testid="dashboards-nav-group">Dashboards</div>,
+}));
+
 vi.mock("@/components/features/households/household-switcher", () => ({
   HouseholdSwitcher: () => <div data-testid="household-switcher">Switcher</div>,
 }));
@@ -67,7 +71,7 @@ describe("AppShell", () => {
   it("renders sidebar with navigation links", () => {
     renderWithRouter();
     expect(screen.getByText("Home Hub")).toBeInTheDocument();
-    expect(screen.getByText("Dashboard")).toBeInTheDocument();
+    expect(screen.getByText("Dashboards")).toBeInTheDocument();
     expect(screen.getByText("Tasks")).toBeInTheDocument();
     expect(screen.getByText("Reminders")).toBeInTheDocument();
     expect(screen.getByText("Households")).toBeInTheDocument();

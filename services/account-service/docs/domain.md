@@ -178,6 +178,54 @@ All fields are immutable after construction. Access is through getter methods.
 
 ---
 
+## Household Preference
+
+### Responsibility
+
+Stores per-(tenant, user, household) settings that vary by the household the user is currently viewing. Distinct from `Preference` (which is per-user-per-tenant): a user who belongs to multiple households has one row here per household.
+
+### Core Models
+
+**Model** (`householdpreference.Model`)
+
+| Field              | Type        |
+|--------------------|-------------|
+| id                 | uuid.UUID   |
+| tenantID           | uuid.UUID   |
+| userID             | uuid.UUID   |
+| householdID        | uuid.UUID   |
+| defaultDashboardID | *uuid.UUID  |
+| createdAt          | time.Time   |
+| updatedAt          | time.Time   |
+
+All fields are immutable after construction. Access is through getter methods.
+
+### Invariants
+
+- The `(tenant_id, user_id, household_id)` triple is unique (`uniqueIndex:idx_hp_tup` on `householdpreference.Entity`).
+- Rows are auto-created on first GET; callers do not POST to create.
+- `defaultDashboardID` is nullable and points at a dashboard owned by the same household. Cross-service FK is not enforced by the database; dashboard-service owns its own table.
+
+### Processors
+
+**Processor** (`householdpreference.Processor`)
+
+| Method                                                    | Description                                                    |
+|-----------------------------------------------------------|----------------------------------------------------------------|
+| `ByIDProvider(id)`                                        | Lazy lookup by ID                                              |
+| `ByTenantUserHouseholdProvider(tenantID, userID, hhID)`   | Lazy lookup by the unique triple                               |
+| `FindOrCreate(tenantID, userID, householdID)`             | Returns existing or inserts a new row with nil default         |
+| `SetDefaultDashboard(id, *uuid.UUID)`                     | Sets or clears `default_dashboard_id` (nil → SQL NULL)         |
+
+`SetDefaultDashboard` uses a raw `UPDATE household_preferences SET default_dashboard_id = ?, updated_at = ? WHERE id = ?` because GORM's `Updates(map)` drops nil entries silently, which is the wrong behavior for "clear the field" (see `householdpreference/administrator.go:updateFields`).
+
+### REST Surface
+
+- `GET /api/v1/household-preferences` — auto-creates on first call via `FindOrCreate`. Returns the row for the authenticated caller's current `(tenant, user, household)`.
+- `PATCH /api/v1/household-preferences/{id}` — updates the single mutable attribute `defaultDashboardId`. An absent attribute or explicit JSON `null` both clear the field (see the PATCH-semantics caveat in `householdpreference/rest.go:UpdateRequest`).
+
+---
+
 ## Invitation
 
 ### Responsibility
@@ -282,3 +330,28 @@ Resolves the full application context for a user by combining tenant, preference
 Returns a fully resolved `*Resolved` or an error.
 
 - PendingInvitationCount is populated by querying pending invitations matching the user's email.
+
+---
+
+## User-Lifecycle Cascade
+
+### Responsibility
+
+Provides a service-to-service hook that other services can invoke when a user is hard-deleted from a tenant. Lives in `internal/userlifecycle/resource.go`.
+
+### Endpoint
+
+`POST /internal/users/{id}/deleted` — mounted outside the `/api/v1` JWT subrouter and guarded by:
+
+- `X-Internal-Token` (must equal `INTERNAL_SERVICE_TOKEN`; else 401).
+- `X-Tenant-ID` (required, must parse as UUID; else 400). The caller is a service, so no user JWT is present and tenant cannot be derived from context.
+
+### Semantics
+
+1. Deletes every `household_preferences` row for `(tenant_id, user_id)` under the resolved tenant context (so GORM's tenant callback scopes the DELETE).
+2. Emits a `UserDeletedEvent` (`shared/go/events.UserDeletedEvent{TenantID, UserID, DeletedAt}`) on the Kafka topic configured via `EVENT_TOPIC_USER_LIFECYCLE` (default `home-hub.user.lifecycle`). The envelope type is `USER_DELETED`.
+3. Returns 204 No Content on success.
+
+Downstream consumers currently include dashboard-service, which deletes its own user-scoped rows on receipt (see dashboard-service `docs/domain.md`).
+
+If the Kafka producer is unavailable or `Produce` fails, the error is logged and the event is dropped — the local DELETE has already committed, and re-running the endpoint is idempotent for the DB portion.

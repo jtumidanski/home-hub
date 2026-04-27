@@ -1,3 +1,4 @@
+import React from "react";
 import { BrowserRouter, Routes, Route, Navigate, useParams } from "react-router-dom";
 import { Toaster } from "sonner";
 import { QueryProvider } from "@/components/providers/query-provider";
@@ -8,7 +9,12 @@ import { ProtectedRoute } from "@/components/features/navigation/protected-route
 import { AppShell } from "@/components/features/navigation/app-shell";
 import { LoginPage } from "@/pages/LoginPage";
 import { OnboardingPage } from "@/pages/OnboardingPage";
-import { DashboardPage } from "@/pages/DashboardPage";
+import { DashboardShell } from "@/pages/DashboardShell";
+import { DashboardRenderer } from "@/pages/DashboardRenderer";
+import { DashboardRedirect } from "@/pages/DashboardRedirect";
+import { DashboardsIndexRedirect } from "@/pages/DashboardsIndexRedirect";
+import { DashboardSkeleton } from "@/components/common/dashboard-skeleton";
+const DashboardDesigner = React.lazy(() => import("@/pages/DashboardDesigner"));
 import { TasksPage } from "@/pages/TasksPage";
 import { RemindersPage } from "@/pages/RemindersPage";
 import { SettingsPage } from "@/pages/SettingsPage";
@@ -65,7 +71,20 @@ export function App() {
                     </ProtectedRoute>
                   }
                 >
-                  <Route index element={<DashboardPage />} />
+                  <Route index element={<DashboardRedirect />} />
+                  <Route path="dashboard" element={<DashboardRedirect />} />
+                  <Route path="dashboards" element={<DashboardsIndexRedirect />} />
+                  <Route path="dashboards/:dashboardId" element={<DashboardShell />}>
+                    <Route index element={<DashboardRenderer />} />
+                    <Route
+                      path="edit"
+                      element={
+                        <React.Suspense fallback={<DashboardSkeleton />}>
+                          <DashboardDesigner />
+                        </React.Suspense>
+                      }
+                    />
+                  </Route>
                   <Route path="tasks" element={<TasksPage />} />
                   <Route path="reminders" element={<RemindersPage />} />
                   <Route path="calendar" element={<CalendarPage />} />

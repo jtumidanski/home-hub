@@ -15,7 +15,18 @@ const SLOT_LABELS: Record<Slot, string> = {
   side: "Side",
 };
 
-export function MealPlanWidget() {
+export interface MealPlanWidgetProps {
+  /**
+   * Optional planning horizon for future dashboard configurability. Accepted
+   * on the prop contract so the widget registry can pass config through,
+   * but not yet wired through the existing today-only filter. Extending the
+   * filter is a follow-up task.
+   */
+  horizonDays?: 1 | 3 | 7;
+}
+
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+export function MealPlanWidget(_props: MealPlanWidgetProps = {}) {
   const { household } = useTenant();
   const timezone = household?.attributes.timezone;
   const monday = getLocalWeekStart(timezone);

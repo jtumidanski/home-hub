@@ -93,6 +93,11 @@ func TestNeverReturnsZeroDays(t *testing.T) {
 	defer srv.Close()
 	c := NewPolicyClient(srv.URL, "")
 	for _, cat := range All() {
+		// Some categories are plumbing-only with a 0 default (never auto-purge);
+		// the reaper skips them. Don't enforce the >= 1 invariant against those.
+		if Defaults[cat] == 0 {
+			continue
+		}
 		p, err := c.GetPolicy(context.Background(), uuid.New(), cat.Scope(), uuid.New(), cat)
 		if err != nil {
 			t.Errorf("%s: %v", cat, err)
