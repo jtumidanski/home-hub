@@ -43,6 +43,13 @@ spec:
                             name: account-service
                             port:
                                 number: 8080
+                  - path: /api/v1/household-preferences
+                    pathType: Prefix
+                    backend:
+                        service:
+                            name: account-service
+                            port:
+                                number: 8080
                   - path: /api/v1/memberships
                     pathType: Prefix
                     backend:
@@ -69,6 +76,13 @@ spec:
                     backend:
                         service:
                             name: account-service
+                            port:
+                                number: 8080
+                  - path: /api/v1/dashboards
+                    pathType: Prefix
+                    backend:
+                        service:
+                            name: dashboard-service
                             port:
                                 number: 8080
                   - path: /api/v1/tasks
@@ -207,6 +221,13 @@ spec:
                             name: account-service
                             port:
                                 number: 8080
+                  - path: /api/v1/household-preferences
+                    pathType: Prefix
+                    backend:
+                        service:
+                            name: account-service
+                            port:
+                                number: 8080
                   - path: /api/v1/memberships
                     pathType: Prefix
                     backend:
@@ -233,6 +254,13 @@ spec:
                     backend:
                         service:
                             name: account-service
+                            port:
+                                number: 8080
+                  - path: /api/v1/dashboards
+                    pathType: Prefix
+                    backend:
+                        service:
+                            name: dashboard-service
                             port:
                                 number: 8080
                   - path: /api/v1/tasks
