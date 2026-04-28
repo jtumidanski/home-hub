@@ -61,9 +61,18 @@ export function computeReorderEntries(
 interface SortableDashboardRowProps {
   dashboard: Dashboard;
   defaultDashboardId: string | null;
+  onItemClick?: (() => void) | undefined;
+  iconSize?: string | undefined;
+  itemPadding?: string | undefined;
 }
 
-function SortableDashboardRow({ dashboard, defaultDashboardId }: SortableDashboardRowProps) {
+function SortableDashboardRow({
+  dashboard,
+  defaultDashboardId,
+  onItemClick,
+  iconSize = "h-4 w-4",
+  itemPadding = "py-2",
+}: SortableDashboardRowProps) {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } =
     useSortable({ id: dashboard.id });
 
@@ -90,16 +99,18 @@ function SortableDashboardRow({ dashboard, defaultDashboardId }: SortableDashboa
       </button>
       <NavLink
         to={`/app/dashboards/${dashboard.id}`}
+        onClick={onItemClick}
         className={({ isActive }) =>
           cn(
-            "flex flex-1 items-center gap-3 rounded-md px-3 py-2 text-sm font-medium transition-colors",
+            "flex flex-1 items-center gap-3 rounded-md px-3 text-sm font-medium transition-colors",
+            itemPadding,
             isActive
               ? "bg-sidebar-accent text-sidebar-accent-foreground"
               : "text-sidebar-foreground hover:bg-sidebar-accent/50",
           )
         }
       >
-        <LayoutDashboard className="h-4 w-4" />
+        <LayoutDashboard className={iconSize} />
         <span className="flex-1 truncate">{dashboard.attributes.name}</span>
       </NavLink>
       <DashboardKebabMenu
@@ -113,9 +124,18 @@ function SortableDashboardRow({ dashboard, defaultDashboardId }: SortableDashboa
 interface DashboardsNavGroupProps {
   isOpen: boolean;
   onToggle: () => void;
+  onItemClick?: () => void;
+  iconSize?: string;
+  itemPadding?: string;
 }
 
-export function DashboardsNavGroup({ isOpen, onToggle }: DashboardsNavGroupProps) {
+export function DashboardsNavGroup({
+  isOpen,
+  onToggle,
+  onItemClick,
+  iconSize,
+  itemPadding,
+}: DashboardsNavGroupProps) {
   const { data } = useDashboards();
   const { data: prefsData } = useHouseholdPreferences();
   const reorderMutation = useReorderDashboards();
@@ -163,6 +183,9 @@ export function DashboardsNavGroup({ isOpen, onToggle }: DashboardsNavGroupProps
               key={dashboard.id}
               dashboard={dashboard}
               defaultDashboardId={defaultDashboardId}
+              onItemClick={onItemClick}
+              iconSize={iconSize}
+              itemPadding={itemPadding}
             />
           ))}
         </div>
@@ -199,10 +222,16 @@ export function DashboardsNavGroup({ isOpen, onToggle }: DashboardsNavGroupProps
             )}
             <button
               type="button"
-              onClick={() => setModalOpen(true)}
-              className="flex w-full items-center gap-3 rounded-md px-3 py-2 text-sm font-medium text-sidebar-foreground/80 transition-colors hover:bg-sidebar-accent/50 hover:text-sidebar-foreground"
+              onClick={() => {
+                setModalOpen(true);
+                onItemClick?.();
+              }}
+              className={cn(
+                "flex w-full items-center gap-3 rounded-md px-3 text-sm font-medium text-sidebar-foreground/80 transition-colors hover:bg-sidebar-accent/50 hover:text-sidebar-foreground",
+                itemPadding ?? "py-2",
+              )}
             >
-              <Plus className="h-4 w-4" />
+              <Plus className={iconSize ?? "h-4 w-4"} />
               <span className="flex-1 text-left">New Dashboard</span>
             </button>
           </div>
