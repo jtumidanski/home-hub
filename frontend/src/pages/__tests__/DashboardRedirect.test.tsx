@@ -26,6 +26,11 @@ vi.mock("@/lib/hooks/api/use-household-preferences", () => ({
   useHouseholdPreferences: () => mockUseHouseholdPreferences(),
 }));
 
+const mockUseTenant = vi.fn();
+vi.mock("@/context/tenant-context", () => ({
+  useTenant: () => mockUseTenant(),
+}));
+
 import { DashboardRedirect } from "@/pages/DashboardRedirect";
 
 function prefs(defaultDashboardId: string | null) {
@@ -72,6 +77,12 @@ describe("DashboardRedirect", () => {
       mutate: vi.fn(),
       isPending: false,
       isSuccess: false,
+      isError: false,
+      error: null,
+    });
+    mockUseTenant.mockReturnValue({
+      tenant: { id: "t-1" },
+      household: { id: "hh-1" },
     });
   });
 
@@ -101,12 +112,38 @@ describe("DashboardRedirect", () => {
     );
   });
 
+  it("renders an error message when the dashboards query fails", async () => {
+    mockUseHouseholdPreferences.mockReturnValue({ data: undefined });
+    mockUseDashboards.mockReturnValue({
+      data: undefined,
+      refetch: vi.fn(),
+      isError: true,
+      error: new Error("dashboard-service unreachable"),
+    });
+
+    const { findByText } = renderIt();
+    expect(await findByText(/Couldn't load dashboards/i)).toBeInTheDocument();
+    expect(navigateMock).not.toHaveBeenCalled();
+  });
+
+  it("renders an empty-state when no household is selected", async () => {
+    mockUseTenant.mockReturnValue({ tenant: { id: "t-1" }, household: null });
+    mockUseHouseholdPreferences.mockReturnValue({ data: undefined });
+    mockUseDashboards.mockReturnValue({ data: undefined, refetch: vi.fn() });
+
+    const { findByText } = renderIt();
+    expect(await findByText(/No household selected/i)).toBeInTheDocument();
+    expect(navigateMock).not.toHaveBeenCalled();
+  });
+
   it("calls the seed mutation when the dashboard list is empty", async () => {
     const mutateMock = vi.fn();
     mockUseSeedDashboard.mockReturnValue({
       mutate: mutateMock,
       isPending: false,
       isSuccess: false,
+      isError: false,
+      error: null,
     });
     mockUseHouseholdPreferences.mockReturnValue({ data: prefs(null) });
     mockUseDashboards.mockReturnValue({

@@ -19,6 +19,7 @@ jobs:
       package: ${{ steps.changes.outputs.package }}
       tracker: ${{ steps.changes.outputs.tracker }}
       workout: ${{ steps.changes.outputs.workout }}
+      dashboard: ${{ steps.changes.outputs.dashboard }}
       frontend: ${{ steps.changes.outputs.frontend }}
       shared: ${{ steps.changes.outputs.shared }}
       docker-matrix: ${{ steps.matrix.outputs.matrix }}
@@ -61,6 +62,9 @@ jobs:
             workout:
               - 'services/workout-service/**'
               - 'shared/go/**'
+            dashboard:
+              - 'services/dashboard-service/**'
+              - 'shared/go/**'
             frontend:
               - 'frontend/**'
             shared:
@@ -82,6 +86,7 @@ jobs:
             {"service":"package-service","context":".","dockerfile":"services/package-service/Dockerfile","changed":"package"},
             {"service":"tracker-service","context":".","dockerfile":"services/tracker-service/Dockerfile","changed":"tracker"},
             {"service":"workout-service","context":".","dockerfile":"services/workout-service/Dockerfile","changed":"workout"},
+            {"service":"dashboard-service","context":".","dockerfile":"services/dashboard-service/Dockerfile","changed":"dashboard"},
             {"service":"frontend","context":"frontend","dockerfile":"frontend/Dockerfile","changed":"frontend"}
           ]'
           MATRIX=$(echo "$ALL" | jq -c --argjson changes "$CHANGES" 'map(select(.changed as $c | $changes | index($c)))')
@@ -263,6 +268,22 @@ jobs:
           cd services/workout-service
           go test ./... -count=1
 
+  build-dashboard:
+    needs: detect-changes
+    if: needs.detect-changes.outputs.dashboard == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-go@v6
+        with:
+          go-version: '1.26'
+      - name: Build
+        run: go build ./services/dashboard-service/...
+      - name: Test
+        run: |
+          cd services/dashboard-service
+          go test ./... -count=1
+
   build-shared:
     needs: detect-changes
     if: needs.detect-changes.outputs.shared == 'true'
@@ -274,13 +295,13 @@ jobs:
           go-version: '1.26'
       - name: Build shared modules
         run: |
-          for pkg in model tenant logging database server auth http testing; do
+          for pkg in model tenant logging database server auth http testing dashboard events kafka retention; do
             echo "Building shared/go/$pkg..."
             go build ./shared/go/$pkg/...
           done
       - name: Test shared modules
         run: |
-          for pkg in model tenant logging database server auth http testing; do
+          for pkg in model tenant logging database server auth http testing dashboard events kafka retention; do
             echo "Testing shared/go/$pkg..."
             cd shared/go/$pkg
             go test ./... -count=1
