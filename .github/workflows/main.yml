@@ -52,6 +52,9 @@ jobs:
             workout:
               - 'services/workout-service/**'
               - 'shared/go/**'
+            dashboard:
+              - 'services/dashboard-service/**'
+              - 'shared/go/**'
             frontend:
               - 'frontend/**'
       - name: Compute docker matrix
@@ -71,6 +74,7 @@ jobs:
             {"service":"package-service","context":".","dockerfile":"services/package-service/Dockerfile","changed":"package"},
             {"service":"tracker-service","context":".","dockerfile":"services/tracker-service/Dockerfile","changed":"tracker"},
             {"service":"workout-service","context":".","dockerfile":"services/workout-service/Dockerfile","changed":"workout"},
+            {"service":"dashboard-service","context":".","dockerfile":"services/dashboard-service/Dockerfile","changed":"dashboard"},
             {"service":"frontend","context":"frontend","dockerfile":"frontend/Dockerfile","changed":"frontend"}
           ]'
           MATRIX=$(echo "$ALL" | jq -c --argjson changes "$CHANGES" 'map(select(.changed as $c | $changes | index($c)))')
