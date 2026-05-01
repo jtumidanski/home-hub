@@ -40,6 +40,7 @@ type Event struct {
 type EventTime struct {
 	DateTime *time.Time `json:"dateTime,omitempty"`
 	Date     string     `json:"date,omitempty"`
+	TimeZone string     `json:"timeZone,omitempty"`
 }
 
 type InsertEventRequest struct {

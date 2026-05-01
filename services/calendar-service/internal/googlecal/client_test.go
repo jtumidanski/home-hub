@@ -2,11 +2,14 @@ package googlecal
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
+	"io"
 	"net/http"
 	"net/http/httptest"
 	"net/url"
 	"testing"
+	"time"
 
 	"github.com/sirupsen/logrus/hooks/test"
 )
@@ -100,5 +103,49 @@ func TestRefreshToken_5xxReturnsTypedErrorWithoutOAuthCode(t *testing.T) {
 func TestIsInvalidGrant_NilFalse(t *testing.T) {
 	if IsInvalidGrant(nil) {
 		t.Fatal("IsInvalidGrant(nil) should be false")
+	}
+}
+
+// TestInsertEvent_RecurringSendsTimeZone guards against the Google Calendar
+// "Missing time zone definition for start time." failure: a recurring event
+// payload must include start.timeZone and end.timeZone, otherwise Google
+// rejects the insert with HTTP 400.
+func TestInsertEvent_RecurringSendsTimeZone(t *testing.T) {
+	var captured map[string]any
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		body, _ := io.ReadAll(r.Body)
+		_ = json.Unmarshal(body, &captured)
+		w.Header().Set("Content-Type", "application/json")
+		_, _ = w.Write([]byte(`{"id":"evt-1","status":"confirmed","summary":"Standup"}`))
+	}))
+	defer srv.Close()
+
+	c := newTestClient(t, srv)
+	start := time.Date(2026, 5, 4, 9, 0, 0, 0, time.UTC)
+	end := start.Add(30 * time.Minute)
+	req := InsertEventRequest{
+		Summary:    "Standup",
+		Start:      &EventTime{DateTime: &start, TimeZone: "America/New_York"},
+		End:        &EventTime{DateTime: &end, TimeZone: "America/New_York"},
+		Recurrence: []string{"RRULE:FREQ=WEEKLY"},
+	}
+
+	if _, err := c.InsertEvent(context.Background(), "tok", "primary", req); err != nil {
+		t.Fatalf("InsertEvent failed: %v", err)
+	}
+
+	startObj, ok := captured["start"].(map[string]any)
+	if !ok {
+		t.Fatalf("expected start object, got %#v", captured["start"])
+	}
+	if startObj["timeZone"] != "America/New_York" {
+		t.Errorf("expected start.timeZone=America/New_York, got %v", startObj["timeZone"])
+	}
+	endObj, ok := captured["end"].(map[string]any)
+	if !ok {
+		t.Fatalf("expected end object, got %#v", captured["end"])
+	}
+	if endObj["timeZone"] != "America/New_York" {
+		t.Errorf("expected end.timeZone=America/New_York, got %v", endObj["timeZone"])
 	}
 }

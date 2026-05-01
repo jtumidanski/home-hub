@@ -117,8 +117,12 @@ func (p *Processor) CreateOnGoogle(gcClient *googlecal.Client, accessToken, cale
 		if endTime.IsZero() {
 			endTime = startTime.Add(time.Hour)
 		}
-		gcEvent.Start = &googlecal.EventTime{DateTime: &startTime}
-		gcEvent.End = &googlecal.EventTime{DateTime: &endTime}
+		// Google Calendar requires an IANA time zone on start/end whenever the
+		// event has a recurrence rule. Set it unconditionally so non-recurring
+		// edits later (which may add recurrence) round-trip safely.
+		tz := resolveTimeZone(input.TimeZone)
+		gcEvent.Start = &googlecal.EventTime{DateTime: &startTime, TimeZone: tz}
+		gcEvent.End = &googlecal.EventTime{DateTime: &endTime, TimeZone: tz}
 	}
 
 	_, err := gcClient.InsertEvent(p.ctx, accessToken, calendarID, gcEvent)
@@ -136,12 +140,17 @@ func (p *Processor) UpdateOnGoogle(gcClient *googlecal.Client, accessToken strin
 	if input.Description != nil {
 		gcUpdate.Description = input.Description
 	}
+	tz := ""
+	if input.TimeZone != nil {
+		tz = *input.TimeZone
+	}
+	tz = resolveTimeZone(tz)
 	if input.Start != nil {
 		if input.AllDay != nil && *input.AllDay {
 			gcUpdate.Start = &googlecal.EventTime{Date: parseDate(*input.Start)}
 		} else {
 			st, _ := time.Parse(time.RFC3339, *input.Start)
-			gcUpdate.Start = &googlecal.EventTime{DateTime: &st}
+			gcUpdate.Start = &googlecal.EventTime{DateTime: &st, TimeZone: tz}
 		}
 	}
 	if input.End != nil {
@@ -150,7 +159,7 @@ func (p *Processor) UpdateOnGoogle(gcClient *googlecal.Client, accessToken strin
 			gcUpdate.End = &googlecal.EventTime{Date: addDay(parseDate(*input.End))}
 		} else {
 			et, _ := time.Parse(time.RFC3339, *input.End)
-			gcUpdate.End = &googlecal.EventTime{DateTime: &et}
+			gcUpdate.End = &googlecal.EventTime{DateTime: &et, TimeZone: tz}
 		}
 	}
 
@@ -304,6 +313,17 @@ func addDay(date string) string {
 		return date
 	}
 	return t.AddDate(0, 0, 1).Format("2006-01-02")
+}
+
+// resolveTimeZone returns an IANA time zone for a Google Calendar event payload.
+// Google rejects recurring-event creates without start.timeZone/end.timeZone
+// (a UTC offset on the dateTime is not sufficient), so we always send one and
+// fall back to UTC when the client omits the field.
+func resolveTimeZone(tz string) string {
+	if tz == "" {
+		return "UTC"
+	}
+	return tz
 }
 
 func (p *Processor) noTenantDB() *gorm.DB {
