@@ -22,7 +22,7 @@ describe("MealPlanAdapter", () => {
   });
 
   it("absent view defaults to list", () => {
-    render(<MemoryRouter><MealPlanAdapter config={{ horizonDays: 1 } as any} /></MemoryRouter>);
+    render(<MemoryRouter><MealPlanAdapter config={{ horizonDays: 1 } as unknown as Parameters<typeof MealPlanAdapter>[0]["config"]} /></MemoryRouter>);
     expect(screen.getByText("LIST_VIEW")).toBeInTheDocument();
   });
 });

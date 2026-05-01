@@ -10,6 +10,7 @@ export interface WeatherTomorrowConfig {
   units: "imperial" | "metric" | null;
 }
 
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 export function WeatherTomorrowAdapter({ config: _config }: { config: WeatherTomorrowConfig }) {
   const { household } = useTenant();
   const tomorrow = useLocalDateOffset(household?.attributes.timezone, 1);
