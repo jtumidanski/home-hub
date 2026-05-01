@@ -14,13 +14,14 @@ var (
 )
 
 type Builder struct {
-	id                 uuid.UUID
-	tenantID           uuid.UUID
-	userID             uuid.UUID
-	householdID        uuid.UUID
-	defaultDashboardID *uuid.UUID
-	createdAt          time.Time
-	updatedAt          time.Time
+	id                   uuid.UUID
+	tenantID             uuid.UUID
+	userID               uuid.UUID
+	householdID          uuid.UUID
+	defaultDashboardID   *uuid.UUID
+	kioskDashboardSeeded bool
+	createdAt            time.Time
+	updatedAt            time.Time
 }
 
 func NewBuilder() *Builder {
@@ -52,6 +53,11 @@ func (b *Builder) SetDefaultDashboardID(id *uuid.UUID) *Builder {
 	return b
 }
 
+func (b *Builder) SetKioskDashboardSeeded(v bool) *Builder {
+	b.kioskDashboardSeeded = v
+	return b
+}
+
 func (b *Builder) SetCreatedAt(t time.Time) *Builder {
 	b.createdAt = t
 	return b
@@ -73,12 +79,13 @@ func (b *Builder) Build() (Model, error) {
 		return Model{}, ErrHouseholdRequired
 	}
 	return Model{
-		id:                 b.id,
-		tenantID:           b.tenantID,
-		userID:             b.userID,
-		householdID:        b.householdID,
-		defaultDashboardID: b.defaultDashboardID,
-		createdAt:          b.createdAt,
-		updatedAt:          b.updatedAt,
+		id:                   b.id,
+		tenantID:             b.tenantID,
+		userID:               b.userID,
+		householdID:          b.householdID,
+		defaultDashboardID:   b.defaultDashboardID,
+		kioskDashboardSeeded: b.kioskDashboardSeeded,
+		createdAt:            b.createdAt,
+		updatedAt:            b.updatedAt,
 	}, nil
 }
