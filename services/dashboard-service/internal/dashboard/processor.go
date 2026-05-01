@@ -7,7 +7,6 @@ import (
 	"encoding/json"
 	"errors"
 	"strings"
-	"time"
 
 	"github.com/google/uuid"
 	"github.com/jtumidanski/home-hub/services/dashboard-service/internal/layout"
@@ -15,8 +14,6 @@ import (
 	"gorm.io/datatypes"
 	"gorm.io/gorm"
 )
-
-func nowUTC() time.Time { return time.Now().UTC() }
 
 // Processor orchestrates dashboard CRUD with scope/visibility rules.
 type Processor struct {
