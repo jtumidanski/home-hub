@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"errors"
 	"net/http"
+	"regexp"
 
 	"github.com/google/uuid"
 	"github.com/gorilla/mux"
@@ -14,6 +15,11 @@ import (
 	"github.com/sirupsen/logrus"
 	"gorm.io/gorm"
 )
+
+// seedKeyRegex enforces lowercase ASCII kebab-case, 1-40 chars, must start
+// with a letter. Empty string is treated as "key omitted" before this is
+// applied; callers should normalize the optional input first.
+var seedKeyRegex = regexp.MustCompile(`^[a-z][a-z0-9-]{0,39}$`)
 
 // writeLayoutError maps a layout.ValidationError onto a JSON:API 422 with the
 // stable layout code + source pointer so the UI can highlight the offending
@@ -322,8 +328,24 @@ func seedHandler(db *gorm.DB) server.InputHandler[SeedRequest] {
 	return func(d *server.HandlerDependency, c *server.HandlerContext, input SeedRequest) http.HandlerFunc {
 		return func(w http.ResponseWriter, r *http.Request) {
 			t := tenantctx.MustFromContext(r.Context())
+
+			// Normalize optional seed key. Empty string is treated as "omitted"
+			// to keep JSON ergonomic for callers that always send the field.
+			var key *string
+			if input.Key != nil && *input.Key != "" {
+				if !seedKeyRegex.MatchString(*input.Key) {
+					server.WriteJSONAPIError(w, http.StatusUnprocessableEntity,
+						"dashboard.seed_key_invalid", "Invalid seed key",
+						"seed key must match "+seedKeyRegex.String(),
+						"/data/attributes/key")
+					return
+				}
+				v := *input.Key
+				key = &v
+			}
+
 			proc := NewProcessor(d.Logger(), r.Context(), db)
-			res, err := proc.Seed(t.Id(), t.HouseholdId(), t.UserId(), input.Name, nil, input.Layout)
+			res, err := proc.Seed(t.Id(), t.HouseholdId(), t.UserId(), input.Name, key, input.Layout)
 			if err != nil {
 				var ve layout.ValidationError
 				if errors.As(err, &ve) {

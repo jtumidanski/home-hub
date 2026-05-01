@@ -64,6 +64,7 @@ type ReorderEntry struct {
 
 type SeedRequest struct {
 	Name   string          `json:"name"`
+	Key    *string         `json:"key,omitempty"`
 	Layout json.RawMessage `json:"layout"`
 }
 
