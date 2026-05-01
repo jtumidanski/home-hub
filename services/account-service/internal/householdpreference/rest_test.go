@@ -91,6 +91,23 @@ func TestGetHouseholdPreferencesAutoCreates(t *testing.T) {
 	}
 }
 
+func TestGetHouseholdPreferencesIncludesKioskFlag(t *testing.T) {
+	db := setupTestDB(t)
+	tid, uid, hid := uuid.New(), uuid.New(), uuid.New()
+	h := newTestServer(t, db, tenantctx.New(tid, hid, uid))
+
+	req := httptest.NewRequest(http.MethodGet, "/api/v1/household-preferences", nil)
+	w := httptest.NewRecorder()
+	h.ServeHTTP(w, req)
+
+	if w.Code != http.StatusOK {
+		t.Fatalf("status: got %d: %s", w.Code, w.Body.String())
+	}
+	if !bytes.Contains(w.Body.Bytes(), []byte(`"kiosk_dashboard_seeded":false`)) {
+		t.Fatalf("expected kiosk_dashboard_seeded:false in body, got: %s", w.Body.String())
+	}
+}
+
 func TestPatchSetsDefaultDashboardId(t *testing.T) {
 	db := setupTestDB(t)
 	tid, uid, hid := uuid.New(), uuid.New(), uuid.New()

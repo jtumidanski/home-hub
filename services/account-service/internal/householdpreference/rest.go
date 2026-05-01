@@ -7,10 +7,11 @@ import (
 )
 
 type RestModel struct {
-	Id                 uuid.UUID  `json:"-"`
-	DefaultDashboardId *uuid.UUID `json:"default_dashboard_id"`
-	CreatedAt          time.Time  `json:"createdAt"`
-	UpdatedAt          time.Time  `json:"updatedAt"`
+	Id                   uuid.UUID  `json:"-"`
+	DefaultDashboardId   *uuid.UUID `json:"default_dashboard_id"`
+	KioskDashboardSeeded bool       `json:"kiosk_dashboard_seeded"`
+	CreatedAt            time.Time  `json:"createdAt"`
+	UpdatedAt            time.Time  `json:"updatedAt"`
 }
 
 func (r RestModel) GetName() string { return "householdPreferences" }
@@ -23,10 +24,11 @@ func (r *RestModel) SetID(id string) error {
 
 func Transform(m Model) (RestModel, error) {
 	return RestModel{
-		Id:                 m.Id(),
-		DefaultDashboardId: m.DefaultDashboardID(),
-		CreatedAt:          m.CreatedAt(),
-		UpdatedAt:          m.UpdatedAt(),
+		Id:                   m.Id(),
+		DefaultDashboardId:   m.DefaultDashboardID(),
+		KioskDashboardSeeded: m.KioskDashboardSeeded(),
+		CreatedAt:            m.CreatedAt(),
+		UpdatedAt:            m.UpdatedAt(),
 	}, nil
 }
 
