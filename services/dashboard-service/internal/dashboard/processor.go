@@ -282,12 +282,7 @@ func (p *Processor) Promote(id, tenantID, householdID, callerUserID uuid.UUID) (
 	if row.UserId == nil {
 		return Model{}, ErrAlreadyHousehold
 	}
-	// GORM's Updates skips zero-value map entries with nil; use a raw UPDATE
-	// so user_id reliably becomes NULL across dialects (Postgres + sqlite).
-	if err := p.db.WithContext(p.ctx).Exec(
-		"UPDATE dashboards SET user_id = NULL, updated_at = ? WHERE id = ?",
-		nowUTC(), id,
-	).Error; err != nil {
+	if err := clearUserID(p.db.WithContext(p.ctx), id); err != nil {
 		return Model{}, err
 	}
 	updated, err := getByID(id)(p.db.WithContext(p.ctx))()
