@@ -19,7 +19,10 @@ function formatTime(iso: string): string {
 }
 
 function tomorrowRange(tomorrow: string): { start: string; end: string } {
-  const [y, m, d] = tomorrow.split("-").map(Number);
+  const parts = tomorrow.split("-").map(Number);
+  const y = parts[0] ?? 1970;
+  const m = parts[1] ?? 1;
+  const d = parts[2] ?? 1;
   const start = new Date(y, m - 1, d, 0, 0, 0, 0).toISOString();
   const end = new Date(y, m - 1, d, 23, 59, 59, 999).toISOString();
   return { start, end };
