@@ -18,7 +18,7 @@ vi.mock("@/lib/hooks/api/use-dashboards", () => ({
 
 vi.mock("@/lib/hooks/api/use-household-preferences", () => ({
   useHouseholdPreferences: () => ({
-    data: { data: { id: "prefs-1", type: "householdPreferences", attributes: { defaultDashboardId: null, createdAt: "", updatedAt: "" } } },
+    data: { data: { id: "prefs-1", type: "householdPreferences", attributes: { defaultDashboardId: null, kioskDashboardSeeded: false, createdAt: "", updatedAt: "" } } },
   }),
   useUpdateHouseholdPreferences: () => ({ mutate: vi.fn() }),
 }));

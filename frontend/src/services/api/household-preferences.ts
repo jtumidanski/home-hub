@@ -1,4 +1,6 @@
+import { api } from "@/lib/api/client";
 import { BaseService } from "./base";
+import type { ApiResponse } from "@/types/api/responses";
 import type {
   HouseholdPreferences,
   HouseholdPreferencesUpdateAttributes,
@@ -29,6 +31,19 @@ class HouseholdPreferencesService extends BaseService {
         attributes: attrs,
       },
     });
+  }
+
+  /**
+   * Sets the write-once-true `kioskDashboardSeeded` flag via the dedicated
+   * sub-route. Body is plain JSON (not JSON:API) — see Go resource.go for
+   * rationale. Frontend never sends false; only true is accepted.
+   */
+  markKioskSeeded(tenant: { id: string }, id: string) {
+    this.setTenant(tenant);
+    return api.patch<ApiResponse<HouseholdPreferences>>(
+      `/household-preferences/${id}/kiosk-seeded`,
+      { value: true },
+    );
   }
 }
 

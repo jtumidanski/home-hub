@@ -38,6 +38,7 @@ export interface DashboardOrderEntry {
 
 export interface HouseholdPreferencesAttributes {
   defaultDashboardId: string | null;
+  kioskDashboardSeeded: boolean;
   createdAt: string;
   updatedAt: string;
 }
