@@ -8,10 +8,10 @@ import (
 )
 
 type Entity struct {
-	Id                 uuid.UUID  `gorm:"type:uuid;primaryKey"`
-	TenantId           uuid.UUID  `gorm:"type:uuid;not null;uniqueIndex:idx_hp_tup"`
-	UserId             uuid.UUID  `gorm:"type:uuid;not null;uniqueIndex:idx_hp_tup"`
-	HouseholdId        uuid.UUID  `gorm:"type:uuid;not null;uniqueIndex:idx_hp_tup"`
+	Id                   uuid.UUID  `gorm:"type:uuid;primaryKey"`
+	TenantId             uuid.UUID  `gorm:"type:uuid;not null;uniqueIndex:idx_hp_tup"`
+	UserId               uuid.UUID  `gorm:"type:uuid;not null;uniqueIndex:idx_hp_tup"`
+	HouseholdId          uuid.UUID  `gorm:"type:uuid;not null;uniqueIndex:idx_hp_tup"`
 	DefaultDashboardId   *uuid.UUID `gorm:"type:uuid"`
 	KioskDashboardSeeded bool       `gorm:"column:kiosk_dashboard_seeded;not null;default:false"`
 	CreatedAt            time.Time  `gorm:"not null"`
