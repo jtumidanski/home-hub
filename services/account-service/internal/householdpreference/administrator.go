@@ -27,11 +27,15 @@ func insert(db *gorm.DB, tenantID, userID, householdID uuid.UUID) (Entity, error
 // given id. The flag is write-once-true; this is intentionally idempotent.
 func markKioskSeeded(db *gorm.DB, id uuid.UUID) (Entity, error) {
 	now := time.Now().UTC()
-	if err := db.Exec(
-		"UPDATE household_preferences SET kiosk_dashboard_seeded = TRUE, updated_at = ? WHERE id = ?",
-		now, id,
-	).Error; err != nil {
-		return Entity{}, err
+	res := db.Model(&Entity{}).Where("id = ?", id).Updates(map[string]any{
+		"kiosk_dashboard_seeded": true,
+		"updated_at":             now,
+	})
+	if res.Error != nil {
+		return Entity{}, res.Error
+	}
+	if res.RowsAffected == 0 {
+		return Entity{}, gorm.ErrRecordNotFound
 	}
 	var e Entity
 	if err := db.Where("id = ?", id).First(&e).Error; err != nil {
