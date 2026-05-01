@@ -8,8 +8,8 @@ import (
 
 type RestModel struct {
 	Id                   uuid.UUID  `json:"-"`
-	DefaultDashboardId   *uuid.UUID `json:"default_dashboard_id"`
-	KioskDashboardSeeded bool       `json:"kiosk_dashboard_seeded"`
+	DefaultDashboardId   *uuid.UUID `json:"defaultDashboardId"`
+	KioskDashboardSeeded bool       `json:"kioskDashboardSeeded"`
 	CreatedAt            time.Time  `json:"createdAt"`
 	UpdatedAt            time.Time  `json:"updatedAt"`
 }
@@ -43,7 +43,7 @@ func Transform(m Model) (RestModel, error) {
 // absent-vs-explicit-null can be distinguished.
 type UpdateRequest struct {
 	Id                 uuid.UUID  `json:"-"`
-	DefaultDashboardId *uuid.UUID `json:"default_dashboard_id,omitempty"`
+	DefaultDashboardId *uuid.UUID `json:"defaultDashboardId,omitempty"`
 }
 
 func (r UpdateRequest) GetName() string { return "householdPreferences" }

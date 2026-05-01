@@ -103,8 +103,8 @@ func TestGetHouseholdPreferencesIncludesKioskFlag(t *testing.T) {
 	if w.Code != http.StatusOK {
 		t.Fatalf("status: got %d: %s", w.Code, w.Body.String())
 	}
-	if !bytes.Contains(w.Body.Bytes(), []byte(`"kiosk_dashboard_seeded":false`)) {
-		t.Fatalf("expected kiosk_dashboard_seeded:false in body, got: %s", w.Body.String())
+	if !bytes.Contains(w.Body.Bytes(), []byte(`"kioskDashboardSeeded":false`)) {
+		t.Fatalf("expected kioskDashboardSeeded:false in body, got: %s", w.Body.String())
 	}
 }
 
@@ -123,7 +123,7 @@ func TestPatchSetsDefaultDashboardId(t *testing.T) {
 			"type": "householdPreferences",
 			"id":   rowID,
 			"attributes": map[string]any{
-				"default_dashboard_id": dashID.String(),
+				"defaultDashboardId": dashID.String(),
 			},
 		},
 	}
@@ -159,7 +159,7 @@ func TestPatchClearsDefaultDashboardId(t *testing.T) {
 			"type": "householdPreferences",
 			"id":   rowID,
 			"attributes": map[string]any{
-				"default_dashboard_id": dashID.String(),
+				"defaultDashboardId": dashID.String(),
 			},
 		},
 	}
@@ -178,7 +178,7 @@ func TestPatchClearsDefaultDashboardId(t *testing.T) {
 			"type": "householdPreferences",
 			"id":   rowID,
 			"attributes": map[string]any{
-				"default_dashboard_id": nil,
+				"defaultDashboardId": nil,
 			},
 		},
 	}
@@ -210,7 +210,7 @@ func TestMarkKioskSeededFlipsFlag(t *testing.T) {
 	}
 	rowID := getResp.Data[0].ID
 	if getResp.Data[0].Attributes.KioskDashboardSeeded {
-		t.Fatalf("expected initial kiosk_dashboard_seeded to be false")
+		t.Fatalf("expected initial kioskDashboardSeeded to be false")
 	}
 
 	// PATCH /api/v1/household-preferences/{id}/kiosk-seeded with {"value": true}.
@@ -223,8 +223,8 @@ func TestMarkKioskSeededFlipsFlag(t *testing.T) {
 	if w.Code != http.StatusOK {
 		t.Fatalf("patch status: got %d: %s", w.Code, w.Body.String())
 	}
-	if !bytes.Contains(w.Body.Bytes(), []byte(`"kiosk_dashboard_seeded":true`)) {
-		t.Fatalf("expected kiosk_dashboard_seeded:true in body, got: %s", w.Body.String())
+	if !bytes.Contains(w.Body.Bytes(), []byte(`"kioskDashboardSeeded":true`)) {
+		t.Fatalf("expected kioskDashboardSeeded:true in body, got: %s", w.Body.String())
 	}
 
 	// Idempotency: second PATCH stays 200 + true.
@@ -237,8 +237,8 @@ func TestMarkKioskSeededFlipsFlag(t *testing.T) {
 	if w2.Code != http.StatusOK {
 		t.Fatalf("second patch status: got %d: %s", w2.Code, w2.Body.String())
 	}
-	if !bytes.Contains(w2.Body.Bytes(), []byte(`"kiosk_dashboard_seeded":true`)) {
-		t.Fatalf("expected kiosk_dashboard_seeded:true on second patch, got: %s", w2.Body.String())
+	if !bytes.Contains(w2.Body.Bytes(), []byte(`"kioskDashboardSeeded":true`)) {
+		t.Fatalf("expected kioskDashboardSeeded:true on second patch, got: %s", w2.Body.String())
 	}
 }
 
