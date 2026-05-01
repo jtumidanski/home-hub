@@ -104,6 +104,8 @@ export function EventFormDialog({
         return `${date}T${time}:00${sign}${hh}:${mm}`;
       };
 
+      const timeZone = Intl.DateTimeFormat().resolvedOptions().timeZone;
+
       if (isEdit && editEvent) {
         const startISO = values.allDay
           ? values.startDate
@@ -123,6 +125,7 @@ export function EventFormDialog({
             location: values.location || undefined,
             description: values.description || undefined,
             scope: editScope ?? "single",
+            timeZone,
           },
         });
         toast.success("Event updated");
@@ -145,6 +148,7 @@ export function EventFormDialog({
             location: values.location || undefined,
             description: values.description || undefined,
             recurrence: values.recurrence ? [values.recurrence] : undefined,
+            timeZone,
           },
         });
         toast.success("Event created");

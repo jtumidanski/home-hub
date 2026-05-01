@@ -64,6 +64,7 @@ export interface CreateEventData {
   location?: string | undefined;
   description?: string | undefined;
   recurrence?: string[] | undefined;
+  timeZone?: string | undefined;
 }
 
 export interface UpdateEventData {
@@ -74,6 +75,7 @@ export interface UpdateEventData {
   location?: string | undefined;
   description?: string | undefined;
   scope?: "single" | "all" | undefined;
+  timeZone?: string | undefined;
 }
 
 export interface AuthorizeResponseAttributes {

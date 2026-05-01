@@ -18,6 +18,7 @@ type CreateEventRequest struct {
 	Location    string    `json:"location"`
 	Description string    `json:"description"`
 	Recurrence  []string  `json:"recurrence"`
+	TimeZone    string    `json:"timeZone"`
 }
 
 func (r CreateEventRequest) GetName() string { return "calendar-events" }
@@ -40,6 +41,7 @@ type UpdateEventRequest struct {
 	Location    *string   `json:"location"`
 	Description *string   `json:"description"`
 	Scope       string    `json:"scope"`
+	TimeZone    *string   `json:"timeZone"`
 }
 
 func (r UpdateEventRequest) GetName() string { return "calendar-events" }
