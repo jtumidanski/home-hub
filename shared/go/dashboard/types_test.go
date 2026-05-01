@@ -12,6 +12,8 @@ func TestIsKnownWidgetType(t *testing.T) {
 		"weather", "tasks-summary", "reminders-summary", "overdue-summary",
 		"meal-plan-today", "calendar-today", "packages-summary",
 		"habits-today", "workout-today",
+		"tasks-today", "reminders-today",
+		"weather-tomorrow", "calendar-tomorrow", "tasks-tomorrow",
 	} {
 		if !IsKnownWidgetType(typ) {
 			t.Fatalf("expected %q to be known", typ)

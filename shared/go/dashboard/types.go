@@ -24,6 +24,11 @@ var WidgetTypes = map[string]struct{}{
 	"packages-summary":  {},
 	"habits-today":      {},
 	"workout-today":     {},
+	"tasks-today":       {},
+	"reminders-today":   {},
+	"weather-tomorrow":  {},
+	"calendar-tomorrow": {},
+	"tasks-tomorrow":    {},
 }
 
 func IsKnownWidgetType(t string) bool { _, ok := WidgetTypes[t]; return ok }
