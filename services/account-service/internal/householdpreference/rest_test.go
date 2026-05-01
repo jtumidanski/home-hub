@@ -198,6 +198,86 @@ func TestPatchClearsDefaultDashboardId(t *testing.T) {
 	}
 }
 
+func TestMarkKioskSeededFlipsFlag(t *testing.T) {
+	db := setupTestDB(t)
+	tid, uid, hid := uuid.New(), uuid.New(), uuid.New()
+	h := newTestServer(t, db, tenantctx.New(tid, hid, uid))
+
+	// Auto-create the row via GET.
+	getResp := doGet(t, h)
+	if len(getResp.Data) != 1 {
+		t.Fatalf("expected 1 row got %d", len(getResp.Data))
+	}
+	rowID := getResp.Data[0].ID
+	if getResp.Data[0].Attributes.KioskDashboardSeeded {
+		t.Fatalf("expected initial kiosk_dashboard_seeded to be false")
+	}
+
+	// PATCH /api/v1/household-preferences/{id}/kiosk-seeded with {"value": true}.
+	patchReq := httptest.NewRequest(http.MethodPatch,
+		"/api/v1/household-preferences/"+rowID+"/kiosk-seeded",
+		bytes.NewReader([]byte(`{"value":true}`)))
+	patchReq.Header.Set("Content-Type", "application/json")
+	w := httptest.NewRecorder()
+	h.ServeHTTP(w, patchReq)
+	if w.Code != http.StatusOK {
+		t.Fatalf("patch status: got %d: %s", w.Code, w.Body.String())
+	}
+	if !bytes.Contains(w.Body.Bytes(), []byte(`"kiosk_dashboard_seeded":true`)) {
+		t.Fatalf("expected kiosk_dashboard_seeded:true in body, got: %s", w.Body.String())
+	}
+
+	// Idempotency: second PATCH stays 200 + true.
+	patchReq2 := httptest.NewRequest(http.MethodPatch,
+		"/api/v1/household-preferences/"+rowID+"/kiosk-seeded",
+		bytes.NewReader([]byte(`{"value":true}`)))
+	patchReq2.Header.Set("Content-Type", "application/json")
+	w2 := httptest.NewRecorder()
+	h.ServeHTTP(w2, patchReq2)
+	if w2.Code != http.StatusOK {
+		t.Fatalf("second patch status: got %d: %s", w2.Code, w2.Body.String())
+	}
+	if !bytes.Contains(w2.Body.Bytes(), []byte(`"kiosk_dashboard_seeded":true`)) {
+		t.Fatalf("expected kiosk_dashboard_seeded:true on second patch, got: %s", w2.Body.String())
+	}
+}
+
+func TestMarkKioskSeededRejectsFalse(t *testing.T) {
+	db := setupTestDB(t)
+	tid, uid, hid := uuid.New(), uuid.New(), uuid.New()
+	h := newTestServer(t, db, tenantctx.New(tid, hid, uid))
+
+	getResp := doGet(t, h)
+	rowID := getResp.Data[0].ID
+
+	patchReq := httptest.NewRequest(http.MethodPatch,
+		"/api/v1/household-preferences/"+rowID+"/kiosk-seeded",
+		bytes.NewReader([]byte(`{"value":false}`)))
+	patchReq.Header.Set("Content-Type", "application/json")
+	w := httptest.NewRecorder()
+	h.ServeHTTP(w, patchReq)
+	if w.Code != http.StatusBadRequest {
+		t.Fatalf("expected 400 for value:false, got %d: %s", w.Code, w.Body.String())
+	}
+}
+
+func TestMarkKioskSeededReturnsNotFoundForUnknownID(t *testing.T) {
+	db := setupTestDB(t)
+	tid, uid, hid := uuid.New(), uuid.New(), uuid.New()
+	h := newTestServer(t, db, tenantctx.New(tid, hid, uid))
+
+	unknownID := uuid.New().String()
+	patchReq := httptest.NewRequest(http.MethodPatch,
+		"/api/v1/household-preferences/"+unknownID+"/kiosk-seeded",
+		bytes.NewReader([]byte(`{"value":true}`)))
+	patchReq.Header.Set("Content-Type", "application/json")
+	w := httptest.NewRecorder()
+	h.ServeHTTP(w, patchReq)
+	if w.Code != http.StatusNotFound {
+		t.Fatalf("expected 404 for unknown id, got %d: %s", w.Code, w.Body.String())
+	}
+}
+
 func doGet(t *testing.T, h http.Handler) jsonapiSliceDoc {
 	t.Helper()
 	req := httptest.NewRequest(http.MethodGet, "/api/v1/household-preferences", nil)
