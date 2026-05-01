@@ -1,76 +1,107 @@
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { useDashboards, useSeedDashboard } from "@/lib/hooks/api/use-dashboards";
-import { useHouseholdPreferences } from "@/lib/hooks/api/use-household-preferences";
+import {
+  useHouseholdPreferences,
+  useMarkKioskSeeded,
+} from "@/lib/hooks/api/use-household-preferences";
 import { useTenant } from "@/context/tenant-context";
 import { seedLayout } from "@/lib/dashboard/seed-layout";
+import { kioskSeedLayout } from "@/lib/dashboard/kiosk-seed-layout";
 import { DashboardSkeleton } from "@/components/common/dashboard-skeleton";
 import { getErrorMessage } from "@/lib/api/errors";
-import type { Dashboard } from "@/types/models/dashboard";
 
 /**
  * Resolves `/app/dashboard` (and `/app/dashboards`) to a concrete dashboard.
- * Resolution order:
+ *
+ * On first visit, seeds two household dashboards in parallel:
+ *   - "Home"   — the standard composition (seedLayout).
+ *   - "Kiosk"  — the kiosk composition (kioskSeedLayout), gated by
+ *                household_preferences.kioskDashboardSeeded so users who
+ *                later delete the Kiosk dashboard don't get it re-seeded.
+ *
+ * Resolution order after seeding:
  *   1. household_preferences.defaultDashboardId, if it still exists.
  *   2. first household-scoped dashboard.
  *   3. first user-scoped dashboard.
- *   4. seed a first-run dashboard.
  */
 export function DashboardRedirect() {
   const navigate = useNavigate();
   const { tenant, household } = useTenant();
   const prefsQuery = useHouseholdPreferences();
   const dashboardsQuery = useDashboards();
-  const seed = useSeedDashboard();
+  const homeSeed = useSeedDashboard();
+  const kioskSeed = useSeedDashboard();
+  const markKioskSeeded = useMarkKioskSeeded();
+  const seededOnce = useRef(false);
 
   const { data: prefs, isError: prefsErr, error: prefsError } = prefsQuery;
   const { data: dashboards, refetch, isError: listErr, error: listError } = dashboardsQuery;
 
   useEffect(() => {
     if (!prefs || !dashboards) return;
+    if (seededOnce.current) return;
+    seededOnce.current = true;
+
     const list = dashboards.data;
     const prefRow = prefs.data[0];
-    const pref = prefRow?.attributes.defaultDashboardId ?? null;
+    const kioskFlag = prefRow?.attributes.kioskDashboardSeeded ?? false;
+    const prefId = prefRow?.id ?? null;
 
-    if (pref && list.some((d) => d.id === pref)) {
-      navigate(`/app/dashboards/${pref}`, { replace: true });
-      return;
-    }
-    const householdDash = list.find((d) => d.attributes.scope === "household");
-    if (householdDash) {
-      navigate(`/app/dashboards/${householdDash.id}`, { replace: true });
-      return;
-    }
-    const user = list.find((d) => d.attributes.scope === "user");
-    if (user) {
-      navigate(`/app/dashboards/${user.id}`, { replace: true });
-      return;
-    }
-    if (seed.isPending || seed.isSuccess) return;
-    seed.mutate(
-      { name: "Home", layout: seedLayout() },
-      {
-        onSuccess: async (res) => {
-          if (!Array.isArray(res.data)) {
-            const single = res.data as Dashboard;
-            navigate(`/app/dashboards/${single.id}`, { replace: true });
-            return;
-          }
-          const first = res.data[0] ?? (await refetch()).data?.data?.[0];
-          if (first) navigate(`/app/dashboards/${first.id}`, { replace: true });
-        },
-      },
+    const homeNeeded = !list.some((d) => d.attributes.scope === "household");
+    const hasKioskRow = list.some(
+      (d) => d.attributes.scope === "household" && d.attributes.name === "Kiosk",
     );
-  }, [prefs, dashboards, navigate, seed, refetch]);
+    const kioskNeeded = !kioskFlag && !hasKioskRow;
+
+    const seedHome = homeNeeded
+      ? homeSeed.mutateAsync({ name: "Home", layout: seedLayout(), key: "home" })
+      : Promise.resolve(null);
+    const seedKiosk = kioskNeeded
+      ? kioskSeed.mutateAsync({ name: "Kiosk", layout: kioskSeedLayout(), key: "kiosk" })
+      : Promise.resolve(null);
+
+    Promise.allSettled([seedHome, seedKiosk]).then(async () => {
+      const refreshed =
+        homeNeeded || kioskNeeded ? (await refetch()).data?.data ?? list : list;
+      const kioskNow = refreshed.some(
+        (d) => d.attributes.scope === "household" && d.attributes.name === "Kiosk",
+      );
+      if (kioskNow && !kioskFlag && prefId) {
+        markKioskSeeded.mutate(prefId);
+      }
+      const pref = prefRow?.attributes.defaultDashboardId ?? null;
+      if (pref && refreshed.some((d) => d.id === pref)) {
+        navigate(`/app/dashboards/${pref}`, { replace: true });
+        return;
+      }
+      const householdDash = refreshed.find((d) => d.attributes.scope === "household");
+      if (householdDash) {
+        navigate(`/app/dashboards/${householdDash.id}`, { replace: true });
+        return;
+      }
+      const userDash = refreshed.find((d) => d.attributes.scope === "user");
+      if (userDash) {
+        navigate(`/app/dashboards/${userDash.id}`, { replace: true });
+        return;
+      }
+    });
+  }, [prefs, dashboards, navigate, homeSeed, kioskSeed, markKioskSeeded, refetch]);
 
   if (!tenant?.id || !household?.id) {
-    return <DashboardMessage title="No household selected" body="Pick a household to view its dashboard." />;
+    return (
+      <DashboardMessage
+        title="No household selected"
+        body="Pick a household to view its dashboard."
+      />
+    );
   }
-  if (prefsErr || listErr || seed.isError) {
+  if (prefsErr || listErr || homeSeed.isError || kioskSeed.isError) {
     const msg =
       getErrorMessage(prefsError, "") ||
       getErrorMessage(listError, "") ||
-      getErrorMessage(seed.error, "") ||
+      getErrorMessage(homeSeed.error, "") ||
+      getErrorMessage(kioskSeed.error, "") ||
       "The dashboard service is unavailable.";
     return <DashboardMessage title="Couldn't load dashboards" body={msg} />;
   }
