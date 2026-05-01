@@ -103,12 +103,19 @@ type SeedResult struct {
 	Existing  []Model
 }
 
-// Seed ensures at least one household-scoped dashboard exists for the given
-// (tenant, household). It is idempotent and race-safe: concurrent Seed calls
-// across replicas are serialized via a Postgres advisory xact lock keyed on
-// tenant+household. On non-Postgres dialects (sqlite in tests), the transaction
-// itself is relied on to serialize.
-func (p *Processor) Seed(tenantID, householdID, callerUserID uuid.UUID, name string, layoutJSON json.RawMessage) (SeedResult, error) {
+// Seed ensures a household-scoped dashboard exists for the given
+// (tenant, household[, seedKey]). It is idempotent and race-safe.
+//
+// When seedKey is non-nil, the lookup is keyed on (tenant, household, seedKey)
+// — distinct keys (e.g. "home" and "kiosk") coexist as separate rows. When
+// seedKey is nil, the legacy behavior is preserved: if any household-scoped
+// row already exists, no new row is created and the visible set is returned.
+//
+// Concurrent Seed calls across replicas are serialized via a Postgres advisory
+// xact lock keyed on tenant+household[+seedKey]. On non-Postgres dialects
+// (sqlite in tests), the partial unique index `idx_dashboards_seed_key` is the
+// race backstop for keyed inserts.
+func (p *Processor) Seed(tenantID, householdID, callerUserID uuid.UUID, name string, seedKey *string, layoutJSON json.RawMessage) (SeedResult, error) {
 	name = trimName(name)
 	if err := validateNameLen(name); err != nil {
 		return SeedResult{}, err
@@ -119,9 +126,54 @@ func (p *Processor) Seed(tenantID, householdID, callerUserID uuid.UUID, name str
 
 	var out SeedResult
 	err := p.db.WithContext(p.ctx).Transaction(func(tx *gorm.DB) error {
-		if err := p.acquireSeedLock(tx, tenantID, householdID); err != nil {
+		if err := p.acquireSeedLock(tx, tenantID, householdID, seedKey); err != nil {
 			return err
 		}
+
+		if seedKey != nil {
+			// Key path: look up the (tenant, household, seedKey) row; insert if
+			// missing, otherwise return the existing row.
+			var existing Entity
+			err := tx.Where("tenant_id = ? AND household_id = ? AND seed_key = ?",
+				tenantID, householdID, *seedKey).First(&existing).Error
+			if err == nil {
+				m, mkErr := Make(existing)
+				if mkErr != nil {
+					return mkErr
+				}
+				out.Existing = append(out.Existing, m)
+				out.Created = false
+				return nil
+			}
+			if !errors.Is(err, gorm.ErrRecordNotFound) {
+				return err
+			}
+
+			key := *seedKey
+			e := Entity{
+				TenantId:      tenantID,
+				HouseholdId:   householdID,
+				UserId:        nil,
+				Name:          name,
+				SortOrder:     0,
+				Layout:        datatypes.JSON(layoutJSON),
+				SchemaVersion: 1,
+				SeedKey:       &key,
+			}
+			saved, err := insert(tx, e)
+			if err != nil {
+				return err
+			}
+			m, err := Make(saved)
+			if err != nil {
+				return err
+			}
+			out.Dashboard = m
+			out.Created = true
+			return nil
+		}
+
+		// Legacy path: any household-scoped row blocks creation.
 		count, err := countHouseholdScoped(tx, tenantID, householdID)
 		if err != nil {
 			return err
@@ -166,13 +218,19 @@ func (p *Processor) Seed(tenantID, householdID, callerUserID uuid.UUID, name str
 }
 
 // acquireSeedLock takes a Postgres transaction-scoped advisory lock so
-// concurrent seeders serialize on the same (tenant, household) key. On other
-// dialects (sqlite in tests) this is a no-op; production always runs Postgres.
-func (p *Processor) acquireSeedLock(tx *gorm.DB, tenantID, householdID uuid.UUID) error {
+// concurrent seeders serialize on the same (tenant, household[, seedKey]) key.
+// On other dialects (sqlite in tests) this is a no-op; production always runs
+// Postgres.
+func (p *Processor) acquireSeedLock(tx *gorm.DB, tenantID, householdID uuid.UUID, seedKey *string) error {
 	if tx.Dialector.Name() != "postgres" {
 		return nil
 	}
-	key := seedLockKey(tenantID, householdID)
+	var key int64
+	if seedKey != nil {
+		key = seedLockKeyForKey(tenantID, householdID, *seedKey)
+	} else {
+		key = seedLockKey(tenantID, householdID)
+	}
 	return tx.Exec("SELECT pg_advisory_xact_lock(?)", key).Error
 }
 
@@ -183,6 +241,18 @@ func seedLockKey(tenantID, householdID uuid.UUID) int64 {
 	copy(combined[:16], tenantID[:])
 	copy(combined[16:], householdID[:])
 	sum := sha256.Sum256(combined[:])
+	return int64(binary.BigEndian.Uint64(sum[:8]))
+}
+
+// seedLockKeyForKey derives a deterministic int64 lock key from
+// tenant+household+seedKey so distinct keys do not block each other while
+// concurrent inserts of the same key still serialize.
+func seedLockKeyForKey(tenantID, householdID uuid.UUID, seedKey string) int64 {
+	combined := make([]byte, 0, 32+len(seedKey))
+	combined = append(combined, tenantID[:]...)
+	combined = append(combined, householdID[:]...)
+	combined = append(combined, []byte(seedKey)...)
+	sum := sha256.Sum256(combined)
 	return int64(binary.BigEndian.Uint64(sum[:8]))
 }
 

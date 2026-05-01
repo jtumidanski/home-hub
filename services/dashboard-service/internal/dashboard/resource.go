@@ -323,7 +323,7 @@ func seedHandler(db *gorm.DB) server.InputHandler[SeedRequest] {
 		return func(w http.ResponseWriter, r *http.Request) {
 			t := tenantctx.MustFromContext(r.Context())
 			proc := NewProcessor(d.Logger(), r.Context(), db)
-			res, err := proc.Seed(t.Id(), t.HouseholdId(), t.UserId(), input.Name, input.Layout)
+			res, err := proc.Seed(t.Id(), t.HouseholdId(), t.UserId(), input.Name, nil, input.Layout)
 			if err != nil {
 				var ve layout.ValidationError
 				if errors.As(err, &ve) {
