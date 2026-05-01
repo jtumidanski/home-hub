@@ -101,6 +101,7 @@ func TestRoundTrip(t *testing.T) {
 		SetUserID(uuid.New()).
 		SetHouseholdID(uuid.New()).
 		SetDefaultDashboardID(&ddID).
+		SetKioskDashboardSeeded(true).
 		SetCreatedAt(now).
 		SetUpdatedAt(now).
 		Build()
@@ -117,6 +118,9 @@ func TestRoundTrip(t *testing.T) {
 	}
 	if got.DefaultDashboardID() == nil || *got.DefaultDashboardID() != ddID {
 		t.Fatal("round-trip mismatch on default dashboard id")
+	}
+	if got.KioskDashboardSeeded() != true {
+		t.Fatal("round-trip mismatch on kiosk dashboard seeded")
 	}
 	if !got.CreatedAt().Equal(orig.CreatedAt()) || !got.UpdatedAt().Equal(orig.UpdatedAt()) {
 		t.Fatal("round-trip mismatch on timestamps")
