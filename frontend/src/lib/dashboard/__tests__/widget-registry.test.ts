@@ -22,4 +22,10 @@ describe("widgetRegistry", () => {
   it("findWidget returns undefined for an unknown type", () => {
     expect(findWidget("nope")).toBeUndefined();
   });
+
+  it("contains the 5 task-046 widgets", () => {
+    for (const t of ["tasks-today", "reminders-today", "weather-tomorrow", "calendar-tomorrow", "tasks-tomorrow"] as const) {
+      expect(findWidget(t)).toBeDefined();
+    }
+  });
 });

@@ -10,6 +10,11 @@ import { calendarTodayWidget } from "@/lib/dashboard/widgets/calendar-today";
 import { packagesSummaryWidget } from "@/lib/dashboard/widgets/packages-summary";
 import { habitsTodayWidget } from "@/lib/dashboard/widgets/habits-today";
 import { workoutTodayWidget } from "@/lib/dashboard/widgets/workout-today";
+import { tasksTodayWidget } from "@/lib/dashboard/widgets/tasks-today";
+import { remindersTodayWidget } from "@/lib/dashboard/widgets/reminders-today";
+import { weatherTomorrowWidget } from "@/lib/dashboard/widgets/weather-tomorrow";
+import { calendarTomorrowWidget } from "@/lib/dashboard/widgets/calendar-tomorrow";
+import { tasksTomorrowWidget } from "@/lib/dashboard/widgets/tasks-tomorrow";
 
 export type WidgetDefinition<TConfig> = {
   type: WidgetType;
@@ -39,6 +44,11 @@ export const widgetRegistry: readonly AnyWidgetDefinition[] = [
   packagesSummaryWidget,
   habitsTodayWidget,
   workoutTodayWidget,
+  tasksTodayWidget,
+  remindersTodayWidget,
+  weatherTomorrowWidget,
+  calendarTomorrowWidget,
+  tasksTomorrowWidget,
 ] as unknown as readonly AnyWidgetDefinition[];
 
 export function findWidget(type: string): AnyWidgetDefinition | undefined {
