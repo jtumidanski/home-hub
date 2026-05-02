@@ -263,7 +263,9 @@ func TestProcessor_ListByMonth_OnlyReturnsRequestedUserAndMonth(t *testing.T) {
 	_, _, _, err = p.CreateOrUpdate(uuid.New(), user2, item2, yesterday(), todayUTC(), numericValue(2), nil)
 	require.NoError(t, err)
 
-	month := time.Now().UTC().Format("2006-01")
+	// Query for yesterday's month — guards against running on the 1st of a
+	// month, when yesterday's entries land in the previous calendar month.
+	month := time.Now().UTC().Add(-24 * time.Hour).Format("2006-01")
 	user1Entries, err := p.ListByMonth(user1, month)
 	require.NoError(t, err)
 	require.Len(t, user1Entries, 1)
@@ -291,7 +293,8 @@ func TestProcessor_ListByMonthWithScheduled_PairsScheduleProjection(t *testing.T
 	_, _, _, err = p.CreateOrUpdate(uuid.New(), userID, unscheduledItem, yesterday(), todayUTC(), numericValue(2), nil)
 	require.NoError(t, err)
 
-	results, err := p.ListByMonthWithScheduled(userID, time.Now().UTC().Format("2006-01"))
+	// Query for yesterday's month — see TestProcessor_ListByMonth_OnlyReturnsRequestedUserAndMonth.
+	results, err := p.ListByMonthWithScheduled(userID, time.Now().UTC().Add(-24*time.Hour).Format("2006-01"))
 	require.NoError(t, err)
 	require.Len(t, results, 2)
 
