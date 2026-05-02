@@ -340,13 +340,13 @@ func TestProcessorSeedIdempotent(t *testing.T) {
 	tid, hid, uid := uuid.New(), uuid.New(), uuid.New()
 	layoutJSON := json.RawMessage(`{"version":1,"widgets":[]}`)
 
-	first, err := p.Seed(tid, hid, uid, "Home", layoutJSON)
+	first, err := p.Seed(tid, hid, uid, "Home", nil, layoutJSON)
 	require.NoError(t, err)
 	require.True(t, first.Created)
 	require.Equal(t, "Home", first.Dashboard.Name())
 	require.True(t, first.Dashboard.IsHouseholdScoped())
 
-	second, err := p.Seed(tid, hid, uid, "Home", layoutJSON)
+	second, err := p.Seed(tid, hid, uid, "Home", nil, layoutJSON)
 	require.NoError(t, err)
 	require.False(t, second.Created, "second seed must not create a new row")
 	require.Len(t, second.Existing, 1)
@@ -368,7 +368,7 @@ func TestProcessorSeedRace(t *testing.T) {
 	for i := 0; i < 2; i++ {
 		go func() {
 			defer wg.Done()
-			res, err := p.Seed(tid, hid, uid, "Home", layoutJSON)
+			res, err := p.Seed(tid, hid, uid, "Home", nil, layoutJSON)
 			if err != nil {
 				t.Error(err)
 				return
@@ -380,4 +380,55 @@ func TestProcessorSeedRace(t *testing.T) {
 	}
 	wg.Wait()
 	require.Equal(t, int32(1), atomic.LoadInt32(&createdCount), "expected exactly one create")
+}
+
+func TestProcessorSeedByKeyIdempotent(t *testing.T) {
+	db := setupTestDB(t)
+	p := newTestProcessor(t, db)
+	tid, hid, uid := uuid.New(), uuid.New(), uuid.New()
+	layoutJSON := json.RawMessage(`{"version":1,"widgets":[]}`)
+	homeKey := "home"
+
+	first, err := p.Seed(tid, hid, uid, "Home", &homeKey, layoutJSON)
+	require.NoError(t, err)
+	require.True(t, first.Created)
+
+	second, err := p.Seed(tid, hid, uid, "Home", &homeKey, layoutJSON)
+	require.NoError(t, err)
+	require.False(t, second.Created, "second seed with same key must not create")
+	require.Len(t, second.Existing, 1)
+	require.Equal(t, first.Dashboard.Id(), second.Existing[0].Id())
+}
+
+func TestProcessorSeedDistinctKeysCoexist(t *testing.T) {
+	db := setupTestDB(t)
+	p := newTestProcessor(t, db)
+	tid, hid, uid := uuid.New(), uuid.New(), uuid.New()
+	layoutJSON := json.RawMessage(`{"version":1,"widgets":[]}`)
+	homeKey, kioskKey := "home", "kiosk"
+
+	home, err := p.Seed(tid, hid, uid, "Home", &homeKey, layoutJSON)
+	require.NoError(t, err)
+	require.True(t, home.Created)
+
+	kiosk, err := p.Seed(tid, hid, uid, "Kiosk", &kioskKey, layoutJSON)
+	require.NoError(t, err)
+	require.True(t, kiosk.Created, "distinct seedKey must not collide with home")
+	require.NotEqual(t, home.Dashboard.Id(), kiosk.Dashboard.Id())
+}
+
+func TestProcessorSeedNilKeyPreservesLegacyBehavior(t *testing.T) {
+	db := setupTestDB(t)
+	p := newTestProcessor(t, db)
+	tid, hid, uid := uuid.New(), uuid.New(), uuid.New()
+	layoutJSON := json.RawMessage(`{"version":1,"widgets":[]}`)
+
+	first, err := p.Seed(tid, hid, uid, "Home", nil, layoutJSON)
+	require.NoError(t, err)
+	require.True(t, first.Created)
+
+	second, err := p.Seed(tid, hid, uid, "Home", nil, layoutJSON)
+	require.NoError(t, err)
+	require.False(t, second.Created)
+	require.Len(t, second.Existing, 1)
 }

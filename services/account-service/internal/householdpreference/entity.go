@@ -8,13 +8,14 @@ import (
 )
 
 type Entity struct {
-	Id                 uuid.UUID  `gorm:"type:uuid;primaryKey"`
-	TenantId           uuid.UUID  `gorm:"type:uuid;not null;uniqueIndex:idx_hp_tup"`
-	UserId             uuid.UUID  `gorm:"type:uuid;not null;uniqueIndex:idx_hp_tup"`
-	HouseholdId        uuid.UUID  `gorm:"type:uuid;not null;uniqueIndex:idx_hp_tup"`
-	DefaultDashboardId *uuid.UUID `gorm:"type:uuid"`
-	CreatedAt          time.Time  `gorm:"not null"`
-	UpdatedAt          time.Time  `gorm:"not null"`
+	Id                   uuid.UUID  `gorm:"type:uuid;primaryKey"`
+	TenantId             uuid.UUID  `gorm:"type:uuid;not null;uniqueIndex:idx_hp_tup"`
+	UserId               uuid.UUID  `gorm:"type:uuid;not null;uniqueIndex:idx_hp_tup"`
+	HouseholdId          uuid.UUID  `gorm:"type:uuid;not null;uniqueIndex:idx_hp_tup"`
+	DefaultDashboardId   *uuid.UUID `gorm:"type:uuid"`
+	KioskDashboardSeeded bool       `gorm:"column:kiosk_dashboard_seeded;not null;default:false"`
+	CreatedAt            time.Time  `gorm:"not null"`
+	UpdatedAt            time.Time  `gorm:"not null"`
 }
 
 func (Entity) TableName() string { return "household_preferences" }
@@ -23,13 +24,14 @@ func Migration(db *gorm.DB) error { return db.AutoMigrate(&Entity{}) }
 
 func (m Model) ToEntity() Entity {
 	return Entity{
-		Id:                 m.id,
-		TenantId:           m.tenantID,
-		UserId:             m.userID,
-		HouseholdId:        m.householdID,
-		DefaultDashboardId: m.defaultDashboardID,
-		CreatedAt:          m.createdAt,
-		UpdatedAt:          m.updatedAt,
+		Id:                   m.id,
+		TenantId:             m.tenantID,
+		UserId:               m.userID,
+		HouseholdId:          m.householdID,
+		DefaultDashboardId:   m.defaultDashboardID,
+		KioskDashboardSeeded: m.kioskDashboardSeeded,
+		CreatedAt:            m.createdAt,
+		UpdatedAt:            m.updatedAt,
 	}
 }
 
@@ -40,6 +42,7 @@ func Make(e Entity) (Model, error) {
 		SetUserID(e.UserId).
 		SetHouseholdID(e.HouseholdId).
 		SetDefaultDashboardID(e.DefaultDashboardId).
+		SetKioskDashboardSeeded(e.KioskDashboardSeeded).
 		SetCreatedAt(e.CreatedAt).
 		SetUpdatedAt(e.UpdatedAt).
 		Build()

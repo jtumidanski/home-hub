@@ -62,3 +62,34 @@ export function getLocalMonth(tz?: string): string {
   const { year, month } = getDateParts(tz);
   return `${year}-${String(month).padStart(2, "0")}`;
 }
+
+/**
+ * Returns the date as YYYY-MM-DD that is `offsetDays` after today in the given
+ * timezone. Day-string arithmetic (not timestamp arithmetic) — DST-safe.
+ */
+export function getLocalDateStrOffset(tz: string | undefined, offsetDays: number): string {
+  const resolved = tz || Intl.DateTimeFormat().resolvedOptions().timeZone;
+  const parts = new Intl.DateTimeFormat("en-CA", {
+    timeZone: resolved,
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+  }).formatToParts(new Date());
+  const year = Number(parts.find((p) => p.type === "year")!.value);
+  const month = Number(parts.find((p) => p.type === "month")!.value);
+  const day = Number(parts.find((p) => p.type === "day")!.value);
+
+  // Construct a Date at noon UTC on the resolved local date so adding days
+  // never crosses a DST cliff in the source timezone, then re-format in tz.
+  const anchor = new Date(Date.UTC(year, month - 1, day + offsetDays, 12, 0, 0));
+  const out = new Intl.DateTimeFormat("en-CA", {
+    timeZone: resolved,
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+  }).formatToParts(anchor);
+  const y = out.find((p) => p.type === "year")!.value;
+  const m = out.find((p) => p.type === "month")!.value;
+  const d = out.find((p) => p.type === "day")!.value;
+  return `${y}-${m}-${d}`;
+}

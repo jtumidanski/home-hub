@@ -71,12 +71,15 @@ class DashboardService extends BaseService {
     tenant: { id: string },
     name: string,
     layout: Layout,
+    key?: string,
   ): Promise<ApiResponse<Dashboard> | ApiListResponse<Dashboard>> {
     this.setTenant(tenant);
+    const attributes: Record<string, unknown> = { name, layout };
+    if (key !== undefined) attributes.key = key;
     return api.post<ApiResponse<Dashboard> | ApiListResponse<Dashboard>>(`/dashboards/seed`, {
       data: {
         type: "dashboards",
-        attributes: { name, layout },
+        attributes,
       },
     });
   }

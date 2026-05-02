@@ -1,6 +1,7 @@
 package householdpreference
 
 import (
+	"encoding/json"
 	"errors"
 	"net/http"
 
@@ -20,6 +21,7 @@ func InitializeRoutes(db *gorm.DB) func(l logrus.FieldLogger, si jsonapi.ServerI
 
 		api.HandleFunc("/household-preferences", rh("GetHouseholdPreferences", getHandler(db))).Methods(http.MethodGet)
 		api.HandleFunc("/household-preferences/{id}", rih("UpdateHouseholdPreferences", updateHandler(db))).Methods(http.MethodPatch)
+		api.HandleFunc("/household-preferences/{id}/kiosk-seeded", rh("MarkKioskSeeded", markKioskSeededHandler(db))).Methods(http.MethodPatch)
 	}
 }
 
@@ -42,6 +44,45 @@ func getHandler(db *gorm.DB) server.GetHandler {
 			}
 			server.MarshalSliceResponse[RestModel](d.Logger())(w)(c.ServerInformation())([]RestModel{rest})
 		}
+	}
+}
+
+// markKioskSeededHandler exposes a sub-route for the write-once-true
+// kiosk_dashboard_seeded flag. The body is plain JSON ({"value": true}) rather
+// than JSON:API because the existing PATCH /household-preferences/{id} cannot
+// distinguish absent-vs-explicit-null on its single mutable attribute (see
+// rest.go FIXME). Frontend never sends false; only true is accepted.
+func markKioskSeededHandler(db *gorm.DB) server.GetHandler {
+	return func(d *server.HandlerDependency, c *server.HandlerContext) http.HandlerFunc {
+		return server.ParseID("id", func(id uuid.UUID) http.HandlerFunc {
+			return func(w http.ResponseWriter, r *http.Request) {
+				var body struct {
+					Value bool `json:"value"`
+				}
+				if err := json.NewDecoder(r.Body).Decode(&body); err != nil || !body.Value {
+					server.WriteError(w, http.StatusBadRequest, "Invalid Request", "expected {\"value\":true}")
+					return
+				}
+				proc := NewProcessor(d.Logger(), r.Context(), db)
+				m, err := proc.MarkKioskSeeded(id)
+				if err != nil {
+					if errors.Is(err, gorm.ErrRecordNotFound) {
+						server.WriteError(w, http.StatusNotFound, "Not Found", "")
+						return
+					}
+					d.Logger().WithError(err).Error("failed to mark kiosk seeded")
+					server.WriteError(w, http.StatusInternalServerError, "Update Failed", "")
+					return
+				}
+				rest, err := Transform(m)
+				if err != nil {
+					d.Logger().WithError(err).Error("creating REST model")
+					w.WriteHeader(http.StatusInternalServerError)
+					return
+				}
+				server.MarshalResponse[RestModel](d.Logger())(w)(c.ServerInformation())(map[string][]string{})(rest)
+			}
+		})
 	}
 }
 

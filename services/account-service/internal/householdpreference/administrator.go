@@ -23,22 +23,48 @@ func insert(db *gorm.DB, tenantID, userID, householdID uuid.UUID) (Entity, error
 	return e, nil
 }
 
-// updateFields sets default_dashboard_id via a raw UPDATE statement so a nil
-// pointer reliably writes NULL across dialects. GORM's Updates(map) drops nil
-// entries silently, which is the wrong behavior for "clear the field".
+// markKioskSeeded sets kiosk_dashboard_seeded = TRUE for the row with the
+// given id. The flag is write-once-true; this is intentionally idempotent.
+func markKioskSeeded(db *gorm.DB, id uuid.UUID) (Entity, error) {
+	now := time.Now().UTC()
+	res := db.Model(&Entity{}).Where("id = ?", id).Updates(map[string]any{
+		"kiosk_dashboard_seeded": true,
+		"updated_at":             now,
+	})
+	if res.Error != nil {
+		return Entity{}, res.Error
+	}
+	if res.RowsAffected == 0 {
+		return Entity{}, gorm.ErrRecordNotFound
+	}
+	var e Entity
+	if err := db.Where("id = ?", id).First(&e).Error; err != nil {
+		return Entity{}, err
+	}
+	return e, nil
+}
+
+// updateFields sets default_dashboard_id via a GORM model-scoped UPDATE so the
+// tenant callback can inject WHERE tenant_id = ? automatically. The map-form
+// of Updates writes every key in the map, including nil values as SQL NULL,
+// which preserves the "clear the field on nil" semantics.
 func updateFields(db *gorm.DB, id uuid.UUID, defaultDashboardID *uuid.UUID) (Entity, error) {
 	now := time.Now().UTC()
 	var dd interface{}
 	if defaultDashboardID != nil {
 		dd = *defaultDashboardID
 	} else {
-		dd = nil
+		dd = gorm.Expr("NULL")
 	}
-	if err := db.Exec(
-		"UPDATE household_preferences SET default_dashboard_id = ?, updated_at = ? WHERE id = ?",
-		dd, now, id,
-	).Error; err != nil {
-		return Entity{}, err
+	res := db.Model(&Entity{}).Where("id = ?", id).Updates(map[string]any{
+		"default_dashboard_id": dd,
+		"updated_at":           now,
+	})
+	if res.Error != nil {
+		return Entity{}, res.Error
+	}
+	if res.RowsAffected == 0 {
+		return Entity{}, gorm.ErrRecordNotFound
 	}
 	var e Entity
 	if err := db.Where("id = ?", id).First(&e).Error; err != nil {

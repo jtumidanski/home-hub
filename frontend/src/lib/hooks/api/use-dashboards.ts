@@ -164,8 +164,8 @@ export function useSeedDashboard() {
   const qc = useQueryClient();
   const { tenant, household } = useTenant();
   return useMutation({
-    mutationFn: ({ name, layout }: { name: string; layout: Layout }) =>
-      dashboardService.seedDashboard(tenant!, name, layout),
+    mutationFn: ({ name, layout, key }: { name: string; layout: Layout; key?: string }) =>
+      dashboardService.seedDashboard(tenant!, name, layout, key),
     onSettled: () => {
       qc.invalidateQueries({ queryKey: dashboardKeys.all(tenant, household) });
     },

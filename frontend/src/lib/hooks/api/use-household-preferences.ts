@@ -36,3 +36,16 @@ export function useUpdateHouseholdPreferences() {
     },
   });
 }
+
+export function useMarkKioskSeeded() {
+  const qc = useQueryClient();
+  const { tenant, household } = useTenant();
+  return useMutation({
+    mutationFn: (id: string) => householdPreferencesService.markKioskSeeded(tenant!, id),
+    onSettled: () => {
+      qc.invalidateQueries({ queryKey: householdPreferencesKeys.all(tenant, household) });
+    },
+    // Silent failure mode: redirect doesn't toast — DashboardRedirect retries
+    // on next load if the PATCH didn't stick. See plan Task H1.
+  });
+}

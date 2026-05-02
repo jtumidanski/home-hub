@@ -54,3 +54,13 @@ func (p *Processor) SetDefaultDashboard(id uuid.UUID, defaultDashboardID *uuid.U
 	}
 	return Make(e)
 }
+
+// MarkKioskSeeded sets kiosk_dashboard_seeded = TRUE for the given row.
+// Idempotent; the flag is write-once-true.
+func (p *Processor) MarkKioskSeeded(id uuid.UUID) (Model, error) {
+	e, err := markKioskSeeded(p.db.WithContext(p.ctx), id)
+	if err != nil {
+		return Model{}, err
+	}
+	return Make(e)
+}

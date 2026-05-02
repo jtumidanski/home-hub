@@ -365,6 +365,46 @@ func TestSeedSecondCallReturns200Slice(t *testing.T) {
 	require.GreaterOrEqual(t, len(doc.Data), 1)
 }
 
+func TestSeedHandlerWithKioskKey(t *testing.T) {
+	db := setupTestDB(t)
+	tid, hid, uid := uuid.New(), uuid.New(), uuid.New()
+	h := newTestServer(t, db, tenantctx.New(tid, hid, uid))
+
+	body := jsonapiBody("dashboards", map[string]any{
+		"name":   "Kiosk",
+		"key":    "kiosk",
+		"layout": map[string]any{"version": 1, "widgets": []any{}},
+	})
+	rec := doRequest(t, h, http.MethodPost, "/api/v1/dashboards/seed", body)
+	require.Equal(t, http.StatusCreated, rec.Code, rec.Body.String())
+
+	// Verify the row was persisted with seed_key = "kiosk".
+	var ent Entity
+	require.NoError(t, db.Where("tenant_id = ? AND household_id = ? AND seed_key = ?", tid, hid, "kiosk").First(&ent).Error)
+	require.NotNil(t, ent.SeedKey)
+	require.Equal(t, "kiosk", *ent.SeedKey)
+}
+
+func TestSeedHandlerRejectsMalformedKey(t *testing.T) {
+	db := setupTestDB(t)
+	tid, hid, uid := uuid.New(), uuid.New(), uuid.New()
+	h := newTestServer(t, db, tenantctx.New(tid, hid, uid))
+
+	body := jsonapiBody("dashboards", map[string]any{
+		"name":   "Kiosk",
+		"key":    "Has Spaces",
+		"layout": map[string]any{"version": 1, "widgets": []any{}},
+	})
+	rec := doRequest(t, h, http.MethodPost, "/api/v1/dashboards/seed", body)
+	require.Equal(t, http.StatusUnprocessableEntity, rec.Code, rec.Body.String())
+
+	var doc jsonapiErrorDoc
+	require.NoError(t, json.Unmarshal(rec.Body.Bytes(), &doc))
+	require.Len(t, doc.Errors, 1)
+	require.NotNil(t, doc.Errors[0].Source)
+	require.Equal(t, "/data/attributes/key", doc.Errors[0].Source.Pointer)
+}
+
 func TestDeleteHouseholdAnyMemberReturns204(t *testing.T) {
 	db := setupTestDB(t)
 	tid, hid := uuid.New(), uuid.New()

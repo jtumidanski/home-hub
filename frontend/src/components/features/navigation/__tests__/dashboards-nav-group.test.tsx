@@ -90,7 +90,7 @@ describe("DashboardsNavGroup", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     mockUseHouseholdPreferences.mockReturnValue({
-      data: { data: { id: "prefs-1", type: "householdPreferences", attributes: { defaultDashboardId: null, createdAt: "", updatedAt: "" } } },
+      data: { data: { id: "prefs-1", type: "householdPreferences", attributes: { defaultDashboardId: null, kioskDashboardSeeded: false, createdAt: "", updatedAt: "" } } },
     });
   });
 

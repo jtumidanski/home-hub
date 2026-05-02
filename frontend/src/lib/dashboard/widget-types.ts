@@ -8,6 +8,11 @@ export const WIDGET_TYPES = [
   "packages-summary",
   "habits-today",
   "workout-today",
+  "tasks-today",
+  "reminders-today",
+  "weather-tomorrow",
+  "calendar-tomorrow",
+  "tasks-tomorrow",
 ] as const;
 
 export type WidgetType = (typeof WIDGET_TYPES)[number];

@@ -1,11 +1,16 @@
 [
   "calendar-today",
+  "calendar-tomorrow",
   "habits-today",
   "meal-plan-today",
   "overdue-summary",
   "packages-summary",
   "reminders-summary",
+  "reminders-today",
   "tasks-summary",
+  "tasks-today",
+  "tasks-tomorrow",
   "weather",
+  "weather-tomorrow",
   "workout-today"
 ]
