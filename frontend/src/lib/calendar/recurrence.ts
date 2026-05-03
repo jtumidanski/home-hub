@@ -17,7 +17,10 @@ export function eventStartInstant(
 // chosen date specifically via Intl.DateTimeFormat parts so DST transitions
 // produce the right offset.
 export function formatUntilUTC(endsOnDate: string, timeZone: string): string {
-  const [y, m, d] = endsOnDate.split("-").map(Number);
+  const [yStr, mStr, dStr] = endsOnDate.split("-");
+  const y = Number(yStr);
+  const m = Number(mStr);
+  const d = Number(dStr);
   // Construct the wall-clock end-of-day as if it were UTC so we can compute
   // the offset induced by the named zone.
   const asUTC = Date.UTC(y, m - 1, d, 23, 59, 59);
@@ -36,7 +39,7 @@ export function formatUntilUTC(endsOnDate: string, timeZone: string): string {
   // What does that UTC instant LOOK LIKE in the named zone?
   const parts = Object.fromEntries(
     fmt.formatToParts(new Date(asUTC)).map((p) => [p.type, p.value]),
-  );
+  ) as Record<string, string | undefined>;
   const localAsUTC = Date.UTC(
     Number(parts.year),
     Number(parts.month) - 1,
