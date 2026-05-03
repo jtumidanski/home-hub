@@ -1,0 +1,44 @@
+{
+  "service": "calendar-service",
+  "path": "services/calendar-service",
+  "scope": "task-047 Go diff: internal/event/recurrence_validator.go (new), recurrence_validator_test.go (new), rest.go (UpdateEventRequest.Recurrence), resource.go (validateRecurrenceOrWriteError + wiring)",
+  "date": "2026-05-02",
+  "build": "pass",
+  "testsPassed": 8,
+  "testsFailed": 0,
+  "overallStatus": "pass",
+  "domains": [
+    {
+      "name": "internal/event",
+      "type": "domain",
+      "checks": [
+        { "id": "DOM-01", "name": "builder.go exists", "status": "pass", "evidence": "services/calendar-service/internal/event/builder.go:37" },
+        { "id": "DOM-02", "name": "ToEntity() method", "status": "pass", "evidence": "services/calendar-service/internal/event/entity.go:41" },
+        { "id": "DOM-03", "name": "Make(Entity) function", "status": "pass", "evidence": "services/calendar-service/internal/event/entity.go:65" },
+        { "id": "DOM-04", "name": "Transform function", "status": "pass", "evidence": "services/calendar-service/internal/event/rest.go:84" },
+        { "id": "DOM-05", "name": "TransformSlice function", "status": "pass", "evidence": "services/calendar-service/internal/event/rest.go:88; resource.go:80 uses TransformSliceWithPrivacy" },
+        { "id": "DOM-06", "name": "Processor accepts FieldLogger", "status": "pass", "evidence": "services/calendar-service/internal/event/processor.go:54" },
+        { "id": "DOM-07", "name": "Handlers pass d.Logger()", "status": "pass", "evidence": "services/calendar-service/internal/event/resource.go:124,125,126,168,169,170" },
+        { "id": "DOM-08", "name": "POST/PATCH use RegisterInputHandler", "status": "pass", "evidence": "services/calendar-service/internal/event/resource.go:30 (POST line 34), resource.go:31 (PATCH line 35)" },
+        { "id": "DOM-09", "name": "Transform errors handled", "status": "pass", "evidence": "services/calendar-service/internal/event/resource.go:81-85; resource.go:178-182" },
+        { "id": "DOM-10", "name": "Test DB has tenant callbacks", "status": "pass", "evidence": "services/calendar-service/internal/event/processor_test.go:22" },
+        { "id": "DOM-11", "name": "Providers use lazy evaluation", "status": "pass", "evidence": "services/calendar-service/internal/event/provider.go (unchanged by task; existing database.Query/SliceQuery usage)" },
+        { "id": "DOM-12", "name": "No os.Getenv() in handlers", "status": "pass", "evidence": "services/calendar-service/internal/event/resource.go: zero grep hits for os.Getenv" },
+        { "id": "DOM-13", "name": "No cross-domain logic in handlers", "status": "pass", "evidence": "services/calendar-service/internal/event/resource.go:120 (validation gate); orchestration in proc.CreateEventOnGoogle/UpdateEventOnGoogle" },
+        { "id": "DOM-14", "name": "Handlers don't call providers directly", "status": "pass", "evidence": "services/calendar-service/internal/event/resource.go: only Processor methods invoked" },
+        { "id": "DOM-15", "name": "No direct entity creation in handlers", "status": "pass", "evidence": "services/calendar-service/internal/event/resource.go: zero grep hits for db.Create/Save/Delete" },
+        { "id": "DOM-16", "name": "administrator.go exists for writes", "status": "pass", "evidence": "services/calendar-service/internal/event/administrator.go:35" },
+        { "id": "DOM-17", "name": "Domain error -> HTTP status mapping", "status": "pass", "evidence": "services/calendar-service/internal/event/resource.go:234-254 (handleMutationError); resource.go:228 maps recurrence validation -> 422 + JSON:API code" },
+        { "id": "DOM-18", "name": "JSON:API interface on REST models", "status": "pass", "evidence": "services/calendar-service/internal/event/rest.go:24-33,48-57,76-82" },
+        { "id": "DOM-19", "name": "Flat request structure", "status": "pass", "evidence": "services/calendar-service/internal/event/rest.go:12-22,35-46 (no nested Data/Type/Attributes); Recurrence *[]string at rest.go:45" },
+        { "id": "DOM-20", "name": "Table-driven tests", "status": "pass", "evidence": "services/calendar-service/internal/event/recurrence_validator_test.go:9,73,117 (each tests slice + t.Run)" }
+      ]
+    }
+  ],
+  "subDomains": [],
+  "security": [
+    { "id": "SEC-04", "name": "No hardcoded secrets in changed files", "status": "pass", "evidence": "recurrence_validator.go:11-18 (only numeric/string constants); rest.go diff (Recurrence pointer field); resource.go diff (validateRecurrenceOrWriteError helper) — zero secret material" }
+  ],
+  "blocking": [],
+  "nonBlocking": []
+}
