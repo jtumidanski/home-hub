@@ -59,3 +59,23 @@ export function formatUntilUTC(endsOnDate: string, timeZone: string): string {
     `${pad(utcInstant.getUTCSeconds())}Z`
   );
 }
+
+export function composeRecurrenceRule(
+  preset: string,
+  mode: EndsMode,
+  endsOnDate: string,
+  endsAfterCount: number,
+  _startDate: string,
+  _startTime: string,
+  timeZone: string,
+): string[] | undefined {
+  if (preset === "") return undefined;
+  switch (mode) {
+    case "on":
+      return [`${preset};UNTIL=${formatUntilUTC(endsOnDate, timeZone)}`];
+    case "after":
+      return [`${preset};COUNT=${endsAfterCount}`];
+    case "never":
+      return [preset];
+  }
+}

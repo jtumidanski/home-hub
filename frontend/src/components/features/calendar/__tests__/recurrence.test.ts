@@ -1,5 +1,9 @@
 import { describe, it, expect } from "vitest";
-import { eventStartInstant, formatUntilUTC } from "@/lib/calendar/recurrence";
+import {
+  composeRecurrenceRule,
+  eventStartInstant,
+  formatUntilUTC,
+} from "@/lib/calendar/recurrence";
 
 describe("eventStartInstant", () => {
   it("returns the local-midnight Date for an all-day event", () => {
@@ -32,5 +36,49 @@ describe("formatUntilUTC", () => {
 
   it("produces an unchanged value for UTC", () => {
     expect(formatUntilUTC("2026-06-10", "UTC")).toBe("20260610T235959Z");
+  });
+});
+
+describe("composeRecurrenceRule", () => {
+  const presets = [
+    "RRULE:FREQ=DAILY",
+    "RRULE:FREQ=WEEKLY",
+    "RRULE:FREQ=WEEKLY;BYDAY=MO,TU,WE,TH,FR",
+    "RRULE:FREQ=MONTHLY",
+    "RRULE:FREQ=YEARLY",
+  ];
+
+  it("returns undefined when preset is empty", () => {
+    expect(
+      composeRecurrenceRule("", "on", "2026-06-10", 10, "2026-05-06", "09:00", "UTC"),
+    ).toBeUndefined();
+  });
+
+  it("appends UNTIL for mode=on, across all presets", () => {
+    for (const preset of presets) {
+      const out = composeRecurrenceRule(preset, "on", "2026-06-10", 10, "2026-05-06", "09:00", "UTC");
+      expect(out).toEqual([`${preset};UNTIL=20260610T235959Z`]);
+    }
+  });
+
+  it("appends COUNT for mode=after", () => {
+    const out = composeRecurrenceRule(
+      "RRULE:FREQ=DAILY", "after", "", 5, "2026-05-06", "09:00", "America/New_York",
+    );
+    expect(out).toEqual(["RRULE:FREQ=DAILY;COUNT=5"]);
+  });
+
+  it("returns the preset unchanged for mode=never", () => {
+    const out = composeRecurrenceRule(
+      "RRULE:FREQ=WEEKLY", "never", "", 0, "2026-05-06", "09:00", "America/New_York",
+    );
+    expect(out).toEqual(["RRULE:FREQ=WEEKLY"]);
+  });
+
+  it("converts UNTIL to UTC for non-UTC zones (winter)", () => {
+    const out = composeRecurrenceRule(
+      "RRULE:FREQ=WEEKLY", "on", "2026-01-15", 0, "2026-01-01", "09:00", "America/New_York",
+    );
+    expect(out).toEqual(["RRULE:FREQ=WEEKLY;UNTIL=20260116T045959Z"]);
   });
 });
