@@ -1,4 +1,4 @@
-import { useEffect, useMemo } from "react";
+import { useEffect, useMemo, useRef } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { toast } from "sonner";
@@ -90,12 +90,52 @@ export function EventFormDialog({
     }
   }, [open, defaults, isEdit, defaultConnection, sources, form]);
 
+  const previousRecurrenceRef = useRef(defaults.recurrence);
   // eslint-disable-next-line react-hooks/incompatible-library -- form.watch() returns unmemoizable values; library-level React Compiler limitation
   const allDay = form.watch("allDay");
   // eslint-disable-next-line react-hooks/incompatible-library -- form.watch() returns unmemoizable values; library-level React Compiler limitation
   const recurrence = form.watch("recurrence");
   // eslint-disable-next-line react-hooks/incompatible-library -- form.watch() returns unmemoizable values; library-level React Compiler limitation
   const endsMode = form.watch("endsMode");
+  // eslint-disable-next-line react-hooks/incompatible-library -- form.watch() returns unmemoizable values; library-level React Compiler limitation
+  const startDate = form.watch("startDate");
+  // eslint-disable-next-line react-hooks/incompatible-library -- form.watch() returns unmemoizable values; library-level React Compiler limitation
+  const endsOnDateUserEdited = form.watch("endsOnDateUserEdited");
+
+  function addOneYear(yyyymmdd: string): string {
+    if (!yyyymmdd) return "";
+    const [yStr, mStr, dStr] = yyyymmdd.split("-");
+    const y = Number(yStr);
+    const m = Number(mStr);
+    const d = Number(dStr);
+    const next = new Date(y + 1, m - 1, d);
+    const yy = next.getFullYear();
+    const mm = String(next.getMonth() + 1).padStart(2, "0");
+    const dd = String(next.getDate()).padStart(2, "0");
+    return `${yy}-${mm}-${dd}`;
+  }
+
+  useEffect(() => {
+    const prev = previousRecurrenceRef.current;
+    if (prev === recurrence) return;
+    if (prev === "" && recurrence !== "") {
+      form.setValue("endsOnDate", addOneYear(form.getValues("startDate")));
+      form.setValue("endsOnDateUserEdited", false);
+    } else if (prev !== "" && recurrence === "") {
+      form.setValue("endsMode", "on");
+      form.setValue("endsOnDate", "");
+      form.setValue("endsAfterCount", 10);
+      form.setValue("endsNeverConfirmed", false);
+      form.setValue("endsOnDateUserEdited", false);
+    }
+    previousRecurrenceRef.current = recurrence;
+  }, [recurrence, form]);
+
+  useEffect(() => {
+    if (recurrence !== "" && endsMode === "on" && !endsOnDateUserEdited) {
+      form.setValue("endsOnDate", addOneYear(startDate));
+    }
+  }, [startDate, recurrence, endsMode, endsOnDateUserEdited, form]);
 
   const handleOpenChange = (next: boolean) => {
     if (form.formState.isSubmitting) return;
