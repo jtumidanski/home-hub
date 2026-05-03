@@ -22,15 +22,21 @@ function makeConnection(): CalendarConnection {
     type: "calendar-connections",
     attributes: {
       provider: "google",
-      providerAccountId: "x",
-      providerEmail: "x@example.com",
       status: "connected",
+      email: "x@example.com",
+      userDisplayName: "Tester",
+      userColor: "#000",
       writeAccess: true,
-      lastSyncedAt: null,
-      lastError: null,
+      lastSyncAt: null,
+      lastSyncAttemptAt: null,
+      lastSyncEventCount: 0,
+      errorCode: null,
+      errorMessage: null,
+      lastErrorAt: null,
+      consecutiveFailures: 0,
       createdAt: "2026-01-01T00:00:00Z",
     },
-  } as CalendarConnection;
+  };
 }
 
 function makeSource(): CalendarSource {
@@ -38,14 +44,12 @@ function makeSource(): CalendarSource {
     id: "src-1",
     type: "calendar-sources",
     attributes: {
-      connectionId: "conn-1",
       name: "Primary",
       primary: true,
-      colorHex: "#000",
-      timeZone: "UTC",
       visible: true,
+      color: "#000",
     },
-  } as CalendarSource;
+  };
 }
 
 describe("EventFormDialog — Ends control", () => {
