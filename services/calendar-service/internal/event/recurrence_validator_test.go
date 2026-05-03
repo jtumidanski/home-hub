@@ -57,3 +57,56 @@ func TestParseRRULE(t *testing.T) {
 		})
 	}
 }
+
+func mustTime(t *testing.T, s string) time.Time {
+	t.Helper()
+	v, err := time.Parse(time.RFC3339, s)
+	if err != nil {
+		t.Fatalf("bad time %q: %v", s, err)
+	}
+	return v
+}
+
+func TestValidateRecurrence(t *testing.T) {
+	start := mustTime(t, "2026-05-06T09:00:00Z")
+
+	tests := []struct {
+		name    string
+		input   []string
+		start   time.Time
+		wantNil bool
+		wantCode string
+	}{
+		{name: "nil slice", input: nil, start: start, wantNil: true},
+		{name: "empty slice", input: []string{}, start: start, wantNil: true},
+		{name: "valid until", input: []string{"RRULE:FREQ=WEEKLY;UNTIL=20260611T035959Z"}, start: start, wantNil: true},
+		{name: "valid count", input: []string{"RRULE:FREQ=DAILY;COUNT=5"}, start: start, wantNil: true},
+		{name: "open-ended", input: []string{"RRULE:FREQ=WEEKLY"}, start: start, wantCode: codeUnbounded},
+		{name: "until > 5y", input: []string{"RRULE:FREQ=WEEKLY;UNTIL=20320101T000000Z"}, start: start, wantCode: codeTooLong},
+		{name: "count zero", input: []string{"RRULE:FREQ=WEEKLY;COUNT=0"}, start: start, wantCode: codeCountRange},
+		{name: "count 731", input: []string{"RRULE:FREQ=WEEKLY;COUNT=731"}, start: start, wantCode: codeCountRange},
+		{name: "case-insensitive", input: []string{"rrule:freq=weekly;until=20260601t000000z"}, start: start, wantNil: true},
+		{name: "until date-only ok", input: []string{"RRULE:FREQ=WEEKLY;UNTIL=20260601"}, start: start, wantNil: true},
+		{name: "EXDATE alongside RRULE only", input: []string{"EXDATE:20260513T090000Z", "RRULE:FREQ=WEEKLY;COUNT=5"}, start: start, wantNil: true},
+		{name: "malformed UNTIL -> unbounded", input: []string{"RRULE:FREQ=WEEKLY;UNTIL=garbage"}, start: start, wantCode: codeUnbounded},
+		{name: "zero start skips too-long check", input: []string{"RRULE:FREQ=WEEKLY;UNTIL=20990101T000000Z"}, start: time.Time{}, wantNil: true},
+	}
+
+	for _, tc := range tests {
+		t.Run(tc.name, func(t *testing.T) {
+			err := ValidateRecurrence(tc.input, tc.start)
+			if tc.wantNil {
+				if err != nil {
+					t.Fatalf("expected nil, got %+v", err)
+				}
+				return
+			}
+			if err == nil {
+				t.Fatalf("expected error code %q, got nil", tc.wantCode)
+			}
+			if err.Code != tc.wantCode {
+				t.Fatalf("code = %q, want %q", err.Code, tc.wantCode)
+			}
+		})
+	}
+}

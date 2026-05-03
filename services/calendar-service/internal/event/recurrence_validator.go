@@ -70,3 +70,43 @@ func parseUntil(s string) (time.Time, error) {
 	}
 	return time.Time{}, errors.New("invalid UNTIL value: " + s)
 }
+
+// ValidateRecurrence enforces the §4.6 PRD checks on every "RRULE:" entry of
+// the slice. Non-RRULE components (EXDATE, RDATE, etc.) are ignored. Returns
+// the first failure, or nil if every RRULE line is bounded and within range.
+// If eventStart.IsZero(), the 5-year window check is skipped (the count and
+// unbounded checks still run); this is used by the update handler where the
+// start time may not be supplied.
+func ValidateRecurrence(recurrence []string, eventStart time.Time) *RecurrenceError {
+	for _, line := range recurrence {
+		trimmed := strings.TrimSpace(line)
+		if !strings.HasPrefix(strings.ToUpper(trimmed), "RRULE:") {
+			continue
+		}
+		until, count, hasUntil, hasCount, err := parseRRULE(trimmed)
+		if err != nil || (!hasUntil && !hasCount) {
+			return &RecurrenceError{
+				Code:    codeUnbounded,
+				Detail:  "Recurring events must specify an end date (UNTIL=) or occurrence count (COUNT=)",
+				RuleRaw: trimmed,
+			}
+		}
+		if hasCount && (count < minOccurrences || count > maxOccurrences) {
+			return &RecurrenceError{
+				Code:    codeCountRange,
+				Detail:  "COUNT must be between 1 and 730",
+				RuleRaw: trimmed,
+			}
+		}
+		if hasUntil && !eventStart.IsZero() {
+			if until.Sub(eventStart) > maxUntilWindow {
+				return &RecurrenceError{
+					Code:    codeTooLong,
+					Detail:  "UNTIL must be no more than 5 years after the event start",
+					RuleRaw: trimmed,
+				}
+			}
+		}
+	}
+	return nil
+}
