@@ -169,8 +169,13 @@ describe("EventFormDialog — Ends control", () => {
     await user.click(screen.getByRole("button", { name: /create event/i }));
     await waitFor(() => expect(mockCreate).toHaveBeenCalledTimes(1));
     const rule = mockCreate.mock.calls[0]![0].data.recurrence[0] as string;
-    expect(rule.startsWith("RRULE:FREQ=WEEKLY;UNTIL=20260611T")).toBe(true);
-    expect(rule.endsWith("Z")).toBe(true);
+    expect(rule).toMatch(/^RRULE:FREQ=WEEKLY;UNTIL=\d{8}T\d{6}Z$/);
+    const untilStr = rule.split("UNTIL=")[1]!;
+    const iso = `${untilStr.slice(0, 4)}-${untilStr.slice(4, 6)}-${untilStr.slice(6, 8)}T${untilStr.slice(9, 11)}:${untilStr.slice(11, 13)}:${untilStr.slice(13, 15)}Z`;
+    const t = Date.parse(iso);
+    expect(t).toBeGreaterThanOrEqual(Date.parse("2026-06-10T00:00:00Z"));
+    expect(t).toBeLessThanOrEqual(Date.parse("2026-06-11T23:59:59Z"));
+    expect(untilStr.slice(13, 15)).toBe("59");
   });
 
   it("submits a COUNT-terminated RRULE for mode=after", async () => {
