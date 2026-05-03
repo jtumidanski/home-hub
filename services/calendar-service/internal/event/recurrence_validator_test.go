@@ -110,3 +110,33 @@ func TestValidateRecurrence(t *testing.T) {
 		})
 	}
 }
+
+func TestValidateRecurrence_HandlerScenarios(t *testing.T) {
+	start := mustTime(t, "2026-05-06T09:00:00-04:00")
+
+	cases := []struct {
+		name string
+		rule string
+		want string
+	}{
+		{"weekly may6 to jun10 inclusive", "RRULE:FREQ=WEEKLY;UNTIL=20260611T035959Z", ""},
+		{"daily count 5", "RRULE:FREQ=DAILY;COUNT=5", ""},
+		{"open-ended weekly", "RRULE:FREQ=WEEKLY", codeUnbounded},
+		{"until 5y+2d", "RRULE:FREQ=WEEKLY;UNTIL=20310509T000000Z", codeTooLong},
+		{"count 731", "RRULE:FREQ=WEEKLY;COUNT=731", codeCountRange},
+	}
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			err := ValidateRecurrence([]string{tc.rule}, start)
+			if tc.want == "" {
+				if err != nil {
+					t.Fatalf("expected nil, got %+v", err)
+				}
+				return
+			}
+			if err == nil || err.Code != tc.want {
+				t.Fatalf("got %+v, want code %q", err, tc.want)
+			}
+		})
+	}
+}
