@@ -351,15 +351,17 @@ export function EventFormDialog({
                         <FormItem>
                           <FormControl>
                             <div className="space-y-2">
-                              <label className="flex items-center gap-2 text-sm">
-                                <input
-                                  type="radio"
-                                  name="endsMode"
-                                  value="on"
-                                  checked={field.value === "on"}
-                                  onChange={() => field.onChange("on")}
-                                />
-                                On
+                              <div className="flex items-center gap-2 text-sm">
+                                <label className="flex items-center gap-2">
+                                  <input
+                                    type="radio"
+                                    name="endsMode"
+                                    value="on"
+                                    checked={field.value === "on"}
+                                    onChange={() => field.onChange("on")}
+                                  />
+                                  On
+                                </label>
                                 <FormField
                                   control={form.control}
                                   name="endsOnDate"
@@ -377,16 +379,18 @@ export function EventFormDialog({
                                     />
                                   )}
                                 />
-                              </label>
-                              <label className="flex items-center gap-2 text-sm">
-                                <input
-                                  type="radio"
-                                  name="endsMode"
-                                  value="after"
-                                  checked={field.value === "after"}
-                                  onChange={() => field.onChange("after")}
-                                />
-                                After
+                              </div>
+                              <div className="flex items-center gap-2 text-sm">
+                                <label className="flex items-center gap-2">
+                                  <input
+                                    type="radio"
+                                    name="endsMode"
+                                    value="after"
+                                    checked={field.value === "after"}
+                                    onChange={() => field.onChange("after")}
+                                  />
+                                  After
+                                </label>
                                 <FormField
                                   control={form.control}
                                   name="endsAfterCount"
@@ -404,7 +408,7 @@ export function EventFormDialog({
                                   )}
                                 />
                                 <span className="text-muted-foreground">occurrences</span>
-                              </label>
+                              </div>
                               <label className="flex items-center gap-2 text-sm">
                                 <input
                                   type="radio"
