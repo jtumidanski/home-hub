@@ -153,6 +153,18 @@ func updateEventHandler(db *gorm.DB, gcClient *googlecal.Client, enc *crypto.Enc
 				return
 			}
 
+			if input.Recurrence != nil {
+				var eventStart time.Time
+				if input.Start != nil && *input.Start != "" {
+					if parsed, perr := time.Parse(time.RFC3339, *input.Start); perr == nil {
+						eventStart = parsed
+					}
+				}
+				if !validateRecurrenceOrWriteError(d, w, *input.Recurrence, eventStart, connID) {
+					return
+				}
+			}
+
 			connProc := connection.NewProcessor(d.Logger(), r.Context(), db)
 			srcProc := source.NewProcessor(d.Logger(), r.Context(), db)
 			proc := NewMutationProcessor(d.Logger(), r.Context(), db, connProc, srcProc)
