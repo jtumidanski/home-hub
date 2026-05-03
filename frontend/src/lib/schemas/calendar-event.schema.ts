@@ -1,5 +1,7 @@
 import { z } from "zod";
 
+const FIVE_YEARS_PLUS_CUSHION_MS = 5 * 365 * 24 * 60 * 60 * 1000 + 24 * 60 * 60 * 1000;
+
 export const eventFormSchema = z
   .object({
     title: z.string().min(1, "Title is required").max(1024, "Title must be 1024 characters or fewer"),
@@ -13,6 +15,11 @@ export const eventFormSchema = z
     description: z.string().max(8192, "Description must be 8192 characters or fewer"),
     calendarId: z.string().min(1, "Calendar is required"),
     connectionId: z.string(),
+    endsMode: z.enum(["on", "after", "never"]),
+    endsOnDate: z.string(),
+    endsAfterCount: z.number().int(),
+    endsNeverConfirmed: z.boolean(),
+    endsOnDateUserEdited: z.boolean(),
   })
   .refine(
     (data) => {
@@ -24,6 +31,41 @@ export const eventFormSchema = z
       return end >= start;
     },
     { message: "End must be after start", path: ["endDate"] },
+  )
+  .refine(
+    (data) => {
+      if (data.recurrence === "" || data.endsMode !== "on") return true;
+      if (!data.endsOnDate) return false;
+      const start = new Date(`${data.startDate}T${data.allDay ? "00:00" : data.startTime || "00:00"}`);
+      const end = new Date(`${data.endsOnDate}T23:59:59`);
+      if (Number.isNaN(end.getTime()) || Number.isNaN(start.getTime())) return false;
+      return end.getTime() > start.getTime();
+    },
+    { message: "End date must be after the event start", path: ["endsOnDate"] },
+  )
+  .refine(
+    (data) => {
+      if (data.recurrence === "" || data.endsMode !== "on" || !data.endsOnDate) return true;
+      const start = new Date(`${data.startDate}T${data.allDay ? "00:00" : data.startTime || "00:00"}`);
+      const end = new Date(`${data.endsOnDate}T23:59:59`);
+      if (Number.isNaN(end.getTime()) || Number.isNaN(start.getTime())) return true;
+      return end.getTime() - start.getTime() <= FIVE_YEARS_PLUS_CUSHION_MS;
+    },
+    { message: "End date cannot be more than 5 years out", path: ["endsOnDate"] },
+  )
+  .refine(
+    (data) => {
+      if (data.recurrence === "" || data.endsMode !== "after") return true;
+      return Number.isInteger(data.endsAfterCount) && data.endsAfterCount >= 1 && data.endsAfterCount <= 730;
+    },
+    { message: "Must be between 1 and 730 occurrences", path: ["endsAfterCount"] },
+  )
+  .refine(
+    (data) => {
+      if (data.recurrence === "" || data.endsMode !== "never") return true;
+      return data.endsNeverConfirmed === true;
+    },
+    { message: "Confirm you understand this event has no end date", path: ["endsNeverConfirmed"] },
   );
 
 export type EventFormData = z.infer<typeof eventFormSchema>;
@@ -69,5 +111,10 @@ export function createEventDefaults(prefilledStart?: Date): EventFormData {
     description: "",
     calendarId: "",
     connectionId: "",
+    endsMode: "on",
+    endsOnDate: "",
+    endsAfterCount: 10,
+    endsNeverConfirmed: false,
+    endsOnDateUserEdited: false,
   };
 }

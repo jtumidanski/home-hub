@@ -1,4 +1,4 @@
-import { useEffect, useMemo } from "react";
+import { useEffect, useMemo, useRef } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { toast } from "sonner";
@@ -10,6 +10,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { useCreateEvent, useUpdateEvent } from "@/lib/hooks/api/use-calendar";
 import { createErrorFromUnknown } from "@/lib/api/errors";
+import { composeRecurrenceRule } from "@/lib/calendar/recurrence";
 import {
   eventFormSchema,
   type EventFormData,
@@ -64,6 +65,11 @@ export function EventFormDialog({
         description: attrs.description ?? "",
         calendarId: attrs.sourceId,
         connectionId: attrs.connectionId,
+        endsMode: "on" as const,
+        endsOnDate: "",
+        endsAfterCount: 10,
+        endsNeverConfirmed: false,
+        endsOnDateUserEdited: false,
       };
     }
     return createEventDefaults(prefilledStart);
@@ -85,8 +91,52 @@ export function EventFormDialog({
     }
   }, [open, defaults, isEdit, defaultConnection, sources, form]);
 
+  const previousRecurrenceRef = useRef(defaults.recurrence);
   // eslint-disable-next-line react-hooks/incompatible-library -- form.watch() returns unmemoizable values; library-level React Compiler limitation
   const allDay = form.watch("allDay");
+  // eslint-disable-next-line react-hooks/incompatible-library -- form.watch() returns unmemoizable values; library-level React Compiler limitation
+  const recurrence = form.watch("recurrence");
+  // eslint-disable-next-line react-hooks/incompatible-library -- form.watch() returns unmemoizable values; library-level React Compiler limitation
+  const endsMode = form.watch("endsMode");
+  // eslint-disable-next-line react-hooks/incompatible-library -- form.watch() returns unmemoizable values; library-level React Compiler limitation
+  const startDate = form.watch("startDate");
+  // eslint-disable-next-line react-hooks/incompatible-library -- form.watch() returns unmemoizable values; library-level React Compiler limitation
+  const endsOnDateUserEdited = form.watch("endsOnDateUserEdited");
+
+  function addOneYear(yyyymmdd: string): string {
+    if (!yyyymmdd) return "";
+    const [yStr, mStr, dStr] = yyyymmdd.split("-");
+    const y = Number(yStr);
+    const m = Number(mStr);
+    const d = Number(dStr);
+    const next = new Date(y + 1, m - 1, d);
+    const yy = next.getFullYear();
+    const mm = String(next.getMonth() + 1).padStart(2, "0");
+    const dd = String(next.getDate()).padStart(2, "0");
+    return `${yy}-${mm}-${dd}`;
+  }
+
+  useEffect(() => {
+    const prev = previousRecurrenceRef.current;
+    if (prev === recurrence) return;
+    if (prev === "" && recurrence !== "") {
+      form.setValue("endsOnDate", addOneYear(form.getValues("startDate")));
+      form.setValue("endsOnDateUserEdited", false);
+    } else if (prev !== "" && recurrence === "") {
+      form.setValue("endsMode", "on");
+      form.setValue("endsOnDate", "");
+      form.setValue("endsAfterCount", 10);
+      form.setValue("endsNeverConfirmed", false);
+      form.setValue("endsOnDateUserEdited", false);
+    }
+    previousRecurrenceRef.current = recurrence;
+  }, [recurrence, form]);
+
+  useEffect(() => {
+    if (recurrence !== "" && endsMode === "on" && !endsOnDateUserEdited) {
+      form.setValue("endsOnDate", addOneYear(startDate));
+    }
+  }, [startDate, recurrence, endsMode, endsOnDateUserEdited, form]);
 
   const handleOpenChange = (next: boolean) => {
     if (form.formState.isSubmitting) return;
@@ -147,7 +197,15 @@ export function EventFormDialog({
             allDay: values.allDay,
             location: values.location || undefined,
             description: values.description || undefined,
-            recurrence: values.recurrence ? [values.recurrence] : undefined,
+            recurrence: composeRecurrenceRule(
+              values.recurrence,
+              values.endsMode,
+              values.endsOnDate,
+              values.endsAfterCount,
+              values.startDate,
+              values.startTime,
+              timeZone,
+            ),
             timeZone,
           },
         });
@@ -191,7 +249,7 @@ export function EventFormDialog({
                       type="checkbox"
                       checked={field.value}
                       onChange={field.onChange}
-                      className="h-4 w-4 rounded border-gray-300"
+                      className="h-4 w-4 rounded border-input"
                     />
                   </FormControl>
                   <FormLabel className="!mt-0">All day</FormLabel>
@@ -260,28 +318,151 @@ export function EventFormDialog({
             </div>
 
             {!isEdit && (
-              <FormField
-                control={form.control}
-                name="recurrence"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Repeats</FormLabel>
-                    <FormControl>
-                      <select
-                        value={field.value}
-                        onChange={field.onChange}
-                        className="flex h-8 w-full rounded-lg border border-input bg-popover text-popover-foreground px-2.5 py-1.5 text-sm"
-                      >
-                        {RECURRENCE_OPTIONS.map((opt) => (
-                          <option key={opt.value} value={opt.value}>
-                            {opt.label}
-                          </option>
-                        ))}
-                      </select>
-                    </FormControl>
-                  </FormItem>
+              <>
+                <FormField
+                  control={form.control}
+                  name="recurrence"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Repeats</FormLabel>
+                      <FormControl>
+                        <select
+                          value={field.value}
+                          onChange={field.onChange}
+                          className="flex h-8 w-full rounded-lg border border-input bg-popover text-popover-foreground px-2.5 py-1.5 text-sm"
+                        >
+                          {RECURRENCE_OPTIONS.map((opt) => (
+                            <option key={opt.value} value={opt.value}>
+                              {opt.label}
+                            </option>
+                          ))}
+                        </select>
+                      </FormControl>
+                    </FormItem>
+                  )}
+                />
+                {recurrence !== "" && (
+                  <div className="space-y-2 rounded-lg border border-input p-3">
+                    <FormLabel>Ends</FormLabel>
+                    <FormField
+                      control={form.control}
+                      name="endsMode"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormControl>
+                            <div className="space-y-2">
+                              <div className="flex items-center gap-2 text-sm">
+                                <label className="flex items-center gap-2">
+                                  <input
+                                    type="radio"
+                                    name="endsMode"
+                                    value="on"
+                                    checked={field.value === "on"}
+                                    onChange={() => field.onChange("on")}
+                                  />
+                                  On
+                                </label>
+                                <FormField
+                                  control={form.control}
+                                  name="endsOnDate"
+                                  render={({ field: dateField }) => (
+                                    <Input
+                                      type="date"
+                                      aria-label="End date"
+                                      disabled={field.value !== "on"}
+                                      value={dateField.value}
+                                      onChange={(e) => {
+                                        form.setValue("endsOnDateUserEdited", true);
+                                        dateField.onChange(e.target.value);
+                                      }}
+                                      className="h-7 w-40"
+                                    />
+                                  )}
+                                />
+                              </div>
+                              <div className="flex items-center gap-2 text-sm">
+                                <label className="flex items-center gap-2">
+                                  <input
+                                    type="radio"
+                                    name="endsMode"
+                                    value="after"
+                                    checked={field.value === "after"}
+                                    onChange={() => field.onChange("after")}
+                                  />
+                                  After
+                                </label>
+                                <FormField
+                                  control={form.control}
+                                  name="endsAfterCount"
+                                  render={({ field: countField }) => (
+                                    <Input
+                                      type="number"
+                                      aria-label="Occurrences"
+                                      min={1}
+                                      max={730}
+                                      disabled={field.value !== "after"}
+                                      value={countField.value}
+                                      onChange={(e) => countField.onChange(Number(e.target.value))}
+                                      className="h-7 w-20"
+                                    />
+                                  )}
+                                />
+                                <span className="text-muted-foreground">occurrences</span>
+                              </div>
+                              <label className="flex items-center gap-2 text-sm">
+                                <input
+                                  type="radio"
+                                  name="endsMode"
+                                  value="never"
+                                  checked={field.value === "never"}
+                                  onChange={() => field.onChange("never")}
+                                />
+                                Never
+                              </label>
+                            </div>
+                          </FormControl>
+                        </FormItem>
+                      )}
+                    />
+                    {endsMode === "on" && (
+                      <FormField
+                        control={form.control}
+                        name="endsOnDate"
+                        render={() => <FormMessage />}
+                      />
+                    )}
+                    {endsMode === "after" && (
+                      <FormField
+                        control={form.control}
+                        name="endsAfterCount"
+                        render={() => <FormMessage />}
+                      />
+                    )}
+                    {endsMode === "never" && (
+                      <div className="space-y-2 rounded-md border border-border bg-muted p-2 text-sm text-muted-foreground">
+                        <p>This event will repeat forever. Are you sure?</p>
+                        <FormField
+                          control={form.control}
+                          name="endsNeverConfirmed"
+                          render={({ field }) => (
+                            <FormItem>
+                              <label className="flex items-center gap-2">
+                                <input
+                                  type="checkbox"
+                                  checked={field.value}
+                                  onChange={(e) => field.onChange(e.target.checked)}
+                                />
+                                I understand this event has no end date.
+                              </label>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+                      </div>
+                    )}
+                  </div>
                 )}
-              />
+              </>
             )}
 
             <FormField

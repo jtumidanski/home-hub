@@ -111,6 +111,16 @@ func createEventHandler(db *gorm.DB, gcClient *googlecal.Client, enc *crypto.Enc
 				return
 			}
 
+			var eventStart time.Time
+			if input.Start != "" {
+				if parsed, perr := time.Parse(time.RFC3339, input.Start); perr == nil {
+					eventStart = parsed
+				}
+			}
+			if !validateRecurrenceOrWriteError(d, w, input.Recurrence, eventStart, connID) {
+				return
+			}
+
 			connProc := connection.NewProcessor(d.Logger(), r.Context(), db)
 			srcProc := source.NewProcessor(d.Logger(), r.Context(), db)
 			proc := NewMutationProcessor(d.Logger(), r.Context(), db, connProc, srcProc)
@@ -141,6 +151,18 @@ func updateEventHandler(db *gorm.DB, gcClient *googlecal.Client, enc *crypto.Enc
 			if err != nil {
 				server.WriteError(w, http.StatusBadRequest, "Invalid ID", "Invalid event ID")
 				return
+			}
+
+			if input.Recurrence != nil {
+				var eventStart time.Time
+				if input.Start != nil && *input.Start != "" {
+					if parsed, perr := time.Parse(time.RFC3339, *input.Start); perr == nil {
+						eventStart = parsed
+					}
+				}
+				if !validateRecurrenceOrWriteError(d, w, *input.Recurrence, eventStart, connID) {
+					return
+				}
 			}
 
 			connProc := connection.NewProcessor(d.Logger(), r.Context(), db)
@@ -195,6 +217,18 @@ func deleteEventHandler(db *gorm.DB, gcClient *googlecal.Client, enc *crypto.Enc
 			w.WriteHeader(http.StatusNoContent)
 		}
 	}
+}
+
+func validateRecurrenceOrWriteError(d *server.HandlerDependency, w http.ResponseWriter, recurrence []string, eventStart time.Time, connID uuid.UUID) bool {
+	if rerr := ValidateRecurrence(recurrence, eventStart); rerr != nil {
+		d.Logger().WithFields(logrus.Fields{
+			"connID": connID,
+			"rule":   rerr.RuleRaw,
+		}).Info("rejected recurrence")
+		server.WriteJSONAPIError(w, http.StatusUnprocessableEntity, rerr.Code, "Validation Error", rerr.Detail, "")
+		return false
+	}
+	return true
 }
 
 func handleMutationError(d *server.HandlerDependency, w http.ResponseWriter, err error, operation string) {
