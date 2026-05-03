@@ -249,7 +249,7 @@ export function EventFormDialog({
                       type="checkbox"
                       checked={field.value}
                       onChange={field.onChange}
-                      className="h-4 w-4 rounded border-gray-300"
+                      className="h-4 w-4 rounded border-input"
                     />
                   </FormControl>
                   <FormLabel className="!mt-0">All day</FormLabel>
@@ -439,7 +439,7 @@ export function EventFormDialog({
                       />
                     )}
                     {endsMode === "never" && (
-                      <div className="space-y-2 rounded-md bg-yellow-50 p-2 text-sm dark:bg-yellow-950">
+                      <div className="space-y-2 rounded-md border border-border bg-muted p-2 text-sm text-muted-foreground">
                         <p>This event will repeat forever. Are you sure?</p>
                         <FormField
                           control={form.control}
