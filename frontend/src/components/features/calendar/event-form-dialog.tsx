@@ -10,6 +10,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { useCreateEvent, useUpdateEvent } from "@/lib/hooks/api/use-calendar";
 import { createErrorFromUnknown } from "@/lib/api/errors";
+import { composeRecurrenceRule } from "@/lib/calendar/recurrence";
 import {
   eventFormSchema,
   type EventFormData,
@@ -196,7 +197,15 @@ export function EventFormDialog({
             allDay: values.allDay,
             location: values.location || undefined,
             description: values.description || undefined,
-            recurrence: values.recurrence ? [values.recurrence] : undefined,
+            recurrence: composeRecurrenceRule(
+              values.recurrence,
+              values.endsMode,
+              values.endsOnDate,
+              values.endsAfterCount,
+              values.startDate,
+              values.startTime,
+              timeZone,
+            ),
             timeZone,
           },
         });
