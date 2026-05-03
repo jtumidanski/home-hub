@@ -64,6 +64,11 @@ export function EventFormDialog({
         description: attrs.description ?? "",
         calendarId: attrs.sourceId,
         connectionId: attrs.connectionId,
+        endsMode: "on" as const,
+        endsOnDate: "",
+        endsAfterCount: 10,
+        endsNeverConfirmed: false,
+        endsOnDateUserEdited: false,
       };
     }
     return createEventDefaults(prefilledStart);
