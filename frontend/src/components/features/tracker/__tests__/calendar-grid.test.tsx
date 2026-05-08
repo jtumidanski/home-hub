@@ -1,0 +1,123 @@
+import { render, screen, fireEvent, act } from "@testing-library/react";
+import { describe, expect, it, vi, beforeEach, afterEach } from "vitest";
+
+import type { MonthSummaryResponse, TrackerEntry } from "@/types/models/tracker";
+import { CalendarGrid } from "../calendar-grid";
+
+// --- Module-boundary mocks --------------------------------------------------
+
+vi.mock("@/lib/hooks/api/use-trackers", () => ({
+  useMonthSummary: vi.fn(),
+  usePutEntry: () => ({ mutate: vi.fn(), isPending: false }),
+  useDeleteEntry: () => ({ mutate: vi.fn(), isPending: false }),
+  useSkipEntry: () => ({ mutate: vi.fn(), isPending: false }),
+}));
+
+vi.mock("@/context/tenant-context", () => ({
+  useTenant: () => ({
+    household: { id: "h1", attributes: { timezone: "America/New_York" } },
+  }),
+}));
+
+vi.mock("@/lib/date-utils", async () => {
+  const actual = await vi.importActual<typeof import("@/lib/date-utils")>(
+    "@/lib/date-utils",
+  );
+  return {
+    ...actual,
+    getLocalTodayStr: () => "2026-05-15",
+    getLocalMonth: () => "2026-05",
+  };
+});
+
+import { useMonthSummary } from "@/lib/hooks/api/use-trackers";
+
+const mockedUseMonthSummary = vi.mocked(useMonthSummary);
+
+// --- Fixtures ---------------------------------------------------------------
+
+function makeEntry(
+  itemId: string,
+  date: string,
+  overrides: Partial<TrackerEntry["attributes"]> = {},
+): TrackerEntry {
+  return {
+    id: `${itemId}-${date}`,
+    type: "tracker_entries",
+    attributes: {
+      tracking_item_id: itemId,
+      date,
+      value: { rating: "positive" },
+      skipped: false,
+      note: null,
+      ...overrides,
+    },
+  } as unknown as TrackerEntry;
+}
+
+function makeSummary(entries: TrackerEntry[]): MonthSummaryResponse {
+  return {
+    data: {
+      id: "2026-05",
+      type: "tracker_month_summary",
+      attributes: {
+        month: "2026-05",
+        completion: { expected: 30, filled: 0, skipped: 0 },
+        complete: false,
+      },
+      relationships: {
+        items: {
+          data: [
+            {
+              id: "item-1",
+              name: "Run",
+              color: "blue",
+              scale_type: "sentiment",
+              scale_config: null,
+              sort_order: 0,
+              active_from: "2026-01-01",
+              active_until: null,
+              schedule_snapshots: [
+                {
+                  effective_date: "2026-01-01",
+                  schedule: [0, 1, 2, 3, 4, 5, 6],
+                },
+              ],
+            },
+          ],
+        },
+        entries: { data: entries },
+      },
+    },
+  } as unknown as MonthSummaryResponse;
+}
+
+beforeEach(() => {
+  vi.useFakeTimers({ shouldAdvanceTime: true });
+});
+
+afterEach(() => {
+  vi.useRealTimers();
+  vi.restoreAllMocks();
+});
+
+// --- Smoke test -------------------------------------------------------------
+
+describe("CalendarGrid (desktop)", () => {
+  it("renders the desktop calendar table for the given month", () => {
+    mockedUseMonthSummary.mockReturnValue({
+      data: makeSummary([]),
+      isLoading: false,
+    } as ReturnType<typeof useMonthSummary>);
+
+    render(
+      <CalendarGrid month="2026-05" onMonthChange={() => {}} onViewReport={() => {}} />,
+    );
+
+    expect(screen.getByText("May 2026")).toBeInTheDocument();
+    // Both desktop table and mobile day view render the item name; the desktop
+    // table is the surface under test, so target it explicitly.
+    expect(screen.getByRole("table")).toBeInTheDocument();
+    expect(screen.getAllByText("Run").length).toBeGreaterThan(0);
+  });
+});
