@@ -1,6 +1,5 @@
 import { useState, useMemo } from "react";
-import { Outlet, NavLink, Link } from "react-router-dom";
-import { Settings } from "lucide-react";
+import { Outlet, Link } from "react-router-dom";
 import { useAuth } from "@/components/providers/auth-provider";
 import { HouseholdSwitcher } from "@/components/features/households/household-switcher";
 import { MobileHeader } from "@/components/features/navigation/mobile-header";
@@ -8,10 +7,9 @@ import { MobileDrawer } from "@/components/features/navigation/mobile-drawer";
 import { NavGroup } from "@/components/features/navigation/nav-group";
 import { DashboardsNavGroup } from "@/components/features/navigation/dashboards-nav-group";
 import { UserMenu } from "@/components/features/navigation/user-menu";
-import { navGroups, settingsNavItem } from "@/components/features/navigation/nav-config";
+import { navGroups } from "@/components/features/navigation/nav-config";
 import { useNavGroupState } from "@/lib/hooks/use-nav-group-state";
 import { usePackageSummary } from "@/lib/hooks/api/use-packages";
-import { cn } from "@/lib/utils";
 
 export function AppShell() {
   const [drawerOpen, setDrawerOpen] = useState(false);
@@ -51,23 +49,6 @@ export function AppShell() {
             />
           ))}
         </nav>
-
-        <div className="border-t p-2">
-          <NavLink
-            to={settingsNavItem.to}
-            className={({ isActive }) =>
-              cn(
-                "flex items-center gap-3 rounded-md px-3 py-2 text-sm font-medium transition-colors",
-                isActive
-                  ? "bg-sidebar-accent text-sidebar-accent-foreground"
-                  : "text-sidebar-foreground hover:bg-sidebar-accent/50",
-              )
-            }
-          >
-            <Settings className="h-4 w-4" />
-            {settingsNavItem.label}
-          </NavLink>
-        </div>
 
         <div className="border-t">
           <UserMenu />
