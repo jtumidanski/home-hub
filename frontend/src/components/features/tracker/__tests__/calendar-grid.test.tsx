@@ -170,6 +170,60 @@ describe("CalendarGrid (desktop)", () => {
       // Multiline preserved: the popup uses whitespace-pre-wrap.
       expect(tooltip.className).toContain("whitespace-pre-wrap");
     });
+
+    it("renders no border or flange when the entry has no note", () => {
+      mockedUseMonthSummary.mockReturnValue({
+        data: makeSummary([makeEntry("item-1", "2026-05-10", { note: null })]),
+        isLoading: false,
+      } as ReturnType<typeof useMonthSummary>);
+
+      render(
+        <CalendarGrid month="2026-05" onMonthChange={() => {}} onViewReport={() => {}} />,
+      );
+
+      const trigger = screen
+        .getAllByRole("button")
+        .find((b) => b.getAttribute("aria-label")?.startsWith("Run, May 10"))!;
+      expect(trigger.className).not.toContain("border-blue-500");
+      expect(trigger.querySelector('[aria-hidden="true"]')).toBeNull();
+    });
+
+    it("does not render a tooltip on a no-note cell after focus delay", async () => {
+      mockedUseMonthSummary.mockReturnValue({
+        data: makeSummary([makeEntry("item-1", "2026-05-10", { note: null })]),
+        isLoading: false,
+      } as ReturnType<typeof useMonthSummary>);
+
+      render(
+        <CalendarGrid month="2026-05" onMonthChange={() => {}} onViewReport={() => {}} />,
+      );
+
+      const trigger = screen
+        .getAllByRole("button")
+        .find((b) => b.getAttribute("aria-label")?.startsWith("Run, May 10"))!;
+      fireEvent.focus(trigger);
+      await act(async () => { vi.advanceTimersByTime(500); });
+      expect(screen.queryByRole("tooltip")).toBeNull();
+      // The cell is not wrapped in a tooltip at all when there is no note,
+      // so no tooltip popup should ever render.
+      expect(document.querySelector('[data-slot="tooltip-content"]')).toBeNull();
+    });
+
+    it("does not render a popover-trigger for a future cell, even if the fixture has a note", () => {
+      mockedUseMonthSummary.mockReturnValue({
+        data: makeSummary([makeEntry("item-1", "2026-05-25", { note: "future ghost" })]),
+        isLoading: false,
+      } as ReturnType<typeof useMonthSummary>);
+
+      render(
+        <CalendarGrid month="2026-05" onMonthChange={() => {}} onViewReport={() => {}} />,
+      );
+
+      const futureTrigger = screen
+        .getAllByRole("button")
+        .find((b) => b.getAttribute("aria-label")?.startsWith("Run, May 25"));
+      expect(futureTrigger).toBeUndefined();
+    });
   });
 
   describe("cursor affordance", () => {
