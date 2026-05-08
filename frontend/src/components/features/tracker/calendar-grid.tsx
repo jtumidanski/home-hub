@@ -4,6 +4,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useMonthSummary, usePutEntry, useDeleteEntry, useSkipEntry } from "@/lib/hooks/api/use-trackers";
@@ -343,6 +344,7 @@ function CellContent({ itemId, date, today, scaleType, scaleConfig, scheduled, e
 
   const hasValue = entry && !entry.skipped && entry.value;
   const isSkipped = entry?.skipped;
+  const hasNote = !!entry?.note;
 
   let display = "";
   if (isSkipped) {
@@ -359,19 +361,52 @@ function CellContent({ itemId, date, today, scaleType, scaleConfig, scheduled, e
     }
   }
 
+  const dateLabel = new Date(date + "T12:00:00").toLocaleDateString("en-US", { month: "short", day: "numeric" });
+  const scoreLabel = isSkipped
+    ? "Skipped"
+    : hasValue
+      ? scaleType === "sentiment"
+        ? `Sentiment ${(entry.value as SentimentValue).rating}`
+        : `Score ${display}`
+      : "No entry";
+  const ariaLabel = `${itemName}, ${dateLabel}. ${scoreLabel}.${hasNote ? ` Note: ${entry!.note}` : ""}`;
+
+  const triggerClassName = cn(
+    "relative w-6 h-6 rounded text-center leading-6 text-[10px] transition-colors cursor-pointer",
+    hasValue && colorBg[color],
+    isSkipped && "bg-muted text-muted-foreground line-through",
+    !hasValue && !isSkipped && scheduled && !hasNote && "border border-dashed border-primary/40 hover:bg-primary/10",
+    !hasValue && !isSkipped && !scheduled && !hasNote && "text-muted-foreground/30",
+    hasNote && "border",
+    hasNote && (colorBorderSolid[color] ?? "border-foreground/30"),
+  );
+
+  const triggerNode = (
+    <PopoverTrigger className={triggerClassName} aria-label={ariaLabel}>
+      {display || (scheduled ? "" : "·")}
+      {hasNote && (
+        <span
+          aria-hidden="true"
+          className={cn(
+            "absolute top-0 right-0 h-1.5 w-1.5",
+            "[clip-path:polygon(100%_0,100%_100%,0_0)]",
+            colorBgSolid[color] ?? "bg-foreground/30",
+          )}
+        />
+      )}
+    </PopoverTrigger>
+  );
+
   return (
     <Popover open={open} onOpenChange={setOpen}>
-      <PopoverTrigger
-        className={cn(
-          "w-6 h-6 rounded text-center leading-6 text-[10px] transition-colors",
-          hasValue && colorBg[color],
-          isSkipped && "bg-muted text-muted-foreground line-through",
-          !hasValue && !isSkipped && scheduled && "border border-dashed border-primary/40 hover:bg-primary/10",
-          !hasValue && !isSkipped && !scheduled && "text-muted-foreground/30"
-        )}
-      >
-          {display || (scheduled ? "" : "·")}
-      </PopoverTrigger>
+      {hasNote ? (
+        <Tooltip>
+          <TooltipTrigger render={triggerNode} />
+          <TooltipContent>{entry!.note}</TooltipContent>
+        </Tooltip>
+      ) : (
+        triggerNode
+      )}
       <PopoverContent className="w-48 p-2" align="center">
         <p className="text-xs font-medium mb-2">{itemName} — {new Date(date + "T12:00:00").toLocaleDateString("en-US", { month: "short", day: "numeric" })}</p>
         <CellEditor

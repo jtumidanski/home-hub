@@ -120,4 +120,27 @@ describe("CalendarGrid (desktop)", () => {
     expect(screen.getByRole("table")).toBeInTheDocument();
     expect(screen.getAllByText("Run").length).toBeGreaterThan(0);
   });
+
+  describe("note indicator", () => {
+    it("renders the solid border and flange when the cell entry has a non-empty note", () => {
+      mockedUseMonthSummary.mockReturnValue({
+        data: makeSummary([makeEntry("item-1", "2026-05-10", { note: "ran 3 miles" })]),
+        isLoading: false,
+      } as ReturnType<typeof useMonthSummary>);
+
+      render(
+        <CalendarGrid month="2026-05" onMonthChange={() => {}} onViewReport={() => {}} />,
+      );
+
+      const trigger = screen
+        .getAllByRole("button")
+        .find((b) => b.getAttribute("aria-label")?.startsWith("Run, May 10"));
+      expect(trigger).toBeDefined();
+      expect(trigger!.className).toContain("border-blue-500");
+      const flange = trigger!.querySelector('[aria-hidden="true"]');
+      expect(flange).not.toBeNull();
+      expect(flange?.className).toContain("bg-blue-500");
+      expect(flange?.getAttribute("class")).toMatch(/\[clip-path:polygon/);
+    });
+  });
 });
