@@ -226,3 +226,11 @@ export function ThemeToggle() {
 ```
 
 No manual dark mode logic in components — CSS variables handle it automatically.
+
+## Cursor affordance for interactive elements
+
+Every element that responds to a click must visually communicate clickability via `cursor-pointer`. Native `<button>` and `<a>` elements get a pointer from the browser; custom interactive elements — clickable `<div>`s, popover triggers wrapped in non-`<button>` `render`-prop targets, table rows that open detail views, etc. — must apply `cursor-pointer` explicitly via Tailwind.
+
+Concrete example (resolved in task-048): the desktop habit-tracker calendar cells rendered as `PopoverTrigger` buttons but did not show a pointer cursor on hover, so users had no visual cue that scoring cells were editable. Adding `cursor-pointer` to past/today triggers in `CellContent` (`frontend/src/components/features/tracker/calendar-grid.tsx`) fixed it. Apply the same affordance whenever you author a clickable surface, especially when the trigger is composed via a primitive's `render` prop (the rendered element may not naturally inherit a pointer cursor).
+
+Acceptance test: hover over the element with a pointing device. The cursor must change to a pointer. If it does not, add `cursor-pointer` to its `className`.
