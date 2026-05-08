@@ -5,6 +5,7 @@ import { QueryProvider } from "@/components/providers/query-provider";
 import { ThemeProvider } from "@/components/providers/theme-provider";
 import { AuthProvider } from "@/components/providers/auth-provider";
 import { TenantProvider } from "@/context/tenant-context";
+import { TooltipProvider } from "@/components/ui/tooltip";
 import { ProtectedRoute } from "@/components/features/navigation/protected-route";
 import { AppShell } from "@/components/features/navigation/app-shell";
 import { LoginPage } from "@/pages/LoginPage";
@@ -58,8 +59,9 @@ export function App() {
         <ThemeProvider>
           <AuthProvider>
             <TenantProvider>
-              <Toaster richColors closeButton />
-              <Routes>
+              <TooltipProvider delay={200}>
+                <Toaster richColors closeButton />
+                <Routes>
                 <Route path="/" element={<Navigate to="/app" replace />} />
                 <Route path="/login" element={<LoginPage />} />
                 <Route path="/onboarding" element={<OnboardingPage />} />
@@ -122,6 +124,7 @@ export function App() {
                 </Route>
                 <Route path="*" element={<Error404Page />} />
               </Routes>
+              </TooltipProvider>
             </TenantProvider>
           </AuthProvider>
         </ThemeProvider>
