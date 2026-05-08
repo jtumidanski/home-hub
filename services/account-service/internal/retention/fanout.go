@@ -9,6 +9,7 @@ import (
 	"io"
 	"net/http"
 	"sort"
+	"strconv"
 	"sync"
 	"time"
 
@@ -179,9 +180,16 @@ type internalRunsList struct {
 }
 
 func (f *HTTPFanout) ListRuns(ctx context.Context, tenantID uuid.UUID, category, trigger, limit string) ([]RunRest, error) {
-	if limit == "" {
-		limit = "20"
+	// The user-facing limit caps the merged result. Each per-service call uses
+	// the same value as an upper bound on its payload — the aggregator must
+	// still trim, since N services can each return up to `limit` runs.
+	n := 20
+	if limit != "" {
+		if v, err := strconv.Atoi(limit); err == nil && v > 0 {
+			n = v
+		}
 	}
+	limit = strconv.Itoa(n)
 	results := make([]RunRest, 0)
 	var mu sync.Mutex
 	var wg sync.WaitGroup
@@ -250,5 +258,8 @@ func (f *HTTPFanout) ListRuns(ctx context.Context, tenantID uuid.UUID, category,
 	wg.Wait()
 
 	sort.Slice(results, func(i, j int) bool { return results[i].StartedAt > results[j].StartedAt })
+	if len(results) > n {
+		results = results[:n]
+	}
 	return results, nil
 }
