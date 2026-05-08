@@ -30,6 +30,28 @@ const colorBorderLeft: Record<string, string> = {
   purple: "border-l-purple-500", fuchsia: "border-l-fuchsia-500", pink: "border-l-pink-500", rose: "border-l-rose-500",
 };
 
+const colorBorderSolid: Record<string, string> = {
+  red: "border-red-500", orange: "border-orange-500",
+  amber: "border-amber-500", yellow: "border-yellow-500",
+  lime: "border-lime-500", green: "border-green-500",
+  emerald: "border-emerald-500", teal: "border-teal-500",
+  cyan: "border-cyan-500", blue: "border-blue-500",
+  indigo: "border-indigo-500", violet: "border-violet-500",
+  purple: "border-purple-500", fuchsia: "border-fuchsia-500",
+  pink: "border-pink-500", rose: "border-rose-500",
+};
+
+const colorBgSolid: Record<string, string> = {
+  red: "bg-red-500", orange: "bg-orange-500",
+  amber: "bg-amber-500", yellow: "bg-yellow-500",
+  lime: "bg-lime-500", green: "bg-green-500",
+  emerald: "bg-emerald-500", teal: "bg-teal-500",
+  cyan: "bg-cyan-500", blue: "bg-blue-500",
+  indigo: "bg-indigo-500", violet: "bg-violet-500",
+  purple: "bg-purple-500", fuchsia: "bg-fuchsia-500",
+  pink: "bg-pink-500", rose: "bg-rose-500",
+};
+
 function splitMonth(month: string): [string, string] {
   const parts = month.split("-");
   return [parts[0] ?? "2026", parts[1] ?? "01"];
