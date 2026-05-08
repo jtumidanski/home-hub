@@ -199,4 +199,39 @@ describe("CalendarGrid (desktop)", () => {
       expect(futureTrigger).toBeUndefined();
     });
   });
+
+  describe("aria-label", () => {
+    it("describes the cell with item name, formatted date, score, and note (when present)", () => {
+      mockedUseMonthSummary.mockReturnValue({
+        data: makeSummary([
+          makeEntry("item-1", "2026-05-10", {
+            value: { rating: "negative" },
+            note: "tough day",
+          }),
+          makeEntry("item-1", "2026-05-11", {
+            value: { rating: "positive" },
+            note: null,
+          }),
+        ]),
+        isLoading: false,
+      } as ReturnType<typeof useMonthSummary>);
+
+      render(
+        <CalendarGrid month="2026-05" onMonthChange={() => {}} onViewReport={() => {}} />,
+      );
+
+      const buttons = screen.getAllByRole("button");
+      const may10 = buttons.find((b) => b.getAttribute("aria-label")?.startsWith("Run, May 10"))!;
+      const may11 = buttons.find((b) => b.getAttribute("aria-label")?.startsWith("Run, May 11"))!;
+
+      expect(may10.getAttribute("aria-label")).toBe(
+        "Run, May 10. Sentiment negative. Note: tough day",
+      );
+      expect(may11.getAttribute("aria-label")).toBe(
+        "Run, May 11. Sentiment positive.",
+      );
+      // No emoji in the aria-label, even though the visible glyph is one.
+      expect(may10.getAttribute("aria-label")).not.toMatch(/😊|😞|😐/);
+    });
+  });
 });
