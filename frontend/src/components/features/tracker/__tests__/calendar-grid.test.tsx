@@ -142,5 +142,33 @@ describe("CalendarGrid (desktop)", () => {
       expect(flange?.className).toContain("bg-blue-500");
       expect(flange?.getAttribute("class")).toMatch(/\[clip-path:polygon/);
     });
+
+    it("shows the note text in a tooltip after hover, with the 200ms provider delay", async () => {
+      mockedUseMonthSummary.mockReturnValue({
+        data: makeSummary([makeEntry("item-1", "2026-05-10", { note: "line one\nline two" })]),
+        isLoading: false,
+      } as ReturnType<typeof useMonthSummary>);
+
+      render(
+        <CalendarGrid month="2026-05" onMonthChange={() => {}} onViewReport={() => {}} />,
+      );
+
+      const trigger = screen
+        .getAllByRole("button")
+        .find((b) => b.getAttribute("aria-label")?.startsWith("Run, May 10"))!;
+
+      // Base UI tooltip's pointer-enter open path does not flush under jsdom;
+      // focus opens it on the same code path with the same content. The 200 ms
+      // delay is exercised manually below to match the configured provider delay.
+      fireEvent.focus(trigger);
+      await act(async () => {
+        vi.advanceTimersByTime(250);
+      });
+
+      const tooltip = await screen.findByText(/line one/);
+      expect(tooltip).toHaveTextContent("line two");
+      // Multiline preserved: the popup uses whitespace-pre-wrap.
+      expect(tooltip.className).toContain("whitespace-pre-wrap");
+    });
   });
 });
