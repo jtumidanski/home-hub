@@ -171,4 +171,32 @@ describe("CalendarGrid (desktop)", () => {
       expect(tooltip.className).toContain("whitespace-pre-wrap");
     });
   });
+
+  describe("cursor affordance", () => {
+    it("applies cursor-pointer to past and today triggers and not to future placeholders", () => {
+      mockedUseMonthSummary.mockReturnValue({
+        data: makeSummary([
+          makeEntry("item-1", "2026-05-10", { note: null }), // past, no note
+          makeEntry("item-1", "2026-05-15", { note: null }), // today, no note
+        ]),
+        isLoading: false,
+      } as ReturnType<typeof useMonthSummary>);
+
+      render(
+        <CalendarGrid month="2026-05" onMonthChange={() => {}} onViewReport={() => {}} />,
+      );
+
+      const buttons = screen.getAllByRole("button");
+      const past = buttons.find((b) => b.getAttribute("aria-label")?.startsWith("Run, May 10"))!;
+      const today = buttons.find((b) => b.getAttribute("aria-label")?.startsWith("Run, May 15"))!;
+      expect(past.className).toContain("cursor-pointer");
+      expect(today.className).toContain("cursor-pointer");
+
+      // Future cells are <span>s, never <button>s.
+      const futureTrigger = buttons.find((b) =>
+        b.getAttribute("aria-label")?.startsWith("Run, May 20"),
+      );
+      expect(futureTrigger).toBeUndefined();
+    });
+  });
 });
