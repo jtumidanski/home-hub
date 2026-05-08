@@ -1,8 +1,9 @@
 import { Menu as MenuPrimitive } from "@base-ui/react/menu";
-import { Moon, Sun, LogOut, ChevronDown } from "lucide-react";
+import { LogOut, ChevronDown, Settings } from "lucide-react";
+import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/components/providers/auth-provider";
-import { useThemeToggle } from "@/lib/hooks/use-theme-toggle";
 import { useLogout } from "@/lib/hooks/api/use-auth";
+import { settingsNavItem } from "@/components/features/navigation/nav-config";
 import { UserAvatar } from "@/components/ui/user-avatar";
 import { cn } from "@/lib/utils";
 
@@ -13,8 +14,8 @@ interface UserMenuProps {
 
 export function UserMenu({ onAction, iconSize = "h-4 w-4" }: UserMenuProps) {
   const { user } = useAuth();
-  const { theme, toggleTheme } = useThemeToggle();
   const logout = useLogout();
+  const navigate = useNavigate();
 
   if (!user) return null;
 
@@ -51,16 +52,12 @@ export function UserMenu({ onAction, iconSize = "h-4 w-4" }: UserMenuProps) {
             <MenuPrimitive.Item
               className="flex w-full cursor-pointer items-center gap-3 rounded-md px-3 py-2 text-sm outline-none select-none hover:bg-accent hover:text-accent-foreground focus:bg-accent focus:text-accent-foreground"
               onClick={() => {
-                toggleTheme();
+                navigate(settingsNavItem.to);
                 onAction?.();
               }}
             >
-              {theme === "light" ? (
-                <Moon className={iconSize} />
-              ) : (
-                <Sun className={iconSize} />
-              )}
-              {theme === "light" ? "Dark Mode" : "Light Mode"}
+              <Settings className={iconSize} />
+              {settingsNavItem.label}
             </MenuPrimitive.Item>
             <MenuPrimitive.Item
               className="flex w-full cursor-pointer items-center gap-3 rounded-md px-3 py-2 text-sm text-destructive outline-none select-none hover:bg-accent focus:bg-accent"
