@@ -99,6 +99,12 @@ For each in-scope file, run every applicable check.
 | FE-15 | Forms use `react-hook-form` + `zodResolver` | Read form components | `useForm({ resolver: zodResolver(schema) })` pattern |
 | FE-16 | Schema in `lib/schemas/` with inferred type | Read schema files | Each `z.object(...)` is paired with `export type X = z.infer<typeof schema>` |
 
+### Styling Checklist
+
+| ID | Check | How to Verify | Pass Criteria |
+|----|-------|---------------|---------------|
+| FE-19 | Interactive elements show `cursor-pointer` | Read changed components for clickable elements (`onClick`, `PopoverTrigger`, `DialogTrigger`, anchor-styled divs, clickable table rows). See `.claude/skills/frontend-dev-guidelines/resources/patterns-styling.md` → "Cursor affordance for interactive elements". | Each interactive non-`<button>`/`<a>` element has `cursor-pointer` applied via `className`. |
+
 ### Testing Checklist
 
 | ID | Check | How to Verify | Pass Criteria |
