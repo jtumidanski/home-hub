@@ -1,12 +1,11 @@
 import { useEffect, useRef } from "react";
-import { NavLink } from "react-router-dom";
-import { Settings, X } from "lucide-react";
+import { X } from "lucide-react";
 import { createPortal } from "react-dom";
 import { MobileHouseholdSelector } from "@/components/features/households/mobile-household-selector";
 import { NavGroup } from "@/components/features/navigation/nav-group";
 import { DashboardsNavGroup } from "@/components/features/navigation/dashboards-nav-group";
 import { UserMenu } from "@/components/features/navigation/user-menu";
-import { navGroups, settingsNavItem } from "@/components/features/navigation/nav-config";
+import { navGroups } from "@/components/features/navigation/nav-config";
 import { useNavGroupState } from "@/lib/hooks/use-nav-group-state";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
@@ -92,25 +91,6 @@ export function MobileDrawer({ open, onClose }: MobileDrawerProps) {
             />
           ))}
         </nav>
-
-        {/* Footer */}
-        <div className="border-t p-3">
-          <NavLink
-            to={settingsNavItem.to}
-            onClick={onClose}
-            className={({ isActive }) =>
-              cn(
-                "flex items-center gap-3 rounded-md px-3 py-3 text-sm font-medium transition-colors",
-                isActive
-                  ? "bg-sidebar-accent text-sidebar-accent-foreground"
-                  : "text-sidebar-foreground hover:bg-sidebar-accent/50",
-              )
-            }
-          >
-            <Settings className="h-5 w-5" />
-            {settingsNavItem.label}
-          </NavLink>
-        </div>
 
         <div className="border-t">
           <UserMenu onAction={onClose} iconSize="h-5 w-5" />
