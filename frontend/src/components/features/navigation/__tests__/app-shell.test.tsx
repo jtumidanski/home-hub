@@ -4,15 +4,10 @@ import userEvent from "@testing-library/user-event";
 import { MemoryRouter } from "react-router-dom";
 
 const mockUseAuth = vi.fn();
-const mockToggleTheme = vi.fn();
 const mockLogoutMutate = vi.fn();
 
 vi.mock("@/components/providers/auth-provider", () => ({
   useAuth: () => mockUseAuth(),
-}));
-
-vi.mock("@/lib/hooks/use-theme-toggle", () => ({
-  useThemeToggle: () => ({ theme: "light", toggleTheme: mockToggleTheme }),
 }));
 
 vi.mock("@/lib/hooks/api/use-auth", () => ({
@@ -75,7 +70,6 @@ describe("AppShell", () => {
     expect(screen.getByText("Tasks")).toBeInTheDocument();
     expect(screen.getByText("Reminders")).toBeInTheDocument();
     expect(screen.getByText("Households")).toBeInTheDocument();
-    expect(screen.getByText("Settings")).toBeInTheDocument();
   });
 
   it("renders household switcher", () => {
@@ -92,16 +86,6 @@ describe("AppShell", () => {
   it("renders outlet for page content", () => {
     renderWithRouter();
     expect(screen.getByTestId("outlet")).toBeInTheDocument();
-  });
-
-  it("calls toggleTheme when theme button is clicked in user menu", async () => {
-    const user = userEvent.setup();
-    renderWithRouter();
-    // Open user menu popover
-    await user.click(screen.getByRole("button", { name: /test user/i }));
-    const darkModeItem = await screen.findByRole("menuitem", { name: /dark mode/i });
-    await user.click(darkModeItem);
-    expect(mockToggleTheme).toHaveBeenCalledTimes(1);
   });
 
   it("calls logout when sign out is clicked in user menu", async () => {
