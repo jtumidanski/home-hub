@@ -80,30 +80,33 @@ export function RecipeDetailPage() {
           <ArrowLeft className="mr-1 h-4 w-4" /> Recipes
         </Button>
 
-        <div className="flex items-start justify-between gap-4">
-          <div>
+        <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3 sm:gap-4">
+          <div className="min-w-0">
             <div className="flex items-center gap-2">
               <span title={plannerTooltip}>
                 {attrs.plannerReady
-                  ? <CheckCircle2 className="h-5 w-5 text-green-500" />
-                  : <AlertCircle className="h-5 w-5 text-yellow-500" />
+                  ? <CheckCircle2 className="h-5 w-5 shrink-0 text-green-500" />
+                  : <AlertCircle className="h-5 w-5 shrink-0 text-yellow-500" />
                 }
               </span>
-              <h1 className="text-2xl font-bold">{attrs.title}</h1>
+              <h1 className="text-xl sm:text-2xl font-bold break-words">{attrs.title}</h1>
             </div>
             {attrs.description && (
-              <p className="mt-1 text-muted-foreground">{attrs.description}</p>
+              <p className="mt-1 text-sm sm:text-base text-muted-foreground">{attrs.description}</p>
             )}
           </div>
-          <div className="flex gap-2 shrink-0">
+          <div className="flex flex-wrap gap-2 sm:shrink-0">
             <Button variant="outline" size="sm" onClick={() => setCookModeOpen(true)}>
-              <Maximize2 className="mr-1 h-4 w-4" /> Cook Mode
+              <Maximize2 className="h-4 w-4 sm:mr-1" />
+              <span className="hidden sm:inline">Cook Mode</span>
             </Button>
             <Button variant="outline" size="sm" onClick={() => navigate(`/app/recipes/${id}/edit`)}>
-              <Pencil className="mr-1 h-4 w-4" /> Edit
+              <Pencil className="h-4 w-4 sm:mr-1" />
+              <span className="hidden sm:inline">Edit</span>
             </Button>
             <Button variant="outline" size="sm" className="text-destructive" onClick={handleDelete}>
-              <Trash2 className="mr-1 h-4 w-4" /> Delete
+              <Trash2 className="h-4 w-4 sm:mr-1" />
+              <span className="hidden sm:inline">Delete</span>
             </Button>
           </div>
         </div>
