@@ -57,8 +57,8 @@ export function WeatherTomorrowAdapter({ config: _config }: { config: WeatherTom
       </CardHeader>
       <CardContent>
         <div className="flex items-baseline gap-2">
-          <span className="text-2xl font-bold">{entry.attributes.highTemperature}°{unit}</span>
-          <span className="text-sm text-muted-foreground">/ {entry.attributes.lowTemperature}°{unit}</span>
+          <span className="text-2xl font-bold">{entry.attributes.highTemperature}{unit}</span>
+          <span className="text-sm text-muted-foreground">/ {entry.attributes.lowTemperature}{unit}</span>
         </div>
         <p className="text-xs text-muted-foreground">{entry.attributes.summary}</p>
       </CardContent>

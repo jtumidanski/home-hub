@@ -9,7 +9,7 @@ vi.mock("@/context/tenant-context", () => ({
 
 import { useWeatherForecast } from "@/lib/hooks/api/use-weather";
 
-const daily = (date: string, hi: number, lo: number, unit = "F") => ({
+const daily = (date: string, hi: number, lo: number, unit = "°F") => ({
   id: date, type: "weather-daily",
   attributes: { date, highTemperature: hi, lowTemperature: lo, temperatureUnit: unit, summary: "Sunny", icon: "sun", weatherCode: 0, hourlyForecast: [] },
 });
