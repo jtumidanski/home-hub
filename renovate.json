@@ -6,6 +6,12 @@
   "automergeType": "pr",
   "platformAutomerge": true,
   "labels": ["dependencies"],
+  "minimumReleaseAge": "3 days",
+  "internalChecksFilter": "strict",
+  "vulnerabilityAlerts": {
+    "minimumReleaseAge": null,
+    "labels": ["dependencies", "security"]
+  },
   "packageRules": [
     {
       "matchManagers": ["gomod"],
