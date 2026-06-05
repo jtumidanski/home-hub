@@ -23,7 +23,7 @@ export function AppShell() {
   }), [appContext?.attributes.pendingInvitationCount, packageSummary]);
 
   return (
-    <div className="flex h-screen flex-col md:flex-row overflow-hidden">
+    <div className="flex h-dvh flex-col md:flex-row overflow-hidden">
       {/* Desktop sidebar */}
       <aside className="hidden md:flex w-64 flex-col border-r bg-sidebar text-sidebar-foreground">
         <div className="flex h-14 items-center border-b px-4">
