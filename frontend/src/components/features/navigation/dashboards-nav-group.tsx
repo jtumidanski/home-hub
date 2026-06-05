@@ -19,44 +19,12 @@ import {
 } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 import { cn } from "@/lib/utils";
+import { sortDashboards, computeReorderEntries } from "@/lib/dashboard/ordering";
 import { useDashboards, useReorderDashboards } from "@/lib/hooks/api/use-dashboards";
 import { useHouseholdPreferences } from "@/lib/hooks/api/use-household-preferences";
 import { NewDashboardModal } from "@/components/features/dashboards/new-dashboard-modal";
 import { DashboardKebabMenu } from "@/components/features/dashboards/dashboard-kebab-menu";
 import type { Dashboard } from "@/types/models/dashboard";
-
-/**
- * Sort dashboards by sortOrder ASC, then createdAt ASC as a stable tiebreaker.
- */
-export function sortDashboards(list: Dashboard[]): Dashboard[] {
-  return [...list].sort((a, b) => {
-    if (a.attributes.sortOrder !== b.attributes.sortOrder) {
-      return a.attributes.sortOrder - b.attributes.sortOrder;
-    }
-    return a.attributes.createdAt.localeCompare(b.attributes.createdAt);
-  });
-}
-
-/**
- * Given a sorted list and active/over ids from a dnd-kit drag-end, returns
- * the reorder payload with 0-indexed sortOrder. Returns null when the drag
- * is a no-op.
- */
-export function computeReorderEntries(
-  sorted: Dashboard[],
-  activeId: string,
-  overId: string,
-): Array<{ id: string; sortOrder: number }> | null {
-  if (activeId === overId) return null;
-  const fromIdx = sorted.findIndex((d) => d.id === activeId);
-  const toIdx = sorted.findIndex((d) => d.id === overId);
-  if (fromIdx < 0 || toIdx < 0) return null;
-  const next = [...sorted];
-  const [moved] = next.splice(fromIdx, 1);
-  if (!moved) return null;
-  next.splice(toIdx, 0, moved);
-  return next.map((d, i) => ({ id: d.id, sortOrder: i }));
-}
 
 interface SortableDashboardRowProps {
   dashboard: Dashboard;

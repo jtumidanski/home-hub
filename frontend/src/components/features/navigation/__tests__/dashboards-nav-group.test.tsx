@@ -2,7 +2,6 @@ import { describe, it, expect, vi, beforeEach } from "vitest";
 import { render, screen, within } from "@testing-library/react";
 import { MemoryRouter } from "react-router-dom";
 import type { Dashboard } from "@/types/models/dashboard";
-import { computeReorderEntries, sortDashboards } from "../dashboards-nav-group";
 
 function dash(overrides: Partial<Dashboard["attributes"]> & { id: string }): Dashboard {
   const { id, ...attrs } = overrides;
@@ -42,49 +41,6 @@ vi.mock("@/lib/hooks/api/use-household-preferences", () => ({
 }));
 
 import { DashboardsNavGroup } from "../dashboards-nav-group";
-
-describe("sortDashboards", () => {
-  it("sorts by sortOrder ASC then createdAt ASC", () => {
-    const list = [
-      dash({ id: "c", sortOrder: 1, createdAt: "2025-01-02T00:00:00Z" }),
-      dash({ id: "a", sortOrder: 0, createdAt: "2025-01-02T00:00:00Z" }),
-      dash({ id: "b", sortOrder: 0, createdAt: "2025-01-01T00:00:00Z" }),
-    ];
-    expect(sortDashboards(list).map((d) => d.id)).toEqual(["b", "a", "c"]);
-  });
-});
-
-describe("computeReorderEntries", () => {
-  const sorted = [
-    dash({ id: "a", sortOrder: 0 }),
-    dash({ id: "b", sortOrder: 1 }),
-    dash({ id: "c", sortOrder: 2 }),
-  ];
-
-  it("returns null when active === over", () => {
-    expect(computeReorderEntries(sorted, "a", "a")).toBeNull();
-  });
-
-  it("emits 0-indexed sortOrder after moving a down", () => {
-    expect(computeReorderEntries(sorted, "a", "c")).toEqual([
-      { id: "b", sortOrder: 0 },
-      { id: "c", sortOrder: 1 },
-      { id: "a", sortOrder: 2 },
-    ]);
-  });
-
-  it("emits 0-indexed sortOrder after moving c up", () => {
-    expect(computeReorderEntries(sorted, "c", "a")).toEqual([
-      { id: "c", sortOrder: 0 },
-      { id: "a", sortOrder: 1 },
-      { id: "b", sortOrder: 2 },
-    ]);
-  });
-
-  it("returns null for unknown id", () => {
-    expect(computeReorderEntries(sorted, "zzz", "a")).toBeNull();
-  });
-});
 
 describe("DashboardsNavGroup", () => {
   beforeEach(() => {
