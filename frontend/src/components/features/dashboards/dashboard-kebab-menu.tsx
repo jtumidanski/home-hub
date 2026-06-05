@@ -91,7 +91,7 @@ export function DashboardKebabMenu({ dashboard, isDefault }: DashboardKebabMenuP
         <MenuPrimitive.Trigger
           aria-label={`Dashboard actions for ${dashboard.attributes.name}`}
           className={cn(
-            "flex h-7 w-7 shrink-0 items-center justify-center rounded-md text-muted-foreground opacity-0 transition-opacity hover:bg-sidebar-accent/50 hover:text-sidebar-foreground focus-visible:opacity-100 group-hover/row:opacity-100 data-[popup-open]:opacity-100 outline-none",
+            "flex h-7 w-7 shrink-0 items-center justify-center rounded-md text-muted-foreground hover:bg-accent hover:text-accent-foreground outline-none",
           )}
         >
           <MoreVertical className="h-4 w-4" />

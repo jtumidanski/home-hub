@@ -2,7 +2,6 @@ import { describe, it, expect, vi, beforeEach } from "vitest";
 import { render, screen, within } from "@testing-library/react";
 import { MemoryRouter } from "react-router-dom";
 import type { Dashboard } from "@/types/models/dashboard";
-import { computeReorderEntries, sortDashboards } from "../dashboards-nav-group";
 
 function dash(overrides: Partial<Dashboard["attributes"]> & { id: string }): Dashboard {
   const { id, ...attrs } = overrides;
@@ -23,75 +22,16 @@ function dash(overrides: Partial<Dashboard["attributes"]> & { id: string }): Das
 }
 
 const mockUseDashboards = vi.fn();
-const mockUseHouseholdPreferences = vi.fn();
-const mockReorderMutate = vi.fn();
 
 vi.mock("@/lib/hooks/api/use-dashboards", () => ({
   useDashboards: () => mockUseDashboards(),
-  useReorderDashboards: () => ({ mutate: mockReorderMutate }),
-  useCreateDashboard: () => ({ mutateAsync: vi.fn(), isPending: false }),
-  useCopyDashboardToMine: () => ({ mutate: vi.fn(), mutateAsync: vi.fn(), isPending: false }),
-  useUpdateDashboard: () => ({ mutate: vi.fn(), isPending: false }),
-  useDeleteDashboard: () => ({ mutate: vi.fn(), isPending: false }),
-  usePromoteDashboard: () => ({ mutate: vi.fn() }),
-}));
-
-vi.mock("@/lib/hooks/api/use-household-preferences", () => ({
-  useHouseholdPreferences: () => mockUseHouseholdPreferences(),
-  useUpdateHouseholdPreferences: () => ({ mutate: vi.fn() }),
 }));
 
 import { DashboardsNavGroup } from "../dashboards-nav-group";
 
-describe("sortDashboards", () => {
-  it("sorts by sortOrder ASC then createdAt ASC", () => {
-    const list = [
-      dash({ id: "c", sortOrder: 1, createdAt: "2025-01-02T00:00:00Z" }),
-      dash({ id: "a", sortOrder: 0, createdAt: "2025-01-02T00:00:00Z" }),
-      dash({ id: "b", sortOrder: 0, createdAt: "2025-01-01T00:00:00Z" }),
-    ];
-    expect(sortDashboards(list).map((d) => d.id)).toEqual(["b", "a", "c"]);
-  });
-});
-
-describe("computeReorderEntries", () => {
-  const sorted = [
-    dash({ id: "a", sortOrder: 0 }),
-    dash({ id: "b", sortOrder: 1 }),
-    dash({ id: "c", sortOrder: 2 }),
-  ];
-
-  it("returns null when active === over", () => {
-    expect(computeReorderEntries(sorted, "a", "a")).toBeNull();
-  });
-
-  it("emits 0-indexed sortOrder after moving a down", () => {
-    expect(computeReorderEntries(sorted, "a", "c")).toEqual([
-      { id: "b", sortOrder: 0 },
-      { id: "c", sortOrder: 1 },
-      { id: "a", sortOrder: 2 },
-    ]);
-  });
-
-  it("emits 0-indexed sortOrder after moving c up", () => {
-    expect(computeReorderEntries(sorted, "c", "a")).toEqual([
-      { id: "c", sortOrder: 0 },
-      { id: "a", sortOrder: 1 },
-      { id: "b", sortOrder: 2 },
-    ]);
-  });
-
-  it("returns null for unknown id", () => {
-    expect(computeReorderEntries(sorted, "zzz", "a")).toBeNull();
-  });
-});
-
 describe("DashboardsNavGroup", () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    mockUseHouseholdPreferences.mockReturnValue({
-      data: { data: { id: "prefs-1", type: "householdPreferences", attributes: { defaultDashboardId: null, kioskDashboardSeeded: false, createdAt: "", updatedAt: "" } } },
-    });
   });
 
   function renderIt() {
@@ -102,7 +42,7 @@ describe("DashboardsNavGroup", () => {
     );
   }
 
-  it("renders household dashboards sorted, then user dashboards", () => {
+  it("renders household dashboards sorted, then user dashboards, as plain links", () => {
     mockUseDashboards.mockReturnValue({
       data: {
         data: [
@@ -119,24 +59,32 @@ describe("DashboardsNavGroup", () => {
     expect(links[0]).toHaveAttribute("href", "/app/dashboards/hh-1");
     expect(links[1]).toHaveAttribute("href", "/app/dashboards/hh-2");
     expect(links[2]).toHaveAttribute("href", "/app/dashboards/u-1");
-
     expect(screen.getByText("My Dashboards")).toBeInTheDocument();
   });
 
-  it("renders only new-dashboard button when list is empty", () => {
+  it("renders no management affordances (no new-dashboard button, kebab, or grip)", () => {
+    mockUseDashboards.mockReturnValue({
+      data: { data: [dash({ id: "hh-1", name: "Home A", scope: "household", sortOrder: 0 })] },
+    });
+    renderIt();
+
+    expect(screen.queryByRole("button", { name: /new dashboard/i })).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: /dashboard actions for/i })).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: /drag .* to reorder/i })).not.toBeInTheDocument();
+  });
+
+  it("renders no links and no new-dashboard button when the list is empty", () => {
     mockUseDashboards.mockReturnValue({ data: { data: [] } });
     renderIt();
 
     expect(screen.queryAllByRole("link")).toHaveLength(0);
-    expect(screen.getByRole("button", { name: /new dashboard/i })).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: /new dashboard/i })).not.toBeInTheDocument();
     expect(screen.queryByText("My Dashboards")).not.toBeInTheDocument();
   });
 
-  it("omits user section when no user dashboards", () => {
+  it("omits the user section when there are no user dashboards", () => {
     mockUseDashboards.mockReturnValue({
-      data: {
-        data: [dash({ id: "hh-1", scope: "household", sortOrder: 0 })],
-      },
+      data: { data: [dash({ id: "hh-1", scope: "household", sortOrder: 0 })] },
     });
     const { container } = renderIt();
     expect(screen.queryByText("My Dashboards")).not.toBeInTheDocument();
