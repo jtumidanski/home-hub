@@ -49,9 +49,15 @@ func makeItem(t *testing.T, db *gorm.DB, userID uuid.UUID, name string) uuid.UUI
 	return id
 }
 
+// scheduleEffectiveDate is a fixed point well before every scenario's `now`
+// (all in 2026-04) so snapshots are always effective. Using a deterministic
+// date instead of time.Now() keeps these tests from breaking as wall-clock
+// drifts past the scenario dates.
+var scheduleEffectiveDate = time.Date(2026, 1, 1, 0, 0, 0, 0, time.UTC)
+
 func setSchedule(t *testing.T, db *gorm.DB, itemID uuid.UUID, days []int) {
 	t.Helper()
-	_, err := schedule.CreateSnapshot(db, itemID, days, time.Now().UTC().AddDate(0, -1, 0))
+	_, err := schedule.CreateSnapshot(db, itemID, days, scheduleEffectiveDate)
 	require.NoError(t, err)
 }
 
