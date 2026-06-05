@@ -24,7 +24,7 @@ export function DashboardsNavGroup({
 }: DashboardsNavGroupProps) {
   const { data } = useDashboards();
 
-  const dashboards = data?.data ?? [];
+  const dashboards = useMemo(() => data?.data ?? [], [data]);
 
   const { householdList, userList } = useMemo(() => {
     const household = sortDashboards(
