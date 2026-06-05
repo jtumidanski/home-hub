@@ -13,7 +13,7 @@ import { OnboardingPage } from "@/pages/OnboardingPage";
 import { DashboardShell } from "@/pages/DashboardShell";
 import { DashboardRenderer } from "@/pages/DashboardRenderer";
 import { DashboardRedirect } from "@/pages/DashboardRedirect";
-import { DashboardsIndexRedirect } from "@/pages/DashboardsIndexRedirect";
+import { DashboardManagementPage } from "@/pages/DashboardManagementPage";
 import { DashboardSkeleton } from "@/components/common/dashboard-skeleton";
 const DashboardDesigner = React.lazy(() => import("@/pages/DashboardDesigner"));
 import { TasksPage } from "@/pages/TasksPage";
@@ -75,7 +75,7 @@ export function App() {
                 >
                   <Route index element={<DashboardRedirect />} />
                   <Route path="dashboard" element={<DashboardRedirect />} />
-                  <Route path="dashboards" element={<DashboardsIndexRedirect />} />
+                  <Route path="dashboards" element={<DashboardManagementPage />} />
                   <Route path="dashboards/:dashboardId" element={<DashboardShell />}>
                     <Route index element={<DashboardRenderer />} />
                     <Route
