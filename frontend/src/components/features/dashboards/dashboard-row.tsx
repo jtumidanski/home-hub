@@ -33,7 +33,7 @@ export function DashboardRow({ dashboard, defaultDashboardId }: DashboardRowProp
       <button
         type="button"
         aria-label={`Drag ${dashboard.attributes.name} to reorder`}
-        className="flex h-9 w-9 shrink-0 cursor-grab touch-none items-center justify-center rounded-md text-muted-foreground hover:bg-accent hover:text-accent-foreground outline-none"
+        className="flex h-9 w-9 shrink-0 cursor-grab touch-none items-center justify-center rounded-md text-muted-foreground hover:bg-accent hover:text-accent-foreground outline-none focus-visible:ring-2 focus-visible:ring-ring"
         {...attributes}
         {...listeners}
       >
@@ -60,7 +60,7 @@ export function DashboardRow({ dashboard, defaultDashboardId }: DashboardRowProp
         aria-label={`Edit ${dashboard.attributes.name}`}
         className={cn(
           "flex h-9 w-9 shrink-0 items-center justify-center rounded-md text-muted-foreground",
-          "hover:bg-accent hover:text-accent-foreground outline-none",
+          "hover:bg-accent hover:text-accent-foreground outline-none focus-visible:ring-2 focus-visible:ring-ring",
         )}
       >
         <Pencil className="h-4 w-4" />
