@@ -4,7 +4,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 
 function ProtectedRouteSkeleton() {
   return (
-    <div className="flex min-h-screen">
+    <div className="flex min-h-dvh">
       <aside className="flex w-64 flex-col border-r bg-sidebar p-4 space-y-4">
         <Skeleton className="h-8 w-32" />
         <Skeleton className="h-10 w-full" />
