@@ -112,6 +112,46 @@ func cascadeDeleteTasks(tx *gorm.DB, ids []string) (int, error) {
 	return total, nil
 }
 
+// Reminders soft-deletes reminders that are dismissed-aged or scheduled-past
+// beyond the configured window. It is the reaper-driven soft-delete stage
+// (reminders have no user-facing trash lifecycle); the restore-window handler
+// hard-deletes them later. It touches no child tables.
+type Reminders struct{}
+
+func (Reminders) Category() sr.Category { return sr.CatProductivityReminders }
+
+func (Reminders) DiscoverScopes(ctx context.Context, db *gorm.DB) ([]sr.Scope, error) {
+	type row struct {
+		TenantId    uuid.UUID
+		HouseholdId uuid.UUID
+	}
+	var rows []row
+	if err := db.Table("reminders").
+		Select("DISTINCT tenant_id, household_id").
+		Scan(&rows).Error; err != nil {
+		return nil, err
+	}
+	out := make([]sr.Scope, 0, len(rows))
+	for _, r := range rows {
+		out = append(out, sr.Scope{TenantId: r.TenantId, Kind: sr.ScopeHousehold, ScopeId: r.HouseholdId})
+	}
+	return out, nil
+}
+
+func (Reminders) Reap(ctx context.Context, tx *gorm.DB, scope sr.Scope, days int, dryRun bool) (sr.ReapResult, error) {
+	now := time.Now().UTC()
+	cutoff := now.Add(-time.Duration(days) * 24 * time.Hour)
+
+	r := tx.Table("reminders").
+		Where("tenant_id = ? AND household_id = ? AND deleted_at IS NULL AND ((last_dismissed_at IS NOT NULL AND last_dismissed_at < ?) OR (scheduled_for < ?))",
+			scope.TenantId, scope.ScopeId, cutoff, cutoff).
+		Update("deleted_at", now)
+	if r.Error != nil {
+		return sr.ReapResult{}, r.Error
+	}
+	return sr.ReapResult{Scanned: int(r.RowsAffected), Deleted: int(r.RowsAffected)}, nil
+}
+
 // AuditTrim reaps old retention_runs rows. This is the system.retention_audit
 // category that every reaper-owning service implements against its own table.
 type AuditTrim struct{}
