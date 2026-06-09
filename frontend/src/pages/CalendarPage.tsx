@@ -9,6 +9,8 @@ import { ErrorCard } from "@/components/common/error-card";
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { CalendarGrid } from "@/components/features/calendar/calendar-grid";
+import { MonthGrid } from "@/components/features/calendar/month-grid";
+import { ViewModeToggle, type CalendarViewMode } from "@/components/features/calendar/view-mode-toggle";
 import { ConnectCalendarButton } from "@/components/features/calendar/connect-calendar-button";
 import { ConnectionStatus } from "@/components/features/calendar/connection-status";
 import { CalendarSelectionPanel } from "@/components/features/calendar/calendar-selection-panel";
@@ -18,7 +20,15 @@ import { ReauthorizeBanner } from "@/components/features/calendar/reauthorize-ba
 import { useCalendarConnections, useCalendarEvents, useCalendarSources, useDeleteEvent } from "@/lib/hooks/api/use-calendar";
 import { usePackages } from "@/lib/hooks/api/use-packages";
 import { packagesToCalendarEvents } from "@/components/features/packages/package-calendar-overlay";
-import { getStartOfWeek, formatDateRange } from "@/components/features/calendar/calendar-utils";
+import {
+  getStartOfWeek,
+  formatDateRange,
+  getStartOfMonth,
+  getMonthGridRange,
+  formatMonthYear,
+  isSameMonth,
+  addMonths,
+} from "@/components/features/calendar/calendar-utils";
 import { getErrorMessage } from "@/lib/api/errors";
 import type { CalendarConnection, CalendarEvent } from "@/types/models/calendar";
 import type { Package } from "@/types/models/package";
@@ -37,6 +47,8 @@ export function CalendarPage() {
 
   const [searchParams, setSearchParams] = useSearchParams();
   const [weekStart, setWeekStart] = useState(() => getStartOfWeek(new Date()));
+  const [viewMode, setViewMode] = useState<CalendarViewMode>("week");
+  const [monthAnchor, setMonthAnchor] = useState(() => getStartOfMonth(new Date()));
   const [showSources, setShowSources] = useState(false);
   const [calPickerOpen, setCalPickerOpen] = useState(false);
 
@@ -92,8 +104,13 @@ export function CalendarPage() {
     return end;
   }, [weekStart, dayCount]);
 
-  const startISO = weekStart.toISOString();
-  const endISO = weekEnd.toISOString();
+  const { startISO, endISO } = useMemo(() => {
+    if (viewMode === "month") {
+      const { start, end } = getMonthGridRange(monthAnchor);
+      return { startISO: start.toISOString(), endISO: end.toISOString() };
+    }
+    return { startISO: weekStart.toISOString(), endISO: weekEnd.toISOString() };
+  }, [viewMode, monthAnchor, weekStart, weekEnd]);
 
   const connectionsQuery = useCalendarConnections();
   const eventsQuery = useCalendarEvents(startISO, endISO);
@@ -130,12 +147,31 @@ export function CalendarPage() {
   const sourcesQuery = useCalendarSources(activeConnection?.id ?? null);
   const sources = sourcesQuery.data?.data ?? [];
 
+  const focusDay = useCallback((day: Date) => {
+    if (isDesktop) {
+      setWeekStart(getStartOfWeek(day));
+    } else {
+      const start = new Date(day);
+      start.setDate(start.getDate() - 1);
+      start.setHours(0, 0, 0, 0);
+      setWeekStart(start);
+    }
+  }, [isDesktop]);
+
   const goPrev = () => {
+    if (viewMode === "month") {
+      setMonthAnchor((a) => addMonths(a, -1));
+      return;
+    }
     const prev = new Date(weekStart);
     prev.setDate(prev.getDate() - dayCount);
     setWeekStart(prev);
   };
   const goNext = () => {
+    if (viewMode === "month") {
+      setMonthAnchor((a) => addMonths(a, 1));
+      return;
+    }
     const next = new Date(weekStart);
     next.setDate(next.getDate() + dayCount);
     setWeekStart(next);
@@ -143,15 +179,28 @@ export function CalendarPage() {
 
   const handleCalendarSelect = (date: Date | undefined) => {
     if (!date) return;
-    if (isDesktop) {
-      setWeekStart(getStartOfWeek(date));
+    if (viewMode === "month") {
+      setMonthAnchor(getStartOfMonth(date));
     } else {
-      const start = new Date(date);
-      start.setDate(start.getDate() - 1);
-      start.setHours(0, 0, 0, 0);
-      setWeekStart(start);
+      focusDay(date);
     }
     setCalPickerOpen(false);
+  };
+
+  const handleDayClick = useCallback((day: Date) => {
+    focusDay(day);
+    setViewMode("week");
+  }, [focusDay]);
+
+  const handleViewModeChange = (mode: CalendarViewMode) => {
+    if (mode === viewMode) return;
+    if (mode === "month") {
+      setMonthAnchor(getStartOfMonth(weekStart));
+    } else {
+      const today = new Date();
+      focusDay(isSameMonth(today, monthAnchor) ? today : monthAnchor);
+    }
+    setViewMode(mode);
   };
 
   const handleAddEvent = useCallback(() => {
@@ -241,10 +290,13 @@ export function CalendarPage() {
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
         <div>
           <h1 className="text-xl md:text-2xl font-semibold">Calendar</h1>
-          <p className="text-sm text-muted-foreground">{formatDateRange(weekStart, weekEnd)}</p>
+          <p className="text-sm text-muted-foreground">
+            {viewMode === "month" ? formatMonthYear(monthAnchor) : formatDateRange(weekStart, weekEnd)}
+          </p>
         </div>
 
         <div className="flex items-center gap-2">
+          <ViewModeToggle mode={viewMode} onChange={handleViewModeChange} />
           <div className="flex items-center border rounded-md">
             <Button variant="ghost" size="sm" onClick={goPrev}>
               <ChevronLeft className="h-4 w-4" />
@@ -259,9 +311,9 @@ export function CalendarPage() {
               <PopoverContent className="w-auto p-0" align="center">
                 <Calendar
                   mode="single"
-                  selected={weekStart}
+                  selected={viewMode === "month" ? monthAnchor : weekStart}
                   onSelect={handleCalendarSelect}
-                  defaultMonth={weekStart}
+                  defaultMonth={viewMode === "month" ? monthAnchor : weekStart}
                 />
               </PopoverContent>
             </Popover>
@@ -325,6 +377,13 @@ export function CalendarPage() {
         <div className="flex-1 min-h-0">
           {eventsQuery.isLoading ? (
             <Skeleton className="h-full w-full" />
+          ) : viewMode === "month" ? (
+            <MonthGrid
+              monthAnchor={monthAnchor}
+              events={events}
+              isDesktop={isDesktop}
+              onDayClick={handleDayClick}
+            />
           ) : (
             <CalendarGrid
               weekStart={weekStart}
