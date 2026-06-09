@@ -256,10 +256,38 @@ export function formatChipTime(iso: string, timezone?: string): string {
   return minutes === 0 ? `${h12}${meridiem}` : `${h12}:${String(minutes).padStart(2, "0")}${meridiem}`;
 }
 
+/**
+ * Return a Date representing midnight at the start of `dayDateStr` (YYYY-MM-DD)
+ * in the given IANA timezone. When no timezone is provided, falls back to
+ * `new Date(year, month-1, d)` (local midnight) for backwards-compat with the
+ * existing tests that pass localtime ISO strings without a Z suffix.
+ */
+function midnightInZone(year: number, month: number, d: number, timezone?: string): Date {
+  if (!timezone) {
+    return new Date(year, month - 1, d, 0, 0, 0, 0);
+  }
+  // Build an ISO string that represents midnight in the given timezone by
+  // appending the zone offset obtained via Intl.
+  const probe = new Date(`${year}-${String(month).padStart(2, "0")}-${String(d).padStart(2, "0")}T12:00:00Z`);
+  const offsetMs = probe.getTime() - new Date(
+    new Intl.DateTimeFormat("en-US", {
+      timeZone: timezone,
+      year: "numeric", month: "2-digit", day: "2-digit",
+      hour: "2-digit", minute: "2-digit", second: "2-digit",
+      hour12: false,
+    }).format(probe).replace(
+      /(\d+)\/(\d+)\/(\d+),\s(\d+):(\d+):(\d+)/,
+      "$3-$1-$2T$4:$5:$6Z",
+    )
+  ).getTime();
+  const midnightUtcMs = new Date(`${year}-${String(month).padStart(2, "0")}-${String(d).padStart(2, "0")}T00:00:00Z`).getTime() + offsetMs;
+  return new Date(midnightUtcMs);
+}
+
 export function getEventsForDay(events: CalendarEvent[], day: Date, timezone?: string): { allDay: CalendarEvent[]; timed: CalendarEvent[] } {
   const { year, month, day: d } = getDateInZone(day, timezone);
-  const dayStart = new Date(year, month - 1, d, 0, 0, 0, 0);
-  const dayEnd = new Date(year, month - 1, d, 23, 59, 59, 999);
+  const dayStart = midnightInZone(year, month, d, timezone);
+  const dayEnd = new Date(dayStart.getTime() + 24 * 60 * 60 * 1000 - 1);
 
   // For date-only comparison of all-day events (YYYY-MM-DD)
   const dayDateStr = `${year}-${String(month).padStart(2, "0")}-${String(d).padStart(2, "0")}`;
