@@ -37,6 +37,8 @@ type RetentionDaysData = z.infer<ReturnType<typeof retentionDaysSchema>>;
 const CATEGORY_LABELS: Record<string, string> = {
   "productivity.completed_tasks": "Completed tasks",
   "productivity.deleted_tasks_restore_window": "Deleted tasks (restore window)",
+  "productivity.reminders": "Reminders",
+  "productivity.deleted_reminders_restore_window": "Deleted reminders (restore window)",
   "recipe.deleted_recipes_restore_window": "Deleted recipes (restore window)",
   "recipe.restoration_audit": "Recipe restoration audit",
   "tracker.entries": "Tracker entries",
