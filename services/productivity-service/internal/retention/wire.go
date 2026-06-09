@@ -22,6 +22,8 @@ func Setup(ctx context.Context, l logrus.FieldLogger, db *gorm.DB, router *mux.R
 	reaper := sr.New("productivity-service", db, pc, metrics, l,
 		CompletedTasks{},
 		DeletedTasksRestoreWindow{},
+		Reminders{},
+		DeletedRemindersRestoreWindow{},
 		AuditTrim{},
 	)
 	sr.MountInternalEndpoints(router, reaper, internalToken, l)

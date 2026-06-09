@@ -1,7 +1,9 @@
 // Package retention wires the productivity-service into the shared retention
-// framework. It implements two CategoryHandlers: completed-task aging and
-// soft-deleted task restore-window expiry. Both run inside a single
-// transaction per scope so the cascade (task → task_restorations) is atomic.
+// framework. It implements four CategoryHandlers: completed-task aging,
+// soft-deleted task restore-window expiry, reminder soft-delete aging, and
+// soft-deleted reminder restore-window expiry. Each runs inside a single
+// transaction per scope so its cascade (task → task_restorations,
+// reminder → reminder_snoozes/reminder_dismissals) is atomic.
 package retention
 
 import (
