@@ -117,6 +117,18 @@ export function getMonthGridRange(monthAnchor: Date): { start: Date; end: Date }
   return { start: new Date(start), end };
 }
 
+/**
+ * Local (not tz-shifted) month/year comparison — matches the locally-derived
+ * day number on each grid cell, so muting and the day number never disagree.
+ */
+export function isSameMonth(day: Date, monthAnchor: Date): boolean {
+  return day.getFullYear() === monthAnchor.getFullYear() && day.getMonth() === monthAnchor.getMonth();
+}
+
+export function formatMonthYear(date: Date): string {
+  return date.toLocaleDateString("en-US", { month: "long", year: "numeric" });
+}
+
 export function isSameDay(a: Date, b: Date, timezone?: string): boolean {
   const aDate = getDateInZone(a, timezone);
   const bDate = getDateInZone(b, timezone);

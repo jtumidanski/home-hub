@@ -16,6 +16,8 @@ import {
   addMonths,
   getMonthGridDays,
   getMonthGridRange,
+  isSameMonth,
+  formatMonthYear,
 } from "../calendar-utils";
 
 function makeEvent(overrides: Partial<CalendarEvent["attributes"]> & { id?: string } = {}): CalendarEvent {
@@ -375,5 +377,31 @@ describe("getMonthGridRange", () => {
     expect(start.getDate()).toBe(26);
     expect(end.getMonth()).toBe(8);
     expect(end.getDate()).toBe(6);
+  });
+});
+
+describe("isSameMonth", () => {
+  const anchor = new Date(2026, 7, 1); // August 2026
+
+  it("is true for a day within the anchor's month", () => {
+    expect(isSameMonth(new Date(2026, 7, 15), anchor)).toBe(true);
+  });
+
+  it("is false for a leading adjacent-month day", () => {
+    expect(isSameMonth(new Date(2026, 6, 26), anchor)).toBe(false); // July 26
+  });
+
+  it("is false for a trailing adjacent-month day", () => {
+    expect(isSameMonth(new Date(2026, 8, 5), anchor)).toBe(false); // Sept 5
+  });
+
+  it("respects the year (Dec vs next Jan)", () => {
+    expect(isSameMonth(new Date(2026, 11, 31), new Date(2027, 0, 1))).toBe(false);
+  });
+});
+
+describe("formatMonthYear", () => {
+  it("formats as full month name and year", () => {
+    expect(formatMonthYear(new Date(2026, 5, 1))).toBe("June 2026");
   });
 });
