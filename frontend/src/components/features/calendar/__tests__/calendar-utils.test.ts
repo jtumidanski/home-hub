@@ -18,6 +18,7 @@ import {
   getMonthGridRange,
   isSameMonth,
   formatMonthYear,
+  formatChipTime,
 } from "../calendar-utils";
 
 function makeEvent(overrides: Partial<CalendarEvent["attributes"]> & { id?: string } = {}): CalendarEvent {
@@ -403,5 +404,32 @@ describe("isSameMonth", () => {
 describe("formatMonthYear", () => {
   it("formats as full month name and year", () => {
     expect(formatMonthYear(new Date(2026, 5, 1))).toBe("June 2026");
+  });
+});
+
+describe("formatChipTime", () => {
+  it("drops :00 minutes on the hour (AM)", () => {
+    expect(formatChipTime("2026-03-26T09:00:00Z", "UTC")).toBe("9a");
+  });
+
+  it("keeps non-zero minutes", () => {
+    expect(formatChipTime("2026-03-26T09:30:00Z", "UTC")).toBe("9:30a");
+  });
+
+  it("formats noon as 12p", () => {
+    expect(formatChipTime("2026-03-26T12:00:00Z", "UTC")).toBe("12p");
+  });
+
+  it("formats afternoon times as PM", () => {
+    expect(formatChipTime("2026-03-26T14:30:00Z", "UTC")).toBe("2:30p");
+  });
+
+  it("formats midnight as 12a", () => {
+    expect(formatChipTime("2026-03-26T00:00:00Z", "UTC")).toBe("12a");
+  });
+
+  it("is timezone-aware", () => {
+    // 14:00 UTC is 10:00 in America/New_York (EDT, UTC-4) on this date.
+    expect(formatChipTime("2026-03-26T14:00:00Z", "America/New_York")).toBe("10a");
   });
 });

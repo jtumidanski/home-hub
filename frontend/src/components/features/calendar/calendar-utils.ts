@@ -244,6 +244,18 @@ export function layoutOverlappingEvents(events: CalendarEvent[]): PositionedEven
   return positioned;
 }
 
+/**
+ * Compact timed-event prefix for month chips: single-letter meridiem,
+ * minutes dropped on the hour. e.g. "9a", "9:30a", "12p", "2:30p".
+ * Timezone-aware via getTimeInZone.
+ */
+export function formatChipTime(iso: string, timezone?: string): string {
+  const { hours, minutes } = getTimeInZone(new Date(iso), timezone);
+  const meridiem = hours < 12 ? "a" : "p";
+  const h12 = hours % 12 === 0 ? 12 : hours % 12;
+  return minutes === 0 ? `${h12}${meridiem}` : `${h12}:${String(minutes).padStart(2, "0")}${meridiem}`;
+}
+
 export function getEventsForDay(events: CalendarEvent[], day: Date, timezone?: string): { allDay: CalendarEvent[]; timed: CalendarEvent[] } {
   const { year, month, day: d } = getDateInZone(day, timezone);
   const dayStart = new Date(year, month - 1, d, 0, 0, 0, 0);
