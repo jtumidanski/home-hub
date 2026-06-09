@@ -19,6 +19,8 @@ import {
   isSameMonth,
   formatMonthYear,
   formatChipTime,
+  toDayKey,
+  bucketEventsByDay,
 } from "../calendar-utils";
 
 function makeEvent(overrides: Partial<CalendarEvent["attributes"]> & { id?: string } = {}): CalendarEvent {
@@ -431,5 +433,46 @@ describe("formatChipTime", () => {
   it("is timezone-aware", () => {
     // 14:00 UTC is 10:00 in America/New_York (EDT, UTC-4) on this date.
     expect(formatChipTime("2026-03-26T14:00:00Z", "America/New_York")).toBe("10a");
+  });
+});
+
+describe("toDayKey", () => {
+  it("formats a local date as YYYY-MM-DD with zero padding", () => {
+    expect(toDayKey(new Date(2026, 7, 5))).toBe("2026-08-05");
+  });
+});
+
+describe("bucketEventsByDay", () => {
+  it("places a timed event in the correct day's bucket", () => {
+    const gridDays = [new Date(2026, 2, 25), new Date(2026, 2, 26), new Date(2026, 2, 27)];
+    const evt = makeEvent({ startTime: "2026-03-26T10:00:00Z", endTime: "2026-03-26T11:00:00Z" });
+    const map = bucketEventsByDay(gridDays, [evt], "UTC");
+    expect(map.get("2026-03-26")!.timed).toHaveLength(1);
+    expect(map.get("2026-03-25")!.timed).toHaveLength(0);
+    expect(map.get("2026-03-27")!.timed).toHaveLength(0);
+  });
+
+  it("sorts timed events within a day by start time ascending", () => {
+    const gridDays = [new Date(2026, 2, 26)];
+    const later = makeEvent({ id: "later", startTime: "2026-03-26T14:00:00Z", endTime: "2026-03-26T15:00:00Z" });
+    const earlier = makeEvent({ id: "earlier", startTime: "2026-03-26T09:00:00Z", endTime: "2026-03-26T10:00:00Z" });
+    const map = bucketEventsByDay(gridDays, [later, earlier], "UTC");
+    expect(map.get("2026-03-26")!.timed.map((e) => e.id)).toEqual(["earlier", "later"]);
+  });
+
+  it("spans a multi-day all-day event across every covered day", () => {
+    const gridDays = [new Date(2026, 3, 1), new Date(2026, 3, 2), new Date(2026, 3, 3), new Date(2026, 3, 4)];
+    const evt = makeEvent({ allDay: true, startTime: "2026-04-01", endTime: "2026-04-03" });
+    const map = bucketEventsByDay(gridDays, [evt], "UTC");
+    expect(map.get("2026-04-01")!.allDay).toHaveLength(1);
+    expect(map.get("2026-04-02")!.allDay).toHaveLength(1);
+    expect(map.get("2026-04-03")!.allDay).toHaveLength(1);
+    expect(map.get("2026-04-04")!.allDay).toHaveLength(0);
+  });
+
+  it("returns an entry for every grid day", () => {
+    const gridDays = getMonthGridDays(new Date(2026, 7, 1));
+    const map = bucketEventsByDay(gridDays, [], "UTC");
+    expect(map.size).toBe(gridDays.length);
   });
 });

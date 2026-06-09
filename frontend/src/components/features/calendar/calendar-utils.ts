@@ -286,3 +286,30 @@ export function getEventsForDay(events: CalendarEvent[], day: Date, timezone?: s
 
   return { allDay, timed };
 }
+
+/** Local YYYY-MM-DD key for a grid day. */
+export function toDayKey(date: Date): string {
+  return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(date.getDate()).padStart(2, "0")}`;
+}
+
+/**
+ * Bucket events into each grid day, keyed by local YYYY-MM-DD. Delegates to
+ * the existing tz-aware getEventsForDay so multi-day/all-day/midnight bucketing
+ * reuse already-tested logic. Within a day, timed events are sorted by start.
+ * Computed once per render in MonthGrid.
+ */
+export function bucketEventsByDay(
+  gridDays: Date[],
+  events: CalendarEvent[],
+  timezone?: string,
+): Map<string, { allDay: CalendarEvent[]; timed: CalendarEvent[] }> {
+  const map = new Map<string, { allDay: CalendarEvent[]; timed: CalendarEvent[] }>();
+  for (const day of gridDays) {
+    const { allDay, timed } = getEventsForDay(events, day, timezone);
+    const sortedTimed = [...timed].sort(
+      (a, b) => new Date(a.attributes.startTime).getTime() - new Date(b.attributes.startTime).getTime(),
+    );
+    map.set(toDayKey(day), { allDay, timed: sortedTimed });
+  }
+  return map;
+}
