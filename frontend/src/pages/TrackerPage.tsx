@@ -44,7 +44,7 @@ export function TrackerPage() {
         )}
         {view === "setup" && <TrackerSetup />}
         {view === "report" && (
-          <MonthReport month={month} onBackToCalendar={() => setView("calendar")} />
+          <MonthReport month={month} />
         )}
       </div>
     </div>
