@@ -12,19 +12,21 @@ import (
 type Category string
 
 const (
-	CatProductivityCompletedTasks            Category = "productivity.completed_tasks"
-	CatProductivityDeletedTasksRestoreWindow Category = "productivity.deleted_tasks_restore_window"
-	CatRecipeDeletedRecipesRestoreWindow     Category = "recipe.deleted_recipes_restore_window"
-	CatRecipeRestorationAudit                Category = "recipe.restoration_audit"
-	CatTrackerEntries                        Category = "tracker.entries"
-	CatTrackerDeletedItemsRestoreWindow      Category = "tracker.deleted_items_restore_window"
-	CatWorkoutPerformances                   Category = "workout.performances"
-	CatWorkoutDeletedCatalogRestoreWindow    Category = "workout.deleted_catalog_restore_window"
-	CatCalendarPastEvents                    Category = "calendar.past_events"
-	CatPackageArchiveWindow                  Category = "package.archive_window"
-	CatPackageArchivedDeleteWindow           Category = "package.archived_delete_window"
-	CatSystemRetentionAudit                  Category = "system.retention_audit"
-	CatDashboardDashboards                   Category = "dashboard.dashboards"
+	CatProductivityCompletedTasks                Category = "productivity.completed_tasks"
+	CatProductivityDeletedTasksRestoreWindow     Category = "productivity.deleted_tasks_restore_window"
+	CatProductivityReminders                     Category = "productivity.reminders"
+	CatProductivityDeletedRemindersRestoreWindow Category = "productivity.deleted_reminders_restore_window"
+	CatRecipeDeletedRecipesRestoreWindow         Category = "recipe.deleted_recipes_restore_window"
+	CatRecipeRestorationAudit                    Category = "recipe.restoration_audit"
+	CatTrackerEntries                            Category = "tracker.entries"
+	CatTrackerDeletedItemsRestoreWindow          Category = "tracker.deleted_items_restore_window"
+	CatWorkoutPerformances                       Category = "workout.performances"
+	CatWorkoutDeletedCatalogRestoreWindow        Category = "workout.deleted_catalog_restore_window"
+	CatCalendarPastEvents                        Category = "calendar.past_events"
+	CatPackageArchiveWindow                      Category = "package.archive_window"
+	CatPackageArchivedDeleteWindow               Category = "package.archived_delete_window"
+	CatSystemRetentionAudit                      Category = "system.retention_audit"
+	CatDashboardDashboards                       Category = "dashboard.dashboards"
 )
 
 // ScopeKind is the kind of entity a retention category applies to.
@@ -38,36 +40,40 @@ const (
 // Defaults are the system-shipped retention windows in days.
 // These are compiled into binaries so they version with the deployment.
 var Defaults = map[Category]int{
-	CatProductivityCompletedTasks:            365,
-	CatProductivityDeletedTasksRestoreWindow: 30,
-	CatRecipeDeletedRecipesRestoreWindow:     30,
-	CatRecipeRestorationAudit:                90,
-	CatTrackerEntries:                        730,
-	CatTrackerDeletedItemsRestoreWindow:      30,
-	CatWorkoutPerformances:                   1825,
-	CatWorkoutDeletedCatalogRestoreWindow:    30,
-	CatCalendarPastEvents:                    365,
-	CatPackageArchiveWindow:                  7,
-	CatPackageArchivedDeleteWindow:           30,
-	CatSystemRetentionAudit:                  180,
-	CatDashboardDashboards:                   0, // v1: never auto-purge; plumbing only
+	CatProductivityCompletedTasks:                365,
+	CatProductivityDeletedTasksRestoreWindow:     30,
+	CatProductivityReminders:                     365,
+	CatProductivityDeletedRemindersRestoreWindow: 30,
+	CatRecipeDeletedRecipesRestoreWindow:         30,
+	CatRecipeRestorationAudit:                    90,
+	CatTrackerEntries:                            730,
+	CatTrackerDeletedItemsRestoreWindow:          30,
+	CatWorkoutPerformances:                       1825,
+	CatWorkoutDeletedCatalogRestoreWindow:        30,
+	CatCalendarPastEvents:                        365,
+	CatPackageArchiveWindow:                      7,
+	CatPackageArchivedDeleteWindow:               30,
+	CatSystemRetentionAudit:                      180,
+	CatDashboardDashboards:                       0, // v1: never auto-purge; plumbing only
 }
 
 // scopeKindOf maps each category to the entity scope it applies to.
 var scopeKindOf = map[Category]ScopeKind{
-	CatProductivityCompletedTasks:            ScopeHousehold,
-	CatProductivityDeletedTasksRestoreWindow: ScopeHousehold,
-	CatRecipeDeletedRecipesRestoreWindow:     ScopeHousehold,
-	CatRecipeRestorationAudit:                ScopeHousehold,
-	CatTrackerEntries:                        ScopeUser,
-	CatTrackerDeletedItemsRestoreWindow:      ScopeUser,
-	CatWorkoutPerformances:                   ScopeUser,
-	CatWorkoutDeletedCatalogRestoreWindow:    ScopeUser,
-	CatCalendarPastEvents:                    ScopeHousehold,
-	CatPackageArchiveWindow:                  ScopeHousehold,
-	CatPackageArchivedDeleteWindow:           ScopeHousehold,
-	CatSystemRetentionAudit:                  ScopeHousehold,
-	CatDashboardDashboards:                   ScopeHousehold,
+	CatProductivityCompletedTasks:                ScopeHousehold,
+	CatProductivityDeletedTasksRestoreWindow:     ScopeHousehold,
+	CatProductivityReminders:                     ScopeHousehold,
+	CatProductivityDeletedRemindersRestoreWindow: ScopeHousehold,
+	CatRecipeDeletedRecipesRestoreWindow:         ScopeHousehold,
+	CatRecipeRestorationAudit:                    ScopeHousehold,
+	CatTrackerEntries:                            ScopeUser,
+	CatTrackerDeletedItemsRestoreWindow:          ScopeUser,
+	CatWorkoutPerformances:                       ScopeUser,
+	CatWorkoutDeletedCatalogRestoreWindow:        ScopeUser,
+	CatCalendarPastEvents:                        ScopeHousehold,
+	CatPackageArchiveWindow:                      ScopeHousehold,
+	CatPackageArchivedDeleteWindow:               ScopeHousehold,
+	CatSystemRetentionAudit:                      ScopeHousehold,
+	CatDashboardDashboards:                       ScopeHousehold,
 }
 
 // Errors returned by Category methods.
