@@ -22,6 +22,7 @@ type Builder struct {
 	ownerUserID      *uuid.UUID
 	lastDismissedAt  *time.Time
 	lastSnoozedUntil *time.Time
+	deletedAt        *time.Time
 	createdAt        time.Time
 	updatedAt        time.Time
 }
@@ -30,17 +31,18 @@ func NewBuilder() *Builder {
 	return &Builder{}
 }
 
-func (b *Builder) SetId(id uuid.UUID) *Builder                   { b.id = id; return b }
-func (b *Builder) SetTenantID(id uuid.UUID) *Builder              { b.tenantID = id; return b }
-func (b *Builder) SetHouseholdID(id uuid.UUID) *Builder           { b.householdID = id; return b }
-func (b *Builder) SetTitle(title string) *Builder                  { b.title = title; return b }
-func (b *Builder) SetNotes(notes string) *Builder                  { b.notes = notes; return b }
-func (b *Builder) SetScheduledFor(t time.Time) *Builder            { b.scheduledFor = t; return b }
-func (b *Builder) SetOwnerUserID(id *uuid.UUID) *Builder           { b.ownerUserID = id; return b }
-func (b *Builder) SetLastDismissedAt(t *time.Time) *Builder        { b.lastDismissedAt = t; return b }
-func (b *Builder) SetLastSnoozedUntil(t *time.Time) *Builder       { b.lastSnoozedUntil = t; return b }
-func (b *Builder) SetCreatedAt(t time.Time) *Builder               { b.createdAt = t; return b }
-func (b *Builder) SetUpdatedAt(t time.Time) *Builder               { b.updatedAt = t; return b }
+func (b *Builder) SetId(id uuid.UUID) *Builder               { b.id = id; return b }
+func (b *Builder) SetTenantID(id uuid.UUID) *Builder         { b.tenantID = id; return b }
+func (b *Builder) SetHouseholdID(id uuid.UUID) *Builder      { b.householdID = id; return b }
+func (b *Builder) SetTitle(title string) *Builder            { b.title = title; return b }
+func (b *Builder) SetNotes(notes string) *Builder            { b.notes = notes; return b }
+func (b *Builder) SetScheduledFor(t time.Time) *Builder      { b.scheduledFor = t; return b }
+func (b *Builder) SetOwnerUserID(id *uuid.UUID) *Builder     { b.ownerUserID = id; return b }
+func (b *Builder) SetLastDismissedAt(t *time.Time) *Builder  { b.lastDismissedAt = t; return b }
+func (b *Builder) SetLastSnoozedUntil(t *time.Time) *Builder { b.lastSnoozedUntil = t; return b }
+func (b *Builder) SetDeletedAt(t *time.Time) *Builder        { b.deletedAt = t; return b }
+func (b *Builder) SetCreatedAt(t time.Time) *Builder         { b.createdAt = t; return b }
+func (b *Builder) SetUpdatedAt(t time.Time) *Builder         { b.updatedAt = t; return b }
 
 func (b *Builder) Build() (Model, error) {
 	if b.title == "" {
@@ -59,6 +61,7 @@ func (b *Builder) Build() (Model, error) {
 		ownerUserID:      b.ownerUserID,
 		lastDismissedAt:  b.lastDismissedAt,
 		lastSnoozedUntil: b.lastSnoozedUntil,
+		deletedAt:        b.deletedAt,
 		createdAt:        b.createdAt,
 		updatedAt:        b.updatedAt,
 	}, nil
