@@ -101,7 +101,7 @@ describe("MonthGrid", () => {
     render(<MonthGrid monthAnchor={new Date(2026, 7, 1)} events={[]} isDesktop onDayClick={onDayClick} />);
     await userEvent.click(screen.getByRole("button", { name: /August 14, / }));
     expect(onDayClick).toHaveBeenCalledTimes(1);
-    const arg = onDayClick.mock.calls[0][0] as Date;
+    const arg = onDayClick.mock.calls[0]![0] as Date;
     expect(arg.getMonth()).toBe(7);
     expect(arg.getDate()).toBe(14);
   });
@@ -111,7 +111,7 @@ describe("MonthGrid", () => {
     render(<MonthGrid monthAnchor={new Date(2026, 7, 1)} events={[]} isDesktop onDayClick={onDayClick} />);
     // Sept 5, 2026 is the last (trailing) grid cell.
     await userEvent.click(screen.getByRole("button", { name: /September 5, / }));
-    const arg = onDayClick.mock.calls[0][0] as Date;
+    const arg = onDayClick.mock.calls[0]![0] as Date;
     expect(arg.getMonth()).toBe(8);
     expect(arg.getDate()).toBe(5);
   });

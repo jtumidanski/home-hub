@@ -476,3 +476,21 @@ describe("bucketEventsByDay", () => {
     expect(map.size).toBe(gridDays.length);
   });
 });
+
+describe("getEventsForDay timezone correctness", () => {
+  it("buckets a UTC-timestamp timed event to the correct household-tz day", () => {
+    // 03:00 UTC on Aug 14 is 23:00 EDT on Aug 13 in America/New_York.
+    const evt = makeEvent({ startTime: "2026-08-14T03:00:00Z", endTime: "2026-08-14T04:00:00Z" });
+    const aug13 = new Date(2026, 7, 13);
+    const aug14 = new Date(2026, 7, 14);
+    expect(getEventsForDay([evt], aug13, "America/New_York").timed).toHaveLength(1);
+    expect(getEventsForDay([evt], aug14, "America/New_York").timed).toHaveLength(0);
+  });
+
+  it("buckets correctly on the spring-forward DST day (America/New_York 2026-03-08)", () => {
+    // 06:00 UTC = 01:00 EST on Mar 8 (before the 02:00 spring-forward).
+    const evt = makeEvent({ startTime: "2026-03-08T06:00:00Z", endTime: "2026-03-08T06:30:00Z" });
+    const mar8 = new Date(2026, 2, 8);
+    expect(getEventsForDay([evt], mar8, "America/New_York").timed).toHaveLength(1);
+  });
+});

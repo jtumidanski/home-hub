@@ -257,31 +257,41 @@ export function formatChipTime(iso: string, timezone?: string): string {
 }
 
 /**
- * Return a Date representing midnight at the start of `dayDateStr` (YYYY-MM-DD)
- * in the given IANA timezone. When no timezone is provided, falls back to
- * `new Date(year, month-1, d)` (local midnight) for backwards-compat with the
- * existing tests that pass localtime ISO strings without a Z suffix.
+ * UTC Date for midnight at the start of the given Y-M-D in `timezone`.
+ * Falls back to local midnight when no timezone is given (back-compat with
+ * tests that pass localtime ISO strings without a Z suffix).
+ *
+ * Uses measure-and-correct: format a UTC guess in the target zone, read the
+ * wall-clock it shows via formatToParts (consistent with getDateInZone/
+ * getTimeInZone), and correct by the difference. A second pass resolves the
+ * rare case where the first correction crosses a DST transition.
  */
 function midnightInZone(year: number, month: number, d: number, timezone?: string): Date {
   if (!timezone) {
     return new Date(year, month - 1, d, 0, 0, 0, 0);
   }
-  // Build an ISO string that represents midnight in the given timezone by
-  // appending the zone offset obtained via Intl.
-  const probe = new Date(`${year}-${String(month).padStart(2, "0")}-${String(d).padStart(2, "0")}T12:00:00Z`);
-  const offsetMs = probe.getTime() - new Date(
-    new Intl.DateTimeFormat("en-US", {
+  const desired = Date.UTC(year, month - 1, d, 0, 0, 0);
+  let guess = desired;
+  for (let i = 0; i < 2; i++) {
+    const parts = new Intl.DateTimeFormat("en-US", {
       timeZone: timezone,
-      year: "numeric", month: "2-digit", day: "2-digit",
-      hour: "2-digit", minute: "2-digit", second: "2-digit",
+      year: "numeric",
+      month: "2-digit",
+      day: "2-digit",
+      hour: "2-digit",
+      minute: "2-digit",
+      second: "2-digit",
       hour12: false,
-    }).format(probe).replace(
-      /(\d+)\/(\d+)\/(\d+),\s(\d+):(\d+):(\d+)/,
-      "$3-$1-$2T$4:$5:$6Z",
-    )
-  ).getTime();
-  const midnightUtcMs = new Date(`${year}-${String(month).padStart(2, "0")}-${String(d).padStart(2, "0")}T00:00:00Z`).getTime() + offsetMs;
-  return new Date(midnightUtcMs);
+    }).formatToParts(new Date(guess));
+    const get = (type: string) => Number(parts.find((p) => p.type === type)!.value);
+    let hour = get("hour");
+    if (hour === 24) hour = 0; // some environments emit "24" for midnight
+    const shown = Date.UTC(get("year"), get("month") - 1, get("day"), hour, get("minute"), get("second"));
+    const diff = shown - desired;
+    if (diff === 0) break;
+    guess -= diff;
+  }
+  return new Date(guess);
 }
 
 export function getEventsForDay(events: CalendarEvent[], day: Date, timezone?: string): { allDay: CalendarEvent[]; timed: CalendarEvent[] } {
