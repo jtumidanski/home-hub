@@ -69,6 +69,22 @@ export function getStartOfWeek(date: Date): Date {
   return d;
 }
 
+export function getStartOfMonth(date: Date): Date {
+  const d = new Date(date.getFullYear(), date.getMonth(), 1);
+  d.setHours(0, 0, 0, 0);
+  return d;
+}
+
+/**
+ * Add `delta` calendar months to `date`. Intended for the month anchor
+ * (always the 1st of a month), so no end-of-month day clamping is needed.
+ */
+export function addMonths(date: Date, delta: number): Date {
+  const d = new Date(date);
+  d.setMonth(d.getMonth() + delta);
+  return d;
+}
+
 export function isSameDay(a: Date, b: Date, timezone?: string): boolean {
   const aDate = getDateInZone(a, timezone);
   const bDate = getDateInZone(b, timezone);

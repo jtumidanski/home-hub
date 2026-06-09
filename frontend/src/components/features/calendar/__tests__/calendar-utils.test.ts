@@ -12,6 +12,8 @@ import {
   getEventsForDay,
   getTimeInZone,
   getDateInZone,
+  getStartOfMonth,
+  addMonths,
 } from "../calendar-utils";
 
 function makeEvent(overrides: Partial<CalendarEvent["attributes"]> & { id?: string } = {}): CalendarEvent {
@@ -284,5 +286,45 @@ describe("getDateInZone", () => {
     const utcMidnight = new Date("2026-03-26T00:00:00Z");
     const { day } = getDateInZone(utcMidnight, "America/New_York");
     expect(day).toBe(25);
+  });
+});
+
+describe("getStartOfMonth", () => {
+  it("returns the 1st of the month at local midnight", () => {
+    const d = new Date(2026, 7, 14, 15, 30); // Aug 14, 2026 3:30pm
+    const start = getStartOfMonth(d);
+    expect(start.getFullYear()).toBe(2026);
+    expect(start.getMonth()).toBe(7); // August
+    expect(start.getDate()).toBe(1);
+    expect(start.getHours()).toBe(0);
+    expect(start.getMinutes()).toBe(0);
+    expect(start.getSeconds()).toBe(0);
+  });
+
+  it("returns the same month when already on the 1st", () => {
+    const start = getStartOfMonth(new Date(2026, 0, 1));
+    expect(start.getMonth()).toBe(0);
+    expect(start.getDate()).toBe(1);
+  });
+});
+
+describe("addMonths", () => {
+  it("advances by one calendar month", () => {
+    const next = addMonths(new Date(2026, 7, 1), 1);
+    expect(next.getFullYear()).toBe(2026);
+    expect(next.getMonth()).toBe(8); // September
+    expect(next.getDate()).toBe(1);
+  });
+
+  it("rolls over the year going forward (Dec -> Jan)", () => {
+    const next = addMonths(new Date(2026, 11, 1), 1);
+    expect(next.getFullYear()).toBe(2027);
+    expect(next.getMonth()).toBe(0); // January
+  });
+
+  it("rolls back the year going backward (Jan -> Dec)", () => {
+    const prev = addMonths(new Date(2026, 0, 1), -1);
+    expect(prev.getFullYear()).toBe(2025);
+    expect(prev.getMonth()).toBe(11); // December
   });
 });
