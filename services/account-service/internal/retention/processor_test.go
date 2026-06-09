@@ -49,6 +49,30 @@ func TestResolveAllUsesDefaults(t *testing.T) {
 	}
 }
 
+func TestResolveAllIncludesReminderCategories(t *testing.T) {
+	db := setupTestDB(t)
+	l, _ := test.NewNullLogger()
+	p := NewProcessor(l, context.Background(), db)
+
+	tenantID := uuid.New()
+	householdID := uuid.New()
+	userID := uuid.New()
+
+	resolved, err := p.ResolveAll(tenantID, householdID, userID)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	rem := resolved.Household.Values[sharedretention.CatProductivityReminders]
+	if rem.Days != 365 || rem.Source != "default" {
+		t.Errorf("reminders = %+v, want 365/default", rem)
+	}
+	rw := resolved.Household.Values[sharedretention.CatProductivityDeletedRemindersRestoreWindow]
+	if rw.Days != 30 || rw.Source != "default" {
+		t.Errorf("restore window = %+v, want 30/default", rw)
+	}
+}
+
 func TestApplyHouseholdPatchUpsertAndDelete(t *testing.T) {
 	db := setupTestDB(t)
 	l, _ := test.NewNullLogger()

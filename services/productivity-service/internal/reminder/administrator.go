@@ -28,7 +28,7 @@ func create(db *gorm.DB, tenantID, householdID uuid.UUID, title, notes string, s
 
 func update(db *gorm.DB, id uuid.UUID, title, notes string, scheduledFor time.Time, ownerUserID *uuid.UUID) (Entity, error) {
 	var e Entity
-	if err := db.Where("id = ?", id).First(&e).Error; err != nil {
+	if err := db.Where("id = ? AND deleted_at IS NULL", id).First(&e).Error; err != nil {
 		return Entity{}, err
 	}
 	e.Title = title
@@ -44,7 +44,7 @@ func update(db *gorm.DB, id uuid.UUID, title, notes string, scheduledFor time.Ti
 
 func dismiss(db *gorm.DB, id uuid.UUID) error {
 	now := time.Now().UTC()
-	result := db.Model(&Entity{}).Where("id = ?", id).Updates(map[string]interface{}{
+	result := db.Model(&Entity{}).Where("id = ? AND deleted_at IS NULL", id).Updates(map[string]interface{}{
 		"last_dismissed_at": now,
 		"updated_at":        now,
 	})
@@ -59,12 +59,26 @@ func dismiss(db *gorm.DB, id uuid.UUID) error {
 
 func snooze(db *gorm.DB, id uuid.UUID, snoozedUntil time.Time) error {
 	now := time.Now().UTC()
-	return db.Model(&Entity{}).Where("id = ?", id).Updates(map[string]interface{}{
+	result := db.Model(&Entity{}).Where("id = ? AND deleted_at IS NULL", id).Updates(map[string]interface{}{
 		"last_snoozed_until": snoozedUntil,
 		"updated_at":         now,
-	}).Error
+	})
+	if result.Error != nil {
+		return result.Error
+	}
+	if result.RowsAffected == 0 {
+		return gorm.ErrRecordNotFound
+	}
+	return nil
 }
 
 func deleteByID(db *gorm.DB, id uuid.UUID) error {
-	return db.Where("id = ?", id).Delete(&Entity{}).Error
+	result := db.Where("id = ? AND deleted_at IS NULL", id).Delete(&Entity{})
+	if result.Error != nil {
+		return result.Error
+	}
+	if result.RowsAffected == 0 {
+		return gorm.ErrRecordNotFound
+	}
+	return nil
 }

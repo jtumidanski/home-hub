@@ -38,6 +38,11 @@ func createHandler(db *gorm.DB) server.InputHandler[CreateRequest] {
 					server.WriteError(w, http.StatusBadRequest, "Invalid Request", "Invalid snooze parameters")
 					return
 				}
+				if errors.Is(err, gorm.ErrRecordNotFound) {
+					d.Logger().WithError(err).Error("Reminder not found")
+					server.WriteError(w, http.StatusNotFound, "Not Found", "Reminder not found")
+					return
+				}
 				d.Logger().WithError(err).Error("Failed to snooze reminder")
 				server.WriteError(w, http.StatusInternalServerError, "Snooze Failed", "")
 				return

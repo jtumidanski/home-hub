@@ -54,6 +54,40 @@ func TestDashboardCategory(t *testing.T) {
 	}
 }
 
+func TestReminderCategories(t *testing.T) {
+	// Known + household-scoped.
+	for _, c := range []Category{CatProductivityReminders, CatProductivityDeletedRemindersRestoreWindow} {
+		if !c.IsKnown() {
+			t.Errorf("%s should be known", c)
+		}
+		if !c.IsHouseholdScoped() {
+			t.Errorf("%s should be household-scoped", c)
+		}
+	}
+	// Defaults.
+	if Defaults[CatProductivityReminders] != 365 {
+		t.Errorf("reminders default = %d, want 365", Defaults[CatProductivityReminders])
+	}
+	if Defaults[CatProductivityDeletedRemindersRestoreWindow] != 30 {
+		t.Errorf("restore-window default = %d, want 30", Defaults[CatProductivityDeletedRemindersRestoreWindow])
+	}
+	// MaxDays: primary 3650, restore window capped at 365 by the suffix.
+	if CatProductivityReminders.MaxDays() != 3650 {
+		t.Errorf("reminders MaxDays = %d, want 3650", CatProductivityReminders.MaxDays())
+	}
+	if CatProductivityDeletedRemindersRestoreWindow.MaxDays() != 365 {
+		t.Errorf("restore-window MaxDays = %d, want 365", CatProductivityDeletedRemindersRestoreWindow.MaxDays())
+	}
+	// Both appear in the household enumeration.
+	found := map[Category]bool{}
+	for _, c := range HouseholdCategories() {
+		found[c] = true
+	}
+	if !found[CatProductivityReminders] || !found[CatProductivityDeletedRemindersRestoreWindow] {
+		t.Errorf("HouseholdCategories missing reminder categories: %v", HouseholdCategories())
+	}
+}
+
 func TestDefaultsCoverage(t *testing.T) {
 	for _, c := range All() {
 		if _, ok := Defaults[c]; !ok {
