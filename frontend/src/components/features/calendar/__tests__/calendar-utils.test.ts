@@ -14,6 +14,8 @@ import {
   getDateInZone,
   getStartOfMonth,
   addMonths,
+  getMonthGridDays,
+  getMonthGridRange,
 } from "../calendar-utils";
 
 function makeEvent(overrides: Partial<CalendarEvent["attributes"]> & { id?: string } = {}): CalendarEvent {
@@ -326,5 +328,52 @@ describe("addMonths", () => {
     const prev = addMonths(new Date(2026, 0, 1), -1);
     expect(prev.getFullYear()).toBe(2025);
     expect(prev.getMonth()).toBe(11); // December
+  });
+});
+
+describe("getMonthGridDays", () => {
+  it("returns a 35-cell grid for a month that starts on Sunday (March 2026)", () => {
+    // March 1, 2026 is a Sunday; March has 31 days.
+    const days = getMonthGridDays(new Date(2026, 2, 1));
+    expect(days).toHaveLength(35);
+    expect(days[0]!.getDay()).toBe(0); // first cell is Sunday
+    expect(days[days.length - 1]!.getDay()).toBe(6); // last cell is Saturday
+    // First cell is March 1 (in-month), last cell is April 4 (trailing).
+    expect(days[0]!.getMonth()).toBe(2);
+    expect(days[0]!.getDate()).toBe(1);
+    expect(days[34]!.getMonth()).toBe(3); // April
+    expect(days[34]!.getDate()).toBe(4);
+  });
+
+  it("returns a 42-cell grid with leading and trailing days (August 2026)", () => {
+    // August 1, 2026 is a Saturday; grid starts on the prior Sunday (Jul 26).
+    const days = getMonthGridDays(new Date(2026, 7, 1));
+    expect(days).toHaveLength(42);
+    expect(days[0]!.getDay()).toBe(0);
+    expect(days[days.length - 1]!.getDay()).toBe(6);
+    // Leading day belongs to July, trailing day belongs to September.
+    expect(days[0]!.getMonth()).toBe(6); // July
+    expect(days[0]!.getDate()).toBe(26);
+    expect(days[41]!.getMonth()).toBe(8); // September
+    expect(days[41]!.getDate()).toBe(5);
+  });
+
+  it("produces cells at local midnight", () => {
+    const days = getMonthGridDays(new Date(2026, 7, 1));
+    for (const d of days) {
+      expect(d.getHours()).toBe(0);
+      expect(d.getMinutes()).toBe(0);
+    }
+  });
+});
+
+describe("getMonthGridRange", () => {
+  it("spans the first grid day to one day past the last (exclusive end)", () => {
+    const { start, end } = getMonthGridRange(new Date(2026, 7, 1));
+    // start = Jul 26 2026, end = Sep 6 2026 (last grid day Sep 5 + 1).
+    expect(start.getMonth()).toBe(6);
+    expect(start.getDate()).toBe(26);
+    expect(end.getMonth()).toBe(8);
+    expect(end.getDate()).toBe(6);
   });
 });

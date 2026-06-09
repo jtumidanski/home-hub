@@ -85,6 +85,38 @@ export function addMonths(date: Date, delta: number): Date {
   return d;
 }
 
+/**
+ * The visible month grid: complete weeks (Sunday-start) covering the whole
+ * month, including leading/trailing days from adjacent months. Length is a
+ * multiple of 7 (typically 35 or 42).
+ */
+export function getMonthGridDays(monthAnchor: Date): Date[] {
+  const firstOfMonth = getStartOfMonth(monthAnchor);
+  const lastOfMonth = new Date(firstOfMonth.getFullYear(), firstOfMonth.getMonth() + 1, 0);
+  const cursor = getStartOfWeek(firstOfMonth);
+  const days: Date[] = [];
+  // Keep appending until we have covered the last day of the month AND
+  // completed the final week (length is a multiple of 7).
+  while (days.length % 7 !== 0 || cursor <= lastOfMonth) {
+    days.push(new Date(cursor));
+    cursor.setDate(cursor.getDate() + 1);
+  }
+  return days;
+}
+
+/**
+ * Half-open [start, end) date range covering the visible grid, for the
+ * events query. `end` is the day after the last grid cell.
+ */
+export function getMonthGridRange(monthAnchor: Date): { start: Date; end: Date } {
+  const days = getMonthGridDays(monthAnchor);
+  const start = days[0]!;
+  const last = days[days.length - 1]!;
+  const end = new Date(last);
+  end.setDate(end.getDate() + 1);
+  return { start: new Date(start), end };
+}
+
 export function isSameDay(a: Date, b: Date, timezone?: string): boolean {
   const aDate = getDateInZone(a, timezone);
   const bDate = getDateInZone(b, timezone);
