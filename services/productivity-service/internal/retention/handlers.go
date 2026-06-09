@@ -9,6 +9,9 @@ import (
 	"time"
 
 	"github.com/google/uuid"
+	"github.com/jtumidanski/home-hub/services/productivity-service/internal/reminder"
+	"github.com/jtumidanski/home-hub/services/productivity-service/internal/reminder/dismissal"
+	"github.com/jtumidanski/home-hub/services/productivity-service/internal/reminder/snooze"
 	"github.com/jtumidanski/home-hub/services/productivity-service/internal/task"
 	"github.com/jtumidanski/home-hub/services/productivity-service/internal/task/restoration"
 	sr "github.com/jtumidanski/home-hub/shared/go/retention"
@@ -150,6 +153,66 @@ func (Reminders) Reap(ctx context.Context, tx *gorm.DB, scope sr.Scope, days int
 		return sr.ReapResult{}, r.Error
 	}
 	return sr.ReapResult{Scanned: int(r.RowsAffected), Deleted: int(r.RowsAffected)}, nil
+}
+
+// DeletedRemindersRestoreWindow hard-deletes reminders whose deleted_at is
+// older than the restore window, cascading to reminder_dismissals and
+// reminder_snoozes. Mirrors DeletedTasksRestoreWindow + cascadeDeleteTasks.
+type DeletedRemindersRestoreWindow struct{}
+
+func (DeletedRemindersRestoreWindow) Category() sr.Category {
+	return sr.CatProductivityDeletedRemindersRestoreWindow
+}
+
+func (DeletedRemindersRestoreWindow) DiscoverScopes(ctx context.Context, db *gorm.DB) ([]sr.Scope, error) {
+	return Reminders{}.DiscoverScopes(ctx, db)
+}
+
+func (DeletedRemindersRestoreWindow) Reap(ctx context.Context, tx *gorm.DB, scope sr.Scope, days int, dryRun bool) (sr.ReapResult, error) {
+	cutoff := time.Now().UTC().Add(-time.Duration(days) * 24 * time.Hour)
+
+	var ids []string
+	if err := tx.Table("reminders").
+		Where("tenant_id = ? AND household_id = ? AND deleted_at IS NOT NULL AND deleted_at < ?", scope.TenantId, scope.ScopeId, cutoff).
+		Pluck("id", &ids).Error; err != nil {
+		return sr.ReapResult{}, err
+	}
+	if len(ids) == 0 {
+		return sr.ReapResult{}, nil
+	}
+
+	deleted, err := cascadeDeleteReminders(tx, ids)
+	if err != nil {
+		return sr.ReapResult{}, err
+	}
+	return sr.ReapResult{Scanned: len(ids), Deleted: deleted}, nil
+}
+
+// cascadeDeleteReminders removes the listed reminder ids and their dependent
+// rows (reminder_snoozes, reminder_dismissals) inside the supplied tx, children
+// first. Returns the total number of rows removed across all three tables.
+func cascadeDeleteReminders(tx *gorm.DB, ids []string) (int, error) {
+	var total int
+
+	r := tx.Where("reminder_id IN ?", ids).Delete(&snooze.Entity{})
+	if r.Error != nil {
+		return 0, r.Error
+	}
+	total += int(r.RowsAffected)
+
+	r = tx.Where("reminder_id IN ?", ids).Delete(&dismissal.Entity{})
+	if r.Error != nil {
+		return 0, r.Error
+	}
+	total += int(r.RowsAffected)
+
+	r = tx.Where("id IN ?", ids).Delete(&reminder.Entity{})
+	if r.Error != nil {
+		return 0, r.Error
+	}
+	total += int(r.RowsAffected)
+
+	return total, nil
 }
 
 // AuditTrim reaps old retention_runs rows. This is the system.retention_audit

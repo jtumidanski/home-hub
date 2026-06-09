@@ -105,3 +105,65 @@ func TestRemindersDiscoverScopes(t *testing.T) {
 		t.Errorf("distinct scopes = %d, want 2", len(scopes))
 	}
 }
+
+func TestDeletedRemindersRestoreWindowCascade(t *testing.T) {
+	db := newReminderDB(t)
+	tenantID := uuid.New()
+	householdID := uuid.New()
+	now := time.Now().UTC()
+	at := func(d time.Duration) *time.Time { v := now.Add(d); return &v }
+
+	mk := func(deletedAt *time.Time, withChildren bool) uuid.UUID {
+		id := uuid.New()
+		db.Create(&reminder.Entity{
+			Id: id, TenantId: tenantID, HouseholdId: householdID,
+			Title: "x", ScheduledFor: now.Add(-500 * 24 * time.Hour),
+			DeletedAt: deletedAt, CreatedAt: now, UpdatedAt: now,
+		})
+		if withChildren {
+			db.Create(&dismissal.Entity{
+				Id: uuid.New(), TenantId: tenantID, HouseholdId: householdID,
+				ReminderId: id, CreatedByUserId: uuid.New(), CreatedAt: now,
+			})
+			db.Create(&snooze.Entity{
+				Id: uuid.New(), TenantId: tenantID, HouseholdId: householdID,
+				ReminderId: id, DurationMinutes: 10, SnoozedUntil: now, CreatedByUserId: uuid.New(), CreatedAt: now,
+			})
+		}
+		return id
+	}
+
+	expired := mk(at(-31*24*time.Hour), true)
+	mk(at(-29*24*time.Hour), false)
+	mk(nil, false)
+
+	res, err := DeletedRemindersRestoreWindow{}.Reap(context.Background(), db, sr.Scope{
+		TenantId: tenantID, Kind: sr.ScopeHousehold, ScopeId: householdID,
+	}, 30, false)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if res.Scanned != 1 {
+		t.Errorf("scanned = %d, want 1", res.Scanned)
+	}
+	if res.Deleted != 3 {
+		t.Errorf("deleted = %d, want 3", res.Deleted)
+	}
+
+	var reminders, dismissals, snoozes int64
+	db.Model(&reminder.Entity{}).Count(&reminders)
+	db.Model(&dismissal.Entity{}).Count(&dismissals)
+	db.Model(&snooze.Entity{}).Count(&snoozes)
+	if reminders != 2 {
+		t.Errorf("remaining reminders = %d, want 2", reminders)
+	}
+	if dismissals != 0 || snoozes != 0 {
+		t.Errorf("children of expired reminder not cascaded: d=%d s=%d", dismissals, snoozes)
+	}
+
+	var gone int64
+	db.Model(&reminder.Entity{}).Where("id = ?", expired).Count(&gone)
+	if gone != 0 {
+		t.Error("expired reminder should have been hard-deleted")
+	}
+}
