@@ -69,6 +69,66 @@ export function getStartOfWeek(date: Date): Date {
   return d;
 }
 
+export function getStartOfMonth(date: Date): Date {
+  const d = new Date(date.getFullYear(), date.getMonth(), 1);
+  d.setHours(0, 0, 0, 0);
+  return d;
+}
+
+/**
+ * Add `delta` calendar months to `date`. Intended for the month anchor
+ * (always the 1st of a month), so no end-of-month day clamping is needed.
+ */
+export function addMonths(date: Date, delta: number): Date {
+  const d = new Date(date);
+  d.setMonth(d.getMonth() + delta);
+  return d;
+}
+
+/**
+ * The visible month grid: complete weeks (Sunday-start) covering the whole
+ * month, including leading/trailing days from adjacent months. Length is a
+ * multiple of 7 (typically 35 or 42).
+ */
+export function getMonthGridDays(monthAnchor: Date): Date[] {
+  const firstOfMonth = getStartOfMonth(monthAnchor);
+  const lastOfMonth = new Date(firstOfMonth.getFullYear(), firstOfMonth.getMonth() + 1, 0);
+  const cursor = getStartOfWeek(firstOfMonth);
+  const days: Date[] = [];
+  // Keep appending until we have covered the last day of the month AND
+  // completed the final week (length is a multiple of 7).
+  while (days.length % 7 !== 0 || cursor <= lastOfMonth) {
+    days.push(new Date(cursor));
+    cursor.setDate(cursor.getDate() + 1);
+  }
+  return days;
+}
+
+/**
+ * Half-open [start, end) date range covering the visible grid, for the
+ * events query. `end` is the day after the last grid cell.
+ */
+export function getMonthGridRange(monthAnchor: Date): { start: Date; end: Date } {
+  const days = getMonthGridDays(monthAnchor);
+  const start = days[0]!;
+  const last = days[days.length - 1]!;
+  const end = new Date(last);
+  end.setDate(end.getDate() + 1);
+  return { start: new Date(start), end };
+}
+
+/**
+ * Local (not tz-shifted) month/year comparison — matches the locally-derived
+ * day number on each grid cell, so muting and the day number never disagree.
+ */
+export function isSameMonth(day: Date, monthAnchor: Date): boolean {
+  return day.getFullYear() === monthAnchor.getFullYear() && day.getMonth() === monthAnchor.getMonth();
+}
+
+export function formatMonthYear(date: Date): string {
+  return date.toLocaleDateString("en-US", { month: "long", year: "numeric" });
+}
+
 export function isSameDay(a: Date, b: Date, timezone?: string): boolean {
   const aDate = getDateInZone(a, timezone);
   const bDate = getDateInZone(b, timezone);
@@ -184,10 +244,60 @@ export function layoutOverlappingEvents(events: CalendarEvent[]): PositionedEven
   return positioned;
 }
 
+/**
+ * Compact timed-event prefix for month chips: single-letter meridiem,
+ * minutes dropped on the hour. e.g. "9a", "9:30a", "12p", "2:30p".
+ * Timezone-aware via getTimeInZone.
+ */
+export function formatChipTime(iso: string, timezone?: string): string {
+  const { hours, minutes } = getTimeInZone(new Date(iso), timezone);
+  const meridiem = hours < 12 ? "a" : "p";
+  const h12 = hours % 12 === 0 ? 12 : hours % 12;
+  return minutes === 0 ? `${h12}${meridiem}` : `${h12}:${String(minutes).padStart(2, "0")}${meridiem}`;
+}
+
+/**
+ * UTC Date for midnight at the start of the given Y-M-D in `timezone`.
+ * Falls back to local midnight when no timezone is given (back-compat with
+ * tests that pass localtime ISO strings without a Z suffix).
+ *
+ * Uses measure-and-correct: format a UTC guess in the target zone, read the
+ * wall-clock it shows via formatToParts (consistent with getDateInZone/
+ * getTimeInZone), and correct by the difference. A second pass resolves the
+ * rare case where the first correction crosses a DST transition.
+ */
+function midnightInZone(year: number, month: number, d: number, timezone?: string): Date {
+  if (!timezone) {
+    return new Date(year, month - 1, d, 0, 0, 0, 0);
+  }
+  const desired = Date.UTC(year, month - 1, d, 0, 0, 0);
+  let guess = desired;
+  for (let i = 0; i < 2; i++) {
+    const parts = new Intl.DateTimeFormat("en-US", {
+      timeZone: timezone,
+      year: "numeric",
+      month: "2-digit",
+      day: "2-digit",
+      hour: "2-digit",
+      minute: "2-digit",
+      second: "2-digit",
+      hour12: false,
+    }).formatToParts(new Date(guess));
+    const get = (type: string) => Number(parts.find((p) => p.type === type)!.value);
+    let hour = get("hour");
+    if (hour === 24) hour = 0; // some environments emit "24" for midnight
+    const shown = Date.UTC(get("year"), get("month") - 1, get("day"), hour, get("minute"), get("second"));
+    const diff = shown - desired;
+    if (diff === 0) break;
+    guess -= diff;
+  }
+  return new Date(guess);
+}
+
 export function getEventsForDay(events: CalendarEvent[], day: Date, timezone?: string): { allDay: CalendarEvent[]; timed: CalendarEvent[] } {
   const { year, month, day: d } = getDateInZone(day, timezone);
-  const dayStart = new Date(year, month - 1, d, 0, 0, 0, 0);
-  const dayEnd = new Date(year, month - 1, d, 23, 59, 59, 999);
+  const dayStart = midnightInZone(year, month, d, timezone);
+  const dayEnd = new Date(dayStart.getTime() + 24 * 60 * 60 * 1000 - 1);
 
   // For date-only comparison of all-day events (YYYY-MM-DD)
   const dayDateStr = `${year}-${String(month).padStart(2, "0")}-${String(d).padStart(2, "0")}`;
@@ -213,4 +323,31 @@ export function getEventsForDay(events: CalendarEvent[], day: Date, timezone?: s
   }
 
   return { allDay, timed };
+}
+
+/** Local YYYY-MM-DD key for a grid day. */
+export function toDayKey(date: Date): string {
+  return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(date.getDate()).padStart(2, "0")}`;
+}
+
+/**
+ * Bucket events into each grid day, keyed by local YYYY-MM-DD. Delegates to
+ * the existing tz-aware getEventsForDay so multi-day/all-day/midnight bucketing
+ * reuse already-tested logic. Within a day, timed events are sorted by start.
+ * Computed once per render in MonthGrid.
+ */
+export function bucketEventsByDay(
+  gridDays: Date[],
+  events: CalendarEvent[],
+  timezone?: string,
+): Map<string, { allDay: CalendarEvent[]; timed: CalendarEvent[] }> {
+  const map = new Map<string, { allDay: CalendarEvent[]; timed: CalendarEvent[] }>();
+  for (const day of gridDays) {
+    const { allDay, timed } = getEventsForDay(events, day, timezone);
+    const sortedTimed = [...timed].sort(
+      (a, b) => new Date(a.attributes.startTime).getTime() - new Date(b.attributes.startTime).getTime(),
+    );
+    map.set(toDayKey(day), { allDay, timed: sortedTimed });
+  }
+  return map;
 }
