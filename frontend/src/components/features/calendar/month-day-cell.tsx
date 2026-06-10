@@ -1,4 +1,5 @@
 import type { CalendarEvent } from "@/types/models/calendar";
+import { cn } from "@/lib/utils";
 import { MonthEventChip } from "./month-event-chip";
 
 interface DayBucket {
@@ -67,9 +68,12 @@ export function MonthDayCell({
       type="button"
       aria-label={label}
       onClick={() => onDayClick(day)}
-      className={`flex flex-col min-h-0 overflow-hidden border-r border-b last:border-r-0 text-left p-1 cursor-pointer hover:bg-accent/40 ${cellTone}`}
+      className={cn(
+        "flex flex-col min-h-0 overflow-hidden border-r border-b last:border-r-0 text-left p-1 cursor-pointer hover:bg-accent/40",
+        cellTone,
+      )}
     >
-      <span className={`text-xs font-medium px-0.5 ${numberTone}`}>{day.getDate()}</span>
+      <span className={cn("text-xs font-medium px-0.5", numberTone)}>{day.getDate()}</span>
       {isDesktop ? (
         <div className="flex-1 overflow-y-auto flex flex-col gap-0.5 mt-0.5">
           {ordered.map((evt) => (

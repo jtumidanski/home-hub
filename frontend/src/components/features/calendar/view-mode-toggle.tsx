@@ -1,4 +1,5 @@
 import { Button } from "@/components/ui/button";
+import { cn } from "@/lib/utils";
 
 export type CalendarViewMode = "week" | "month";
 
@@ -14,7 +15,7 @@ export function ViewModeToggle({ mode, onChange }: ViewModeToggleProps) {
         variant="ghost"
         size="sm"
         aria-pressed={mode === "week"}
-        className={mode === "week" ? "bg-accent text-accent-foreground" : ""}
+        className={cn(mode === "week" && "bg-accent text-accent-foreground")}
         onClick={() => onChange("week")}
       >
         Week
@@ -23,7 +24,7 @@ export function ViewModeToggle({ mode, onChange }: ViewModeToggleProps) {
         variant="ghost"
         size="sm"
         aria-pressed={mode === "month"}
-        className={mode === "month" ? "bg-accent text-accent-foreground" : ""}
+        className={cn(mode === "month" && "bg-accent text-accent-foreground")}
         onClick={() => onChange("month")}
       >
         Month
