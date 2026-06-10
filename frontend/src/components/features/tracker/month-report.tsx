@@ -1,4 +1,3 @@
-import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useMonthReport } from "@/lib/hooks/api/use-trackers";
@@ -8,7 +7,6 @@ import type { SentimentStats, NumericStats, RangeStats, ReportItem } from "@/typ
 
 interface Props {
   month: string;
-  onBackToCalendar: () => void;
 }
 
 function formatMonth(month: string) {
@@ -17,7 +15,7 @@ function formatMonth(month: string) {
   return date.toLocaleDateString("en-US", { month: "long", year: "numeric" });
 }
 
-export function MonthReport({ month, onBackToCalendar }: Props) {
+export function MonthReport({ month }: Props) {
   const { household } = useTenant();
   const today = getLocalTodayStr(household?.attributes.timezone);
   const { data, isLoading, error } = useMonthReport(month, today, true);
@@ -34,10 +32,7 @@ export function MonthReport({ month, onBackToCalendar }: Props) {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <h2 className="text-lg font-semibold">{formatMonth(month)} — Report</h2>
-        <Button variant="outline" size="sm" onClick={onBackToCalendar}>Calendar</Button>
-      </div>
+      <h2 className="text-lg font-semibold">{formatMonth(month)} — Report</h2>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         <Card>
