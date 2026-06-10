@@ -478,19 +478,26 @@ describe("bucketEventsByDay", () => {
 });
 
 describe("getEventsForDay timezone correctness", () => {
+  // The `day` arguments are anchored at NOON UTC so getDateInZone resolves them
+  // to the intended household-tz calendar date identically on any test runner
+  // (Intl is runner-tz-independent). Using `new Date(year, month, date)` here
+  // would make the result depend on the runner's local timezone (UTC in CI,
+  // EDT on a dev machine) and bucket against the wrong day.
   it("buckets a UTC-timestamp timed event to the correct household-tz day", () => {
     // 03:00 UTC on Aug 14 is 23:00 EDT on Aug 13 in America/New_York.
     const evt = makeEvent({ startTime: "2026-08-14T03:00:00Z", endTime: "2026-08-14T04:00:00Z" });
-    const aug13 = new Date(2026, 7, 13);
-    const aug14 = new Date(2026, 7, 14);
+    const aug13 = new Date(Date.UTC(2026, 7, 13, 12));
+    const aug14 = new Date(Date.UTC(2026, 7, 14, 12));
     expect(getEventsForDay([evt], aug13, "America/New_York").timed).toHaveLength(1);
     expect(getEventsForDay([evt], aug14, "America/New_York").timed).toHaveLength(0);
   });
 
   it("buckets correctly on the spring-forward DST day (America/New_York 2026-03-08)", () => {
-    // 06:00 UTC = 01:00 EST on Mar 8 (before the 02:00 spring-forward).
+    // 06:00 UTC = 01:00 EST on Mar 8 (before the 02:00 spring-forward) -> Mar 8 in NY.
     const evt = makeEvent({ startTime: "2026-03-08T06:00:00Z", endTime: "2026-03-08T06:30:00Z" });
-    const mar8 = new Date(2026, 2, 8);
+    const mar7 = new Date(Date.UTC(2026, 2, 7, 12));
+    const mar8 = new Date(Date.UTC(2026, 2, 8, 12));
     expect(getEventsForDay([evt], mar8, "America/New_York").timed).toHaveLength(1);
+    expect(getEventsForDay([evt], mar7, "America/New_York").timed).toHaveLength(0);
   });
 });
