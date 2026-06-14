@@ -146,15 +146,16 @@ type recipeUsageRow struct {
 	UsageCount  int64     `gorm:"column:usage_count"`
 }
 
-func getRecipeUsageFromPlanItems(db *gorm.DB, recipeIDs []uuid.UUID) map[uuid.UUID]recipeUsageResult {
+func getRecipeUsageFromPlanItems(db *gorm.DB, recipeIDs []uuid.UUID, tenantID, householdID uuid.UUID) map[uuid.UUID]recipeUsageResult {
 	if len(recipeIDs) == 0 {
 		return nil
 	}
 	var rows []recipeUsageRow
-	db.Table("plan_items").
-		Select("recipe_id, MAX(day) as last_used_day, COUNT(*) as usage_count").
-		Where("recipe_id IN ?", recipeIDs).
-		Group("recipe_id").
+	db.Table("plan_items AS pi").
+		Select("pi.recipe_id AS recipe_id, MAX(pi.day) AS last_used_day, COUNT(*) AS usage_count").
+		Joins("JOIN plan_weeks AS pw ON pw.id = pi.plan_week_id").
+		Where("pw.tenant_id = ? AND pw.household_id = ? AND pi.recipe_id IN ?", tenantID, householdID, recipeIDs).
+		Group("pi.recipe_id").
 		Find(&rows)
 	result := make(map[uuid.UUID]recipeUsageResult, len(rows))
 	for _, r := range rows {

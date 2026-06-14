@@ -438,8 +438,8 @@ func (p *Processor) BuildListEnrichments(models []Model) []ListEnrichment {
 	return enrichments
 }
 
-func (p *Processor) GetRecipeUsage(recipeIDs []uuid.UUID) map[uuid.UUID]recipeUsageResult {
-	return getRecipeUsageFromPlanItems(p.db.WithContext(p.ctx), recipeIDs)
+func (p *Processor) GetRecipeUsage(recipeIDs []uuid.UUID, tenantID, householdID uuid.UUID) map[uuid.UUID]recipeUsageResult {
+	return getRecipeUsageFromPlanItems(p.db.WithContext(p.ctx), recipeIDs, tenantID, householdID)
 }
 
 // Helper functions for cross-domain type conversion

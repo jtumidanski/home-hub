@@ -79,6 +79,7 @@ func parseHandler(db *gorm.DB) server.InputHandler[ParseRequest] {
 func listHandler(db *gorm.DB) server.GetHandler {
 	return func(d *server.HandlerDependency, c *server.HandlerContext) http.HandlerFunc {
 		return func(w http.ResponseWriter, r *http.Request) {
+			t := tenantctx.MustFromContext(r.Context())
 			filters := ListFilters{
 				Search:              r.URL.Query().Get("search"),
 				Tags:                r.URL.Query()["tag"],
@@ -111,11 +112,11 @@ func listHandler(db *gorm.DB) server.GetHandler {
 				for i, m := range models {
 					recipeIDs[i] = m.Id()
 				}
-				usageMap = proc.GetRecipeUsage(recipeIDs)
+				usageMap = proc.GetRecipeUsage(recipeIDs, t.Id(), t.HouseholdId())
 			}
 
 			enrichments := proc.BuildListEnrichments(models)
-			if includeUsage && usageMap != nil {
+			if usageMap != nil {
 				for i, m := range models {
 					if usage, ok := usageMap[m.Id()]; ok {
 						enrichments[i].LastUsedDate = usage.lastUsedDay
