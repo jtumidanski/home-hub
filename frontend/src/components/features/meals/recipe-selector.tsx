@@ -7,8 +7,9 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Skeleton } from "@/components/ui/skeleton";
 import { useRecipes } from "@/lib/hooks/api/use-recipes";
 import { CLASSIFICATIONS } from "@/lib/constants/recipe";
+import { RecipeSortSelect } from "@/components/features/recipes/recipe-sort-select";
 import type { Slot } from "@/types/models/meal-plan";
-import type { RecipeListItem } from "@/types/models/recipe";
+import type { RecipeListItem, RecipeSort } from "@/types/models/recipe";
 
 interface RecipeSelectorProps {
   autoClassification?: Slot;
@@ -18,12 +19,14 @@ interface RecipeSelectorProps {
 export function RecipeSelector({ autoClassification, onSelectRecipe }: RecipeSelectorProps) {
   const [search, setSearch] = useState("");
   const [classification, setClassification] = useState<string>(autoClassification ?? "");
+  const [sort, setSort] = useState<RecipeSort | undefined>(undefined);
 
   const { data, isLoading } = useRecipes({
     search: search || undefined,
     classification: classification || undefined,
     plannerReady: true,
     pageSize: 50,
+    sort,
   });
 
   const recipes = useMemo(() => data?.data ?? [], [data]);
@@ -63,6 +66,7 @@ export function RecipeSelector({ autoClassification, onSelectRecipe }: RecipeSel
             ))}
           </SelectContent>
         </Select>
+        <RecipeSortSelect value={sort} onChange={setSort} className="w-[130px]" />
       </div>
 
       <div className="max-h-[300px] overflow-y-auto space-y-1">
