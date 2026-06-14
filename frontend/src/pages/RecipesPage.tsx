@@ -6,6 +6,7 @@ import { useRecipes, useRecipeTags, useDeleteRecipe } from "@/lib/hooks/api/use-
 import { useMobile } from "@/lib/hooks/use-mobile";
 import { PullToRefresh } from "@/components/common/pull-to-refresh";
 import { RecipeCard } from "@/components/features/recipes/recipe-card";
+import { RecipeSortSelect } from "@/components/features/recipes/recipe-sort-select";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
@@ -13,7 +14,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { createErrorFromUnknown } from "@/lib/api/errors";
 import { CLASSIFICATIONS } from "@/lib/constants/recipe";
 import { toTitleCase } from "@/lib/utils";
-import type { RecipeListItem } from "@/types/models/recipe";
+import type { RecipeListItem, RecipeSort } from "@/types/models/recipe";
 
 export function RecipesPage() {
   const navigate = useNavigate();
@@ -21,6 +22,7 @@ export function RecipesPage() {
   const [search, setSearch] = useState("");
   const [selectedTags, setSelectedTags] = useState<string[]>([]);
   const [plannerFilter, setPlannerFilter] = useState<"" | "ready" | "not-ready">("");
+  const [sort, setSort] = useState<RecipeSort | undefined>(undefined);
 
   // Extract classification from selected tags
   const selectedClassification = selectedTags.find((t) => (CLASSIFICATIONS as readonly string[]).includes(t));
@@ -31,6 +33,7 @@ export function RecipesPage() {
     tags: selectedNonClassTags.length > 0 ? selectedNonClassTags : undefined,
     classification: selectedClassification,
     plannerReady: plannerFilter === "ready" ? true : plannerFilter === "not-ready" ? false : undefined,
+    sort,
   });
   const { data: tagsData } = useRecipeTags();
   const deleteRecipe = useDeleteRecipe();
@@ -73,24 +76,27 @@ export function RecipesPage() {
           </Button>
         </div>
 
-        {/* Search */}
-        <div className="relative">
-          <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-          <Input
-            placeholder="Search recipes..."
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            className="pl-9"
-          />
-          {search && (
-            <button
-              type="button"
-              onClick={() => setSearch("")}
-              className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
-            >
-              <X className="h-4 w-4" />
-            </button>
-          )}
+        {/* Search + sort */}
+        <div className="flex gap-2">
+          <div className="relative flex-1">
+            <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+            <Input
+              placeholder="Search recipes..."
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              className="pl-9"
+            />
+            {search && (
+              <button
+                type="button"
+                onClick={() => setSearch("")}
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+              >
+                <X className="h-4 w-4" />
+              </button>
+            )}
+          </div>
+          <RecipeSortSelect value={sort} onChange={setSort} />
         </div>
 
         {/* Unified filter row */}

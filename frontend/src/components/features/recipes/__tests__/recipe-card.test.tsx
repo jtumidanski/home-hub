@@ -99,4 +99,19 @@ describe("RecipeCard", () => {
 
     expect(mockNavigate).toHaveBeenCalledWith("/app/recipes/recipe-1/edit");
   });
+
+  it("shows cooked count when usageCount is present and > 0", () => {
+    render(<RecipeCard recipe={makeRecipe({ usageCount: 4 })} onDelete={vi.fn()} />);
+    expect(screen.getByText(/cooked 4x/i)).toBeInTheDocument();
+  });
+
+  it("does not show cooked count when usageCount is 0", () => {
+    render(<RecipeCard recipe={makeRecipe({ usageCount: 0 })} onDelete={vi.fn()} />);
+    expect(screen.queryByText(/cooked/i)).not.toBeInTheDocument();
+  });
+
+  it("does not show cooked count when usageCount is absent", () => {
+    render(<RecipeCard recipe={makeRecipe()} onDelete={vi.fn()} />);
+    expect(screen.queryByText(/cooked/i)).not.toBeInTheDocument();
+  });
 });

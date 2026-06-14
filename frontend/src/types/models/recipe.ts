@@ -56,6 +56,8 @@ export interface PlannerConfig {
   maxConsecutiveDays?: number;
 }
 
+export type RecipeSort = "usageCount" | "-usageCount";
+
 export interface RecipeListAttributes {
   title: string;
   description?: string;

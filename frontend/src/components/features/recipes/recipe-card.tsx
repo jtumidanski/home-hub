@@ -90,6 +90,11 @@ export function RecipeCard({ recipe, onDelete }: RecipeCardProps) {
             <Clock className="h-3 w-3" />
             {totalTime > 0 ? `${totalTime} min` : "??? min"}
           </span>
+          {(attributes.usageCount ?? 0) > 0 && (
+            <span className="text-xs text-muted-foreground">
+              cooked {attributes.usageCount}x
+            </span>
+          )}
           {allTags.map((tag) => (
             <Badge key={tag} variant="secondary" className="text-xs">
               {toTitleCase(tag)}

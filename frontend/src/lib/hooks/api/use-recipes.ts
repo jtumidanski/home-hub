@@ -3,7 +3,7 @@ import { toast } from "sonner";
 import { recipeService } from "@/services/api/recipe";
 import { useTenant } from "@/context/tenant-context";
 import { getErrorMessage } from "@/lib/api/errors";
-import type { RecipeCreateAttributes, RecipeUpdateAttributes } from "@/types/models/recipe";
+import type { RecipeCreateAttributes, RecipeUpdateAttributes, RecipeSort } from "@/types/models/recipe";
 import type { Tenant } from "@/types/models/tenant";
 import type { Household } from "@/types/models/household";
 
@@ -32,6 +32,7 @@ interface UseRecipesParams {
   plannerReady?: boolean | undefined;
   classification?: string | undefined;
   normalizationStatus?: string | undefined;
+  sort?: RecipeSort | undefined;
 }
 
 export function useRecipes(params?: UseRecipesParams) {
