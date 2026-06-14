@@ -31,13 +31,35 @@ func getDeletedByID(id uuid.UUID) database.EntityProvider[Entity] {
 	})
 }
 
+// UsageSort selects whether and how the recipe list is ordered by cook frequency.
+type UsageSort int
+
+const (
+	UsageSortNone UsageSort = iota // default order (created_at DESC)
+	UsageSortAsc                   // least cooked first
+	UsageSortDesc                  // most cooked first
+)
+
+// parseUsageSort maps the JSON:API `sort` query value to a UsageSort.
+// Unknown values fall back to the default order (lenient, per PRD §5.3).
+func parseUsageSort(v string) UsageSort {
+	switch v {
+	case "usageCount":
+		return UsageSortAsc
+	case "-usageCount":
+		return UsageSortDesc
+	default:
+		return UsageSortNone
+	}
+}
+
 type ListFilters struct {
-	Search             string
-	Tags               []string
-	Page               int
-	PageSize           int
-	PlannerReady       *bool
-	Classification     string
+	Search              string
+	Tags                []string
+	Page                int
+	PageSize            int
+	PlannerReady        *bool
+	Classification      string
 	NormalizationStatus string
 }
 
