@@ -87,6 +87,9 @@ func listHandler(db *gorm.DB) server.GetHandler {
 				PageSize:            queryInt(r, "page[size]", 20),
 				Classification:      r.URL.Query().Get("classification"),
 				NormalizationStatus: r.URL.Query().Get("normalizationStatus"),
+				TenantID:            t.Id(),
+				HouseholdID:         t.HouseholdId(),
+				UsageSort:           parseUsageSort(r.URL.Query().Get("sort")),
 			}
 			if pr := r.URL.Query().Get("plannerReady"); pr == "true" {
 				v := true
@@ -97,17 +100,16 @@ func listHandler(db *gorm.DB) server.GetHandler {
 			}
 
 			proc := NewProcessor(d.Logger(), r.Context(), db)
-			models, total, err := proc.List(filters)
+			models, usageMap, total, err := proc.List(filters)
 			if err != nil {
 				d.Logger().WithError(err).Error("Failed to list recipes")
 				server.WriteError(w, http.StatusInternalServerError, "Error", "")
 				return
 			}
 
-			// Optionally fetch usage data
+			// Frequency sort auto-populates usageMap. Otherwise honor include_usage.
 			includeUsage := r.URL.Query().Get("include_usage") == "true"
-			var usageMap map[uuid.UUID]recipeUsageResult
-			if includeUsage && len(models) > 0 {
+			if usageMap == nil && includeUsage && len(models) > 0 {
 				recipeIDs := make([]uuid.UUID, len(models))
 				for i, m := range models {
 					recipeIDs[i] = m.Id()

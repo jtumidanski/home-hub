@@ -150,7 +150,7 @@ func (p *Processor) Get(id uuid.UUID) (Model, cooklang.ParseResult, error) {
 	return m, cooklang.Parse(m.Source()), nil
 }
 
-func (p *Processor) List(filters ListFilters) ([]Model, int64, error) {
+func (p *Processor) List(filters ListFilters) ([]Model, map[uuid.UUID]recipeUsageResult, int64, error) {
 	if filters.Page < 1 {
 		filters.Page = 1
 	}
@@ -158,20 +158,20 @@ func (p *Processor) List(filters ListFilters) ([]Model, int64, error) {
 		filters.PageSize = 20
 	}
 
-	entities, total, err := getAll(filters)(p.db.WithContext(p.ctx))
+	entities, usageMap, total, err := getAll(filters)(p.db.WithContext(p.ctx))
 	if err != nil {
-		return nil, 0, err
+		return nil, nil, 0, err
 	}
 
 	models := make([]Model, 0, len(entities))
 	for _, e := range entities {
 		m, err := Make(e)
 		if err != nil {
-			return nil, 0, err
+			return nil, nil, 0, err
 		}
 		models = append(models, m)
 	}
-	return models, total, nil
+	return models, usageMap, total, nil
 }
 
 func (p *Processor) Update(id uuid.UUID, attrs UpdateAttrs) (Model, cooklang.ParseResult, error) {
