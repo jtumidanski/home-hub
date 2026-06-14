@@ -1,0 +1,40 @@
+{
+  "service": "recipe-service",
+  "path": "services/recipe-service",
+  "scope": "changed Go files f8aff3a..a0b53fc (recipe package)",
+  "date": "2026-06-14",
+  "build": "pass",
+  "tests": "pass",
+  "overallStatus": "pass",
+  "domains": [
+    {
+      "name": "recipe",
+      "type": "domain",
+      "checks": [
+        {"id": "DOM-05", "name": "TransformSlice used in list", "status": "pass", "evidence": "resource.go:130"},
+        {"id": "DOM-07", "name": "Handlers pass d.Logger()", "status": "pass", "evidence": "resource.go:102"},
+        {"id": "DOM-09", "name": "Transform/marshal errors handled", "status": "pass", "evidence": "resource.go:136-147"},
+        {"id": "DOM-10", "name": "Test DB registers tenant callbacks", "status": "pass", "evidence": "processor_integration_test.go:24"},
+        {"id": "DOM-11", "name": "Providers lazy/read-only", "status": "warn", "evidence": "provider.go:70,202 eager imperative read funcs (pre-existing style)"},
+        {"id": "DOM-12", "name": "No os.Getenv in handlers", "status": "pass", "evidence": "grep 0 matches"},
+        {"id": "DOM-14", "name": "Handlers call processors only", "status": "pass", "evidence": "resource.go listHandler -> proc.*"},
+        {"id": "DOM-15", "name": "No direct db writes in handlers", "status": "pass", "evidence": "grep 0 db.Create/Save/Delete in resource.go"},
+        {"id": "DOM-20", "name": "Table-driven tests", "status": "pass", "evidence": "usage_sort_test.go:6-17"}
+      ]
+    }
+  ],
+  "security": [
+    {"id": "SEC-tenant-recipes", "name": "Recipe rows tenant-scoped in sort path", "status": "pass", "evidence": "provider.go:72 db.Model(&Entity{}); tenant_callbacks.go:39-46; isolation probe returned only caller tenant"},
+    {"id": "SEC-count-scope", "name": "Count scoped to tenant AND household", "status": "pass", "evidence": "provider.go:140,210; resource.go:90-91; TestGetRecipeUsageScopedToHousehold"},
+    {"id": "SEC-raw-table-callback", "name": "Raw db.Table not silently unscoped", "status": "pass", "evidence": "explicit plan_weeks scope; callback no-op on tableless subquery"},
+    {"id": "SEC-injection", "name": "No untrusted input in raw SQL/ORDER BY", "status": "pass", "evidence": "provider.go:46-55 enum mapping; 148 dir from enum; bound params"},
+    {"id": "SEC-ambiguous-cols", "name": "No ambiguous joined columns", "status": "pass", "evidence": "qualified recipes.* in order/select; tests pass"},
+    {"id": "SEC-secrets", "name": "No hardcoded secrets", "status": "pass", "evidence": "none introduced"}
+  ],
+  "blocking": [],
+  "nonBlocking": [
+    "DOM-11: getAll/getRecipeUsageFromPlanItems are eager read funcs (pre-existing style, read-only, scoped) — not a regression",
+    "Recipe list is tenant-scoped not household-scoped (documented FR-17 decision, context.md:36)",
+    "last_used_day scanned into *string for Postgres date column (pre-existing pattern; verify once against Postgres)"
+  ]
+}
