@@ -7,6 +7,7 @@ import type {
   RecipeTag,
   RecipeParseResult,
   RecipeIngredient,
+  RecipeSort,
 } from "@/types/models/recipe";
 import type { Tenant } from "@/types/models/tenant";
 import type { ApiListResponse } from "@/types/api/responses";
@@ -20,6 +21,7 @@ interface RecipeListParams {
   plannerReady?: boolean | undefined;
   classification?: string | undefined;
   normalizationStatus?: string | undefined;
+  sort?: RecipeSort | undefined;
 }
 
 export interface RecipeListResponse extends ApiListResponse<RecipeListItem> {
@@ -47,6 +49,7 @@ class RecipeService extends BaseService {
     if (params?.plannerReady !== undefined) query.set("plannerReady", String(params.plannerReady));
     if (params?.classification) query.set("classification", params.classification);
     if (params?.normalizationStatus) query.set("normalizationStatus", params.normalizationStatus);
+    if (params?.sort) query.set("sort", params.sort);
     if (params?.page) query.set("page[number]", String(params.page));
     if (params?.pageSize) query.set("page[size]", String(params.pageSize));
     const qs = query.toString();
