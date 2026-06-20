@@ -20,7 +20,7 @@ jobs:
     outputs:
       docker-matrix: ${{ steps.matrix.outputs.matrix }}
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
       - uses: dorny/paths-filter@v4
         id: changes
         with:
@@ -107,7 +107,7 @@ jobs:
       matrix:
         include: ${{ fromJSON(needs.detect-changes.outputs.docker-matrix) }}
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
 
       - name: Log in to GHCR
         uses: docker/login-action@v4
