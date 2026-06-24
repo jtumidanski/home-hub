@@ -47,3 +47,13 @@ func (r *CreateRequest) SetID(id string) error {
 	r.Id, err = uuid.Parse(id)
 	return err
 }
+
+// SetToOneReferenceID reads the `task` to-one relationship that the client
+// sends in the JSON:API document body. Without this, api2go drops the
+// relationship and TaskId is left empty.
+func (r *CreateRequest) SetToOneReferenceID(name, ID string) error {
+	if name == "task" {
+		r.TaskId = ID
+	}
+	return nil
+}
