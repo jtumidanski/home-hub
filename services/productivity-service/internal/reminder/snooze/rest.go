@@ -54,3 +54,13 @@ func (r *CreateRequest) SetID(id string) error {
 	r.Id, err = uuid.Parse(id)
 	return err
 }
+
+// SetToOneReferenceID reads the `reminder` to-one relationship that the client
+// sends in the JSON:API document body. Without this, api2go drops the
+// relationship and ReminderId is left empty.
+func (r *CreateRequest) SetToOneReferenceID(name, ID string) error {
+	if name == "reminder" {
+		r.ReminderId = ID
+	}
+	return nil
+}
