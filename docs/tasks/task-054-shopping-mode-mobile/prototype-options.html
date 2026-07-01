@@ -1,0 +1,492 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Shopping Mode — Mobile UX Prototypes</title>
+<style>
+  :root{
+    --bg:#ffffff;
+    --fg:#09090b;
+    --muted:#71717a;
+    --muted-bg:#f4f4f5;
+    --border:#e4e4e7;
+    --primary:#18181b;
+    --primary-fg:#fafafa;
+    --accent:#f4f4f5;
+    --good:#16a34a;
+    --good-bg:#dcfce7;
+    --radius:12px;
+    --row-h:64px;
+  }
+  *{box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
+  html,body{margin:0;padding:0;}
+  body{
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+    background:#e9e9ec;
+    color:var(--fg);
+    padding:24px 12px 60px;
+    -webkit-font-smoothing:antialiased;
+  }
+  .page-head{max-width:920px;margin:0 auto 18px;text-align:center;}
+  .page-head h1{font-size:20px;margin:0 0 4px;}
+  .page-head p{font-size:13px;color:#52525b;margin:0;}
+
+  /* tab switcher */
+  .tabs{
+    max-width:920px;margin:0 auto 20px;
+    display:grid;grid-template-columns:repeat(4,1fr);gap:8px;
+  }
+  .tab{
+    border:1px solid var(--border);background:#fff;border-radius:10px;
+    padding:10px 10px;cursor:pointer;text-align:left;transition:all .15s;
+  }
+  .tab:hover{border-color:#a1a1aa;}
+  .tab.active{border-color:var(--primary);box-shadow:0 0 0 2px rgba(24,24,27,.12);}
+  .tab .k{font-size:11px;font-weight:700;letter-spacing:.04em;color:var(--muted);text-transform:uppercase;}
+  .tab .t{font-size:14px;font-weight:600;margin-top:2px;}
+  .tab .d{font-size:11px;color:#52525b;margin-top:3px;line-height:1.35;}
+  @media(max-width:760px){.tabs{grid-template-columns:repeat(2,1fr);}}
+
+  .layout{max-width:920px;margin:0 auto;display:flex;gap:28px;align-items:flex-start;justify-content:center;flex-wrap:wrap;}
+
+  /* device frame */
+  .device{
+    width:390px;height:780px;background:var(--bg);
+    border-radius:38px;border:11px solid #18181b;
+    box-shadow:0 18px 50px rgba(0,0,0,.28);
+    overflow:hidden;position:relative;flex:0 0 auto;
+  }
+  .screen{position:absolute;inset:0;display:flex;flex-direction:column;overflow:hidden;}
+
+  .notch{position:absolute;top:0;left:50%;transform:translateX(-50%);width:140px;height:26px;background:#18181b;border-radius:0 0 16px 16px;z-index:50;}
+
+  /* explainer panel */
+  .explain{flex:1 1 280px;max-width:340px;min-width:260px;}
+  .explain h2{font-size:16px;margin:0 0 8px;}
+  .explain .lead{font-size:13px;color:#3f3f46;line-height:1.5;margin:0 0 14px;}
+  .explain h3{font-size:12px;text-transform:uppercase;letter-spacing:.05em;color:var(--muted);margin:16px 0 6px;}
+  .explain ul{margin:0;padding-left:18px;}
+  .explain li{font-size:13px;line-height:1.55;margin-bottom:4px;color:#3f3f46;}
+  .explain .pro::marker{content:"✓  ";}
+  .explain .con::marker{content:"–  ";}
+  .badge-try{display:inline-block;background:var(--muted-bg);border:1px solid var(--border);border-radius:999px;font-size:11px;padding:3px 10px;color:#3f3f46;margin-top:10px;}
+
+  /* ---------- in-app shared bits ---------- */
+  .app-head{padding:34px 16px 10px;border-bottom:1px solid var(--border);flex:0 0 auto;background:#fff;z-index:20;}
+  .app-title{font-size:18px;font-weight:700;}
+  .app-sub{font-size:12px;color:var(--muted);margin-top:1px;}
+  .progress-wrap{margin-top:12px;display:flex;align-items:center;gap:10px;}
+  .bar{flex:1;height:8px;border-radius:999px;background:var(--muted-bg);overflow:hidden;}
+  .bar > i{display:block;height:100%;background:var(--primary);border-radius:999px;transition:width .25s ease;}
+  .count{font-size:12px;font-variant-numeric:tabular-nums;color:var(--muted);font-weight:600;white-space:nowrap;}
+
+  .scroll{flex:1 1 auto;overflow-y:auto;-webkit-overflow-scrolling:touch;}
+
+  .cat-head{position:sticky;top:0;background:#fafafaee;backdrop-filter:blur(6px);padding:10px 16px 6px;font-size:11px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);z-index:10;}
+
+  .foot{flex:0 0 auto;border-top:1px solid var(--border);padding:12px 16px calc(12px + env(safe-area-inset-bottom));background:#fff;display:flex;gap:10px;}
+  .btn{flex:1;border:none;border-radius:12px;padding:0 16px;height:50px;font-size:15px;font-weight:600;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;}
+  .btn.primary{background:var(--primary);color:var(--primary-fg);}
+  .btn.ghost{background:#fff;border:1px solid var(--border);color:var(--fg);flex:0 0 auto;width:54px;}
+
+  /* ===== Design A: Big Rows ===== */
+  .rowA{
+    display:flex;align-items:center;gap:14px;
+    min-height:var(--row-h);padding:0 16px;
+    border-bottom:1px solid var(--border);
+    cursor:pointer;user-select:none;background:#fff;
+    transition:background .12s,opacity .2s;
+  }
+  .rowA:active{background:var(--accent);}
+  .check{
+    flex:0 0 auto;width:30px;height:30px;border-radius:9px;
+    border:2px solid #c4c4cc;display:flex;align-items:center;justify-content:center;
+    transition:all .15s;
+  }
+  .check svg{width:18px;height:18px;stroke:#fff;stroke-width:3.2;fill:none;opacity:0;transition:opacity .15s;}
+  .rowA.done .check,.rowB.done .check,.rowD.done .check{background:var(--primary);border-color:var(--primary);}
+  .rowA.done .check svg,.rowB.done .check svg,.rowD.done .check svg{opacity:1;}
+  .iname{flex:1;font-size:17px;font-weight:500;line-height:1.2;}
+  .rowA.done .iname,.rowB.done .iname,.rowD.done .iname{text-decoration:line-through;color:var(--muted);}
+  .rowA.done,.rowD.done{opacity:.55;}
+  .qty{flex:0 0 auto;font-size:13px;font-weight:600;color:#3f3f46;background:var(--muted-bg);border-radius:8px;padding:4px 9px;font-variant-numeric:tabular-nums;}
+
+  /* ===== Design B: Swipe ===== */
+  .swipe-outer{position:relative;overflow:hidden;border-bottom:1px solid var(--border);background:var(--good-bg);}
+  .swipe-hint{position:absolute;inset:0;display:flex;align-items:center;padding:0 22px;color:var(--good);font-weight:700;font-size:14px;gap:8px;}
+  .swipe-hint.right{justify-content:flex-start;}
+  .rowB{
+    position:relative;display:flex;align-items:center;gap:14px;
+    min-height:var(--row-h);padding:0 16px;background:#fff;
+    cursor:grab;user-select:none;touch-action:pan-y;will-change:transform;
+  }
+  .rowB.done{background:#fff;}
+  .grip{flex:0 0 auto;color:#c4c4cc;font-size:18px;letter-spacing:-2px;}
+
+  /* ===== Design C: Focus ===== */
+  .focus{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:24px 22px;text-align:center;position:relative;}
+  .ring{position:absolute;top:46px;left:50%;transform:translateX(-50%);}
+  .focus-cat{font-size:12px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);margin-bottom:14px;}
+  .focus-name{font-size:38px;font-weight:700;line-height:1.12;margin-bottom:14px;}
+  .focus-qty{font-size:20px;color:#3f3f46;background:var(--muted-bg);border-radius:12px;padding:8px 18px;font-weight:600;}
+  .upnext{position:absolute;bottom:0;left:0;right:0;padding:14px 16px;border-top:1px solid var(--border);}
+  .upnext .lbl{font-size:11px;text-transform:uppercase;letter-spacing:.05em;color:var(--muted);font-weight:700;margin-bottom:6px;}
+  .upnext .mini{display:flex;align-items:center;gap:8px;font-size:13px;color:#52525b;padding:3px 0;}
+  .focus-foot{flex:0 0 auto;padding:16px;display:flex;gap:12px;}
+  .donescreen{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;padding:24px;text-align:center;}
+  .donescreen .big{font-size:54px;}
+  .donescreen h3{font-size:22px;margin:0;}
+  .donescreen p{font-size:14px;color:var(--muted);margin:0;}
+
+  /* ===== Design D: Accordion ===== */
+  .acc-head{
+    display:flex;align-items:center;gap:12px;padding:16px;cursor:pointer;
+    border-bottom:1px solid var(--border);background:#fff;user-select:none;
+  }
+  .acc-head .chev{transition:transform .2s;color:var(--muted);font-size:13px;}
+  .acc-head.open .chev{transform:rotate(90deg);}
+  .acc-name{flex:1;font-size:16px;font-weight:700;}
+  .acc-prog{font-size:12px;font-weight:600;color:var(--muted);background:var(--muted-bg);border-radius:999px;padding:3px 10px;font-variant-numeric:tabular-nums;}
+  .acc-head.complete .acc-name{color:var(--muted);text-decoration:line-through;}
+  .acc-head.complete .acc-prog{background:var(--good-bg);color:var(--good);}
+  .acc-body{overflow:hidden;}
+  .acc-body.collapsed{display:none;}
+</style>
+</head>
+<body>
+
+<div class="page-head">
+  <h1>Shopping Mode — Mobile UX Directions</h1>
+  <p>Same list &amp; data, four interaction models. All optimized for one-handed use with large tap targets. Tap items to check them off — these are live.</p>
+</div>
+
+<div class="tabs" id="tabs">
+  <button class="tab active" data-view="A">
+    <div class="k">Option A</div><div class="t">Big Tap Rows</div>
+    <div class="d">Same aisle layout, supersized. Whole row is a 64px target.</div>
+  </button>
+  <button class="tab" data-view="B">
+    <div class="k">Option B</div><div class="t">Swipe to Check</div>
+    <div class="d">Drag a row right to mark it done — flick past each item.</div>
+  </button>
+  <button class="tab" data-view="C">
+    <div class="k">Option C</div><div class="t">Focus Mode</div>
+    <div class="d">One item at a time, giant thumb button. Heads-up shopping.</div>
+  </button>
+  <button class="tab" data-view="D">
+    <div class="k">Option D</div><div class="t">Aisle by Aisle</div>
+    <div class="d">Collapsible sections, advance one store-section at a time.</div>
+  </button>
+</div>
+
+<div class="layout">
+  <div class="device">
+    <div class="notch"></div>
+    <div class="screen" id="screen"></div>
+  </div>
+  <div class="explain" id="explain"></div>
+</div>
+
+<script>
+/* ---------------- shared data ---------------- */
+const CATS = [
+  {name:"Produce", order:1},
+  {name:"Bakery", order:2},
+  {name:"Meat & Seafood", order:3},
+  {name:"Dairy", order:4},
+  {name:"Pantry", order:5},
+  {name:"Frozen", order:6},
+];
+let ITEMS = [
+  {id:1, name:"Bananas", qty:null, cat:"Produce"},
+  {id:2, name:"Baby Spinach", qty:"1 bag", cat:"Produce"},
+  {id:3, name:"Avocados", qty:"3", cat:"Produce"},
+  {id:4, name:"Roma Tomatoes", qty:"4", cat:"Produce"},
+  {id:5, name:"Sourdough Loaf", qty:null, cat:"Bakery"},
+  {id:6, name:"Everything Bagels", qty:"6 ct", cat:"Bakery"},
+  {id:7, name:"Chicken Thighs", qty:"2 lb", cat:"Meat & Seafood"},
+  {id:8, name:"Salmon Fillet", qty:"1 lb", cat:"Meat & Seafood"},
+  {id:9, name:"Whole Milk", qty:"1 gal", cat:"Dairy"},
+  {id:10, name:"Greek Yogurt", qty:null, cat:"Dairy"},
+  {id:11, name:"Sharp Cheddar", qty:null, cat:"Dairy"},
+  {id:12, name:"Olive Oil", qty:null, cat:"Pantry"},
+  {id:13, name:"Black Beans", qty:"2 cans", cat:"Pantry"},
+  {id:14, name:"Penne Pasta", qty:null, cat:"Pantry"},
+  {id:15, name:"Peanut Butter", qty:null, cat:"Pantry"},
+  {id:16, name:"Frozen Peas", qty:null, cat:"Frozen"},
+  {id:17, name:"Vanilla Ice Cream", qty:null, cat:"Frozen"},
+];
+ITEMS.forEach(i=>{i.checked=false;});
+// pre-check a couple so progress is visible
+ITEMS[0].checked=true; ITEMS[8].checked=true; ITEMS[11].checked=true;
+
+const catOrder = n => (CATS.find(c=>c.name===n)||{order:99}).order;
+const storeSorted = () => [...ITEMS].sort((a,b)=> catOrder(a.cat)-catOrder(b.cat) || a.id-b.id);
+const groups = () => {
+  const m=new Map();
+  storeSorted().forEach(i=>{ if(!m.has(i.cat)) m.set(i.cat,[]); m.get(i.cat).push(i); });
+  return [...m.entries()].map(([name,items])=>({name,items}));
+};
+const counts = () => {
+  const total=ITEMS.length, done=ITEMS.filter(i=>i.checked).length;
+  return {total,done,pct: total? Math.round(done/total*100):0};
+};
+const CHECK_SVG = '<svg viewBox="0 0 24 24"><path d="M4 12.5l5 5L20 6"/></svg>';
+
+/* ---------------- explainers ---------------- */
+const EXPLAIN = {
+  A:{title:"Big Tap Rows",
+    lead:"The most direct fix and closest to today's design. Keep the familiar aisle-grouped list, but make every row a full-width 64px target with a 30px checkbox. Tapping anywhere checks it off; done items dim, strike through, and sink to the bottom of their aisle.",
+    pros:["Lowest risk — same mental model, just bigger and thumb-friendly","Nothing to learn; works for first-time users","Still scannable: you see the whole aisle at once"],
+    cons:["Still a scrolling list — long lists mean thumb travel","No single 'hero' action; relies on accurate tapping"],
+    try:"Tap any row to check it off"},
+  B:{title:"Swipe to Check",
+    lead:"Rows look similar but the primary gesture is a horizontal swipe: drag a row to the right and release past the threshold to mark it bought. A swipe is forgiving — no precise aiming at a small box — and you can fly down the list one flick at a time. Tap still works as a fallback.",
+    pros:["Very fast & forgiving — gross motor motion, not precise aim","Satisfying, app-like rhythm walking the aisles","Tap fallback keeps it accessible"],
+    cons:["Gesture is hidden — needs a hint / first-run coaching","Swiping can fight with vertical scroll on some phones","Harder to undo by accident vs. a deliberate tap"],
+    try:"Drag a row to the right and let go"},
+  C:{title:"Focus Mode",
+    lead:"A heads-up, one-item-at-a-time flow ordered by your aisle path. The current item fills the screen; a giant thumb-zone 'Got it' button advances to the next, 'Skip' defers it to the end. A progress ring and an 'up next' peek keep you oriented. Best for pushing a cart and barely looking at the phone.",
+    pros:["Biggest possible target — one button fills the thumb zone","Zero scrolling; glance-and-go","Naturally walks you through the store in order"],
+    cons:["Can't see the whole list at a glance (peek mitigates)","More taps for a quick 'grab three things' run","Biggest departure from current UX"],
+    try:"Hit 'Got it' to walk the list"},
+  D:{title:"Aisle by Aisle",
+    lead:"Sections collapse into accordions; only the aisle you're in is open. Each header shows its progress (e.g. Produce · 2/4) and completed aisles collapse and check off automatically. A fixed 'Next aisle' button jumps you forward, so you focus one store-section at a time instead of one long scroll.",
+    pros:["Cuts scrolling — only one aisle's items on screen","Mirrors how you actually move through a store","Big rows + clear section progress"],
+    cons:["An extra tap to open/switch aisles","Mis-ordered categories vs. your store hurt the flow","Slightly more chrome than a plain list"],
+    try:"Tap a section header, or 'Next aisle'"},
+};
+
+/* ---------------- render dispatch ---------------- */
+let view="A";
+const screen=document.getElementById("screen");
+const explainEl=document.getElementById("explain");
+let focusIdx=0; // for design C
+let openCat=null; // for design D
+
+function renderExplain(){
+  const e=EXPLAIN[view];
+  explainEl.innerHTML=`
+    <h2>${e.title}</h2>
+    <p class="lead">${e.lead}</p>
+    <h3>Strengths</h3>
+    <ul>${e.pros.map(p=>`<li class="pro">${p}</li>`).join("")}</ul>
+    <h3>Trade-offs</h3>
+    <ul>${e.cons.map(c=>`<li class="con">${c}</li>`).join("")}</ul>
+    <span class="badge-try">👉 ${e.try}</span>`;
+}
+
+function headHTML(){
+  const c=counts();
+  return `<div class="app-head">
+    <div class="app-title">Weekly Groceries</div>
+    <div class="app-sub">Shopping mode</div>
+    <div class="progress-wrap">
+      <div class="bar"><i style="width:${c.pct}%"></i></div>
+      <div class="count">${c.done} / ${c.total}</div>
+    </div>
+  </div>`;
+}
+function footHTML(){
+  return `<div class="foot">
+    <button class="btn ghost" data-act="reset" title="Uncheck all">↺</button>
+    <button class="btn primary" data-act="finish">Finish Shopping</button>
+  </div>`;
+}
+
+/* ----- Design A ----- */
+function renderA(){
+  let body="";
+  groups().forEach(g=>{
+    const sorted=[...g.items].sort((a,b)=> (a.checked-b.checked) || a.id-b.id);
+    body+=`<div class="cat-head">${g.name}</div>`;
+    sorted.forEach(i=>{
+      body+=`<div class="rowA ${i.checked?'done':''}" data-toggle="${i.id}">
+        <div class="check">${CHECK_SVG}</div>
+        <div class="iname">${i.name}</div>
+        ${i.qty?`<div class="qty">${i.qty}</div>`:''}
+      </div>`;
+    });
+  });
+  screen.innerHTML = headHTML()+`<div class="scroll">${body}</div>`+footHTML();
+}
+
+/* ----- Design B ----- */
+function renderB(){
+  let body="";
+  groups().forEach(g=>{
+    body+=`<div class="cat-head">${g.name}</div>`;
+    g.items.forEach(i=>{
+      body+=`<div class="swipe-outer">
+        <div class="swipe-hint right">${CHECK_SVG.replace('stroke:#fff','')} Got it</div>
+        <div class="rowB ${i.checked?'done':''}" data-id="${i.id}">
+          <div class="check">${CHECK_SVG}</div>
+          <div class="iname">${i.name}</div>
+          ${i.qty?`<div class="qty">${i.qty}</div>`:''}
+          <div class="grip">›››</div>
+        </div>
+      </div>`;
+    });
+  });
+  screen.innerHTML = headHTML()+`<div class="scroll">${body}</div>`+footHTML();
+  attachSwipe();
+}
+function attachSwipe(){
+  screen.querySelectorAll(".rowB").forEach(row=>{
+    let startX=0,curX=0,dragging=false;
+    const id=+row.dataset.id;
+    row.addEventListener("pointerdown",e=>{
+      dragging=true;startX=e.clientX;curX=0;row.setPointerCapture(e.pointerId);
+      row.style.transition="none";
+    });
+    row.addEventListener("pointermove",e=>{
+      if(!dragging)return;
+      curX=Math.max(0,e.clientX-startX); // only allow swipe right
+      row.style.transform=`translateX(${curX}px)`;
+    });
+    const end=()=>{
+      if(!dragging)return;dragging=false;
+      row.style.transition="transform .2s";
+      if(curX>110){
+        row.style.transform="translateX(100%)";
+        setTimeout(()=>{ const it=ITEMS.find(x=>x.id===id); if(it) it.checked=!it.checked; renderB(); },150);
+      }else{
+        row.style.transform="translateX(0)";
+      }
+    };
+    row.addEventListener("pointerup",end);
+    row.addEventListener("pointercancel",end);
+    // tap fallback (no real drag)
+    row.addEventListener("click",()=>{ if(Math.abs(curX)<6){ const it=ITEMS.find(x=>x.id===id); it.checked=!it.checked; renderB(); }});
+  });
+}
+
+/* ----- Design C ----- */
+function renderC(){
+  const order=storeSorted();
+  const remaining=order.filter(i=>!i.checked);
+  const c=counts();
+  if(remaining.length===0){
+    screen.innerHTML=`<div class="app-head"><div class="app-title">Weekly Groceries</div><div class="app-sub">Shopping mode</div></div>
+      <div class="donescreen">
+        <div class="big">🎉</div><h3>All done!</h3>
+        <p>${c.total} of ${c.total} items in the cart.</p>
+        <div style="display:flex;gap:10px;width:100%;padding:0 8px;">
+          <button class="btn ghost" data-act="reset" style="flex:1;width:auto">↺ Restart</button>
+          <button class="btn primary" data-act="finish">Finish Shopping</button>
+        </div>
+      </div>`;
+    return;
+  }
+  if(focusIdx>=remaining.length) focusIdx=0;
+  const cur=remaining[focusIdx];
+  const next=remaining.filter(x=>x.id!==cur.id).slice(0,2);
+  const R=52,C2=2*Math.PI*R,off=C2*(1-c.pct/100);
+  screen.innerHTML=`
+    <div class="focus">
+      <svg class="ring" width="120" height="120" viewBox="0 0 120 120">
+        <circle cx="60" cy="60" r="${R}" fill="none" stroke="#e4e4e7" stroke-width="9"/>
+        <circle cx="60" cy="60" r="${R}" fill="none" stroke="#18181b" stroke-width="9"
+          stroke-linecap="round" stroke-dasharray="${C2}" stroke-dashoffset="${off}"
+          transform="rotate(-90 60 60)"/>
+        <text x="60" y="58" text-anchor="middle" font-size="22" font-weight="700" fill="#18181b">${c.done}/${c.total}</text>
+        <text x="60" y="76" text-anchor="middle" font-size="10" fill="#71717a">in cart</text>
+      </svg>
+      <div style="height:150px"></div>
+      <div class="focus-cat">${cur.cat}</div>
+      <div class="focus-name">${cur.name}</div>
+      ${cur.qty?`<div class="focus-qty">${cur.qty}</div>`:''}
+      <div class="upnext">
+        <div class="lbl">Up next</div>
+        ${next.length? next.map(n=>`<div class="mini">• ${n.name}${n.qty?` · ${n.qty}`:''}</div>`).join("") : '<div class="mini">Last one!</div>'}
+      </div>
+    </div>
+    <div class="focus-foot">
+      <button class="btn ghost" data-act="skip" style="width:96px;flex:0 0 auto">Skip</button>
+      <button class="btn primary" data-act="got" data-id="${cur.id}">✓ Got it</button>
+    </div>`;
+}
+
+/* ----- Design D ----- */
+function renderD(){
+  const gs=groups();
+  // default-open the first incomplete aisle
+  if(openCat===null){
+    const firstIncomplete=gs.find(g=>g.items.some(i=>!i.checked));
+    openCat=firstIncomplete?firstIncomplete.name:gs[0].name;
+  }
+  let body="";
+  gs.forEach(g=>{
+    const done=g.items.filter(i=>i.checked).length;
+    const complete=done===g.items.length;
+    const open=g.name===openCat;
+    body+=`<div class="acc-head ${open?'open':''} ${complete?'complete':''}" data-cat="${g.name}">
+      <span class="chev">▶</span>
+      <span class="acc-name">${g.name}</span>
+      <span class="acc-prog">${complete?'✓ ':''}${done}/${g.items.length}</span>
+    </div>
+    <div class="acc-body ${open?'':'collapsed'}">`;
+    [...g.items].sort((a,b)=>(a.checked-b.checked)||a.id-b.id).forEach(i=>{
+      body+=`<div class="rowD ${i.checked?'done':''}" data-toggle="${i.id}">
+        <div class="check">${CHECK_SVG}</div>
+        <div class="iname">${i.name}</div>
+        ${i.qty?`<div class="qty">${i.qty}</div>`:''}
+      </div>`;
+    });
+    body+=`</div>`;
+  });
+  screen.innerHTML = headHTML()+`<div class="scroll">${body}</div>`+
+    `<div class="foot"><button class="btn primary" data-act="nextaisle">Next aisle →</button></div>`;
+}
+
+/* ---------------- events ---------------- */
+function rerender(){
+  if(view==="A")renderA();
+  else if(view==="B")renderB();
+  else if(view==="C")renderC();
+  else renderD();
+}
+
+screen.addEventListener("click",e=>{
+  const tog=e.target.closest("[data-toggle]");
+  if(tog){ const id=+tog.dataset.toggle; const it=ITEMS.find(x=>x.id===id); it.checked=!it.checked; rerender(); return; }
+  const act=e.target.closest("[data-act]");
+  if(!act)return;
+  const a=act.dataset.act;
+  if(a==="reset"){ ITEMS.forEach(i=>i.checked=false); focusIdx=0; rerender(); }
+  else if(a==="finish"){ ITEMS.forEach(i=>i.checked=true); rerender(); }
+  else if(a==="got"){ const it=ITEMS.find(x=>x.id===+act.dataset.id); it.checked=true; focusIdx=0; renderC(); }
+  else if(a==="skip"){ focusIdx++; renderC(); }
+  else if(a==="nextaisle"){
+    const gs=groups();
+    const idx=gs.findIndex(g=>g.name===openCat);
+    const nextInc=[...gs.slice(idx+1),...gs.slice(0,idx+1)].find(g=>g.items.some(i=>!i.checked));
+    openCat=nextInc?nextInc.name:openCat;
+    renderD();
+    screen.querySelector(".acc-head.open")?.scrollIntoView({behavior:"smooth",block:"start"});
+  }
+  else if(act.dataset.cat){}
+});
+
+// accordion header toggle (separate because not data-act)
+screen.addEventListener("click",e=>{
+  if(view!=="D")return;
+  const h=e.target.closest(".acc-head");
+  if(!h)return;
+  openCat = (openCat===h.dataset.cat)? "__none__" : h.dataset.cat;
+  renderD();
+});
+
+document.getElementById("tabs").addEventListener("click",e=>{
+  const t=e.target.closest(".tab"); if(!t)return;
+  document.querySelectorAll(".tab").forEach(x=>x.classList.remove("active"));
+  t.classList.add("active");
+  view=t.dataset.view; focusIdx=0; openCat=null;
+  renderExplain(); rerender();
+});
+
+renderExplain(); rerender();
+</script>
+</body>
+</html>

@@ -37,6 +37,12 @@ import {
 import { usePlans } from "@/lib/hooks/api/use-meals";
 import type { NestedShoppingItem } from "@/types/models/shopping";
 
+// eslint-disable-next-line react-refresh/only-export-components
+export function progressPercent(checked: number, total: number): number {
+  if (total <= 0) return 0;
+  return Math.min(100, Math.max(0, (checked / total) * 100));
+}
+
 interface GroupedItems {
   categoryName: string;
   sortOrder: number;
@@ -161,7 +167,7 @@ export function ShoppingListDetailPage() {
 
       {/* Action Bar */}
       {!isArchived && (
-        <div className="flex gap-2 flex-wrap">
+        <div className={cn("flex gap-2 flex-wrap", shoppingMode && "hidden md:flex")}>
           {shoppingMode ? (
             <>
               <Button variant="outline" size="sm" onClick={() => setShoppingMode(false)}>
@@ -226,6 +232,29 @@ export function ShoppingListDetailPage() {
         </div>
       )}
 
+      {/* Sticky mobile progress header (shopping mode, active) */}
+      {!isArchived && shoppingMode && (
+        <div
+          data-testid="mobile-shopping-progress"
+          className="md:hidden sticky top-0 z-20 -mx-4 px-4 py-3 bg-background border-b space-y-2"
+        >
+          <div className="h-2 rounded bg-muted">
+            <div
+              className="h-2 rounded bg-primary transition-all"
+              style={{ width: `${progressPercent(checkedCount, totalCount)}%` }}
+            />
+          </div>
+          <div className="flex items-center justify-between">
+            <span className="text-sm text-muted-foreground">
+              {checkedCount} of {totalCount} items
+            </span>
+            <Button variant="outline" size="sm" onClick={() => setShoppingMode(false)}>
+              <ArrowLeft className="h-4 w-4 mr-1" /> Back to Edit
+            </Button>
+          </div>
+        </div>
+      )}
+
       {/* Items grouped by category */}
       {grouped.length === 0 ? (
         <Card>
@@ -253,7 +282,7 @@ export function ShoppingListDetailPage() {
                   <div
                     key={item.id}
                     className={cn(
-                      "flex items-center gap-3 px-2 py-2 rounded hover:bg-accent/30 transition-colors",
+                      "flex items-center gap-3 px-2 py-2 rounded hover:bg-accent/30 transition-colors min-h-[64px] md:min-h-0",
                       shoppingMode && "cursor-pointer",
                       item.checked && "opacity-60",
                     )}
@@ -266,17 +295,22 @@ export function ShoppingListDetailPage() {
                     {(shoppingMode || isArchived) && (
                       <div
                         className={cn(
-                          "h-5 w-5 rounded border flex items-center justify-center flex-shrink-0",
+                          "h-7 w-7 md:h-5 md:w-5 rounded border flex items-center justify-center flex-shrink-0",
                           item.checked
                             ? "bg-primary border-primary text-primary-foreground"
                             : "border-muted-foreground",
                         )}
                       >
-                        {item.checked && <Check className="h-3 w-3" />}
+                        {item.checked && <Check className="h-4 w-4 md:h-3 md:w-3" />}
                       </div>
                     )}
                     <div className="flex-1 min-w-0">
-                      <span className={cn("text-sm", item.checked && shoppingMode && "line-through")}>
+                      <span
+                        className={cn(
+                          "text-[17px] md:text-sm",
+                          item.checked && shoppingMode && "line-through",
+                        )}
+                      >
                         {item.name}
                       </span>
                       {item.quantity && (
@@ -304,6 +338,21 @@ export function ShoppingListDetailPage() {
             </Card>
           );
         })
+      )}
+
+      {/* Sticky mobile bottom action bar (shopping mode, active) */}
+      {!isArchived && shoppingMode && (
+        <div
+          data-testid="mobile-shopping-actions"
+          className="md:hidden sticky bottom-0 z-20 -mx-4 px-4 py-3 bg-background border-t flex items-center gap-2"
+        >
+          <Button variant="outline" onClick={() => uncheckAll.mutate()}>
+            <RotateCcw className="h-4 w-4 mr-1" /> Uncheck All
+          </Button>
+          <Button className="flex-1" onClick={() => setShowFinishConfirm(true)}>
+            <Archive className="h-4 w-4 mr-1" /> Finish Shopping
+          </Button>
+        </div>
       )}
 
       {/* Finish Shopping Confirmation */}
