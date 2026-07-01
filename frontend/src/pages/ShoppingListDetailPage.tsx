@@ -37,6 +37,11 @@ import {
 import { usePlans } from "@/lib/hooks/api/use-meals";
 import type { NestedShoppingItem } from "@/types/models/shopping";
 
+export function progressPercent(checked: number, total: number): number {
+  if (total <= 0) return 0;
+  return Math.min(100, Math.max(0, (checked / total) * 100));
+}
+
 interface GroupedItems {
   categoryName: string;
   sortOrder: number;
