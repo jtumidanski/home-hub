@@ -258,7 +258,7 @@ export function ShoppingListDetailPage() {
                   <div
                     key={item.id}
                     className={cn(
-                      "flex items-center gap-3 px-2 py-2 rounded hover:bg-accent/30 transition-colors",
+                      "flex items-center gap-3 px-2 py-2 rounded hover:bg-accent/30 transition-colors min-h-[64px] md:min-h-0",
                       shoppingMode && "cursor-pointer",
                       item.checked && "opacity-60",
                     )}
@@ -271,17 +271,22 @@ export function ShoppingListDetailPage() {
                     {(shoppingMode || isArchived) && (
                       <div
                         className={cn(
-                          "h-5 w-5 rounded border flex items-center justify-center flex-shrink-0",
+                          "h-7 w-7 md:h-5 md:w-5 rounded border flex items-center justify-center flex-shrink-0",
                           item.checked
                             ? "bg-primary border-primary text-primary-foreground"
                             : "border-muted-foreground",
                         )}
                       >
-                        {item.checked && <Check className="h-3 w-3" />}
+                        {item.checked && <Check className="h-4 w-4 md:h-3 md:w-3" />}
                       </div>
                     )}
                     <div className="flex-1 min-w-0">
-                      <span className={cn("text-sm", item.checked && shoppingMode && "line-through")}>
+                      <span
+                        className={cn(
+                          "text-[17px] md:text-sm",
+                          item.checked && shoppingMode && "line-through",
+                        )}
+                      >
                         {item.name}
                       </span>
                       {item.quantity && (
