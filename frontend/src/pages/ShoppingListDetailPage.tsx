@@ -37,6 +37,7 @@ import {
 import { usePlans } from "@/lib/hooks/api/use-meals";
 import type { NestedShoppingItem } from "@/types/models/shopping";
 
+// eslint-disable-next-line react-refresh/only-export-components
 export function progressPercent(checked: number, total: number): number {
   if (total <= 0) return 0;
   return Math.min(100, Math.max(0, (checked / total) * 100));
@@ -337,6 +338,21 @@ export function ShoppingListDetailPage() {
             </Card>
           );
         })
+      )}
+
+      {/* Sticky mobile bottom action bar (shopping mode, active) */}
+      {!isArchived && shoppingMode && (
+        <div
+          data-testid="mobile-shopping-actions"
+          className="md:hidden sticky bottom-0 z-20 -mx-4 px-4 py-3 bg-background border-t flex items-center gap-2"
+        >
+          <Button variant="outline" onClick={() => uncheckAll.mutate()}>
+            <RotateCcw className="h-4 w-4 mr-1" /> Uncheck All
+          </Button>
+          <Button className="flex-1" onClick={() => setShowFinishConfirm(true)}>
+            <Archive className="h-4 w-4 mr-1" /> Finish Shopping
+          </Button>
+        </div>
       )}
 
       {/* Finish Shopping Confirmation */}

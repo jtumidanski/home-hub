@@ -123,6 +123,48 @@ describe("ShoppingListDetailPage — sticky mobile progress header", () => {
   });
 });
 
+describe("ShoppingListDetailPage — sticky mobile bottom bar", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    mockUseShoppingList.mockReturnValue(mockList("active"));
+  });
+
+  it("does not render the bottom action bar outside shopping mode", () => {
+    renderPage();
+    expect(screen.queryByTestId("mobile-shopping-actions")).not.toBeInTheDocument();
+  });
+
+  it("renders Uncheck All and Finish Shopping in shopping mode", async () => {
+    renderPage();
+    await userEvent.click(screen.getByText("Start Shopping"));
+    const bar = screen.getByTestId("mobile-shopping-actions");
+    expect(within(bar).getByText("Uncheck All")).toBeInTheDocument();
+    expect(within(bar).getByText("Finish Shopping")).toBeInTheDocument();
+  });
+
+  it("calls the uncheck mutation when mobile Uncheck All is tapped", async () => {
+    renderPage();
+    await userEvent.click(screen.getByText("Start Shopping"));
+    const bar = screen.getByTestId("mobile-shopping-actions");
+    await userEvent.click(within(bar).getByText("Uncheck All"));
+    expect(mockUncheckMutate).toHaveBeenCalled();
+  });
+
+  it("opens the finish-confirmation dialog when mobile Finish Shopping is tapped", async () => {
+    renderPage();
+    await userEvent.click(screen.getByText("Start Shopping"));
+    const bar = screen.getByTestId("mobile-shopping-actions");
+    await userEvent.click(within(bar).getByText("Finish Shopping"));
+    expect(screen.getByText("Finish Shopping?")).toBeInTheDocument();
+  });
+
+  it("does not render the bottom action bar in the archived view", () => {
+    mockUseShoppingList.mockReturnValue(mockList("archived"));
+    renderPage();
+    expect(screen.queryByTestId("mobile-shopping-actions")).not.toBeInTheDocument();
+  });
+});
+
 describe("progressPercent", () => {
   it("returns 0 when total is 0 (no divide-by-zero)", () => {
     expect(progressPercent(0, 0)).toBe(0);
