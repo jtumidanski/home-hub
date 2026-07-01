@@ -166,7 +166,7 @@ export function ShoppingListDetailPage() {
 
       {/* Action Bar */}
       {!isArchived && (
-        <div className="flex gap-2 flex-wrap">
+        <div className={cn("flex gap-2 flex-wrap", shoppingMode && "hidden md:flex")}>
           {shoppingMode ? (
             <>
               <Button variant="outline" size="sm" onClick={() => setShoppingMode(false)}>
@@ -228,6 +228,29 @@ export function ShoppingListDetailPage() {
           <Button onClick={handleQuickAdd} disabled={!quickAdd.trim()}>
             <Plus className="h-4 w-4" />
           </Button>
+        </div>
+      )}
+
+      {/* Sticky mobile progress header (shopping mode, active) */}
+      {!isArchived && shoppingMode && (
+        <div
+          data-testid="mobile-shopping-progress"
+          className="md:hidden sticky top-0 z-20 -mx-4 px-4 py-3 bg-background border-b space-y-2"
+        >
+          <div className="h-2 rounded bg-muted">
+            <div
+              className="h-2 rounded bg-primary transition-all"
+              style={{ width: `${progressPercent(checkedCount, totalCount)}%` }}
+            />
+          </div>
+          <div className="flex items-center justify-between">
+            <span className="text-sm text-muted-foreground">
+              {checkedCount} of {totalCount} items
+            </span>
+            <Button variant="outline" size="sm" onClick={() => setShoppingMode(false)}>
+              <ArrowLeft className="h-4 w-4 mr-1" /> Back to Edit
+            </Button>
+          </div>
         </div>
       )}
 

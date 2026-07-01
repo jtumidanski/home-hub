@@ -97,6 +97,32 @@ describe("ShoppingListDetailPage — row behavior", () => {
   });
 });
 
+describe("ShoppingListDetailPage — sticky mobile progress header", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    mockUseShoppingList.mockReturnValue(mockList("active"));
+  });
+
+  it("does not render the mobile progress header outside shopping mode", () => {
+    renderPage();
+    expect(screen.queryByTestId("mobile-shopping-progress")).not.toBeInTheDocument();
+  });
+
+  it("renders the sticky progress header with count and Back to Edit in shopping mode", async () => {
+    renderPage();
+    await userEvent.click(screen.getByText("Start Shopping"));
+    const header = screen.getByTestId("mobile-shopping-progress");
+    expect(within(header).getByText("1 of 2 items")).toBeInTheDocument();
+    expect(within(header).getByText("Back to Edit")).toBeInTheDocument();
+  });
+
+  it("does not render the mobile progress header in the archived view", () => {
+    mockUseShoppingList.mockReturnValue(mockList("archived"));
+    renderPage();
+    expect(screen.queryByTestId("mobile-shopping-progress")).not.toBeInTheDocument();
+  });
+});
+
 describe("progressPercent", () => {
   it("returns 0 when total is 0 (no divide-by-zero)", () => {
     expect(progressPercent(0, 0)).toBe(0);
