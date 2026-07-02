@@ -301,6 +301,7 @@ func computeSentimentStats(expectedDays, filledDays, skippedDays int, entries []
 		ExpectedDays: expectedDays,
 		FilledDays:   filledDays,
 		SkippedDays:  skippedDays,
+		DailyValues:  make([]DailyRating, 0, len(entries)),
 	}
 	for _, e := range entries {
 		if e.Skipped() || len(e.Value()) == 0 {
@@ -337,7 +338,7 @@ func computeNumericStats(expectedDays, filledDays, skippedDays int, entries []en
 		FilledDays:   filledDays,
 		SkippedDays:  skippedDays,
 	}
-	var values []DailyCount
+	values := make([]DailyCount, 0, len(entries))
 	for _, e := range entries {
 		if e.Skipped() || len(e.Value()) == 0 {
 			continue
@@ -378,7 +379,7 @@ func computeRangeStats(expectedDays, filledDays, skippedDays int, entries []entr
 		FilledDays:   filledDays,
 		SkippedDays:  skippedDays,
 	}
-	var values []DailyValue
+	values := make([]DailyValue, 0, len(entries))
 	var nums []float64
 	for _, e := range entries {
 		if e.Skipped() || len(e.Value()) == 0 {

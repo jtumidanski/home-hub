@@ -339,6 +339,57 @@ func TestComputeReport_RangeStats(t *testing.T) {
 	assert.Greater(t, stats.StdDev, 0.0)
 }
 
+// A complete month where every scheduled day was skipped (no filled entries)
+// must still serialize daily_values as an empty array, never null — the
+// frontend report cards call daily_values.map() without a null guard.
+func TestComputeReport_NumericStatsAllSkippedHasEmptyDailyValues(t *testing.T) {
+	db := setupTestDB(t)
+	p := newTestProcessor(t, db)
+	userID := uuid.New()
+
+	item := seedItem(t, db, userID, "Drinks", "numeric", nil, []int{}, monthStart.AddDate(0, 0, -7), nil, monthStart.AddDate(0, 0, -7))
+	// Every day skipped: month is complete but there are no filled values.
+	for i := 0; i < 31; i++ {
+		seedEntry(t, db, item, monthStart.AddDate(0, 0, i), nil, true)
+	}
+
+	report, err := p.ComputeReport(userID, testMonth, time.Now().UTC())
+	require.NoError(t, err)
+	require.Len(t, report.Items, 1)
+
+	assert.NotContains(t, string(report.Items[0].Stats), `"daily_values":null`)
+	assert.Contains(t, string(report.Items[0].Stats), `"daily_values":[]`)
+
+	var stats NumericStats
+	require.NoError(t, json.Unmarshal(report.Items[0].Stats, &stats))
+	assert.NotNil(t, stats.DailyValues)
+	assert.Len(t, stats.DailyValues, 0)
+}
+
+func TestComputeReport_RangeStatsAllSkippedHasEmptyDailyValues(t *testing.T) {
+	db := setupTestDB(t)
+	p := newTestProcessor(t, db)
+	userID := uuid.New()
+
+	cfg := json.RawMessage(`{"min":0,"max":100}`)
+	item := seedItem(t, db, userID, "Sleep", "range", cfg, []int{}, monthStart.AddDate(0, 0, -7), nil, monthStart.AddDate(0, 0, -7))
+	for i := 0; i < 31; i++ {
+		seedEntry(t, db, item, monthStart.AddDate(0, 0, i), nil, true)
+	}
+
+	report, err := p.ComputeReport(userID, testMonth, time.Now().UTC())
+	require.NoError(t, err)
+	require.Len(t, report.Items, 1)
+
+	assert.NotContains(t, string(report.Items[0].Stats), `"daily_values":null`)
+	assert.Contains(t, string(report.Items[0].Stats), `"daily_values":[]`)
+
+	var stats RangeStats
+	require.NoError(t, json.Unmarshal(report.Items[0].Stats, &stats))
+	assert.NotNil(t, stats.DailyValues)
+	assert.Len(t, stats.DailyValues, 0)
+}
+
 func TestComputeReport_SoftDeletedItemAppearsInHistoricalReport(t *testing.T) {
 	db := setupTestDB(t)
 	p := newTestProcessor(t, db)
