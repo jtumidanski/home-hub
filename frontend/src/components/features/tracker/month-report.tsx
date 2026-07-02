@@ -116,7 +116,7 @@ function NumericCard({ item }: { item: ReportItem }) {
           <span>{Math.round(stats.days_with_entries_above_zero_pct * 100)}% days &gt;0</span>
         </div>
         <div className="flex items-end gap-px h-8">
-          {stats.daily_values.map((dv, i) => (
+          {(stats.daily_values ?? []).map((dv, i) => (
             <div key={i} className="flex-1 bg-primary/60 rounded-t" style={{ height: `${maxVal > 0 ? (dv.count / maxVal) * 100 : 0}%`, minHeight: dv.count > 0 ? "2px" : "0" }} />
           ))}
         </div>
@@ -142,7 +142,7 @@ function RangeCard({ item }: { item: ReportItem }) {
           <span>Std Dev: <strong>{stats.std_dev}</strong></span>
         </div>
         <div className="flex items-end gap-px h-8">
-          {stats.daily_values.map((dv, i) => {
+          {(stats.daily_values ?? []).map((dv, i) => {
             const min = stats.min?.value ?? 0;
             const max = stats.max?.value ?? 100;
             const range = max - min || 1;
