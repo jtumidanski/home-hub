@@ -60,7 +60,7 @@ export function MobileDrawer() {
         <div className="flex h-14 items-center justify-between border-b px-3">
           <div className="flex items-center gap-2">
             <BrandMark className="size-7 shrink-0" />
-            <span className="text-lg font-semibold">Home Hub</span>
+            <span className="text-lg font-semibold leading-none">Home Hub</span>
           </div>
           <Button variant="ghost" size="icon" onClick={onClose} aria-label="Close navigation menu">
             <X className="h-5 w-5" />

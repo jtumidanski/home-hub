@@ -40,7 +40,7 @@ function AppShellContent() {
             className="flex items-center gap-2.5 rounded-lg bg-sidebar-accent/50 px-2 py-2 transition-colors hover:bg-sidebar-accent"
           >
             <BrandMark className="size-8 shrink-0" />
-            <span className="text-base font-semibold tracking-tight">Home Hub</span>
+            <span className="text-base font-semibold leading-none tracking-tight">Home Hub</span>
           </Link>
           <HouseholdSwitcher />
         </SidebarHeader>
