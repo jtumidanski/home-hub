@@ -55,7 +55,7 @@ export const navGroups: NavGroup[] = [
     key: "management",
     label: "Management",
     items: [
-      { to: "/app/dashboards", icon: LayoutGrid, label: "Manage Dashboards" },
+      { to: "/app/dashboards", icon: LayoutGrid, label: "Dashboards", end: true },
       { to: "/app/households", icon: Home, label: "Households", badgeKey: "pendingInvitationCount" },
     ],
   },
@@ -66,3 +66,15 @@ export const settingsNavItem: NavItem = {
   icon: Settings,
   label: "Settings",
 };
+
+/**
+ * Whether `pathname` should mark a nav item with target `to` active. Exact
+ * items (`end`) match only the exact path; others match the path or any child
+ * segment (`to/...`) — but NOT a sibling that merely shares the string prefix
+ * (e.g. `/app/dashboards` must not light up on `/app/dashboards/123`'s parent
+ * when it is an exact "Manage Dashboards" link).
+ */
+export function isNavItemActive(pathname: string, to: string, end?: boolean): boolean {
+  if (end) return pathname === to;
+  return pathname === to || pathname.startsWith(`${to}/`);
+}
