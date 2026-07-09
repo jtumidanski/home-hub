@@ -27,14 +27,11 @@ vi.mock("@/components/features/households/household-switcher", () => ({
 }));
 
 vi.mock("@/components/features/navigation/mobile-header", () => ({
-  MobileHeader: ({ onMenuOpen }: { onMenuOpen: () => void }) => (
-    <button data-testid="mobile-header" onClick={onMenuOpen}>Menu</button>
-  ),
+  MobileHeader: () => <div data-testid="mobile-header">Menu</div>,
 }));
 
 vi.mock("@/components/features/navigation/mobile-drawer", () => ({
-  MobileDrawer: ({ open }: { open: boolean }) =>
-    open ? <div data-testid="mobile-drawer">Drawer</div> : null,
+  MobileDrawer: () => <div data-testid="mobile-drawer" />,
 }));
 
 vi.mock("react-router-dom", async () => {
