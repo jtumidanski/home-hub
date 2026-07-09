@@ -14,7 +14,7 @@ const tabs = [
 
 export function WorkoutShell() {
   return (
-    <div className="py-4 px-4 space-y-4">
+    <div className="p-4 md:p-6 space-y-4">
       <div className="flex items-center justify-between flex-wrap gap-2">
         <h1 className="text-2xl font-bold">Workouts</h1>
         <nav className="flex flex-wrap gap-1">

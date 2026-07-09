@@ -1,22 +1,12 @@
-import { Menu } from "lucide-react";
-import { Button } from "@/components/ui/button";
+import { BrandMark } from "@/components/common/brand-mark";
+import { SidebarTrigger } from "@/components/ui/sidebar";
 
-interface MobileHeaderProps {
-  onMenuOpen: () => void;
-}
-
-export function MobileHeader({ onMenuOpen }: MobileHeaderProps) {
+export function MobileHeader() {
   return (
-    <header className="flex h-14 items-center border-b bg-sidebar px-4 md:hidden">
-      <Button
-        variant="ghost"
-        size="icon"
-        onClick={onMenuOpen}
-        aria-label="Open navigation menu"
-      >
-        <Menu className="h-5 w-5" />
-      </Button>
-      <span className="ml-3 text-lg font-semibold">Home Hub</span>
+    <header className="flex h-14 items-center gap-2 border-b bg-sidebar px-3 md:hidden">
+      <SidebarTrigger aria-label="Open navigation menu" />
+      <BrandMark className="size-7 shrink-0" />
+      <span className="text-lg font-semibold">Home Hub</span>
     </header>
   );
 }

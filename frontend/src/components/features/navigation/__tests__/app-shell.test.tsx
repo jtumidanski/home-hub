@@ -66,7 +66,7 @@ describe("AppShell", () => {
   it("renders sidebar with navigation links", () => {
     renderWithRouter();
     expect(screen.getByText("Home Hub")).toBeInTheDocument();
-    expect(screen.getByText("Dashboards")).toBeInTheDocument();
+    expect(screen.getByTestId("dashboards-nav-group")).toBeInTheDocument();
     expect(screen.getByText("Tasks")).toBeInTheDocument();
     expect(screen.getByText("Reminders")).toBeInTheDocument();
     expect(screen.getByText("Households")).toBeInTheDocument();

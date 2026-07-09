@@ -296,11 +296,27 @@ function midnightInZone(year: number, month: number, d: number, timezone?: strin
 
 export function getEventsForDay(events: CalendarEvent[], day: Date, timezone?: string): { allDay: CalendarEvent[]; timed: CalendarEvent[] } {
   const { year, month, day: d } = getDateInZone(day, timezone);
+  const dayDateStr = `${year}-${String(month).padStart(2, "0")}-${String(d).padStart(2, "0")}`;
+  return getEventsForDateStr(events, dayDateStr, timezone);
+}
+
+/**
+ * Like getEventsForDay, but keyed on a YYYY-MM-DD date string in `timezone`
+ * rather than a Date. Callers that already hold a calendar-date string (e.g.
+ * dashboard "tomorrow" widgets) use this so they don't have to reconstruct a
+ * timezone-anchored Date just to have getDateInZone derive the string back.
+ *
+ * All-day events are matched by inclusive date-string range (they are stored at
+ * UTC midnight and must not be shifted by timezone). Timed events are matched by
+ * overlap with the tz-aware [midnight, midnight+24h) window for that date.
+ */
+export function getEventsForDateStr(events: CalendarEvent[], dateStr: string, timezone?: string): { allDay: CalendarEvent[]; timed: CalendarEvent[] } {
+  const parts = dateStr.split("-").map(Number);
+  const year = parts[0] ?? 1970;
+  const month = parts[1] ?? 1;
+  const d = parts[2] ?? 1;
   const dayStart = midnightInZone(year, month, d, timezone);
   const dayEnd = new Date(dayStart.getTime() + 24 * 60 * 60 * 1000 - 1);
-
-  // For date-only comparison of all-day events (YYYY-MM-DD)
-  const dayDateStr = `${year}-${String(month).padStart(2, "0")}-${String(d).padStart(2, "0")}`;
 
   const allDay: CalendarEvent[] = [];
   const timed: CalendarEvent[] = [];
@@ -311,7 +327,7 @@ export function getEventsForDay(events: CalendarEvent[], day: Date, timezone?: s
       // Both start and end are inclusive (e.g., Apr 1 to Apr 3 = three days).
       const startDate = evt.attributes.startTime.slice(0, 10);
       const endDate = evt.attributes.endTime.slice(0, 10);
-      if (dayDateStr >= startDate && dayDateStr <= endDate) {
+      if (dateStr >= startDate && dateStr <= endDate) {
         allDay.push(evt);
       }
     } else {

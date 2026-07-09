@@ -2,6 +2,7 @@
 import { useMemo } from "react";
 import { Link } from "react-router-dom";
 import { useCalendarEvents } from "@/lib/hooks/api/use-calendar";
+import { getEventsForDateStr } from "@/components/features/calendar/calendar-utils";
 import { useTenant } from "@/context/tenant-context";
 import { useLocalDateOffset } from "@/lib/hooks/use-local-date-offset";
 import { Card, CardAction, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -18,13 +19,20 @@ function formatTime(iso: string): string {
   return new Date(iso).toLocaleTimeString([], { hour: "numeric", minute: "2-digit" });
 }
 
+// Backend query window. We fetch a generous ±1 day around the target UTC date
+// rather than the exact local-midnight span, because all-day events are stored
+// at UTC midnight and a tz-shifted window would miss the target day's own
+// all-day events while catching the next day's. The precise day selection is
+// done client-side by getEventsForDateStr, which handles all-day (date-string)
+// and timed (tz-aware) events correctly.
 function tomorrowRange(tomorrow: string): { start: string; end: string } {
   const parts = tomorrow.split("-").map(Number);
   const y = parts[0] ?? 1970;
   const m = parts[1] ?? 1;
   const d = parts[2] ?? 1;
-  const start = new Date(y, m - 1, d, 0, 0, 0, 0).toISOString();
-  const end = new Date(y, m - 1, d, 23, 59, 59, 999).toISOString();
+  const dayMs = Date.UTC(y, m - 1, d);
+  const start = new Date(dayMs - 24 * 60 * 60 * 1000).toISOString();
+  const end = new Date(dayMs + 2 * 24 * 60 * 60 * 1000).toISOString();
   return { start, end };
 }
 
@@ -55,7 +63,8 @@ export function CalendarTomorrowAdapter({ config }: { config: CalendarTomorrowCo
   }
 
   const all = (data?.data ?? []) as CalendarEvent[];
-  const filtered = all.filter((e) => config.includeAllDay || !e.attributes.allDay);
+  const { allDay, timed } = getEventsForDateStr(all, tomorrow, household?.attributes.timezone);
+  const filtered = config.includeAllDay ? [...allDay, ...timed] : timed;
   const sorted = filtered.sort((a, b) => {
     if (a.attributes.allDay && !b.attributes.allDay) return -1;
     if (!a.attributes.allDay && b.attributes.allDay) return 1;
