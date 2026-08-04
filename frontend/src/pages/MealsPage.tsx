@@ -1,4 +1,5 @@
 import { useState, useCallback, useMemo } from "react";
+import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 import { Lock, Unlock, Copy, FileDown, Plus, ShoppingCart } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -51,6 +52,7 @@ function getWeekDays(startsOn: Date) {
 }
 
 export function MealsPage() {
+  const navigate = useNavigate();
   const [startsOn, setStartsOn] = useState<Date>(getLocalWeekStart);
   const startsOnStr = formatDateStr(startsOn);
 
@@ -221,6 +223,7 @@ export function MealsPage() {
               onItemClick={(item) => {
                 if (!locked) setEditItem(item);
               }}
+              onItemNavigate={(item) => navigate(`/app/recipes/${item.recipe_id}`)}
               onRemoveItem={handleRemoveItem}
             />
           )}

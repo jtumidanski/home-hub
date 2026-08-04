@@ -11,6 +11,7 @@ interface WeekGridProps {
   locked: boolean;
   onCellClick: (day: string, slot: Slot) => void;
   onItemClick: (item: PlanItemAttributes) => void;
+  onItemNavigate: (item: PlanItemAttributes) => void;
   onRemoveItem: (itemId: string) => void;
 }
 
@@ -39,7 +40,7 @@ function getDaysOfWeek(startsOn: Date): { date: Date; label: string; dateStr: st
   return days;
 }
 
-export function WeekGrid({ startsOn, items, locked, onCellClick, onItemClick, onRemoveItem }: WeekGridProps) {
+export function WeekGrid({ startsOn, items, locked, onCellClick, onItemClick, onItemNavigate, onRemoveItem }: WeekGridProps) {
   const days = getDaysOfWeek(startsOn);
 
   const getItemsForCell = (dateStr: string, slot: Slot) =>
@@ -80,46 +81,60 @@ export function WeekGrid({ startsOn, items, locked, onCellClick, onItemClick, on
                     }}
                   >
                     <div className="space-y-1">
-                      {cellItems.map((item) => (
-                        <div
-                          key={item.id}
-                          className="group relative rounded bg-primary/10 p-1.5 text-xs cursor-pointer"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            if (!locked) onItemClick(item);
-                          }}
-                        >
-                          <div className="flex items-start justify-between gap-1">
-                            <span className="font-medium leading-tight truncate min-w-0">
-                              {item.recipe_deleted && (
-                                <AlertTriangle className="inline h-3 w-3 text-yellow-500 mr-1" />
+                      {cellItems.map((item) => {
+                        // When locked, a live recipe links through to its detail page;
+                        // when unlocked, clicking opens the edit popover. A deleted
+                        // recipe in a locked plan is not clickable.
+                        const canNavigate = locked && !item.recipe_deleted;
+                        const clickable = !locked || !item.recipe_deleted;
+                        return (
+                          <div
+                            key={item.id}
+                            className={cn(
+                              "group relative rounded bg-primary/10 p-1.5 text-xs",
+                              clickable ? "cursor-pointer hover:bg-primary/20" : "cursor-default"
+                            )}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              if (canNavigate) {
+                                onItemNavigate(item);
+                              } else if (!locked) {
+                                onItemClick(item);
+                              }
+                            }}
+                          >
+                            <div className="flex items-start justify-between gap-1">
+                              <span className="font-medium leading-tight truncate min-w-0">
+                                {item.recipe_deleted && (
+                                  <AlertTriangle className="inline h-3 w-3 text-yellow-500 mr-1" />
+                                )}
+                                {item.recipe_title}
+                              </span>
+                              {!locked && (
+                                <Button
+                                  variant="ghost"
+                                  size="icon"
+                                  className="h-4 w-4 opacity-0 group-hover:opacity-100 shrink-0"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    onRemoveItem(item.id);
+                                  }}
+                                >
+                                  <X className="h-3 w-3" />
+                                </Button>
                               )}
-                              {item.recipe_title}
-                            </span>
-                            {!locked && (
-                              <Button
-                                variant="ghost"
-                                size="icon"
-                                className="h-4 w-4 opacity-0 group-hover:opacity-100 shrink-0"
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  onRemoveItem(item.id);
-                                }}
-                              >
-                                <X className="h-3 w-3" />
-                              </Button>
+                            </div>
+
+                            {(item.planned_servings || (item.serving_multiplier && item.serving_multiplier !== 1)) && (
+                              <div className="text-muted-foreground mt-0.5">
+                                {item.planned_servings
+                                  ? `serves ${item.planned_servings}`
+                                  : `×${item.serving_multiplier}`}
+                              </div>
                             )}
                           </div>
-
-                          {(item.planned_servings || (item.serving_multiplier && item.serving_multiplier !== 1)) && (
-                            <div className="text-muted-foreground mt-0.5">
-                              {item.planned_servings
-                                ? `serves ${item.planned_servings}`
-                                : `×${item.serving_multiplier}`}
-                            </div>
-                          )}
-                        </div>
-                      ))}
+                        );
+                      })}
                     </div>
                   </td>
                 );
