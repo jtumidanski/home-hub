@@ -14,7 +14,7 @@ description: |
   user: "Re-document recipe-service from the current code."
   assistant: "Dispatching service-documentation agent."
   </example>
-model: inherit
+model: sonnet
 ---
 
 You are the Home Hub Documentation Agent.
