@@ -1,6 +1,5 @@
 import { useState, useCallback, useMemo } from "react";
 import { useSearchParams } from "react-router-dom";
-import { type ColumnDef } from "@tanstack/react-table";
 import { toast } from "sonner";
 import { useReminders, useSnoozeReminder, useDismissReminder, useDeleteReminder } from "@/lib/hooks/api/use-reminders";
 import { useMemberMap, useHouseholdMembers } from "@/lib/hooks/api/use-household-members";
@@ -13,7 +12,7 @@ import { PullToRefresh } from "@/components/common/pull-to-refresh";
 import { ListFilterBar } from "@/components/common/list-filter-bar";
 import { ReminderCard } from "@/components/features/reminders/reminder-card";
 import { CreateReminderDialog } from "@/components/features/reminders/create-reminder-dialog";
-import { DataTable } from "@/components/common/data-table";
+import { DataTable, type DataTableColumnDef } from "@/components/common/data-table";
 import { ErrorCard } from "@/components/common/error-card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -109,7 +108,7 @@ export function RemindersPage() {
     await refetch();
   }, [refetch]);
 
-  const columns: ColumnDef<Reminder, unknown>[] = [
+  const columns: DataTableColumnDef<Reminder>[] = [
     {
       accessorKey: "attributes.title",
       header: "Title",

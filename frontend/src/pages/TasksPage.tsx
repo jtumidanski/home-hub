@@ -1,6 +1,5 @@
 import { useState, useCallback, useMemo } from "react";
 import { useSearchParams } from "react-router-dom";
-import { type ColumnDef } from "@tanstack/react-table";
 import { toast } from "sonner";
 import { useTasks, useUpdateTask, useDeleteTask } from "@/lib/hooks/api/use-tasks";
 import { useMemberMap, useHouseholdMembers } from "@/lib/hooks/api/use-household-members";
@@ -13,7 +12,7 @@ import { PullToRefresh } from "@/components/common/pull-to-refresh";
 import { ListFilterBar } from "@/components/common/list-filter-bar";
 import { TaskCard } from "@/components/features/tasks/task-card";
 import { CreateTaskDialog } from "@/components/features/tasks/create-task-dialog";
-import { DataTable } from "@/components/common/data-table";
+import { DataTable, type DataTableColumnDef } from "@/components/common/data-table";
 import { ErrorCard } from "@/components/common/error-card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -98,7 +97,7 @@ export function TasksPage() {
     await refetch();
   }, [refetch]);
 
-  const columns: ColumnDef<Task, unknown>[] = [
+  const columns: DataTableColumnDef<Task>[] = [
     {
       id: "complete",
       header: "",
