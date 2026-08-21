@@ -1,14 +1,15 @@
+import { type RowData, flexRender, useTable } from "@tanstack/react-table";
 import {
-  type ColumnDef,
-  flexRender,
-  getCoreRowModel,
-  useReactTable,
-} from "@tanstack/react-table";
+  type DataTableColumnDef,
+  dataTableFeatures,
+} from "@/components/common/data-table-features";
 import { Skeleton } from "@/components/ui/skeleton";
 import { cn } from "@/lib/utils";
 
-interface DataTableProps<TData> {
-  columns: ColumnDef<TData, unknown>[];
+export type { DataTableColumnDef };
+
+interface DataTableProps<TData extends RowData> {
+  columns: DataTableColumnDef<TData>[];
   data: TData[];
   isLoading?: boolean;
   emptyMessage?: string;
@@ -16,7 +17,7 @@ interface DataTableProps<TData> {
   skeletonRows?: number;
 }
 
-export function DataTable<TData>({
+export function DataTable<TData extends RowData>({
   columns,
   data,
   isLoading,
@@ -24,11 +25,10 @@ export function DataTable<TData>({
   onRowClick,
   skeletonRows = 4,
 }: DataTableProps<TData>) {
-  // eslint-disable-next-line react-hooks/incompatible-library -- useReactTable returns unmemoizable functions; library-level React Compiler limitation
-  const table = useReactTable({
+  const table = useTable({
+    features: dataTableFeatures,
     data,
     columns,
-    getCoreRowModel: getCoreRowModel(),
   });
 
   if (isLoading) {
@@ -78,7 +78,7 @@ export function DataTable<TData>({
               )}
               onClick={() => onRowClick?.(row.original)}
             >
-              {row.getVisibleCells().map((cell) => (
+              {row.getAllCells().map((cell) => (
                 <td key={cell.id} className="px-4 py-3 align-middle">
                   {flexRender(cell.column.columnDef.cell, cell.getContext())}
                 </td>

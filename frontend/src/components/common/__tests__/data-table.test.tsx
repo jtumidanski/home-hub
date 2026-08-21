@@ -1,15 +1,14 @@
 import { describe, it, expect, vi } from "vitest";
 import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { type ColumnDef } from "@tanstack/react-table";
-import { DataTable } from "../data-table";
+import { DataTable, type DataTableColumnDef } from "../data-table";
 
 interface TestRow {
   id: string;
   name: string;
 }
 
-const columns: ColumnDef<TestRow, unknown>[] = [
+const columns: DataTableColumnDef<TestRow>[] = [
   { accessorKey: "id", header: "ID" },
   { accessorKey: "name", header: "Name" },
 ];
