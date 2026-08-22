@@ -13,7 +13,7 @@ require (
 	github.com/jtumidanski/home-hub/shared/go/retention v0.0.0
 	github.com/jtumidanski/home-hub/shared/go/server v0.0.0
 	github.com/jtumidanski/home-hub/shared/go/tenant v0.0.0
-	github.com/sirupsen/logrus v1.10.0
+	github.com/sirupsen/logrus v1.10.1
 	gorm.io/driver/sqlite v1.6.0
 	gorm.io/gorm v1.31.2
 )

@@ -7,7 +7,7 @@ require (
 	github.com/google/uuid v1.6.0
 	github.com/jtumidanski/home-hub/shared/go/logging v0.0.0
 	github.com/jtumidanski/home-hub/shared/go/tenant v0.0.0
-	github.com/sirupsen/logrus v1.10.0
+	github.com/sirupsen/logrus v1.10.1
 )
 
 require (

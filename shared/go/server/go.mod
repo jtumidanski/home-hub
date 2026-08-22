@@ -7,7 +7,7 @@ require (
 	github.com/gorilla/mux v1.8.1
 	github.com/jtumidanski/api2go v1.0.4
 	github.com/jtumidanski/home-hub/shared/go/logging v0.0.0
-	github.com/sirupsen/logrus v1.10.0
+	github.com/sirupsen/logrus v1.10.1
 	go.opentelemetry.io/otel/trace v1.45.0
 )
 
