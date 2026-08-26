@@ -159,10 +159,32 @@ leg_pins() {
     [ "$rc" -eq 0 ] && echo "pins: go $want consistent across toolchain.versions, go.work, and .github/workflows"
     return "$rc"
 }
-leg_build()          { :; }
-leg_vet()            { :; }
-leg_test()           { :; }
-leg_lint()           { :; }
+# Iterate every discovered module, run `cmd` inside it, collect failures.
+# Every module runs even after one fails — one pass, complete picture.
+for_each_module() {
+    local label="$1"; shift
+    local rc=0 moddir rel
+    while IFS= read -r moddir; do
+        rel="${moddir#"$ROOT"/}"
+        echo "--- $label: $rel"
+        if ! (cd "$moddir" && "$@"); then
+            echo "$label FAIL — $rel"
+            rc=1
+        fi
+    done < <(discover_modules)
+    return "$rc"
+}
+
+leg_build() { for_each_module build go build ./...; }
+
+# Plain `go vet`, not golangci-lint's govet: --quick must never trigger a cold
+# multi-minute golangci-lint bootstrap. The lint leg's `standard` set includes
+# govet, so flagless coverage is unchanged; this is the price of a
+# bootstrap-free --quick.
+leg_vet() { for_each_module vet go vet ./...; }
+
+leg_test() { for_each_module test go test ./... -count=1; }
+leg_lint()            { :; }
 leg_frontend_build() { :; }
 leg_eslint()         { :; }
 leg_docker()         { :; }

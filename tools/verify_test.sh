@@ -75,5 +75,10 @@ esac
 "$V" --only pins >/dev/null 2>&1
 check "pins leg passes against the committed toolchain" 0 $?
 
+# --- module discovery covers everything go.work declares --------------------
+want_modules="$(awk '/^\t\.\//{gsub(/^\t\.\//,""); print}' "$ROOT/go.work" | sort)"
+got_modules="$(cd "$ROOT" && tools/verify.sh --facts 2>/dev/null | sed -n 's/^modules: //p')"
+check "discovery finds every go.work module" "$(printf '%s\n' "$want_modules" | wc -l | tr -d ' ')" "$got_modules"
+
 echo "passed: $passed  failed: $failed"
 [ "$failed" -eq 0 ]
