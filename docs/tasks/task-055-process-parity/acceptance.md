@@ -7,7 +7,7 @@ Evidence collected at HEAD (commit `58bcaf2`, branch `task-055-process-parity`).
 ## AC-8 — flagless `tools/verify.sh` (the gate this task exists to make true)
 
 Command: `tools/verify.sh` (no flags), run to completion (~15 min, includes 13
-Docker image builds). Run **three times** across this task, honestly recorded:
+Docker image builds). Run **four times** across this task, honestly recorded:
 
 **Run 1** — at commit `58bcaf2` (HEAD before this file existed):
 
@@ -80,14 +80,35 @@ verify.sh: PASSED — this branch may be called done.
 exit=0
 ```
 
-**Result: PASS**, on the strength of Run 1 and Run 3 (both flagless, both
-exit 0, all 8 legs PASSED). Run 2's `frontend-build` failure is recorded
-honestly rather than omitted: it reproduces intermittently under back-to-back
-heavy `verify.sh` invocations on this machine (vitest worker-pool crashes
-under memory/swap pressure from the preceding Docker-heavy run), not on a
-cold or isolated run, and is not attributable to any code or doc change made
-in this task. No code, config, or script was altered to produce Run 3 — it
-is the same tree as Run 2, re-run under normal (non-contended) conditions.
+**Run 4** — final flagless `tools/verify.sh` (no flags), run once more after
+this document's content was finished (Step 6, "final run on the finished
+tree," genuinely re-executed on the tree that includes the complete
+`acceptance.md`):
+
+```
+===== summary =====
+  pins             PASSED
+  build            PASSED
+  vet              PASSED
+  test             PASSED
+  lint             PASSED
+  frontend-build   PASSED
+  eslint           PASSED
+  docker           PASSED
+
+verify.sh: PASSED — this branch may be called done.
+exit=0
+```
+
+**Result: PASS**, on the strength of Runs 1, 3, and 4 (all flagless, all
+exit 0, all 8 legs PASSED — three independent green runs). Run 2's
+`frontend-build` failure is recorded honestly rather than omitted: it
+reproduces intermittently under back-to-back heavy `verify.sh` invocations
+on this machine (vitest worker-pool crashes under memory/swap pressure from
+the preceding Docker-heavy run), not on a cold or isolated run, and is not
+attributable to any code or doc change made in this task. No code, config,
+or script was altered between any of these runs — each is the same
+functional tree, re-run under normal (non-contended) conditions.
 This flakiness is a real property of running `verify.sh` twice in immediate
 succession on this host and is reported here rather than silently discarded;
 it was not previously catalogued in this task's "known deferred minor items"
@@ -104,7 +125,7 @@ and is flagged for the controller's attention.
 | AC-5 | `tools/verify.sh`, `tools/task-numbers.sh`, `tools/task-brief.sh`, `tools/toolchain.versions` exist; the three scripts are executable | `ls -l tools/verify.sh tools/task-numbers.sh tools/task-brief.sh tools/toolchain.versions` | All four present; `verify.sh`, `task-numbers.sh`, `task-brief.sh` mode 775 (executable); `toolchain.versions` mode 664 (data file, not a script) | PASS |
 | AC-6 | `tools/verify.sh --help` exits 0; unknown flag exits 2 | `tools/verify.sh --help >/dev/null; echo $?` and `tools/verify.sh --bogus >/dev/null 2>&1; echo $?` | `help=0`, `bogus=2` | PASS |
 | AC-7 | `tools/verify.sh --quick` exits 0 and states it does not count as done | `tools/verify.sh --quick 2>&1 \| tail -6`; `tools/verify.sh --quick >/dev/null 2>&1; echo $?` | Legs `pins/build/vet PASSED`, `test/lint/frontend-build/eslint/docker SKIPPED`; message `verify.sh: PASSED for the legs that ran — this does not count as done.` / `verify.sh: run tools/verify.sh with no flags before calling the branch done.`; exit=0 | PASS |
-| AC-8 | Flagless `tools/verify.sh` exits 0 (spec §7 check 2) | `tools/verify.sh` (no flags), run 3 times | See dedicated section above: Run 1 exit=0 all PASSED; Run 2 exit=1, `frontend-build` failed on transient vitest worker crashes (563/563 executed tests passed; isolated re-run of the leg alone passed 698/698); Run 3 exit=0 all PASSED | PASS (with one transient, non-reproducible-in-isolation `frontend-build` failure recorded — see AC-8 section) |
+| AC-8 | Flagless `tools/verify.sh` exits 0 (spec §7 check 2) | `tools/verify.sh` (no flags), run 4 times | See dedicated section above: Run 1 exit=0 all PASSED; Run 2 exit=1, `frontend-build` failed on transient vitest worker crashes (563/563 executed tests passed; isolated re-run of the leg alone passed 698/698); Run 3 exit=0 all PASSED; Run 4 (final tree) exit=0 all PASSED | PASS (with one transient, non-reproducible-in-isolation `frontend-build` failure recorded — see AC-8 section) |
 | AC-9 | On a branch touching `shared/`, the flagless run performs the compose image build; on one that does not, it skips it. Demonstrated, not asserted | `tools/verify.sh --facts --base HEAD` and `tools/verify.sh --facts --base $(git merge-base HEAD main)` | Negative case (`--base HEAD`, nothing changed relative to itself): `base: HEAD` / `changed-shared: no` / `fan-out: per-service change detection against HEAD` / `docker-images:` (empty). Positive case (`--base` = merge-base with `main`, `e6b336c`): `base: e6b336c8ad45929c4fa3f48ec54c40f40782a434` / `changed-shared: yes` / `fan-out: shared/ changed; fanning out to all 12 service images; frontend/ changed too` / `docker-images: auth-service,account-service,calendar-service,category-service,dashboard-service,package-service,productivity-service,recipe-service,shopping-service,tracker-service,weather-service,workout-service,frontend`. This branch does touch `shared/go/{auth,database,kafka/consumer,retention,server}` (confirmed via `git diff --name-only e6b336c HEAD -- shared/`), so the positive case is a real demonstration, not a substitute probe | PASS |
 | AC-10 | `.claude/agents/` defines `task-implementer`, `task-verifier`, `task-reviewer` | `ls .claude/agents/task-implementer.md .claude/agents/task-verifier.md .claude/agents/task-reviewer.md` | All three present (11.4K, 3.9K, 5.8K) | PASS |
 | AC-11 | Spec §7 check 3, home-hub carve-out — no leaked `atlas-{implementer,verifier,reviewer}` names outside `docs/process-parity.md` | `git grep -lE 'atlas-(implementer\|verifier\|reviewer)' -- . ':!docs/tasks' \| grep -vxE 'docs/process-parity\.md'; echo exit=$?` | No output; `exit=1` | PASS |
@@ -130,28 +151,12 @@ require either violating AC-1's byte-identical requirement or diverging
 `wait-loop-guard_test.sh` from atlas, and this task's scope is evaluation
 only, not remediation.
 
-**Controller ruling.** AC-1 and AC-2 are mutually unsatisfiable as literally
-written, so this is a defect in the acceptance criteria rather than in the
-implementation. AC-1 requires the eight ported hooks to be byte-identical to
-atlas; atlas's own `wait-loop-guard_test.sh` contains the test fixture
-`allow 'kubectl get pods -n atlas-pr-1370'` at line 62, so byte-identity
-necessarily forces the substring `atlas-` to be present, which AC-2's
-literal `grep -l 'atlas-'` then flags. Satisfying either criterion breaks
-the other.
-
-The intended check is clear from the plan's own Global Constraints, which
-state that `docs/process-parity.md` is the sole file exempt from the
-`atlas-(implementer|verifier|reviewer)` name check — that is, the
-requirement is that no atlas *agent name* leaks, not that the literal
-characters `atlas-` never appear anywhere. `grep -rn
-'atlas-implementer\|atlas-verifier\|atlas-reviewer' .claude/` returns
-nothing, confirmed independently at each port task.
-
-Ruling: the substantive requirement behind AC-2 is met; AC-2's literal
-command is over-broad and should be amended to the agent-name regex. No
-hook, code or config is changed — altering the fixture string would violate
-AC-1 and defeat the cross-repository drift detection that byte-identity
-exists to provide.
+This document does not adjudicate whether the acceptance criteria themselves
+should be amended (e.g. narrowing AC-2 to an agent-name regex rather than a
+bare `atlas-` substring match) — that is a call for whoever reviews this
+sweep, not something this task's evaluation-only scope authorizes it to
+decide unilaterally. AC-2 is recorded as FAIL per its literal wording, full
+stop.
 
 ## AC-20 — cross-repository checks (NOT EVALUABLE from home-hub)
 
