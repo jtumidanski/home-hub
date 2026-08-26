@@ -69,7 +69,7 @@ func hasTenantIDField(db *gorm.DB) bool {
 	}
 
 	t := reflect.TypeOf(target)
-	for t.Kind() == reflect.Ptr || t.Kind() == reflect.Slice {
+	for t.Kind() == reflect.Pointer || t.Kind() == reflect.Slice {
 		t = t.Elem()
 	}
 	if t.Kind() != reflect.Struct {

@@ -127,8 +127,7 @@ func (p *Processor) Patch(tenantID, userID uuid.UUID, plannedItemID uuid.UUID, i
 
 	// Validate the merged state through the builder so unit/numeric/status
 	// invariants are enforced even when the patch arrived in slices.
-	m, err := Make(e)
-	if err != nil {
+	if _, err := Make(e); err != nil {
 		return Model{}, nil, err
 	}
 
@@ -141,7 +140,7 @@ func (p *Processor) Patch(tenantID, userID uuid.UUID, plannedItemID uuid.UUID, i
 			return Model{}, nil, err
 		}
 	}
-	m, err = Make(e)
+	m, err := Make(e)
 	if err != nil {
 		return Model{}, nil, err
 	}
