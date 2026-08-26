@@ -252,11 +252,7 @@ func TransformWithPrivacy(m Model, requesterUserID uuid.UUID) (RestModel, error)
 }
 
 func TransformDetection(result carrier.DetectionResult) carrier.RestDetectionModel {
-	return carrier.RestDetectionModel{
-		TrackingNumber:  result.TrackingNumber,
-		DetectedCarrier: result.DetectedCarrier,
-		Confidence:      result.Confidence,
-	}
+	return carrier.RestDetectionModel(result)
 }
 
 func TransformSliceWithPrivacy(models []Model, requesterUserID uuid.UUID) ([]RestModel, error) {

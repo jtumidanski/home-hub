@@ -266,12 +266,12 @@ func (c *Client) DeleteEvent(ctx context.Context, accessToken, calendarID, event
 			return nil
 		}
 		if resp.StatusCode == http.StatusTooManyRequests || resp.StatusCode >= 500 {
-			lastErr = fmt.Errorf("Google API returned %d", resp.StatusCode)
+			lastErr = fmt.Errorf("google API returned %d", resp.StatusCode)
 			continue
 		}
-		return fmt.Errorf("Google API delete returned %d", resp.StatusCode)
+		return fmt.Errorf("google API delete returned %d", resp.StatusCode)
 	}
-	return fmt.Errorf("Google API delete failed after %d retries: %w", maxRetries, lastErr)
+	return fmt.Errorf("google API delete failed after %d retries: %w", maxRetries, lastErr)
 }
 
 func (c *Client) doWithRetry(req *http.Request, result interface{}) error {
@@ -313,13 +313,13 @@ func (c *Client) doWithRetry(req *http.Request, result interface{}) error {
 		}
 
 		if resp.StatusCode == http.StatusTooManyRequests || resp.StatusCode >= 500 {
-			lastErr = fmt.Errorf("Google API returned %d: %s", resp.StatusCode, string(body))
+			lastErr = fmt.Errorf("google API returned %d: %s", resp.StatusCode, string(body))
 			continue
 		}
 
-		return fmt.Errorf("Google API returned %d: %s", resp.StatusCode, string(body))
+		return fmt.Errorf("google API returned %d: %s", resp.StatusCode, string(body))
 	}
-	return fmt.Errorf("Google API call failed after %d retries: %w", maxRetries, lastErr)
+	return fmt.Errorf("google API call failed after %d retries: %w", maxRetries, lastErr)
 }
 
 func (c *Client) FetchUserEmail(ctx context.Context, accessToken string) (string, error) {

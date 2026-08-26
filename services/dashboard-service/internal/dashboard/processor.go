@@ -220,7 +220,7 @@ func (p *Processor) Seed(tenantID, householdID, callerUserID uuid.UUID, name str
 // On other dialects (sqlite in tests) this is a no-op; production always runs
 // Postgres.
 func (p *Processor) acquireSeedLock(tx *gorm.DB, tenantID, householdID uuid.UUID, seedKey *string) error {
-	if tx.Dialector.Name() != "postgres" {
+	if tx.Name() != "postgres" {
 		return nil
 	}
 	var key int64

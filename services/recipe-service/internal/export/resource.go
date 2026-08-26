@@ -61,10 +61,7 @@ func TransformIngredient(ci ConsolidatedIngredient) RestIngredientModel {
 		CategorySortOrder: categorySortOrder,
 	}
 	for _, eq := range ci.ExtraQuantities {
-		rest.ExtraQuantities = append(rest.ExtraQuantities, RestQuantityUnit{
-			Quantity: eq.Quantity,
-			Unit:     eq.Unit,
-		})
+		rest.ExtraQuantities = append(rest.ExtraQuantities, RestQuantityUnit(eq))
 	}
 	return rest
 }

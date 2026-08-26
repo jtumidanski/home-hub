@@ -92,7 +92,7 @@ func scopeToRest(s *ResolvedScope) *PolicyScope {
 		Categories: make(map[string]CategoryView, len(s.Values)),
 	}
 	for cat, v := range s.Values {
-		out.Categories[string(cat)] = CategoryView{Days: v.Days, Source: v.Source}
+		out.Categories[string(cat)] = CategoryView(v)
 	}
 	return out
 }

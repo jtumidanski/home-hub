@@ -97,7 +97,7 @@ func putSetsHandler(db *gorm.DB) server.InputHandler[PutPerformanceSetsRequest] 
 			}
 			inputs := make([]SetInput, len(input.Sets))
 			for i, s := range input.Sets {
-				inputs[i] = SetInput{Reps: s.Reps, Weight: s.Weight}
+				inputs[i] = SetInput(s)
 			}
 			proc := NewProcessor(d.Logger(), r.Context(), db)
 			m, sets, err := proc.ReplaceSets(t.Id(), t.UserId(), itemID, input.WeightUnit, inputs)

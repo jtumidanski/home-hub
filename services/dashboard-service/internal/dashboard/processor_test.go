@@ -356,7 +356,7 @@ func TestProcessorSeedIdempotent(t *testing.T) {
 
 func TestProcessorSeedRace(t *testing.T) {
 	db := setupTestDB(t)
-	if db.Dialector.Name() != "postgres" {
+	if db.Name() != "postgres" {
 		t.Skip("sqlite does not provide pg_advisory_xact_lock; race covered by production dialect")
 	}
 	p := newTestProcessor(t, db)

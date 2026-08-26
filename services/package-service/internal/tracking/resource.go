@@ -299,11 +299,7 @@ func summaryHandler(db *gorm.DB, maxActive int, carriers *carrier.Registry) serv
 				return
 			}
 
-			rest := RestSummaryModel{
-				ArrivingTodayCount: result.ArrivingTodayCount,
-				InTransitCount:     result.InTransitCount,
-				ExceptionCount:     result.ExceptionCount,
-			}
+			rest := RestSummaryModel(result)
 			server.MarshalResponse[RestSummaryModel](d.Logger())(w)(c.ServerInformation())(map[string][]string{})(rest)
 		}
 	}

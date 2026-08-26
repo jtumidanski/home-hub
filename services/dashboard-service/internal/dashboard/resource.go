@@ -104,12 +104,7 @@ func createHandler(db *gorm.DB) server.InputHandler[CreateRequest] {
 		return func(w http.ResponseWriter, r *http.Request) {
 			t := tenantctx.MustFromContext(r.Context())
 			proc := NewProcessor(d.Logger(), r.Context(), db)
-			m, err := proc.Create(t.Id(), t.HouseholdId(), t.UserId(), CreateAttrs{
-				Name:      input.Name,
-				Scope:     input.Scope,
-				Layout:    input.Layout,
-				SortOrder: input.SortOrder,
-			})
+			m, err := proc.Create(t.Id(), t.HouseholdId(), t.UserId(), CreateAttrs(input))
 			if err != nil {
 				var ve layout.ValidationError
 				if errors.As(err, &ve) {
@@ -144,11 +139,7 @@ func updateHandler(db *gorm.DB) server.InputHandler[UpdateRequest] {
 			return func(w http.ResponseWriter, r *http.Request) {
 				t := tenantctx.MustFromContext(r.Context())
 				proc := NewProcessor(d.Logger(), r.Context(), db)
-				m, err := proc.Update(id, t.Id(), t.HouseholdId(), t.UserId(), UpdateAttrs{
-					Name:      input.Name,
-					Layout:    input.Layout,
-					SortOrder: input.SortOrder,
-				})
+				m, err := proc.Update(id, t.Id(), t.HouseholdId(), t.UserId(), UpdateAttrs(input))
 				if err != nil {
 					var ve layout.ValidationError
 					if errors.As(err, &ve) {

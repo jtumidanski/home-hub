@@ -369,7 +369,7 @@ func listTagsHandler(db *gorm.DB) server.GetHandler {
 
 			rest := make([]RestTagModel, len(tags))
 			for i, t := range tags {
-				rest[i] = RestTagModel{Tag: t.Tag, Count: t.Count}
+				rest[i] = RestTagModel(t)
 			}
 
 			server.MarshalSliceResponse[RestTagModel](d.Logger())(w)(c.ServerInformation())(rest)

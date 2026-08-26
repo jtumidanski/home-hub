@@ -100,7 +100,7 @@ func (c *UPSClient) parseResponse(body []byte) (TrackingResult, error) {
 		Status: normalizeUPSStatus(pkg.CurrentStatus.Type),
 	}
 
-	if pkg.DeliveryDate != nil && len(pkg.DeliveryDate) > 0 {
+	if len(pkg.DeliveryDate) > 0 {
 		dateStr := pkg.DeliveryDate[0].Date
 		if t, err := time.Parse("20060102", dateStr); err == nil {
 			result.EstimatedDelivery = &t
