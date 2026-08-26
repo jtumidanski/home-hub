@@ -4,9 +4,9 @@
 #
 # Why this lives in the repo
 # --------------------------
-# `.claude/commands/execute-task.md` Step 4b instructs the controller to run
-# `scripts/task-brief`. That path does not exist here — the script it means is
-# the superpowers plugin's, at:
+# `.claude/commands/execute-task.md` now points the controller at
+# `tools/task-brief.sh` (this file) directly. Before it was vendored here,
+# that step pointed at the superpowers plugin's own script, at:
 #
 #     ~/.claude/plugins/cache/claude-plugins-official/superpowers/
 #         <VERSION>/skills/subagent-driven-development/scripts/task-brief

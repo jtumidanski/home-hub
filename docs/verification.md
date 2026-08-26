@@ -141,6 +141,18 @@ well-meaning local edit to one of them breaks the parity `diff` check that
 guards them. Re-harmonization is a file copy from the upstream source, not a
 manual merge — fix the drift upstream, then re-copy.
 
+Because they are byte-identical copies, some of them cite atlas's
+`CLAUDE.md` heading names, which do not exist under those names in
+home-hub's restructured `CLAUDE.md`: `commit-boundary.sh` cites `CLAUDE.md
+"Context Handoff"` and `fork-dispatch-guard.sh` cites `CLAUDE.md "Model &
+Cost Preferences"`; home-hub's analogues are `## Handing off context` and
+`## Dispatching agents`. `wait-loop-guard.sh` asserts that CLAUDE.md
+forbids polling; in home-hub that rule lives in
+`docs/tooling-conventions.md` instead. Do not "fix" these citations by
+editing the hooks — that breaks byte-identity (AC-1). This drift is the
+deliberate price of byte-identity; when reading one of these hooks, mentally
+substitute the home-hub location above for the CLAUDE.md heading it names.
+
 ## `scripts/*.sh` are thin delegates
 
 `scripts/ci-build.sh`, `scripts/ci-test.sh`, and `scripts/lint-all.sh` have no
@@ -165,8 +177,8 @@ of CI.
 `tools/verify.sh`'s `lint` leg runs two layers per module: gofumpt +
 goimports formatting, checked with `--diff` so the gate never rewrites the
 tree behind you, and golangci-lint's `standard` set (errcheck, govet,
-ineffassign, staticcheck, unused). Plus Prettier/ESLint for `frontend/` via
-the separate `eslint` leg.
+ineffassign, staticcheck, unused). Plus ESLint for `frontend/` (`npx eslint
+.`) via the separate `eslint` leg — there is no Prettier in this repo.
 
 Fix mode is `tools/verify.sh --fix-fmt` — it rewrites files in place across
 all modules, then exits without running any other leg. Run it before
@@ -183,3 +195,32 @@ Known footguns:
   fallback) into `.cache/tools/bin/golangci-lint-<version>` on first use —
   the first `lint` run after a fresh clone or a version bump takes longer
   while it downloads.
+
+## Known-flaky legs and re-run policy
+
+The gate is otherwise deterministic, but `frontend-build` has one observed
+flake mode: transient vitest **worker-process crashes** under memory/swap
+pressure, not real test failures. Signature: `Error: Worker exited
+unexpectedly` / `[vitest-pool]: Worker forks emitted error` in the vitest
+output, with every test that actually ran reporting as passed (e.g. `Tests
+563 passed (563)` alongside `Errors 32 errors`) — never an assertion
+failure or a changed pass/fail count. Recorded in
+`docs/tasks/task-055-process-parity/acceptance.md`: a flagless run's
+`frontend-build` leg failed this way immediately after the `docker` leg's
+13 concurrent builds had exhausted swap (`free -h` showed `Swap 8.0Gi used
+/ 8.0Gi total`); re-running `tools/verify.sh --only frontend-build` alone,
+under normal memory pressure, passed cleanly (`Test Files 106 passed
+(106)`, `Tests 698 passed (698)`).
+
+The contract is still binary — a flagless run's exit status is the verdict
+(see `task-verifier.md`). The sanctioned response to a `frontend-build`
+failure matching this signature is:
+
+1. Re-run the leg in isolation (`tools/verify.sh --only frontend-build`) to
+   characterize it — confirm the failure is worker-exit noise, not a real
+   assertion failure, and confirm it clears when re-run alone.
+2. If it clears, the flake is characterized, not fixed — re-run the full
+   flagless gate for the authoritative result.
+3. **Never edit code, tests, or config to turn a flake green.** If the
+   isolated re-run also fails, or fails with an assertion failure rather
+   than a worker-exit error, treat it as a real failure, not this flake.

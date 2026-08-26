@@ -27,8 +27,9 @@ lives only in prose, where it is easy to skip.
 This task executes `docs/process-parity.md` §6 step 2 for `home-hub`: full parity,
 not a subset. The canonical specification is `docs/process-parity.md` (a verbatim
 copy of the atlas original, pinned at atlas commit `e83f59e61`); the home-hub
-scoping notes are in `docs/process-parity-brief.md`. Both are committed alongside
-this PRD so the task folder is self-contained. There is no sync mechanism between
+scoping notes are in `process-parity-brief.md` (this task folder). Both are
+committed alongside this PRD so the task folder is self-contained. There is no
+sync mechanism between
 repositories by design — each ends up self-contained, and consistency is asserted
 mechanically at the end (§7 of the specification) rather than maintained
 continuously.
@@ -252,9 +253,10 @@ Port the nine documents from `$ATLAS/docs/` into `docs/`, genericized per §5.2.
   used the `atlas-*` names.
 - FR-D7. Do not port `docs/packets/`, `docs/reverse-engineering.md`,
   `docs/adding-a-new-service.md`, or `docs/observability.md`.
-- FR-D8. `docs/process-parity.md` and `docs/process-parity-brief.md` are committed
-  in this task's folder context and remain in `docs/`. `docs/process-parity.md` is
-  the sole file exempt from the FR-D6 name check.
+- FR-D8. `docs/process-parity.md` is committed in `docs/` and is the sole file
+  exempt from the FR-D6 name check. `process-parity-brief.md` (the transient
+  home-hub scoping notes for this task) lives in this task's folder, not in
+  `docs/` directly.
 
 ### 4.8 Commands
 

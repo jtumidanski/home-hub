@@ -1,16 +1,22 @@
 # Review Protocol
 
 This document owns what a reviewer **returns to its controller**, and what it
-writes **to disk instead**. It applies to every review dispatch in this repo —
-`task-reviewer`, the named guideline reviewers
-(`backend-guidelines-reviewer`, `frontend-guidelines-reviewer`), the
-plan-adherence reviewer (`plan-adherence-reviewer`), and any ad-hoc per-unit
-code review.
+writes **to disk instead**. It governs `task-reviewer` and any ad-hoc per-unit
+code review, which are the dispatches that implement the verdict-first
+contract below (see `.claude/agents/task-reviewer.md`).
+
+The three named guideline/adherence reviewers —
+`backend-guidelines-reviewer`, `frontend-guidelines-reviewer`, and
+`plan-adherence-reviewer` — are **not** governed by this document. Each
+predates it and uses its own established report format and return
+vocabulary (see each agent's own `## Scope` and return-shape sections). They
+still write their full reasoning to `docs/tasks/<task>/audit.md`; only the
+compact verdict-first return block below is specific to `task-reviewer`.
 
 It does not change what reviewers look for, how adversarial they are, or their
 scope. Each agent's own `## Scope` section and the audit checklists (DOM-*,
 SUB-*, SEC-* for backend; FE-* for frontend) remain the contract for *what* is
-reviewed. This is only the shape of the answer.
+reviewed. This is only the shape of the answer for the reviewers it governs.
 
 ---
 

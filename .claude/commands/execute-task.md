@@ -188,14 +188,10 @@ After an implementer reports `DONE` / `DONE_WITH_CONCERNS`:
    ([`docs/codemod-vs-agents.md`](../../docs/codemod-vs-agents.md)) may take
    a reduced or skipped per-task review agent. Every other task — including
    a hand-applied "mechanical" batch with no `--check` PASS behind it — is
-   judgment-bearing and gets the full review agent; that is the safe
-   default. No rewriter exists yet, so this reduced path is dormant and
+   judgment-bearing and gets the full `task-reviewer` dispatch; that is the
+   safe default. No rewriter exists yet, so this reduced path is dormant and
    every task takes full review today. This governs the per-task review
-   agent only; `tools/verify.sh` and the guideline reviewers still run
-   unconditionally before a PR.
-
-   Every task is judgment-bearing and gets the full `task-reviewer` dispatch;
-   that is the safe default. `tools/verify.sh` and the guideline reviewers
+   agent only; `tools/verify.sh` and the guideline reviewers
    (`backend-guidelines-reviewer`, `frontend-guidelines-reviewer`) still run
    unconditionally before a PR, alongside `plan-adherence-reviewer`.
 3. **Reconcile when it lands**, at the next natural pause (the notification
@@ -307,8 +303,8 @@ carrying, so they pay full freight for none of it.
 ### Step 4f — Record what each agent cost
 
 Home-hub has no separate ledger tool. When you reconcile an agent
-(implementer, verifier, reviewer), append one line by hand to the task's
-`progress.md`:
+(implementer, verifier, reviewer), append one line by hand to
+`.superpowers/sdd/<plan-basename>/progress.md`:
 
 ```
 Task <N>: <status> — agent=<type> model=<model> commit=<sha>

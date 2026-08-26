@@ -9,20 +9,21 @@ bodies assume rather than restate.
 
 | | |
 |---|---|
-| Worktree (`$ROOT`) | `/home/tumidanski/source/home-hub/.worktrees/task-055-process-parity` |
+| Worktree (`$ROOT`) | `<repo-root>` |
 | Branch | `task-055-process-parity` |
 | Base branch | `main` |
 | Task folder | `docs/tasks/task-055-process-parity/` |
-| Atlas source (`$ATLAS`) | `/home/tumidanski/source/atlas-ms/atlas/.worktrees/task-266-process-parity-agent-rename` |
+| Atlas source (`$ATLAS`) | `<atlas-repo-root>` |
 
 Every command runs from `$ROOT`. Never `cd` to the main repo at
-`/home/tumidanski/source/home-hub`. `$ATLAS` is read-only for this task — never
+`<main-repo-root>`. `$ATLAS` is read-only for this task — never
 write into it.
 
 The canonical cross-repository specification is committed here at
 `docs/process-parity.md` (verbatim copy of atlas's, pinned at atlas commit
-`e83f59e61`); home-hub scoping notes are at `docs/process-parity-brief.md`. The
-design phase confirmed by `diff` that the pinned copy is current.
+`e83f59e61`); home-hub scoping notes are at `process-parity-brief.md` (this
+task folder). The design phase confirmed by `diff` that the pinned copy is
+current.
 
 ---
 
@@ -278,7 +279,7 @@ number.
 ## 9. Fast commands
 
 ```bash
-cd /home/tumidanski/source/home-hub/.worktrees/task-055-process-parity
+cd <repo-root>
 
 tools/verify.sh --quick                 # inner loop: pins, build, vet
 tools/verify.sh --only lint             # current Go lint backlog

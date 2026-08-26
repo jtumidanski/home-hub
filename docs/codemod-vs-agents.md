@@ -56,39 +56,44 @@ tokens-per-turn), not on a locally reproduced disaster.
 
 ## Worked example: this plan's own linter-cleanup wave (Tasks 17–19)
 
-This plan's own remaining tasks are the closest available example of a
-templated-transformation family, planned but — as of this task — not yet
-executed. Planning-time counts (Ruling 1, `.superpowers/sdd/plan/progress.md`):
-a repo-wide `.golangci.yml` gate surfaced roughly 44 formatter findings across
-around 180 files, 78 `errcheck` sites, and 32 remaining `staticcheck`/
-`unused`/`ineffassign`/`govet` findings — split across three tasks precisely
-because they sit at three different points on the mechanical-to-judgment
-spectrum this document is about:
+This plan's own linter-cleanup tasks are the closest available example of a
+templated-transformation family, and by the time of this fix wave they have
+been executed, so the figures below are the measured outcome, not a
+planning-time estimate. The real numbers were larger than planned: **377
+files** for the formatting sweep, **106 `errcheck`** sites, and **39** total
+findings for the `staticcheck`/`unused`/`ineffassign`/`govet` group — split
+across three tasks precisely because they sit at three different points on
+the mechanical-to-judgment spectrum this document is about. The evidence is
+the commit history, not a git-ignored progress file: `639cec7` (formatting),
+`f41a4e7` (errcheck), and `34a8c19` (staticcheck/unused/ineffassign/govet).
 
-- **Task 17 — `gofumpt`/`goimports` formatting sweep across ~180 files.**
-  Every finding is a pure syntactic rewrite with one deterministic correct
-  output; `tools/verify.sh --fix-fmt` already applies exactly this class of
-  fix in place. This is the **canonical codemod case** — zero per-site
-  judgment, and the tool to do it (`--fix-fmt`) already exists rather than
-  needing to be built. If a transformation this templated required 180
-  separate implementer dispatches instead of one scripted pass, it would
-  clear the second-dispatch threshold on the first two sites alone.
-- **Task 18 — 78 `errcheck` sites, behaviour-preserving.** Each site needs
-  the same shape of fix (handle or explicitly discard a previously-ignored
-  error) but the *right* handling — return it, log it, wrap it with a
-  call-specific message — is a per-site judgment call even though the fix is
-  mechanical in structure. This is the **canonical borderline case**: AST
-  tooling can find every site and apply a templated fix, but a human or
-  reviewing agent still has to confirm each choice was appropriate, so a
-  scripted sweep plus a verification pass (Ruling 3) is the right shape
-  rather than either a blind codemod or 78 individual dispatches.
-- **Task 19 — 32 hand-judged `staticcheck`/`unused`/`ineffassign`/`govet`
-  findings, including one explicitly authorised behaviour change.** These are
-  heterogeneous findings across four different linters with no single
-  templated edit shape, and at least one site requires a real behavioural
-  decision, not just a mechanical fix. This is the **canonical agent case**
-  — dispatch `task-implementer` per finding or per small batch, because there
-  is no repeated shape for a codemod to exploit.
+- **Task 17 — `gofumpt`/`goimports` formatting sweep across 377 files**
+  (`639cec7`). Every finding is a pure syntactic rewrite with one
+  deterministic correct output; `tools/verify.sh --fix-fmt` already applies
+  exactly this class of fix in place. This is the **canonical codemod
+  case** — zero per-site judgment, and the tool to do it (`--fix-fmt`)
+  already exists rather than needing to be built. If a transformation this
+  templated required 377 separate implementer dispatches instead of one
+  scripted pass, it would clear the second-dispatch threshold on the first
+  two sites alone.
+- **Task 18 — 106 `errcheck` sites, behaviour-preserving** (`f41a4e7`). Each
+  site needs the same shape of fix (handle or explicitly discard a
+  previously-ignored error) but the *right* handling — return it, log it,
+  wrap it with a call-specific message — is a per-site judgment call even
+  though the fix is mechanical in structure. This is the **canonical
+  borderline case**: AST tooling can find every site and apply a templated
+  fix, but a human or reviewing agent still has to confirm each choice was
+  appropriate, so a scripted sweep plus a verification pass (Ruling 3) is
+  the right shape rather than either a blind codemod or 106 individual
+  dispatches.
+- **Task 19 — 39 hand-judged `staticcheck`/`unused`/`ineffassign`/`govet`
+  findings, including one explicitly authorised behaviour change**
+  (`34a8c19`). These are heterogeneous findings across four different
+  linters with no single templated edit shape, and at least one site
+  requires a real behavioural decision, not just a mechanical fix. This is
+  the **canonical agent case** — dispatch `task-implementer` per finding or
+  per small batch, because there is no repeated shape for a codemod to
+  exploit.
 
 The split mirrors FR-2.2 from the sibling repo this document was ported
 from: **rewrite what is derivable, list what is not, and never silently skip

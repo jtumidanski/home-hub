@@ -98,3 +98,23 @@ literal home or absolute paths like `/Users/<name>/...` or
 `/home/<name>/...` — a committed absolute path is not reproducible on
 another machine. `.claude/hooks/block-home-paths-in-docs.sh` machine-checks
 this for every write under `docs/`.
+
+## Testing the tooling itself
+
+A few of the scripts under `tools/` and `.claude/hooks/` carry their own
+hermetic test scripts, run directly (not via `tools/verify.sh` — they are
+not a gate leg):
+
+- `tools/verify_test.sh` — contract tests for `tools/verify.sh` flag
+  handling and leg selection (`VERIFY_DRY_RUN=1`, no leg does real work).
+- `tools/task-numbers_test.sh` — regression tests for
+  `tools/task-numbers.sh`, built against a throwaway git repo so assertions
+  never depend on the live repo's evolving task history.
+- `.claude/hooks/wait-loop-guard_test.sh` — allow/deny-case tests for
+  `.claude/hooks/wait-loop-guard.sh`.
+
+Run each directly, e.g. `bash tools/verify_test.sh`. These are not wired
+into any `verify.sh` leg or CI job — they test the tooling, not the repo's
+code — so nothing runs them automatically. **Run the matching test script
+by hand whenever you change its subject** (`verify.sh`, `task-numbers.sh`,
+or `wait-loop-guard.sh`), before committing.

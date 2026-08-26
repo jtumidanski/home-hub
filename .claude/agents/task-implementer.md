@@ -112,6 +112,9 @@ its role, plus the patterns to copy. The planner already knew them.
   back to a repo sweep — that is exactly the phase this contract removes, and
   the controller can supply the inventory far more cheaply than you can
   derive it.
+- A `## Fix` section (used by Phase 5 `/fix-pr-bug` briefs) is an equivalent
+  file inventory — treat it the same as `### Files` and do not report
+  `NEEDS_CONTEXT` solely because the heading differs.
 - **To read a dependency's source, ask the toolchain for its path — never
   search for it.** `go list -m -f '{{.Dir}}' <module>` prints the directory in
   ~0.02s and is correct whether the module resolves to the module cache or to a

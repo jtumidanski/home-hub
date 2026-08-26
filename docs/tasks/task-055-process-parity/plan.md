@@ -12,8 +12,8 @@
 
 ## Global Constraints
 
-- `$ATLAS` = `/home/tumidanski/source/atlas-ms/atlas/.worktrees/task-266-process-parity-agent-rename`. This is the pinned source for every port. Never read atlas from any other path.
-- `$ROOT` = `/home/tumidanski/source/home-hub/.worktrees/task-055-process-parity`. Every command runs from here. Never `cd` to the main repo.
+- `$ATLAS` = `<atlas-repo-root>`. This is the pinned source for every port. Never read atlas from any other path.
+- `$ROOT` = `<repo-root>`. Every command runs from here. Never `cd` to the main repo.
 - `GO_VERSION=1.27.0`, `ALPINE_VERSION=3.24`, `GOLANGCI_LINT_VERSION=v2.13.1`. These exact values go in `tools/toolchain.versions`.
 - Go module set is **24 modules**, discovered by `find services shared/go -name go.mod`, never hardcoded. 12 services, 12 `shared/go/*` modules.
 - Docker image set is **13**: the 12 services (context `.`, dockerfile `services/<svc>/Dockerfile`) plus `frontend` (context `frontend`, dockerfile `frontend/Dockerfile`). Image tag `home-hub-<name>:verify`.
@@ -97,7 +97,7 @@ Insert after the `# Docker` block in `.gitignore`:
 - [ ] **Step 2: Verify the ignore works before creating anything under it**
 
 ```bash
-cd /home/tumidanski/source/home-hub/.worktrees/task-055-process-parity
+cd <repo-root>
 mkdir -p .cache/tools/bin && touch .cache/tools/bin/probe
 git status --porcelain .cache
 ```
@@ -218,8 +218,8 @@ Both scan `docs/tasks/` and `.worktrees/*/docs/tasks/` — exactly home-hub's la
 - [ ] **Step 1: Copy all three files verbatim**
 
 ```bash
-cd /home/tumidanski/source/home-hub/.worktrees/task-055-process-parity
-A=/home/tumidanski/source/atlas-ms/atlas/.worktrees/task-266-process-parity-agent-rename
+cd <repo-root>
+A=<atlas-repo-root>
 cp "$A/tools/task-numbers.sh" tools/task-numbers.sh
 cp "$A/tools/task-numbers_test.sh" tools/task-numbers_test.sh
 cp "$A/tools/task-brief.sh" tools/task-brief.sh
@@ -1308,8 +1308,8 @@ These are copied, never edited. NFR-4 exists so a future re-harmonization is a f
 - [ ] **Step 1: Copy all eight**
 
 ```bash
-cd /home/tumidanski/source/home-hub/.worktrees/task-055-process-parity
-A=/home/tumidanski/source/atlas-ms/atlas/.worktrees/task-266-process-parity-agent-rename
+cd <repo-root>
+A=<atlas-repo-root>
 for f in wait-loop-guard.sh wait-loop-guard_test.sh block-home-paths-in-docs.sh \
          turn-budget.sh turn-budget-guard.sh fork-dispatch-guard.sh \
          commit-boundary.sh task-num-collision-detector.sh; do
@@ -1324,7 +1324,7 @@ Expected: eight new files plus the two pre-existing `skill-activation-prompt.*`.
 - [ ] **Step 2: Verify byte-identity (AC-1)**
 
 ```bash
-A=/home/tumidanski/source/atlas-ms/atlas/.worktrees/task-266-process-parity-agent-rename
+A=<atlas-repo-root>
 for f in wait-loop-guard.sh wait-loop-guard_test.sh block-home-paths-in-docs.sh \
          turn-budget.sh turn-budget-guard.sh fork-dispatch-guard.sh \
          commit-boundary.sh task-num-collision-detector.sh; do
@@ -1644,8 +1644,8 @@ The rules port unchanged; only illustrations move. FR-D3 is the governing constr
 - [ ] **Step 1: Copy the three agents**
 
 ```bash
-cd /home/tumidanski/source/home-hub/.worktrees/task-055-process-parity
-A=/home/tumidanski/source/atlas-ms/atlas/.worktrees/task-266-process-parity-agent-rename
+cd <repo-root>
+A=<atlas-repo-root>
 cp "$A/.claude/agents/task-implementer.md" .claude/agents/task-implementer.md
 cp "$A/.claude/agents/task-verifier.md"    .claude/agents/task-verifier.md
 cp "$A/.claude/agents/task-reviewer.md"    .claude/agents/task-reviewer.md
@@ -1686,7 +1686,7 @@ Expected: the 120 tool-call budget and `PARTIAL` hand-back both present in `task
 - [ ] **Step 4: Verify no rule was dropped along with its example (FR-D3)**
 
 ```bash
-A=/home/tumidanski/source/atlas-ms/atlas/.worktrees/task-266-process-parity-agent-rename
+A=<atlas-repo-root>
 for f in task-implementer task-verifier task-reviewer; do
   echo "=== $f: atlas $(grep -c '^' "$A/.claude/agents/$f.md") lines, home-hub $(grep -c '^' ".claude/agents/$f.md") lines"
   diff <(grep -oE '^\s*[-*] \*\*[^*]+\*\*' "$A/.claude/agents/$f.md") \
@@ -1736,8 +1736,8 @@ git commit -m "feat(task-055): add task-implementer, task-verifier, and task-rev
 - [ ] **Step 1: Copy and inventory**
 
 ```bash
-cd /home/tumidanski/source/home-hub/.worktrees/task-055-process-parity
-A=/home/tumidanski/source/atlas-ms/atlas/.worktrees/task-266-process-parity-agent-rename
+cd <repo-root>
+A=<atlas-repo-root>
 cp "$A/.claude/commands/fix-pr-bug.md" .claude/commands/fix-pr-bug.md
 grep -nE 'atlas|libs/|packet|WZ|IDA|bake|--facts|--all|--no-ui|tools/lint.sh|Chronicle20' .claude/commands/fix-pr-bug.md
 ```
@@ -1794,7 +1794,7 @@ Without this task the trio and `task-numbers.sh` ship inert, directly contradict
 - [ ] **Step 1: Preserve home-hub's worktree-discipline language before overwriting**
 
 ```bash
-cd /home/tumidanski/source/home-hub/.worktrees/task-055-process-parity
+cd <repo-root>
 cp .claude/commands/execute-task.md /tmp/hh-execute-task-original.md
 grep -nE 'worktree|absolute path|git add -A|destructive|post-commit branch' /tmp/hh-execute-task-original.md
 ```
@@ -1804,7 +1804,7 @@ Keep this output open. Every rule it names must appear in the new file.
 - [ ] **Step 2: Copy atlas's version and inventory what must be rebound**
 
 ```bash
-A=/home/tumidanski/source/atlas-ms/atlas/.worktrees/task-266-process-parity-agent-rename
+A=<atlas-repo-root>
 cp "$A/.claude/commands/execute-task.md" .claude/commands/execute-task.md
 grep -nE 'atlas|libs/|packet|WZ|IDA|bake|service-wiring-recipe|query-scope-audit|tools/lint.sh|--all\b|Chronicle20' .claude/commands/execute-task.md
 ```
@@ -1916,8 +1916,8 @@ Ownership, per PRD §4.7:
 - [ ] **Step 1: Copy all four and inventory**
 
 ```bash
-cd /home/tumidanski/source/home-hub/.worktrees/task-055-process-parity
-A=/home/tumidanski/source/atlas-ms/atlas/.worktrees/task-266-process-parity-agent-rename
+cd <repo-root>
+A=<atlas-repo-root>
 for f in verification tooling-conventions git-workflow slice-first; do
   cp "$A/docs/$f.md" "docs/$f.md"
 done
@@ -2014,8 +2014,8 @@ Ownership, per PRD §4.7:
 - [ ] **Step 1: Copy all four and inventory**
 
 ```bash
-cd /home/tumidanski/source/home-hub/.worktrees/task-055-process-parity
-A=/home/tumidanski/source/atlas-ms/atlas/.worktrees/task-266-process-parity-agent-rename
+cd <repo-root>
+A=<atlas-repo-root>
 for f in agent-dispatch review-protocol post-implementation codemod-vs-agents; do
   cp "$A/docs/$f.md" "docs/$f.md"
 done
@@ -2089,8 +2089,8 @@ Design §4.5 established the merge is mechanical and safe: the two share an iden
 - [ ] **Step 1: Snapshot both inputs so the reconciliation is auditable**
 
 ```bash
-cd /home/tumidanski/source/home-hub/.worktrees/task-055-process-parity
-A=/home/tumidanski/source/atlas-ms/atlas/.worktrees/task-266-process-parity-agent-rename
+cd <repo-root>
+A=<atlas-repo-root>
 cp docs/superpowers-integration.md /tmp/hh-si-before.md
 cp "$A/docs/superpowers-integration.md" /tmp/atlas-si.md
 diff <(grep '^#' /tmp/hh-si-before.md) <(grep '^#' /tmp/atlas-si.md)
@@ -2174,7 +2174,7 @@ Last within L4 by design §8.4: FR-M2 and AC-14 require every table target exist
 - [ ] **Step 1: Confirm all nine owner documents exist before writing the table**
 
 ```bash
-cd /home/tumidanski/source/home-hub/.worktrees/task-055-process-parity
+cd <repo-root>
 for d in agent-dispatch verification superpowers-integration review-protocol post-implementation \
          codemod-vs-agents slice-first tooling-conventions git-workflow; do
   test -f "docs/$d.md" && echo "ok   docs/$d.md" || echo "MISSING docs/$d.md"
@@ -2319,7 +2319,7 @@ Per module, the measured counts: recipe 33, workout 30, productivity 21, account
 - [ ] **Step 1: Confirm the working tree is clean before the sweep**
 
 ```bash
-cd /home/tumidanski/source/home-hub/.worktrees/task-055-process-parity
+cd <repo-root>
 git status --porcelain
 ```
 
@@ -2415,7 +2415,7 @@ Measured in design §3.2: 78 findings — `resp.Body.Close()`, `w.Write()`, `db.
 - [ ] **Step 1: Get the full, current finding list**
 
 ```bash
-cd /home/tumidanski/source/home-hub/.worktrees/task-055-process-parity
+cd <repo-root>
 tools/verify.sh --only lint 2>&1 | grep 'errcheck' | tee /tmp/errcheck.txt | wc -l
 ```
 
@@ -2517,7 +2517,7 @@ Measured in design §3.2. These need judgment, not a sweep — this is the ~32 g
 - [ ] **Step 1: Get the current list, bucketed by linter**
 
 ```bash
-cd /home/tumidanski/source/home-hub/.worktrees/task-055-process-parity
+cd <repo-root>
 tools/verify.sh --only lint 2>&1 | grep -oE '\((staticcheck|unused|ineffassign|govet)\)' | sort | uniq -c
 tools/verify.sh --only lint 2>&1 | grep -E '\((staticcheck|unused|ineffassign|govet)\)' > /tmp/go-lint-rest.txt
 cat /tmp/go-lint-rest.txt
@@ -2611,7 +2611,7 @@ Line numbers come from the design's measurement and may have shifted; always re-
 - [ ] **Step 1: Get the current error list**
 
 ```bash
-cd /home/tumidanski/source/home-hub/.worktrees/task-055-process-parity/frontend
+cd <repo-root>/frontend
 npx eslint . 2>&1 | tail -30
 ```
 
@@ -2700,7 +2700,7 @@ Expected: 695 tests passing; eslint reporting **0 errors** (the 5 warnings may r
 - [ ] **Step 9: Commit**
 
 ```bash
-cd /home/tumidanski/source/home-hub/.worktrees/task-055-process-parity
+cd <repo-root>
 git add frontend/src
 git commit -m "fix(task-055): clear all frontend eslint errors, including conditional hooks in DashboardDesigner"
 ```
@@ -2729,7 +2729,7 @@ AC-20 is a **reporting obligation, not a check** (design §8.6): specification �
 - [ ] **Step 1: Run the flagless gate — the one that decides AC-8**
 
 ```bash
-cd /home/tumidanski/source/home-hub/.worktrees/task-055-process-parity
+cd <repo-root>
 tools/verify.sh 2>&1 | tee /tmp/verify-flagless.log | tail -30
 echo "exit=${PIPESTATUS[0]}"
 ```
@@ -2739,7 +2739,7 @@ Expected: every leg `PASSED` and `verify.sh: PASSED — this branch may be calle
 - [ ] **Step 2: Run the mechanical acceptance checks**
 
 ```bash
-A=/home/tumidanski/source/atlas-ms/atlas/.worktrees/task-266-process-parity-agent-rename
+A=<atlas-repo-root>
 
 echo "--- AC-1: nine hooks, eight byte-identical"
 ls .claude/hooks/*.sh | wc -l

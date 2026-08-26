@@ -33,11 +33,6 @@ measurement instrument, not a repair crew.
   covered.
 - Optionally, the task number and the module the task touched.
 
-If the command you were given omits `--base` and the script warns that a
-shared-lib change fanned out to all modules, report that warning verbatim
-alongside your verdict. It means the run was ~10x slower than it needed to be
-and the caller is missing `--base` (docs/verification.md, "Iteration gate").
-
 ## Process
 
 1. `cd <worktree> && git branch --show-current` and
@@ -67,7 +62,9 @@ Reply with ONLY this — no preamble, under 30 lines:
 Status: PASS
 Command: tools/verify.sh --quick
 Exit: 0
-Checks: <the script's own passed-list summary line, verbatim>
+Checks: <the script's own "===== summary =====" table, verbatim — one
+  `  <leg>   PASSED|SKIPPED` row per leg, plus its closing "verify.sh:
+  PASSED..." line>
 ```
 
 **FAIL:**
@@ -76,7 +73,7 @@ Checks: <the script's own passed-list summary line, verbatim>
 Status: FAIL
 Command: tools/verify.sh --quick
 Exit: <code>
-Failed checks: <the script's own failed-list, verbatim>
+Failed checks: <the FAILED rows from the script's own "===== summary =====" table, verbatim>
 
 First failing block:
 <up to 40 lines of the actual output for the FIRST failed check, verbatim>

@@ -1,7 +1,7 @@
 # Process Parity — Design
 
 Task: `task-055-process-parity`
-Inputs: `prd.md`, `docs/process-parity.md` (canonical spec), `docs/process-parity-brief.md`
+Inputs: `prd.md`, `docs/process-parity.md` (canonical spec), `process-parity-brief.md`
 Status: Draft for review
 Date: 2026-08-26
 
@@ -27,7 +27,7 @@ recommend and the reason. None of them change the task's scope.
 diff $ATLAS/docs/process-parity.md docs/process-parity.md   → identical
 ```
 
-`$ATLAS` = `/home/tumidanski/source/atlas-ms/atlas/.worktrees/task-266-process-parity-agent-rename`.
+`$ATLAS` = `<atlas-repo-root>`.
 The pinned spec copy is current; no re-sync needed.
 
 ---
