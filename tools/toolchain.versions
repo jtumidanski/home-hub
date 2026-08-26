@@ -1,0 +1,16 @@
+# tools/toolchain.versions — the single source of truth for this repo's
+# toolchain pins (task-055). Shell-sourceable KEY=value; read by
+# tools/verify.sh and .claude/hooks/format-on-write.sh.
+#
+# Nothing here is read at build time by go.mod, go.work, Dockerfile ARG
+# defaults, or .github/workflows/*.yml — none of those formats can read an
+# external file. Those pins are duplicated on purpose and machine-checked
+# against this file by tools/verify.sh's `pins` leg. Bump here, run
+# `tools/verify.sh --only pins`, fix what it names.
+#
+# gofumpt/goimports versions are embedded in the golangci-lint release.
+# Node tooling (eslint, vite, vitest) is pinned by frontend/package.json and
+# its lockfile.
+GO_VERSION=1.27.0
+ALPINE_VERSION=3.24
+GOLANGCI_LINT_VERSION=v2.13.1

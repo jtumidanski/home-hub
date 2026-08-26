@@ -1,0 +1,32 @@
+# Root golangci-lint v2 config — the single config source for every Go module
+# in the repo (task-055). tools/verify.sh runs golangci-lint from each module's
+# own directory with this file passed via -c; do not add per-module configs.
+#
+# Deliberate divergence from atlas: no --new-from-rev gating. atlas gates
+# findings to new code because its backlog is too large to clear. home-hub's
+# backlog was cleared in task-055, so the tree is clean from day one and the
+# flagless tools/verify.sh contract is literally true rather than
+# true-modulo-a-baseline. Do not add rev-gating without first re-reading
+# docs/verification.md.
+#
+# Any exclusion added here must carry a comment naming the follow-up that
+# removes it.
+version: "2"
+
+linters:
+  # The v2 `standard` default group: errcheck, govet, ineffassign,
+  # staticcheck, unused. Membership is fixed by the version pin in
+  # tools/toolchain.versions.
+  default: standard
+
+formatters:
+  enable:
+    - gofumpt
+    - goimports
+  settings:
+    goimports:
+      # Group intra-repo imports separately. gofumpt's module-path stays UNSET
+      # — one shared config serves 24 modules; golangci-lint derives it per
+      # module from each go.mod.
+      local-prefixes:
+        - github.com/jtumidanski/home-hub
