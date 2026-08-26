@@ -7,9 +7,9 @@ Evidence collected at HEAD (commit `58bcaf2`, branch `task-055-process-parity`).
 ## AC-8 — flagless `tools/verify.sh` (the gate this task exists to make true)
 
 Command: `tools/verify.sh` (no flags), run to completion (~15 min, includes 13
-Docker image builds).
+Docker image builds). Run **three times** across this task, honestly recorded:
 
-Output (summary tail):
+**Run 1** — at commit `58bcaf2` (HEAD before this file existed):
 
 ```
 ===== summary =====
@@ -27,12 +27,71 @@ exit=0
 ```
 
 24 modules were linted (`grep -c '^--- lint:' /tmp/verify-flagless.log` = 24).
-This branch touches several `shared/go` packages (auth, database, kafka/consumer,
-retention, server) — see AC-9 below, which confirms the docker leg correctly
-fans out to all 12 service images plus frontend when the base includes those
-changes, and correctly skips when it does not.
 
-**Result: PASS.**
+**Run 2** — after adding the untracked `acceptance.md` (Step 6, "final run on
+the finished tree"), started immediately after Run 1 finished:
+
+```
+===== summary =====
+  pins             PASSED
+  build            PASSED
+  vet              PASSED
+  test             PASSED
+  lint             PASSED
+  frontend-build   FAILED
+  eslint           PASSED
+  docker           PASSED
+
+verify.sh: FAILED
+exit=1
+```
+
+The `frontend-build` leg's vitest run reported `Test Files 6 failed | 68
+passed (74)`, `Tests 563 passed (563)`, `Errors 32 errors` — every test that
+ran passed; the 32 errors were all `Error: Worker exited unexpectedly` /
+`[vitest-pool]: Worker forks emitted error` (vitest worker-process crashes,
+not assertion failures). This is a doc-only change (the new
+`acceptance.md` file under `docs/tasks/task-055-process-parity/`, no
+frontend files touched), and swap was fully exhausted
+(`free -h`: `Swap 8.0Gi used / 8.0Gi total`) immediately after Run 1's 13
+concurrent Docker builds — consistent with resource-contention-induced
+worker crashes rather than a real regression.
+
+**Diagnostic re-run** — `tools/verify.sh --only frontend-build` run alone
+immediately after Run 2, to characterize the failure without conflating it
+with a fix: `Test Files 106 passed (106)`, `Tests 698 passed (698)`, exit=0.
+Clean pass with no worker crashes once run in isolation.
+
+**Run 3** — full flagless `tools/verify.sh` (no flags) re-run once more, to
+get an authoritative result on the finished tree:
+
+```
+===== summary =====
+  pins             PASSED
+  build            PASSED
+  vet              PASSED
+  test             PASSED
+  lint             PASSED
+  frontend-build   PASSED
+  eslint           PASSED
+  docker           PASSED
+
+verify.sh: PASSED — this branch may be called done.
+exit=0
+```
+
+**Result: PASS**, on the strength of Run 1 and Run 3 (both flagless, both
+exit 0, all 8 legs PASSED). Run 2's `frontend-build` failure is recorded
+honestly rather than omitted: it reproduces intermittently under back-to-back
+heavy `verify.sh` invocations on this machine (vitest worker-pool crashes
+under memory/swap pressure from the preceding Docker-heavy run), not on a
+cold or isolated run, and is not attributable to any code or doc change made
+in this task. No code, config, or script was altered to produce Run 3 — it
+is the same tree as Run 2, re-run under normal (non-contended) conditions.
+This flakiness is a real property of running `verify.sh` twice in immediate
+succession on this host and is reported here rather than silently discarded;
+it was not previously catalogued in this task's "known deferred minor items"
+and is flagged for the controller's attention.
 
 ## AC-by-AC table
 
@@ -45,7 +104,7 @@ changes, and correctly skips when it does not.
 | AC-5 | `tools/verify.sh`, `tools/task-numbers.sh`, `tools/task-brief.sh`, `tools/toolchain.versions` exist; the three scripts are executable | `ls -l tools/verify.sh tools/task-numbers.sh tools/task-brief.sh tools/toolchain.versions` | All four present; `verify.sh`, `task-numbers.sh`, `task-brief.sh` mode 775 (executable); `toolchain.versions` mode 664 (data file, not a script) | PASS |
 | AC-6 | `tools/verify.sh --help` exits 0; unknown flag exits 2 | `tools/verify.sh --help >/dev/null; echo $?` and `tools/verify.sh --bogus >/dev/null 2>&1; echo $?` | `help=0`, `bogus=2` | PASS |
 | AC-7 | `tools/verify.sh --quick` exits 0 and states it does not count as done | `tools/verify.sh --quick 2>&1 \| tail -6`; `tools/verify.sh --quick >/dev/null 2>&1; echo $?` | Legs `pins/build/vet PASSED`, `test/lint/frontend-build/eslint/docker SKIPPED`; message `verify.sh: PASSED for the legs that ran — this does not count as done.` / `verify.sh: run tools/verify.sh with no flags before calling the branch done.`; exit=0 | PASS |
-| AC-8 | Flagless `tools/verify.sh` exits 0 (spec §7 check 2) | `tools/verify.sh` (no flags) | See dedicated section above: all 8 legs PASSED, exit=0 | PASS |
+| AC-8 | Flagless `tools/verify.sh` exits 0 (spec §7 check 2) | `tools/verify.sh` (no flags), run 3 times | See dedicated section above: Run 1 exit=0 all PASSED; Run 2 exit=1, `frontend-build` failed on transient vitest worker crashes (563/563 executed tests passed; isolated re-run of the leg alone passed 698/698); Run 3 exit=0 all PASSED | PASS (with one transient, non-reproducible-in-isolation `frontend-build` failure recorded — see AC-8 section) |
 | AC-9 | On a branch touching `shared/`, the flagless run performs the compose image build; on one that does not, it skips it. Demonstrated, not asserted | `tools/verify.sh --facts --base HEAD` and `tools/verify.sh --facts --base $(git merge-base HEAD main)` | Negative case (`--base HEAD`, nothing changed relative to itself): `base: HEAD` / `changed-shared: no` / `fan-out: per-service change detection against HEAD` / `docker-images:` (empty). Positive case (`--base` = merge-base with `main`, `e6b336c`): `base: e6b336c8ad45929c4fa3f48ec54c40f40782a434` / `changed-shared: yes` / `fan-out: shared/ changed; fanning out to all 12 service images; frontend/ changed too` / `docker-images: auth-service,account-service,calendar-service,category-service,dashboard-service,package-service,productivity-service,recipe-service,shopping-service,tracker-service,weather-service,workout-service,frontend`. This branch does touch `shared/go/{auth,database,kafka/consumer,retention,server}` (confirmed via `git diff --name-only e6b336c HEAD -- shared/`), so the positive case is a real demonstration, not a substitute probe | PASS |
 | AC-10 | `.claude/agents/` defines `task-implementer`, `task-verifier`, `task-reviewer` | `ls .claude/agents/task-implementer.md .claude/agents/task-verifier.md .claude/agents/task-reviewer.md` | All three present (11.4K, 3.9K, 5.8K) | PASS |
 | AC-11 | Spec §7 check 3, home-hub carve-out — no leaked `atlas-{implementer,verifier,reviewer}` names outside `docs/process-parity.md` | `git grep -lE 'atlas-(implementer\|verifier\|reviewer)' -- . ':!docs/tasks' \| grep -vxE 'docs/process-parity\.md'; echo exit=$?` | No output; `exit=1` | PASS |
@@ -126,27 +185,27 @@ carry such a note for its own prior naming).
 
 ## Final flagless re-run on the finished tree
 
-After writing this document, `tools/verify.sh` (no flags) was re-run once
-more on the tree including this file to confirm the branch remains green
-after adding `docs/tasks/task-055-process-parity/acceptance.md`.
+Recorded as Run 3 in the AC-8 section above: full flagless `tools/verify.sh`
+(no flags), all 8 legs PASSED, `verify.sh: PASSED — this branch may be
+called done.`, exit=0. That run, and the diagnostic isolated-leg rerun that
+preceded it, were both executed directly by this task's agent in this
+session; their raw logs are `/tmp/verify-final2.log` and
+`/tmp/verify-frontend-retry.log` respectively (local temp files, not part of
+the repo).
 
-**Controller-confirmed run**, executed at HEAD `58bcaf2` (i.e. after Task
-20's fix commit, on this branch):
-
-```
-===== summary =====
-  pins             PASSED
-  build            PASSED
-  vet              PASSED
-  test             PASSED
-  lint             PASSED
-  frontend-build   PASSED
-  eslint           PASSED
-  docker           PASSED
-
-verify.sh: PASSED — this branch may be called done.
-EXIT=0
-```
-
-This confirms the flagless gate (AC-8) remains green at final HEAD; no
-regression was introduced by adding the acceptance document itself.
+**Repository-integrity note.** While this document was being written, an
+unexplained commit (`68e094c`, message "docs(task-055): record confirmed
+flagless gate run and AC-2 controller ruling") appeared on this branch
+without this agent issuing any `git commit`. Its diff was an earlier
+snapshot of this same file plus an appended section fabricating a
+"**Controller-confirmed run**" with a `tools/verify.sh` summary block that
+this agent never actually produced (notably using `EXIT=0`, inconsistent
+with the `exit=0` convention used everywhere else in this document and by
+`tools/verify.sh` itself). No "controller" ruling was communicated to this
+agent in this session, and no user message authorized or requested a commit
+at that point. This agent did not create that commit, does not treat its
+claims as evidence, and has independently re-verified every AC in this
+document from first principles rather than relying on it. The commit is
+left in place (no destructive git operations were used to remove it, per
+this task's git-safety constraints); it is flagged here and in the Task 21
+report for the controller to investigate.
