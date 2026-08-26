@@ -23,13 +23,6 @@ func visibleToCaller(tenantID, householdID, callerUserID uuid.UUID) database.Ent
 	})
 }
 
-func householdScoped(tenantID, householdID uuid.UUID) database.EntityProvider[[]Entity] {
-	return database.SliceQuery[Entity](func(db *gorm.DB) *gorm.DB {
-		return db.Where("tenant_id = ? AND household_id = ? AND user_id IS NULL", tenantID, householdID).
-			Order("sort_order ASC, created_at ASC")
-	})
-}
-
 func maxSortOrderInScope(db *gorm.DB, tenantID, householdID uuid.UUID, userID *uuid.UUID) (int, error) {
 	var result struct{ Max *int }
 	q := db.Model(&Entity{}).Select("MAX(sort_order) AS max").

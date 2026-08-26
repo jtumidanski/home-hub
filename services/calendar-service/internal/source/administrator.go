@@ -55,6 +55,3 @@ func deleteByConnection(db *gorm.DB, connectionID uuid.UUID) error {
 	return db.Where("connection_id = ?", connectionID).Delete(&Entity{}).Error
 }
 
-func deleteByID(db *gorm.DB, id uuid.UUID) error {
-	return db.Where("id = ?", id).Delete(&Entity{}).Error
-}

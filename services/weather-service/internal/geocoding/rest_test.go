@@ -10,15 +10,6 @@ import (
 	"github.com/jtumidanski/home-hub/services/weather-service/internal/openmeteo"
 )
 
-type mockClient struct {
-	results []openmeteo.GeocodingResult
-	err     error
-}
-
-func (m *mockClient) searchPlaces(query string) ([]openmeteo.GeocodingResult, error) {
-	return m.results, m.err
-}
-
 func TestSearchHandlerShortQuery(t *testing.T) {
 	client := openmeteo.NewClient()
 

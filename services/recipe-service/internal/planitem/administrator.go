@@ -24,6 +24,3 @@ func deleteItem(db *gorm.DB, id uuid.UUID) error {
 	return db.Where("id = ?", id).Delete(&Entity{}).Error
 }
 
-func deleteByPlanWeekID(db *gorm.DB, planWeekID uuid.UUID) error {
-	return db.Where("plan_week_id = ?", planWeekID).Delete(&Entity{}).Error
-}

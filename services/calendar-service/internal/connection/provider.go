@@ -19,12 +19,6 @@ func getByUserAndHousehold(userID, householdID uuid.UUID) database.EntityProvide
 	})
 }
 
-func getByHousehold(householdID uuid.UUID) database.EntityProvider[[]Entity] {
-	return database.SliceQuery[Entity](func(db *gorm.DB) *gorm.DB {
-		return db.Where("household_id = ?", householdID)
-	})
-}
-
 func getAllConnected() database.EntityProvider[[]Entity] {
 	return database.SliceQuery[Entity](func(db *gorm.DB) *gorm.DB {
 		return db.Where("status = ?", "connected")
