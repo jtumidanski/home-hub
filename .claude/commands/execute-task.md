@@ -183,6 +183,17 @@ After an implementer reports `DONE` / `DONE_WITH_CONCERNS`:
    `CHANGES_REQUIRED` the enumerated `blocking` lines are the fix brief; open
    the artifact when a line is not actionable as written.
 
+   **Right-sizing the task review agent.** A task whose diff was
+   codemod-produced and `--check`-confirmed
+   ([`docs/codemod-vs-agents.md`](../../docs/codemod-vs-agents.md)) may take
+   a reduced or skipped per-task review agent. Every other task — including
+   a hand-applied "mechanical" batch with no `--check` PASS behind it — is
+   judgment-bearing and gets the full review agent; that is the safe
+   default. No rewriter exists yet, so this reduced path is dormant and
+   every task takes full review today. This governs the per-task review
+   agent only; `tools/verify.sh` and the guideline reviewers still run
+   unconditionally before a PR.
+
    Every task is judgment-bearing and gets the full `task-reviewer` dispatch;
    that is the safe default. `tools/verify.sh` and the guideline reviewers
    (`backend-guidelines-reviewer`, `frontend-guidelines-reviewer`) still run
