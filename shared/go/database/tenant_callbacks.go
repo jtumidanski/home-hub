@@ -5,9 +5,10 @@ import (
 	"reflect"
 	"sync"
 
-	"github.com/jtumidanski/home-hub/shared/go/tenant"
 	"github.com/sirupsen/logrus"
 	"gorm.io/gorm"
+
+	"github.com/jtumidanski/home-hub/shared/go/tenant"
 )
 
 // hasTenantIDCache memoizes the result of struct introspection so the tenant

@@ -4,6 +4,7 @@ import (
 	"context"
 
 	"github.com/gorilla/mux"
+
 	"github.com/jtumidanski/home-hub/services/auth-service/internal/config"
 	"github.com/jtumidanski/home-hub/services/auth-service/internal/externalidentity"
 	authjwt "github.com/jtumidanski/home-hub/services/auth-service/internal/jwt"

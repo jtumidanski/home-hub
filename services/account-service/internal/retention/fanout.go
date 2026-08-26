@@ -14,8 +14,9 @@ import (
 	"time"
 
 	"github.com/google/uuid"
-	sharedretention "github.com/jtumidanski/home-hub/shared/go/retention"
 	"github.com/sirupsen/logrus"
+
+	sharedretention "github.com/jtumidanski/home-hub/shared/go/retention"
 )
 
 // Errors returned by the Fanout layer.

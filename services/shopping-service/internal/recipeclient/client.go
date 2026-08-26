@@ -132,10 +132,10 @@ func (c *Client) GetPlanIngredients(planID uuid.UUID, accessToken string, tenant
 }
 
 type IngredientLookup struct {
-	CanonicalID  uuid.UUID
-	Name         string
-	DisplayName  string
-	CategoryID   *uuid.UUID
+	CanonicalID uuid.UUID
+	Name        string
+	DisplayName string
+	CategoryID  *uuid.UUID
 }
 
 type ingredientLookupResponse struct {

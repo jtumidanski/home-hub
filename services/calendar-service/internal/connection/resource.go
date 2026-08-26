@@ -10,17 +10,20 @@ import (
 	"github.com/google/uuid"
 	"github.com/gorilla/mux"
 	"github.com/jtumidanski/api2go/jsonapi"
+	"github.com/sirupsen/logrus"
+	"gorm.io/gorm"
+
 	"github.com/jtumidanski/home-hub/services/calendar-service/internal/config"
 	"github.com/jtumidanski/home-hub/services/calendar-service/internal/crypto"
 	"github.com/jtumidanski/home-hub/services/calendar-service/internal/googlecal"
 	"github.com/jtumidanski/home-hub/shared/go/server"
 	tenantctx "github.com/jtumidanski/home-hub/shared/go/tenant"
-	"github.com/sirupsen/logrus"
-	"gorm.io/gorm"
 )
 
-type SyncTrigger func(conn Model)
-type CascadeDelete func(ctx context.Context, connectionID uuid.UUID)
+type (
+	SyncTrigger   func(conn Model)
+	CascadeDelete func(ctx context.Context, connectionID uuid.UUID)
+)
 
 func InitializeRoutes(db *gorm.DB, gcClient *googlecal.Client, enc *crypto.Encryptor, cfg config.Config, syncTrigger SyncTrigger, cascadeDelete CascadeDelete) func(l logrus.FieldLogger, si jsonapi.ServerInformation, api *mux.Router) {
 	return func(l logrus.FieldLogger, si jsonapi.ServerInformation, api *mux.Router) {

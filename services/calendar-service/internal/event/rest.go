@@ -57,20 +57,20 @@ func (r *UpdateEventRequest) SetID(id string) error {
 }
 
 type RestModel struct {
-	Id              uuid.UUID  `json:"-"`
-	Title           string     `json:"title"`
-	Description     *string    `json:"description"`
-	StartTime       time.Time  `json:"startTime"`
-	EndTime         time.Time  `json:"endTime"`
-	AllDay          bool       `json:"allDay"`
-	Location        *string    `json:"location"`
-	Visibility      string     `json:"visibility"`
-	UserDisplayName string     `json:"userDisplayName"`
-	UserColor       string     `json:"userColor"`
-	IsOwner         bool       `json:"isOwner"`
-	SourceId        string     `json:"sourceId"`
-	ConnectionId    string     `json:"connectionId"`
-	IsRecurring     bool       `json:"isRecurring"`
+	Id              uuid.UUID `json:"-"`
+	Title           string    `json:"title"`
+	Description     *string   `json:"description"`
+	StartTime       time.Time `json:"startTime"`
+	EndTime         time.Time `json:"endTime"`
+	AllDay          bool      `json:"allDay"`
+	Location        *string   `json:"location"`
+	Visibility      string    `json:"visibility"`
+	UserDisplayName string    `json:"userDisplayName"`
+	UserColor       string    `json:"userColor"`
+	IsOwner         bool      `json:"isOwner"`
+	SourceId        string    `json:"sourceId"`
+	ConnectionId    string    `json:"connectionId"`
+	IsRecurring     bool      `json:"isRecurring"`
 }
 
 func (r RestModel) GetName() string { return "calendar-events" }

@@ -7,23 +7,26 @@ import (
 	"time"
 
 	"github.com/google/uuid"
-	"github.com/jtumidanski/home-hub/services/tracker-service/internal/entry"
-	"github.com/jtumidanski/home-hub/services/tracker-service/internal/schedule"
-	"github.com/jtumidanski/home-hub/services/tracker-service/internal/trackingitem"
-	"github.com/jtumidanski/home-hub/shared/go/database"
 	"github.com/sirupsen/logrus/hooks/test"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"gorm.io/driver/sqlite"
 	"gorm.io/gorm"
+
+	"github.com/jtumidanski/home-hub/services/tracker-service/internal/entry"
+	"github.com/jtumidanski/home-hub/services/tracker-service/internal/schedule"
+	"github.com/jtumidanski/home-hub/services/tracker-service/internal/trackingitem"
+	"github.com/jtumidanski/home-hub/shared/go/database"
 )
 
 // All tests use January 2025 (a fully-past month relative to today's date in
 // the test environment) so completion math is unaffected by `time.Now()`.
 const testMonth = "2025-01"
 
-var monthStart = time.Date(2025, 1, 1, 0, 0, 0, 0, time.UTC)
-var monthEnd = time.Date(2025, 1, 31, 0, 0, 0, 0, time.UTC)
+var (
+	monthStart = time.Date(2025, 1, 1, 0, 0, 0, 0, time.UTC)
+	monthEnd   = time.Date(2025, 1, 31, 0, 0, 0, 0, time.UTC)
+)
 
 func setupTestDB(t *testing.T) *gorm.DB {
 	t.Helper()

@@ -5,18 +5,19 @@ import (
 	"errors"
 
 	"github.com/google/uuid"
-	"github.com/jtumidanski/home-hub/services/workout-service/internal/exercise"
-	"github.com/jtumidanski/home-hub/services/workout-service/internal/planneditem"
 	"github.com/sirupsen/logrus"
 	"gorm.io/gorm"
+
+	"github.com/jtumidanski/home-hub/services/workout-service/internal/exercise"
+	"github.com/jtumidanski/home-hub/services/workout-service/internal/planneditem"
 )
 
 var (
-	ErrPlannedItemNotFound  = errors.New("planned item not found")
-	ErrPerSetNotAllowed     = errors.New("per-set logging is only valid for strength items")
-	ErrSummaryWhilePerSet   = errors.New("cannot write summary actuals while per-set rows exist; collapse first")
-	ErrUnitChangeWithSets   = errors.New("cannot change weightUnit while per-set rows exist")
-	ErrInvalidSetNumeric    = errors.New("set reps and weight must be non-negative")
+	ErrPlannedItemNotFound = errors.New("planned item not found")
+	ErrPerSetNotAllowed    = errors.New("per-set logging is only valid for strength items")
+	ErrSummaryWhilePerSet  = errors.New("cannot write summary actuals while per-set rows exist; collapse first")
+	ErrUnitChangeWithSets  = errors.New("cannot change weightUnit while per-set rows exist")
+	ErrInvalidSetNumeric   = errors.New("set reps and weight must be non-negative")
 )
 
 type Processor struct {

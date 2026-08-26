@@ -2,11 +2,12 @@ package weekview
 
 import (
 	"github.com/google/uuid"
+	"gorm.io/gorm"
+
 	"github.com/jtumidanski/home-hub/services/workout-service/internal/exercise"
 	"github.com/jtumidanski/home-hub/services/workout-service/internal/performance"
 	"github.com/jtumidanski/home-hub/services/workout-service/internal/planneditem"
 	"github.com/jtumidanski/home-hub/services/workout-service/internal/week"
-	"gorm.io/gorm"
 )
 
 // AssembleItems builds the []ItemRest projection for a week. It performs three

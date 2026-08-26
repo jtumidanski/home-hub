@@ -1,8 +1,9 @@
 package externalidentity
 
 import (
-	"github.com/jtumidanski/home-hub/shared/go/database"
 	"gorm.io/gorm"
+
+	"github.com/jtumidanski/home-hub/shared/go/database"
 )
 
 func getByProviderAndSubject(provider, subject string) database.EntityProvider[Entity] {

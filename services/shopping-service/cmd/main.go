@@ -4,6 +4,7 @@ import (
 	"context"
 
 	"github.com/gorilla/mux"
+
 	"github.com/jtumidanski/home-hub/services/shopping-service/internal/config"
 	"github.com/jtumidanski/home-hub/services/shopping-service/internal/item"
 	"github.com/jtumidanski/home-hub/services/shopping-service/internal/list"

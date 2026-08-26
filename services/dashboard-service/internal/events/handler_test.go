@@ -7,15 +7,16 @@ import (
 	"time"
 
 	"github.com/google/uuid"
-	"github.com/jtumidanski/home-hub/services/dashboard-service/internal/dashboard"
-	sharedDB "github.com/jtumidanski/home-hub/shared/go/database"
-	sharedevents "github.com/jtumidanski/home-hub/shared/go/events"
 	"github.com/segmentio/kafka-go"
 	"github.com/sirupsen/logrus/hooks/test"
 	"github.com/stretchr/testify/require"
 	"gorm.io/datatypes"
 	"gorm.io/driver/sqlite"
 	"gorm.io/gorm"
+
+	"github.com/jtumidanski/home-hub/services/dashboard-service/internal/dashboard"
+	sharedDB "github.com/jtumidanski/home-hub/shared/go/database"
+	sharedevents "github.com/jtumidanski/home-hub/shared/go/events"
 )
 
 func setupTestDB(t *testing.T) *gorm.DB {

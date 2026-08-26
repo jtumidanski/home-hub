@@ -7,6 +7,9 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/gorilla/mux"
+	"github.com/sirupsen/logrus"
+	"gorm.io/gorm"
+
 	"github.com/jtumidanski/home-hub/services/calendar-service/internal/config"
 	"github.com/jtumidanski/home-hub/services/calendar-service/internal/connection"
 	"github.com/jtumidanski/home-hub/services/calendar-service/internal/crypto"
@@ -20,8 +23,6 @@ import (
 	"github.com/jtumidanski/home-hub/shared/go/database"
 	"github.com/jtumidanski/home-hub/shared/go/logging"
 	"github.com/jtumidanski/home-hub/shared/go/server"
-	"github.com/sirupsen/logrus"
-	"gorm.io/gorm"
 )
 
 func main() {

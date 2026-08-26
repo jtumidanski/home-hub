@@ -35,23 +35,24 @@ type Builder struct {
 
 func NewBuilder() *Builder { return &Builder{} }
 
-func (b *Builder) SetId(id uuid.UUID) *Builder                  { b.id = id; return b }
-func (b *Builder) SetTenantID(id uuid.UUID) *Builder            { b.tenantID = id; return b }
-func (b *Builder) SetUserID(id uuid.UUID) *Builder              { b.userID = id; return b }
-func (b *Builder) SetWeekID(id uuid.UUID) *Builder              { b.weekID = id; return b }
-func (b *Builder) SetExerciseID(id uuid.UUID) *Builder          { b.exerciseID = id; return b }
-func (b *Builder) SetDayOfWeek(d int) *Builder                   { b.dayOfWeek = d; return b }
-func (b *Builder) SetPosition(p int) *Builder                    { b.position = p; return b }
-func (b *Builder) SetPlannedSets(v *int) *Builder                { b.plannedSets = v; return b }
-func (b *Builder) SetPlannedReps(v *int) *Builder                { b.plannedReps = v; return b }
-func (b *Builder) SetPlannedWeight(v *float64) *Builder          { b.plannedWeight = v; return b }
-func (b *Builder) SetPlannedWeightUnit(v *string) *Builder       { b.plannedWeightUnit = v; return b }
-func (b *Builder) SetPlannedDurationSeconds(v *int) *Builder     { b.plannedDurationSeconds = v; return b }
-func (b *Builder) SetPlannedDistance(v *float64) *Builder        { b.plannedDistance = v; return b }
-func (b *Builder) SetPlannedDistanceUnit(v *string) *Builder     { b.plannedDistanceUnit = v; return b }
-func (b *Builder) SetNotes(v *string) *Builder                   { b.notes = v; return b }
-func (b *Builder) SetCreatedAt(t time.Time) *Builder             { b.createdAt = t; return b }
-func (b *Builder) SetUpdatedAt(t time.Time) *Builder             { b.updatedAt = t; return b }
+func (b *Builder) SetId(id uuid.UUID) *Builder             { b.id = id; return b }
+func (b *Builder) SetTenantID(id uuid.UUID) *Builder       { b.tenantID = id; return b }
+func (b *Builder) SetUserID(id uuid.UUID) *Builder         { b.userID = id; return b }
+func (b *Builder) SetWeekID(id uuid.UUID) *Builder         { b.weekID = id; return b }
+func (b *Builder) SetExerciseID(id uuid.UUID) *Builder     { b.exerciseID = id; return b }
+func (b *Builder) SetDayOfWeek(d int) *Builder             { b.dayOfWeek = d; return b }
+func (b *Builder) SetPosition(p int) *Builder              { b.position = p; return b }
+func (b *Builder) SetPlannedSets(v *int) *Builder          { b.plannedSets = v; return b }
+func (b *Builder) SetPlannedReps(v *int) *Builder          { b.plannedReps = v; return b }
+func (b *Builder) SetPlannedWeight(v *float64) *Builder    { b.plannedWeight = v; return b }
+func (b *Builder) SetPlannedWeightUnit(v *string) *Builder { b.plannedWeightUnit = v; return b }
+
+func (b *Builder) SetPlannedDurationSeconds(v *int) *Builder { b.plannedDurationSeconds = v; return b }
+func (b *Builder) SetPlannedDistance(v *float64) *Builder    { b.plannedDistance = v; return b }
+func (b *Builder) SetPlannedDistanceUnit(v *string) *Builder { b.plannedDistanceUnit = v; return b }
+func (b *Builder) SetNotes(v *string) *Builder               { b.notes = v; return b }
+func (b *Builder) SetCreatedAt(t time.Time) *Builder         { b.createdAt = t; return b }
+func (b *Builder) SetUpdatedAt(t time.Time) *Builder         { b.updatedAt = t; return b }
 
 func (b *Builder) Build() (Model, error) {
 	if b.dayOfWeek < 0 || b.dayOfWeek > 6 {

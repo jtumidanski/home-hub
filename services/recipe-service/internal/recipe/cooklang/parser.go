@@ -416,7 +416,7 @@ func parseMarker(text string, marker byte) (string, string, string, string, int)
 			if braceEnd < 0 {
 				return "", "", "", "", 0
 			}
-			path := text[pos : braceIdx]
+			path := text[pos:braceIdx]
 			// Derive a display name from the path (last segment)
 			name := path
 			if lastSlash := strings.LastIndex(path, "/"); lastSlash >= 0 {

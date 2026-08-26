@@ -4,6 +4,7 @@ import (
 	"context"
 
 	"github.com/gorilla/mux"
+
 	"github.com/jtumidanski/home-hub/services/account-service/internal/appcontext"
 	"github.com/jtumidanski/home-hub/services/account-service/internal/config"
 	"github.com/jtumidanski/home-hub/services/account-service/internal/household"

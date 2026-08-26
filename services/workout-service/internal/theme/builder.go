@@ -26,9 +26,9 @@ type Builder struct {
 
 func NewBuilder() *Builder { return &Builder{} }
 
-func (b *Builder) SetId(id uuid.UUID) *Builder       { b.id = id; return b }
-func (b *Builder) SetTenantID(id uuid.UUID) *Builder { b.tenantID = id; return b }
-func (b *Builder) SetUserID(id uuid.UUID) *Builder   { b.userID = id; return b }
+func (b *Builder) SetId(id uuid.UUID) *Builder        { b.id = id; return b }
+func (b *Builder) SetTenantID(id uuid.UUID) *Builder  { b.tenantID = id; return b }
+func (b *Builder) SetUserID(id uuid.UUID) *Builder    { b.userID = id; return b }
 func (b *Builder) SetName(n string) *Builder          { b.name = n; return b }
 func (b *Builder) SetSortOrder(o int) *Builder        { b.sortOrder = o; return b }
 func (b *Builder) SetCreatedAt(t time.Time) *Builder  { b.createdAt = t; return b }

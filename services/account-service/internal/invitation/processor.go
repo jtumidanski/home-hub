@@ -7,23 +7,24 @@ import (
 	"time"
 
 	"github.com/google/uuid"
+	"github.com/sirupsen/logrus"
+	"gorm.io/gorm"
+
 	"github.com/jtumidanski/home-hub/services/account-service/internal/household"
 	"github.com/jtumidanski/home-hub/services/account-service/internal/membership"
 	"github.com/jtumidanski/home-hub/services/account-service/internal/preference"
 	"github.com/jtumidanski/home-hub/shared/go/database"
 	"github.com/jtumidanski/home-hub/shared/go/model"
-	"github.com/sirupsen/logrus"
-	"gorm.io/gorm"
 )
 
 var (
-	ErrNotAuthorized       = errors.New("user does not have owner or admin role")
-	ErrAlreadyInvited      = errors.New("a pending invitation already exists for this email and household")
-	ErrAlreadyMember       = errors.New("email already has a membership in this household")
-	ErrNotPending          = errors.New("invitation is not in pending status")
-	ErrExpired             = errors.New("invitation has expired")
-	ErrEmailMismatch       = errors.New("user email does not match invitation email")
-	ErrCrossTenant         = errors.New("user belongs to a different tenant than the invitation")
+	ErrNotAuthorized        = errors.New("user does not have owner or admin role")
+	ErrAlreadyInvited       = errors.New("a pending invitation already exists for this email and household")
+	ErrAlreadyMember        = errors.New("email already has a membership in this household")
+	ErrNotPending           = errors.New("invitation is not in pending status")
+	ErrExpired              = errors.New("invitation has expired")
+	ErrEmailMismatch        = errors.New("user email does not match invitation email")
+	ErrCrossTenant          = errors.New("user belongs to a different tenant than the invitation")
 	ErrAlreadyHasMembership = errors.New("user already has a membership in this household")
 )
 

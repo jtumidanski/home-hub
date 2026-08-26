@@ -7,6 +7,8 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/gorilla/mux"
+	"github.com/sirupsen/logrus"
+
 	"github.com/jtumidanski/home-hub/services/weather-service/internal/config"
 	"github.com/jtumidanski/home-hub/services/weather-service/internal/forecast"
 	"github.com/jtumidanski/home-hub/services/weather-service/internal/geocoding"
@@ -17,7 +19,6 @@ import (
 	"github.com/jtumidanski/home-hub/shared/go/database"
 	"github.com/jtumidanski/home-hub/shared/go/logging"
 	"github.com/jtumidanski/home-hub/shared/go/server"
-	"github.com/sirupsen/logrus"
 )
 
 func main() {

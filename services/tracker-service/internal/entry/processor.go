@@ -7,10 +7,11 @@ import (
 	"time"
 
 	"github.com/google/uuid"
-	"github.com/jtumidanski/home-hub/services/tracker-service/internal/schedule"
-	"github.com/jtumidanski/home-hub/services/tracker-service/internal/trackingitem"
 	"github.com/sirupsen/logrus"
 	"gorm.io/gorm"
+
+	"github.com/jtumidanski/home-hub/services/tracker-service/internal/schedule"
+	"github.com/jtumidanski/home-hub/services/tracker-service/internal/trackingitem"
 )
 
 var (

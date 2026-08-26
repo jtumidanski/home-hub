@@ -179,7 +179,7 @@ func (c *FedExClient) parseResponse(body []byte) (TrackingResult, error) {
 
 // Request types
 type fedexTrackRequest struct {
-	IncludeDetailedScans bool               `json:"includeDetailedScans"`
+	IncludeDetailedScans bool                `json:"includeDetailedScans"`
 	TrackingInfo         []fedexTrackingInfo `json:"trackingInfo"`
 }
 

@@ -9,11 +9,12 @@ import (
 	"github.com/google/uuid"
 	"github.com/gorilla/mux"
 	"github.com/jtumidanski/api2go/jsonapi"
+	"github.com/sirupsen/logrus"
+	"gorm.io/gorm"
+
 	"github.com/jtumidanski/home-hub/services/dashboard-service/internal/layout"
 	"github.com/jtumidanski/home-hub/shared/go/server"
 	tenantctx "github.com/jtumidanski/home-hub/shared/go/tenant"
-	"github.com/sirupsen/logrus"
-	"gorm.io/gorm"
 )
 
 // seedKeyRegex enforces lowercase ASCII kebab-case, 1-40 chars, must start

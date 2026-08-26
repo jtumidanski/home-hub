@@ -7,14 +7,15 @@ import (
 	"time"
 
 	"github.com/google/uuid"
-	"github.com/jtumidanski/home-hub/services/workout-service/internal/exercise"
-	"github.com/jtumidanski/home-hub/services/workout-service/internal/planneditem"
-	"github.com/jtumidanski/home-hub/shared/go/database"
 	"github.com/sirupsen/logrus/hooks/test"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"gorm.io/driver/sqlite"
 	"gorm.io/gorm"
+
+	"github.com/jtumidanski/home-hub/services/workout-service/internal/exercise"
+	"github.com/jtumidanski/home-hub/services/workout-service/internal/planneditem"
+	"github.com/jtumidanski/home-hub/shared/go/database"
 )
 
 // Table-driven coverage of the §4.4.1 status state machine. The processor

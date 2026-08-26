@@ -7,17 +7,18 @@ import (
 	"strings"
 
 	"github.com/google/uuid"
-	"github.com/jtumidanski/home-hub/services/workout-service/internal/region"
-	"github.com/jtumidanski/home-hub/services/workout-service/internal/theme"
 	"github.com/sirupsen/logrus"
 	"gorm.io/gorm"
+
+	"github.com/jtumidanski/home-hub/services/workout-service/internal/region"
+	"github.com/jtumidanski/home-hub/services/workout-service/internal/theme"
 )
 
 var (
-	ErrNotFound        = errors.New("exercise not found")
-	ErrDuplicateName   = errors.New("exercise name already exists for this user")
-	ErrThemeNotFound   = errors.New("theme not found")
-	ErrRegionNotFound  = errors.New("region not found")
+	ErrNotFound          = errors.New("exercise not found")
+	ErrDuplicateName     = errors.New("exercise name already exists for this user")
+	ErrThemeNotFound     = errors.New("theme not found")
+	ErrRegionNotFound    = errors.New("region not found")
 	ErrSecondaryNotFound = errors.New("secondary region not found")
 )
 

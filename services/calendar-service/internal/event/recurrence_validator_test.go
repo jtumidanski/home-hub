@@ -15,13 +15,19 @@ func TestParseRRULE(t *testing.T) {
 		count     int
 		expectErr bool
 	}{
-		{name: "weekly until date-time", line: "RRULE:FREQ=WEEKLY;UNTIL=20260611T035959Z",
-			hasUntil: true, untilUTC: "2026-06-11T03:59:59Z"},
+		{
+			name: "weekly until date-time", line: "RRULE:FREQ=WEEKLY;UNTIL=20260611T035959Z",
+			hasUntil: true, untilUTC: "2026-06-11T03:59:59Z",
+		},
 		{name: "weekly count", line: "RRULE:FREQ=WEEKLY;COUNT=10", hasCount: true, count: 10},
-		{name: "lowercase tokens", line: "rrule:freq=weekly;until=20260611t035959z",
-			hasUntil: true, untilUTC: "2026-06-11T03:59:59Z"},
-		{name: "until date-only form", line: "RRULE:FREQ=WEEKLY;UNTIL=20260611",
-			hasUntil: true, untilUTC: "2026-06-11T00:00:00Z"},
+		{
+			name: "lowercase tokens", line: "rrule:freq=weekly;until=20260611t035959z",
+			hasUntil: true, untilUTC: "2026-06-11T03:59:59Z",
+		},
+		{
+			name: "until date-only form", line: "RRULE:FREQ=WEEKLY;UNTIL=20260611",
+			hasUntil: true, untilUTC: "2026-06-11T00:00:00Z",
+		},
 		{name: "open-ended", line: "RRULE:FREQ=WEEKLY"},
 		{name: "malformed until -> err", line: "RRULE:FREQ=WEEKLY;UNTIL=garbage", expectErr: true},
 		{name: "malformed count -> err", line: "RRULE:FREQ=WEEKLY;COUNT=abc", expectErr: true},
@@ -71,10 +77,10 @@ func TestValidateRecurrence(t *testing.T) {
 	start := mustTime(t, "2026-05-06T09:00:00Z")
 
 	tests := []struct {
-		name    string
-		input   []string
-		start   time.Time
-		wantNil bool
+		name     string
+		input    []string
+		start    time.Time
+		wantNil  bool
 		wantCode string
 	}{
 		{name: "nil slice", input: nil, start: start, wantNil: true},

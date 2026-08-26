@@ -6,10 +6,11 @@ import (
 	"time"
 
 	"github.com/google/uuid"
-	"github.com/jtumidanski/home-hub/services/workout-service/internal/planneditem"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"gorm.io/gorm"
+
+	"github.com/jtumidanski/home-hub/services/workout-service/internal/planneditem"
 )
 
 // seedWeekWithItem inserts a week row and one planned_item owned by it. The

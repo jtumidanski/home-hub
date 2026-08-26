@@ -3,8 +3,9 @@ package oidcprovider
 import (
 	"testing"
 
-	"github.com/jtumidanski/home-hub/services/auth-service/internal/config"
 	"github.com/sirupsen/logrus/hooks/test"
+
+	"github.com/jtumidanski/home-hub/services/auth-service/internal/config"
 )
 
 func TestListEnabled(t *testing.T) {

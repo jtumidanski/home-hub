@@ -34,8 +34,8 @@ func TestTransform(t *testing.T) {
 
 func TestRestModel_JSONAPIInterface(t *testing.T) {
 	tests := []struct {
-		name     string
-		run      func(t *testing.T)
+		name string
+		run  func(t *testing.T)
 	}{
 		{
 			name: "GetName returns categories",
@@ -83,9 +83,9 @@ func TestTransformSlice(t *testing.T) {
 	now := time.Now().Truncate(time.Second)
 
 	tests := []struct {
-		name     string
-		models   []Model
-		wantLen  int
+		name    string
+		models  []Model
+		wantLen int
 	}{
 		{
 			name:    "empty slice",

@@ -5,14 +5,15 @@ import (
 	"fmt"
 
 	"github.com/google/uuid"
+	"github.com/sirupsen/logrus"
+	"gorm.io/gorm"
+
 	"github.com/jtumidanski/home-hub/services/account-service/internal/household"
 	"github.com/jtumidanski/home-hub/services/account-service/internal/invitation"
 	"github.com/jtumidanski/home-hub/services/account-service/internal/membership"
 	"github.com/jtumidanski/home-hub/services/account-service/internal/preference"
 	"github.com/jtumidanski/home-hub/services/account-service/internal/tenant"
 	"github.com/jtumidanski/home-hub/shared/go/database"
-	"github.com/sirupsen/logrus"
-	"gorm.io/gorm"
 )
 
 // Resolved holds the fully resolved application context for a user.

@@ -27,13 +27,13 @@ func NewBuilder() *Builder {
 	return &Builder{}
 }
 
-func (b *Builder) SetId(id uuid.UUID) *Builder           { b.id = id; return b }
-func (b *Builder) SetUserId(id uuid.UUID) *Builder       { b.userId = id; return b }
-func (b *Builder) SetTokenHash(hash string) *Builder     { b.tokenHash = hash; return b }
-func (b *Builder) SetExpiresAt(t time.Time) *Builder     { b.expiresAt = t; return b }
-func (b *Builder) SetRevoked(revoked bool) *Builder      { b.revoked = revoked; return b }
-func (b *Builder) SetCreatedAt(t time.Time) *Builder     { b.createdAt = t; return b }
-func (b *Builder) SetUpdatedAt(t time.Time) *Builder     { b.updatedAt = t; return b }
+func (b *Builder) SetId(id uuid.UUID) *Builder       { b.id = id; return b }
+func (b *Builder) SetUserId(id uuid.UUID) *Builder   { b.userId = id; return b }
+func (b *Builder) SetTokenHash(hash string) *Builder { b.tokenHash = hash; return b }
+func (b *Builder) SetExpiresAt(t time.Time) *Builder { b.expiresAt = t; return b }
+func (b *Builder) SetRevoked(revoked bool) *Builder  { b.revoked = revoked; return b }
+func (b *Builder) SetCreatedAt(t time.Time) *Builder { b.createdAt = t; return b }
+func (b *Builder) SetUpdatedAt(t time.Time) *Builder { b.updatedAt = t; return b }
 
 func (b *Builder) Build() (Model, error) {
 	if b.userId == uuid.Nil {

@@ -6,9 +6,10 @@ import (
 	"time"
 
 	"github.com/google/uuid"
-	"github.com/jtumidanski/home-hub/shared/go/model"
 	"github.com/sirupsen/logrus"
 	"gorm.io/gorm"
+
+	"github.com/jtumidanski/home-hub/shared/go/model"
 )
 
 var allowedSnoozeDurations = map[int]bool{10: true, 30: true, 60: true}

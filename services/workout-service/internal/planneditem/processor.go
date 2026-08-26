@@ -6,16 +6,17 @@ import (
 	"time"
 
 	"github.com/google/uuid"
-	"github.com/jtumidanski/home-hub/services/workout-service/internal/exercise"
 	"github.com/sirupsen/logrus"
 	"gorm.io/gorm"
+
+	"github.com/jtumidanski/home-hub/services/workout-service/internal/exercise"
 )
 
 var (
-	ErrNotFound          = errors.New("planned item not found")
-	ErrExerciseNotFound  = errors.New("exercise not found")
-	ErrExerciseDeleted   = errors.New("cannot plan a soft-deleted exercise")
-	ErrExerciseMismatch  = errors.New("exercise does not belong to this user")
+	ErrNotFound         = errors.New("planned item not found")
+	ErrExerciseNotFound = errors.New("exercise not found")
+	ErrExerciseDeleted  = errors.New("cannot plan a soft-deleted exercise")
+	ErrExerciseMismatch = errors.New("exercise does not belong to this user")
 )
 
 type Processor struct {

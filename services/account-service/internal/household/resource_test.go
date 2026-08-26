@@ -7,15 +7,16 @@ import (
 	"net/http/httptest"
 	"testing"
 
+	"github.com/google/uuid"
 	"github.com/gorilla/mux"
+	"github.com/sirupsen/logrus/hooks/test"
+	"gorm.io/driver/sqlite"
+	"gorm.io/gorm"
+
 	"github.com/jtumidanski/home-hub/services/account-service/internal/membership"
 	"github.com/jtumidanski/home-hub/shared/go/database"
 	"github.com/jtumidanski/home-hub/shared/go/server"
 	tenantctx "github.com/jtumidanski/home-hub/shared/go/tenant"
-	"github.com/google/uuid"
-	"github.com/sirupsen/logrus/hooks/test"
-	"gorm.io/driver/sqlite"
-	"gorm.io/gorm"
 )
 
 func setupHandlerTest(t *testing.T) (*mux.Router, *gorm.DB, uuid.UUID, uuid.UUID) {

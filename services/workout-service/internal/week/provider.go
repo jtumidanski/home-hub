@@ -4,9 +4,10 @@ import (
 	"time"
 
 	"github.com/google/uuid"
+	"gorm.io/gorm"
+
 	"github.com/jtumidanski/home-hub/shared/go/database"
 	"github.com/jtumidanski/home-hub/shared/go/tenant"
-	"gorm.io/gorm"
 )
 
 func GetByID(id uuid.UUID) database.EntityProvider[Entity] {

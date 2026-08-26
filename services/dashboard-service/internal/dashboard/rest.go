@@ -36,8 +36,8 @@ type CreateRequest struct {
 	SortOrder *int            `json:"sortOrder"`
 }
 
-func (CreateRequest) GetName() string      { return "dashboards" }
-func (CreateRequest) GetID() string        { return "" }
+func (CreateRequest) GetName() string       { return "dashboards" }
+func (CreateRequest) GetID() string         { return "" }
 func (*CreateRequest) SetID(_ string) error { return nil }
 
 type UpdateRequest struct {
@@ -46,8 +46,8 @@ type UpdateRequest struct {
 	SortOrder *int             `json:"sortOrder"`
 }
 
-func (UpdateRequest) GetName() string      { return "dashboards" }
-func (UpdateRequest) GetID() string        { return "" }
+func (UpdateRequest) GetName() string       { return "dashboards" }
+func (UpdateRequest) GetID() string         { return "" }
 func (*UpdateRequest) SetID(_ string) error { return nil }
 
 type ReorderRequest struct {
@@ -68,8 +68,8 @@ type SeedRequest struct {
 	Layout json.RawMessage `json:"layout"`
 }
 
-func (SeedRequest) GetName() string      { return "dashboards" }
-func (SeedRequest) GetID() string        { return "" }
+func (SeedRequest) GetName() string       { return "dashboards" }
+func (SeedRequest) GetID() string         { return "" }
 func (*SeedRequest) SetID(_ string) error { return nil }
 
 func Transform(m Model) (RestModel, error) {

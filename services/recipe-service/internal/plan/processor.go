@@ -7,6 +7,9 @@ import (
 	"time"
 
 	"github.com/google/uuid"
+	"github.com/sirupsen/logrus"
+	"gorm.io/gorm"
+
 	"github.com/jtumidanski/home-hub/services/recipe-service/internal/audit"
 	"github.com/jtumidanski/home-hub/services/recipe-service/internal/categoryclient"
 	"github.com/jtumidanski/home-hub/services/recipe-service/internal/export"
@@ -15,16 +18,14 @@ import (
 	"github.com/jtumidanski/home-hub/services/recipe-service/internal/recipe"
 	"github.com/jtumidanski/home-hub/shared/go/model"
 	tenantctx "github.com/jtumidanski/home-hub/shared/go/tenant"
-	"github.com/sirupsen/logrus"
-	"gorm.io/gorm"
 )
 
 var (
-	ErrNotFound       = errors.New("plan not found")
-	ErrAlreadyExists  = errors.New("plan already exists for this week")
-	ErrLocked         = errors.New("plan is locked")
-	ErrAlreadyLocked  = errors.New("plan is already locked")
-	ErrNotLocked      = errors.New("plan is not locked")
+	ErrNotFound      = errors.New("plan not found")
+	ErrAlreadyExists = errors.New("plan already exists for this week")
+	ErrLocked        = errors.New("plan is locked")
+	ErrAlreadyLocked = errors.New("plan is already locked")
+	ErrNotLocked     = errors.New("plan is not locked")
 )
 
 type Processor struct {

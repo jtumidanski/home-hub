@@ -6,15 +6,14 @@ import (
 	"time"
 
 	"github.com/google/uuid"
-	"github.com/jtumidanski/home-hub/services/recipe-service/internal/audit"
-	tenantctx "github.com/jtumidanski/home-hub/shared/go/tenant"
 	"github.com/sirupsen/logrus"
 	"gorm.io/gorm"
+
+	"github.com/jtumidanski/home-hub/services/recipe-service/internal/audit"
+	tenantctx "github.com/jtumidanski/home-hub/shared/go/tenant"
 )
 
-var (
-	ErrNotFound = errors.New("plan item not found")
-)
+var ErrNotFound = errors.New("plan item not found")
 
 type Processor struct {
 	l   logrus.FieldLogger

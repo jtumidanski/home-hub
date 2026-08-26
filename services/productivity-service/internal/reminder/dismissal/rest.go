@@ -11,7 +11,7 @@ type RestModel struct {
 	CreatedAt time.Time `json:"createdAt"`
 }
 
-func (r RestModel) GetName() string       { return "reminder-dismissals" }
+func (r RestModel) GetName() string        { return "reminder-dismissals" }
 func (r RestModel) GetID() string          { return r.Id.String() }
 func (r *RestModel) SetID(id string) error { var err error; r.Id, err = uuid.Parse(id); return err }
 
@@ -39,8 +39,8 @@ type CreateRequest struct {
 	ReminderId string    `json:"reminderId"`
 }
 
-func (r CreateRequest) GetName() string       { return "reminder-dismissals" }
-func (r CreateRequest) GetID() string          { return r.Id.String() }
+func (r CreateRequest) GetName() string { return "reminder-dismissals" }
+func (r CreateRequest) GetID() string   { return r.Id.String() }
 func (r *CreateRequest) SetID(id string) error {
 	if id == "" {
 		return nil

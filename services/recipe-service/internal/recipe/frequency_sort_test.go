@@ -6,9 +6,10 @@ import (
 	"time"
 
 	"github.com/google/uuid"
-	tenantctx "github.com/jtumidanski/home-hub/shared/go/tenant"
 	"github.com/sirupsen/logrus/hooks/test"
 	"gorm.io/gorm"
+
+	tenantctx "github.com/jtumidanski/home-hub/shared/go/tenant"
 )
 
 func newFreqProcessor(t *testing.T) (*Processor, *gorm.DB, uuid.UUID, uuid.UUID) {
@@ -113,9 +114,9 @@ func TestListFrequencySortTieBreakerAcrossPages(t *testing.T) {
 func TestListFrequencySortComposesWithSearch(t *testing.T) {
 	p, db, tenantID, householdID := newFreqProcessor(t)
 
-	applePie := mkRecipe(t, p, tenantID, householdID, "Apple Pie")   // matches "pie", 2 cooks
-	peachPie := mkRecipe(t, p, tenantID, householdID, "Peach Pie")   // matches "pie", 1 cook
-	mkRecipe(t, p, tenantID, householdID, "Garden Salad")            // does NOT match "pie"
+	applePie := mkRecipe(t, p, tenantID, householdID, "Apple Pie") // matches "pie", 2 cooks
+	peachPie := mkRecipe(t, p, tenantID, householdID, "Peach Pie") // matches "pie", 1 cook
+	mkRecipe(t, p, tenantID, householdID, "Garden Salad")          // does NOT match "pie"
 
 	pw := seedPlanWeek(t, db, tenantID, householdID)
 	for i := 0; i < 2; i++ {

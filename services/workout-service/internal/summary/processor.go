@@ -11,14 +11,15 @@ import (
 	"time"
 
 	"github.com/google/uuid"
+	"github.com/sirupsen/logrus"
+	"gorm.io/gorm"
+
 	"github.com/jtumidanski/home-hub/services/workout-service/internal/exercise"
 	"github.com/jtumidanski/home-hub/services/workout-service/internal/performance"
 	"github.com/jtumidanski/home-hub/services/workout-service/internal/planneditem"
 	"github.com/jtumidanski/home-hub/services/workout-service/internal/region"
 	"github.com/jtumidanski/home-hub/services/workout-service/internal/theme"
 	"github.com/jtumidanski/home-hub/services/workout-service/internal/week"
-	"github.com/sirupsen/logrus"
-	"gorm.io/gorm"
 )
 
 type Processor struct {
@@ -463,6 +464,7 @@ func derefInt(p *int) int {
 	}
 	return *p
 }
+
 func derefFloat(p *float64) float64 {
 	if p == nil {
 		return 0

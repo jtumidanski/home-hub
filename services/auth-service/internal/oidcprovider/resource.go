@@ -5,9 +5,10 @@ import (
 
 	"github.com/gorilla/mux"
 	"github.com/jtumidanski/api2go/jsonapi"
+	"github.com/sirupsen/logrus"
+
 	"github.com/jtumidanski/home-hub/services/auth-service/internal/config"
 	"github.com/jtumidanski/home-hub/shared/go/server"
-	"github.com/sirupsen/logrus"
 )
 
 // InitializeRoutes registers OIDC provider routes.

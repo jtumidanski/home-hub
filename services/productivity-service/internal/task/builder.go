@@ -7,9 +7,7 @@ import (
 	"github.com/google/uuid"
 )
 
-var (
-	ErrTitleRequired = errors.New("task title is required")
-)
+var ErrTitleRequired = errors.New("task title is required")
 
 type Builder struct {
 	id              uuid.UUID
@@ -33,19 +31,19 @@ func NewBuilder() *Builder {
 }
 
 func (b *Builder) SetId(id uuid.UUID) *Builder              { b.id = id; return b }
-func (b *Builder) SetTenantID(id uuid.UUID) *Builder         { b.tenantID = id; return b }
-func (b *Builder) SetHouseholdID(id uuid.UUID) *Builder      { b.householdID = id; return b }
-func (b *Builder) SetTitle(title string) *Builder             { b.title = title; return b }
-func (b *Builder) SetNotes(notes string) *Builder             { b.notes = notes; return b }
-func (b *Builder) SetStatus(status string) *Builder           { b.status = status; return b }
-func (b *Builder) SetDueOn(dueOn *time.Time) *Builder         { b.dueOn = dueOn; return b }
-func (b *Builder) SetRolloverEnabled(v bool) *Builder         { b.rolloverEnabled = v; return b }
-func (b *Builder) SetOwnerUserID(id *uuid.UUID) *Builder       { b.ownerUserID = id; return b }
-func (b *Builder) SetCompletedAt(t *time.Time) *Builder       { b.completedAt = t; return b }
-func (b *Builder) SetCompletedByUID(id *uuid.UUID) *Builder   { b.completedByUID = id; return b }
-func (b *Builder) SetDeletedAt(t *time.Time) *Builder         { b.deletedAt = t; return b }
-func (b *Builder) SetCreatedAt(t time.Time) *Builder          { b.createdAt = t; return b }
-func (b *Builder) SetUpdatedAt(t time.Time) *Builder          { b.updatedAt = t; return b }
+func (b *Builder) SetTenantID(id uuid.UUID) *Builder        { b.tenantID = id; return b }
+func (b *Builder) SetHouseholdID(id uuid.UUID) *Builder     { b.householdID = id; return b }
+func (b *Builder) SetTitle(title string) *Builder           { b.title = title; return b }
+func (b *Builder) SetNotes(notes string) *Builder           { b.notes = notes; return b }
+func (b *Builder) SetStatus(status string) *Builder         { b.status = status; return b }
+func (b *Builder) SetDueOn(dueOn *time.Time) *Builder       { b.dueOn = dueOn; return b }
+func (b *Builder) SetRolloverEnabled(v bool) *Builder       { b.rolloverEnabled = v; return b }
+func (b *Builder) SetOwnerUserID(id *uuid.UUID) *Builder    { b.ownerUserID = id; return b }
+func (b *Builder) SetCompletedAt(t *time.Time) *Builder     { b.completedAt = t; return b }
+func (b *Builder) SetCompletedByUID(id *uuid.UUID) *Builder { b.completedByUID = id; return b }
+func (b *Builder) SetDeletedAt(t *time.Time) *Builder       { b.deletedAt = t; return b }
+func (b *Builder) SetCreatedAt(t time.Time) *Builder        { b.createdAt = t; return b }
+func (b *Builder) SetUpdatedAt(t time.Time) *Builder        { b.updatedAt = t; return b }
 
 func (b *Builder) Build() (Model, error) {
 	if b.title == "" {

@@ -35,8 +35,8 @@ type RestModel struct {
 	UpdatedAt  time.Time   `json:"updatedAt"`
 }
 
-func (r RestModel) GetName() string       { return "planned-items" }
-func (r RestModel) GetID() string         { return r.Id.String() }
+func (r RestModel) GetName() string { return "planned-items" }
+func (r RestModel) GetID() string   { return r.Id.String() }
 func (r *RestModel) SetID(id string) error {
 	if id == "" {
 		return nil

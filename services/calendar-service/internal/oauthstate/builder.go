@@ -7,9 +7,7 @@ import (
 	"github.com/google/uuid"
 )
 
-var (
-	ErrRedirectURIRequired = errors.New("redirect URI is required")
-)
+var ErrRedirectURIRequired = errors.New("redirect URI is required")
 
 type Builder struct {
 	id          uuid.UUID
@@ -25,13 +23,13 @@ type Builder struct {
 func NewBuilder() *Builder { return &Builder{} }
 
 func (b *Builder) SetId(id uuid.UUID) *Builder          { b.id = id; return b }
-func (b *Builder) SetTenantID(id uuid.UUID) *Builder     { b.tenantID = id; return b }
-func (b *Builder) SetHouseholdID(id uuid.UUID) *Builder  { b.householdID = id; return b }
-func (b *Builder) SetUserID(id uuid.UUID) *Builder       { b.userID = id; return b }
-func (b *Builder) SetRedirectURI(uri string) *Builder    { b.redirectURI = uri; return b }
-func (b *Builder) SetReauthorize(r bool) *Builder        { b.reauthorize = r; return b }
-func (b *Builder) SetExpiresAt(t time.Time) *Builder     { b.expiresAt = t; return b }
-func (b *Builder) SetCreatedAt(t time.Time) *Builder     { b.createdAt = t; return b }
+func (b *Builder) SetTenantID(id uuid.UUID) *Builder    { b.tenantID = id; return b }
+func (b *Builder) SetHouseholdID(id uuid.UUID) *Builder { b.householdID = id; return b }
+func (b *Builder) SetUserID(id uuid.UUID) *Builder      { b.userID = id; return b }
+func (b *Builder) SetRedirectURI(uri string) *Builder   { b.redirectURI = uri; return b }
+func (b *Builder) SetReauthorize(r bool) *Builder       { b.reauthorize = r; return b }
+func (b *Builder) SetExpiresAt(t time.Time) *Builder    { b.expiresAt = t; return b }
+func (b *Builder) SetCreatedAt(t time.Time) *Builder    { b.createdAt = t; return b }
 
 func (b *Builder) Build() (Model, error) {
 	if b.redirectURI == "" {

@@ -9,13 +9,14 @@ import (
 
 	"github.com/gorilla/mux"
 	"github.com/jtumidanski/api2go/jsonapi"
+	"github.com/sirupsen/logrus"
+	"gorm.io/gorm"
+
 	"github.com/jtumidanski/home-hub/services/auth-service/internal/authflow"
 	"github.com/jtumidanski/home-hub/services/auth-service/internal/config"
 	authjwt "github.com/jtumidanski/home-hub/services/auth-service/internal/jwt"
 	"github.com/jtumidanski/home-hub/services/auth-service/internal/oidc"
 	"github.com/jtumidanski/home-hub/shared/go/server"
-	"github.com/sirupsen/logrus"
-	"gorm.io/gorm"
 )
 
 // InitializeRoutes registers auth flow routes that orchestrate across domains.

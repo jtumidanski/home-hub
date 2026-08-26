@@ -6,12 +6,13 @@ import (
 	"time"
 
 	"github.com/google/uuid"
-	database "github.com/jtumidanski/home-hub/shared/go/database"
-	reminder "github.com/jtumidanski/home-hub/services/productivity-service/internal/reminder"
 	"github.com/sirupsen/logrus/hooks/test"
 	"github.com/stretchr/testify/require"
 	"gorm.io/driver/sqlite"
 	"gorm.io/gorm"
+
+	reminder "github.com/jtumidanski/home-hub/services/productivity-service/internal/reminder"
+	database "github.com/jtumidanski/home-hub/shared/go/database"
 )
 
 func setupTestDB(t *testing.T) *gorm.DB {

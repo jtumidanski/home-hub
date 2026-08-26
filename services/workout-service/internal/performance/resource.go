@@ -7,10 +7,11 @@ import (
 	"github.com/google/uuid"
 	"github.com/gorilla/mux"
 	"github.com/jtumidanski/api2go/jsonapi"
-	"github.com/jtumidanski/home-hub/shared/go/server"
-	tenantctx "github.com/jtumidanski/home-hub/shared/go/tenant"
 	"github.com/sirupsen/logrus"
 	"gorm.io/gorm"
+
+	"github.com/jtumidanski/home-hub/shared/go/server"
+	tenantctx "github.com/jtumidanski/home-hub/shared/go/tenant"
 )
 
 // InitializeRoutes mounts the performance write endpoints. PATCH and PUT use

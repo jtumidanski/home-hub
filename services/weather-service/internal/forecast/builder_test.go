@@ -25,7 +25,6 @@ func TestBuilderValid(t *testing.T) {
 		SetCreatedAt(now).
 		SetUpdatedAt(now).
 		Build()
-
 	if err != nil {
 		t.Fatalf("expected no error, got %v", err)
 	}
@@ -163,7 +162,6 @@ func TestBuilderBoundaryCoordinates(t *testing.T) {
 				SetLongitude(tt.lon).
 				SetUnits("metric").
 				Build()
-
 			if err != nil {
 				t.Fatalf("expected no error, got %v", err)
 			}

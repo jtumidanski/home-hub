@@ -15,7 +15,7 @@ type Model struct {
 }
 
 func (m Model) Id() uuid.UUID             { return m.id }
-func (m Model) TrackingItemID() uuid.UUID  { return m.trackingItemID }
-func (m Model) Schedule() []int            { return m.schedule }
-func (m Model) EffectiveDate() time.Time   { return m.effectiveDate }
-func (m Model) CreatedAt() time.Time       { return m.createdAt }
+func (m Model) TrackingItemID() uuid.UUID { return m.trackingItemID }
+func (m Model) Schedule() []int           { return m.schedule }
+func (m Model) EffectiveDate() time.Time  { return m.effectiveDate }
+func (m Model) CreatedAt() time.Time      { return m.createdAt }

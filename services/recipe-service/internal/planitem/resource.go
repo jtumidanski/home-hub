@@ -20,7 +20,7 @@ type RestModel struct {
 	UpdatedAt         time.Time `json:"updated_at"`
 }
 
-func (r RestModel) GetName() string       { return "plan-items" }
+func (r RestModel) GetName() string        { return "plan-items" }
 func (r RestModel) GetID() string          { return r.Id.String() }
 func (r *RestModel) SetID(id string) error { var err error; r.Id, err = uuid.Parse(id); return err }
 
@@ -59,8 +59,8 @@ type CreateItemRequest struct {
 	Position          *int      `json:"position,omitempty"`
 }
 
-func (r CreateItemRequest) GetName() string       { return "plan-items" }
-func (r CreateItemRequest) GetID() string          { return r.Id.String() }
+func (r CreateItemRequest) GetName() string { return "plan-items" }
+func (r CreateItemRequest) GetID() string   { return r.Id.String() }
 func (r *CreateItemRequest) SetID(id string) error {
 	if id == "" {
 		return nil
@@ -81,6 +81,10 @@ type UpdateItemRequest struct {
 	Position          *int      `json:"position,omitempty"`
 }
 
-func (r UpdateItemRequest) GetName() string       { return "plan-items" }
-func (r UpdateItemRequest) GetID() string          { return r.Id.String() }
-func (r *UpdateItemRequest) SetID(id string) error { var err error; r.Id, err = uuid.Parse(id); return err }
+func (r UpdateItemRequest) GetName() string { return "plan-items" }
+func (r UpdateItemRequest) GetID() string   { return r.Id.String() }
+func (r *UpdateItemRequest) SetID(id string) error {
+	var err error
+	r.Id, err = uuid.Parse(id)
+	return err
+}

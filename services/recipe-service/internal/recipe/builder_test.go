@@ -81,7 +81,7 @@ func TestBuilder_Build(t *testing.T) {
 					SetTitle("").
 					SetSource("Add @salt{1%tsp}.")
 			},
-			wantErr: ErrTitleRequired,
+			wantErr:     ErrTitleRequired,
 			assertModel: func(t *testing.T, m Model) {},
 		},
 		{
@@ -91,7 +91,7 @@ func TestBuilder_Build(t *testing.T) {
 					SetTitle("A Recipe").
 					SetSource("")
 			},
-			wantErr: ErrSourceRequired,
+			wantErr:     ErrSourceRequired,
 			assertModel: func(t *testing.T, m Model) {},
 		},
 		{
@@ -100,7 +100,7 @@ func TestBuilder_Build(t *testing.T) {
 				return NewBuilder().
 					SetTitle("A Recipe")
 			},
-			wantErr: ErrSourceRequired,
+			wantErr:     ErrSourceRequired,
 			assertModel: func(t *testing.T, m Model) {},
 		},
 	}

@@ -12,19 +12,19 @@ var UserColors = []string{
 }
 
 type Model struct {
-	id                 uuid.UUID
-	tenantID           uuid.UUID
-	householdID        uuid.UUID
-	userID             uuid.UUID
-	provider           string
-	status             string
-	email              string
-	accessToken        string
-	refreshToken       string
-	tokenExpiry        time.Time
-	userDisplayName    string
-	userColor          string
-	writeAccess        bool
+	id                  uuid.UUID
+	tenantID            uuid.UUID
+	householdID         uuid.UUID
+	userID              uuid.UUID
+	provider            string
+	status              string
+	email               string
+	accessToken         string
+	refreshToken        string
+	tokenExpiry         time.Time
+	userDisplayName     string
+	userColor           string
+	writeAccess         bool
 	lastSyncAt          *time.Time
 	lastSyncAttemptAt   *time.Time
 	lastSyncEventCount  int
@@ -36,19 +36,19 @@ type Model struct {
 	updatedAt           time.Time
 }
 
-func (m Model) Id() uuid.UUID             { return m.id }
-func (m Model) TenantID() uuid.UUID       { return m.tenantID }
-func (m Model) HouseholdID() uuid.UUID    { return m.householdID }
-func (m Model) UserID() uuid.UUID         { return m.userID }
-func (m Model) Provider() string          { return m.provider }
-func (m Model) Status() string            { return m.status }
-func (m Model) Email() string             { return m.email }
-func (m Model) AccessToken() string       { return m.accessToken }
-func (m Model) RefreshToken() string      { return m.refreshToken }
-func (m Model) TokenExpiry() time.Time    { return m.tokenExpiry }
-func (m Model) UserDisplayName() string   { return m.userDisplayName }
-func (m Model) UserColor() string         { return m.userColor }
-func (m Model) WriteAccess() bool         { return m.writeAccess }
+func (m Model) Id() uuid.UUID                 { return m.id }
+func (m Model) TenantID() uuid.UUID           { return m.tenantID }
+func (m Model) HouseholdID() uuid.UUID        { return m.householdID }
+func (m Model) UserID() uuid.UUID             { return m.userID }
+func (m Model) Provider() string              { return m.provider }
+func (m Model) Status() string                { return m.status }
+func (m Model) Email() string                 { return m.email }
+func (m Model) AccessToken() string           { return m.accessToken }
+func (m Model) RefreshToken() string          { return m.refreshToken }
+func (m Model) TokenExpiry() time.Time        { return m.tokenExpiry }
+func (m Model) UserDisplayName() string       { return m.userDisplayName }
+func (m Model) UserColor() string             { return m.userColor }
+func (m Model) WriteAccess() bool             { return m.writeAccess }
 func (m Model) LastSyncAt() *time.Time        { return m.lastSyncAt }
 func (m Model) LastSyncAttemptAt() *time.Time { return m.lastSyncAttemptAt }
 func (m Model) LastSyncEventCount() int       { return m.lastSyncEventCount }

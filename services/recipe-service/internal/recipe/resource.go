@@ -10,12 +10,13 @@ import (
 	"github.com/google/uuid"
 	"github.com/gorilla/mux"
 	"github.com/jtumidanski/api2go/jsonapi"
+	"github.com/sirupsen/logrus"
+	"gorm.io/gorm"
+
 	"github.com/jtumidanski/home-hub/services/recipe-service/internal/normalization"
 	"github.com/jtumidanski/home-hub/services/recipe-service/internal/recipe/cooklang"
 	"github.com/jtumidanski/home-hub/shared/go/server"
 	tenantctx "github.com/jtumidanski/home-hub/shared/go/tenant"
-	"github.com/sirupsen/logrus"
-	"gorm.io/gorm"
 )
 
 func InitializeRoutes(db *gorm.DB) func(l logrus.FieldLogger, si jsonapi.ServerInformation, api *mux.Router) {

@@ -5,11 +5,12 @@ import (
 	"time"
 
 	"github.com/google/uuid"
+	"github.com/sirupsen/logrus"
+	"gorm.io/gorm"
+
 	"github.com/jtumidanski/home-hub/services/tracker-service/internal/entry"
 	"github.com/jtumidanski/home-hub/services/tracker-service/internal/schedule"
 	"github.com/jtumidanski/home-hub/services/tracker-service/internal/trackingitem"
-	"github.com/sirupsen/logrus"
-	"gorm.io/gorm"
 )
 
 // Result is the orchestrated payload for the "today" view: the user's tracking

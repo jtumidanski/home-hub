@@ -5,14 +5,15 @@ import (
 	"testing"
 
 	"github.com/google/uuid"
-	database "github.com/jtumidanski/home-hub/shared/go/database"
-	"github.com/jtumidanski/home-hub/services/shopping-service/internal/item"
-	tenantctx "github.com/jtumidanski/home-hub/shared/go/tenant"
 	"github.com/sirupsen/logrus/hooks/test"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"gorm.io/driver/sqlite"
 	"gorm.io/gorm"
+
+	"github.com/jtumidanski/home-hub/services/shopping-service/internal/item"
+	database "github.com/jtumidanski/home-hub/shared/go/database"
+	tenantctx "github.com/jtumidanski/home-hub/shared/go/tenant"
 )
 
 func setupTestDB(t *testing.T) *gorm.DB {

@@ -4,6 +4,7 @@ import (
 	"context"
 
 	"github.com/gorilla/mux"
+
 	"github.com/jtumidanski/home-hub/services/workout-service/internal/config"
 	"github.com/jtumidanski/home-hub/services/workout-service/internal/exercise"
 	"github.com/jtumidanski/home-hub/services/workout-service/internal/performance"

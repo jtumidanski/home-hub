@@ -13,12 +13,13 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/gorilla/mux"
+	"github.com/sirupsen/logrus"
+	"gorm.io/gorm"
+
 	"github.com/jtumidanski/home-hub/services/account-service/internal/householdpreference"
 	sharedevents "github.com/jtumidanski/home-hub/shared/go/events"
 	"github.com/jtumidanski/home-hub/shared/go/server"
 	sharedtenant "github.com/jtumidanski/home-hub/shared/go/tenant"
-	"github.com/sirupsen/logrus"
-	"gorm.io/gorm"
 )
 
 // Producer is the subset of kafka/producer.Producer this package depends on.

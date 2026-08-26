@@ -6,12 +6,13 @@ import (
 	"time"
 
 	"github.com/google/uuid"
+	"gorm.io/gorm"
+
 	"github.com/jtumidanski/home-hub/services/workout-service/internal/exercise"
 	"github.com/jtumidanski/home-hub/services/workout-service/internal/performance"
 	"github.com/jtumidanski/home-hub/services/workout-service/internal/region"
 	"github.com/jtumidanski/home-hub/services/workout-service/internal/theme"
 	sr "github.com/jtumidanski/home-hub/shared/go/retention"
-	"gorm.io/gorm"
 )
 
 func discoverUserScopes(db *gorm.DB) ([]sr.Scope, error) {

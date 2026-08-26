@@ -12,12 +12,13 @@ import (
 
 	"github.com/gorilla/mux"
 	"github.com/jtumidanski/api2go/jsonapi"
-	httpparams "github.com/jtumidanski/home-hub/shared/go/http"
-	"github.com/jtumidanski/home-hub/services/workout-service/internal/weekview"
-	"github.com/jtumidanski/home-hub/shared/go/server"
-	tenantctx "github.com/jtumidanski/home-hub/shared/go/tenant"
 	"github.com/sirupsen/logrus"
 	"gorm.io/gorm"
+
+	"github.com/jtumidanski/home-hub/services/workout-service/internal/weekview"
+	httpparams "github.com/jtumidanski/home-hub/shared/go/http"
+	"github.com/jtumidanski/home-hub/shared/go/server"
+	tenantctx "github.com/jtumidanski/home-hub/shared/go/tenant"
 )
 
 func InitializeRoutes(db *gorm.DB) func(l logrus.FieldLogger, si jsonapi.ServerInformation, api *mux.Router) {
@@ -38,9 +39,9 @@ type RestModel struct {
 	Items         []weekview.ItemRest `json:"items"`
 }
 
-func (r RestModel) GetName() string         { return "today" }
-func (r RestModel) GetID() string           { return r.Id }
-func (r *RestModel) SetID(id string) error  { r.Id = id; return nil }
+func (r RestModel) GetName() string        { return "today" }
+func (r RestModel) GetID() string          { return r.Id }
+func (r *RestModel) SetID(id string) error { r.Id = id; return nil }
 
 func transform(res Result) RestModel {
 	items := res.Items

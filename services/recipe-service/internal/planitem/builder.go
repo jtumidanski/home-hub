@@ -30,17 +30,18 @@ type Builder struct {
 
 func NewBuilder() *Builder { return &Builder{} }
 
-func (b *Builder) SetId(id uuid.UUID) *Builder                    { b.id = id; return b }
-func (b *Builder) SetPlanWeekID(id uuid.UUID) *Builder            { b.planWeekID = id; return b }
-func (b *Builder) SetDay(day time.Time) *Builder                  { b.day = day; return b }
-func (b *Builder) SetSlot(slot string) *Builder                   { b.slot = slot; return b }
-func (b *Builder) SetRecipeID(id uuid.UUID) *Builder              { b.recipeID = id; return b }
-func (b *Builder) SetServingMultiplier(v *float64) *Builder       { b.servingMultiplier = v; return b }
-func (b *Builder) SetPlannedServings(v *int) *Builder             { b.plannedServings = v; return b }
-func (b *Builder) SetNotes(n *string) *Builder                    { b.notes = n; return b }
-func (b *Builder) SetPosition(p int) *Builder                     { b.position = p; return b }
-func (b *Builder) SetCreatedAt(t time.Time) *Builder              { b.createdAt = t; return b }
-func (b *Builder) SetUpdatedAt(t time.Time) *Builder              { b.updatedAt = t; return b }
+func (b *Builder) SetId(id uuid.UUID) *Builder              { b.id = id; return b }
+func (b *Builder) SetPlanWeekID(id uuid.UUID) *Builder      { b.planWeekID = id; return b }
+func (b *Builder) SetDay(day time.Time) *Builder            { b.day = day; return b }
+func (b *Builder) SetSlot(slot string) *Builder             { b.slot = slot; return b }
+func (b *Builder) SetRecipeID(id uuid.UUID) *Builder        { b.recipeID = id; return b }
+func (b *Builder) SetServingMultiplier(v *float64) *Builder { b.servingMultiplier = v; return b }
+
+func (b *Builder) SetPlannedServings(v *int) *Builder { b.plannedServings = v; return b }
+func (b *Builder) SetNotes(n *string) *Builder        { b.notes = n; return b }
+func (b *Builder) SetPosition(p int) *Builder         { b.position = p; return b }
+func (b *Builder) SetCreatedAt(t time.Time) *Builder  { b.createdAt = t; return b }
+func (b *Builder) SetUpdatedAt(t time.Time) *Builder  { b.updatedAt = t; return b }
 
 func (b *Builder) Build() (Model, error) {
 	if b.day.IsZero() {

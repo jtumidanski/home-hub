@@ -6,10 +6,11 @@ import (
 	"time"
 
 	"github.com/google/uuid"
-	"github.com/jtumidanski/home-hub/services/calendar-service/internal/event"
-	sr "github.com/jtumidanski/home-hub/shared/go/retention"
 	"gorm.io/driver/sqlite"
 	"gorm.io/gorm"
+
+	"github.com/jtumidanski/home-hub/services/calendar-service/internal/event"
+	sr "github.com/jtumidanski/home-hub/shared/go/retention"
 )
 
 func newDB(t *testing.T) *gorm.DB {
@@ -73,8 +74,8 @@ func TestPastEventsDoesNotDeleteFutureEvents(t *testing.T) {
 			Id: uuid.New(), TenantId: tenantID, HouseholdId: householdID,
 			ConnectionId: uuid.New(), SourceId: uuid.New(), UserId: uuid.New(),
 			ExternalId: uuid.New().String(), Title: "Future",
-			StartTime: now.Add(time.Duration(i+1) * 24 * time.Hour),
-			EndTime:   now.Add(time.Duration(i+2) * 24 * time.Hour),
+			StartTime:  now.Add(time.Duration(i+1) * 24 * time.Hour),
+			EndTime:    now.Add(time.Duration(i+2) * 24 * time.Hour),
 			Visibility: "default", UserDisplayName: "User", UserColor: "#000000",
 			CreatedAt: now, UpdatedAt: now,
 		})

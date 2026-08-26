@@ -8,10 +8,10 @@ import (
 )
 
 var (
-	ErrReminderIDRequired       = errors.New("snooze reminderID is required")
-	ErrCreatedByRequired        = errors.New("snooze createdByUserID is required")
-	ErrDurationMinutesRequired  = errors.New("snooze durationMinutes must be positive")
-	ErrSnoozedUntilRequired     = errors.New("snooze snoozedUntil is required")
+	ErrReminderIDRequired      = errors.New("snooze reminderID is required")
+	ErrCreatedByRequired       = errors.New("snooze createdByUserID is required")
+	ErrDurationMinutesRequired = errors.New("snooze durationMinutes must be positive")
+	ErrSnoozedUntilRequired    = errors.New("snooze snoozedUntil is required")
 )
 
 type Builder struct {
@@ -30,13 +30,13 @@ func NewBuilder() *Builder {
 }
 
 func (b *Builder) SetId(id uuid.UUID) *Builder              { b.id = id; return b }
-func (b *Builder) SetTenantID(id uuid.UUID) *Builder         { b.tenantID = id; return b }
-func (b *Builder) SetHouseholdID(id uuid.UUID) *Builder      { b.householdID = id; return b }
-func (b *Builder) SetReminderID(id uuid.UUID) *Builder       { b.reminderID = id; return b }
-func (b *Builder) SetDurationMinutes(d int) *Builder         { b.durationMinutes = d; return b }
-func (b *Builder) SetSnoozedUntil(t time.Time) *Builder      { b.snoozedUntil = t; return b }
-func (b *Builder) SetCreatedByUserID(id uuid.UUID) *Builder  { b.createdByUserID = id; return b }
-func (b *Builder) SetCreatedAt(t time.Time) *Builder         { b.createdAt = t; return b }
+func (b *Builder) SetTenantID(id uuid.UUID) *Builder        { b.tenantID = id; return b }
+func (b *Builder) SetHouseholdID(id uuid.UUID) *Builder     { b.householdID = id; return b }
+func (b *Builder) SetReminderID(id uuid.UUID) *Builder      { b.reminderID = id; return b }
+func (b *Builder) SetDurationMinutes(d int) *Builder        { b.durationMinutes = d; return b }
+func (b *Builder) SetSnoozedUntil(t time.Time) *Builder     { b.snoozedUntil = t; return b }
+func (b *Builder) SetCreatedByUserID(id uuid.UUID) *Builder { b.createdByUserID = id; return b }
+func (b *Builder) SetCreatedAt(t time.Time) *Builder        { b.createdAt = t; return b }
 
 func (b *Builder) Build() (Model, error) {
 	if b.reminderID == uuid.Nil {

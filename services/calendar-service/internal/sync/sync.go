@@ -8,18 +8,19 @@ import (
 	"time"
 
 	"github.com/google/uuid"
+	"github.com/sirupsen/logrus"
+	"gorm.io/gorm"
+
 	"github.com/jtumidanski/home-hub/services/calendar-service/internal/connection"
 	"github.com/jtumidanski/home-hub/services/calendar-service/internal/crypto"
 	"github.com/jtumidanski/home-hub/services/calendar-service/internal/event"
 	"github.com/jtumidanski/home-hub/services/calendar-service/internal/googlecal"
 	"github.com/jtumidanski/home-hub/services/calendar-service/internal/oauthstate"
 	"github.com/jtumidanski/home-hub/services/calendar-service/internal/source"
-	"github.com/sirupsen/logrus"
-	"gorm.io/gorm"
 )
 
 const (
-	maxJitter     = 60 * time.Second
+	maxJitter        = 60 * time.Second
 	syncWindowPast   = 7 * 24 * time.Hour
 	syncWindowFuture = 30 * 24 * time.Hour
 )
@@ -269,15 +270,15 @@ func (e *Engine) syncSource(ctx context.Context, conn connection.Model, src sour
 			UserId:           conn.UserID(),
 			ExternalId:       ge.ID,
 			GoogleCalendarId: src.ExternalID(),
-			Title:           title,
-			Description:     ge.Description,
-			StartTime:       startTime,
-			EndTime:         endTime,
-			AllDay:          allDay,
-			Location:        ge.Location,
-			Visibility:      visibility,
-			UserDisplayName: conn.UserDisplayName(),
-			UserColor:       conn.UserColor(),
+			Title:            title,
+			Description:      ge.Description,
+			StartTime:        startTime,
+			EndTime:          endTime,
+			AllDay:           allDay,
+			Location:         ge.Location,
+			Visibility:       visibility,
+			UserDisplayName:  conn.UserDisplayName(),
+			UserColor:        conn.UserColor(),
 		}
 
 		if err := evtProc.Upsert(entity); err != nil {

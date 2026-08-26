@@ -26,12 +26,12 @@ func NewBuilder() *Builder {
 	return &Builder{}
 }
 
-func (b *Builder) SetId(id uuid.UUID) *Builder              { b.id = id; return b }
-func (b *Builder) SetUserId(id uuid.UUID) *Builder          { b.userId = id; return b }
-func (b *Builder) SetProvider(provider string) *Builder     { b.provider = provider; return b }
-func (b *Builder) SetProviderSubject(sub string) *Builder   { b.providerSubject = sub; return b }
-func (b *Builder) SetCreatedAt(t time.Time) *Builder        { b.createdAt = t; return b }
-func (b *Builder) SetUpdatedAt(t time.Time) *Builder        { b.updatedAt = t; return b }
+func (b *Builder) SetId(id uuid.UUID) *Builder            { b.id = id; return b }
+func (b *Builder) SetUserId(id uuid.UUID) *Builder        { b.userId = id; return b }
+func (b *Builder) SetProvider(provider string) *Builder   { b.provider = provider; return b }
+func (b *Builder) SetProviderSubject(sub string) *Builder { b.providerSubject = sub; return b }
+func (b *Builder) SetCreatedAt(t time.Time) *Builder      { b.createdAt = t; return b }
+func (b *Builder) SetUpdatedAt(t time.Time) *Builder      { b.updatedAt = t; return b }
 
 func (b *Builder) Build() (Model, error) {
 	if b.userId == uuid.Nil {

@@ -13,11 +13,12 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/gorilla/mux"
-	authjwt "github.com/jtumidanski/home-hub/services/auth-service/internal/jwt"
-	"github.com/jtumidanski/home-hub/shared/go/server"
 	"github.com/sirupsen/logrus/hooks/test"
 	"gorm.io/driver/sqlite"
 	"gorm.io/gorm"
+
+	authjwt "github.com/jtumidanski/home-hub/services/auth-service/internal/jwt"
+	"github.com/jtumidanski/home-hub/shared/go/server"
 )
 
 func setupResourceTestDB(t *testing.T) *gorm.DB {

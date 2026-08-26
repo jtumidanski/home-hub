@@ -8,11 +8,11 @@ import (
 )
 
 var (
-	ErrNameRequired             = errors.New("wish list item name is required")
-	ErrNameTooLong              = errors.New("wish list item name must not exceed 255 characters")
-	ErrPurchaseLocationTooLong  = errors.New("purchase location must not exceed 255 characters")
-	ErrInvalidUrgency           = errors.New("urgency must be one of must_have, need_to_have, want")
-	ErrVoteCountNegative        = errors.New("vote count cannot be negative")
+	ErrNameRequired            = errors.New("wish list item name is required")
+	ErrNameTooLong             = errors.New("wish list item name must not exceed 255 characters")
+	ErrPurchaseLocationTooLong = errors.New("purchase location must not exceed 255 characters")
+	ErrInvalidUrgency          = errors.New("urgency must be one of must_have, need_to_have, want")
+	ErrVoteCountNegative       = errors.New("vote count cannot be negative")
 )
 
 type Builder struct {
@@ -32,10 +32,10 @@ func NewBuilder() *Builder {
 	return &Builder{urgency: UrgencyWant}
 }
 
-func (b *Builder) SetId(id uuid.UUID) *Builder            { b.id = id; return b }
-func (b *Builder) SetTenantID(id uuid.UUID) *Builder       { b.tenantID = id; return b }
-func (b *Builder) SetHouseholdID(id uuid.UUID) *Builder    { b.householdID = id; return b }
-func (b *Builder) SetName(name string) *Builder            { b.name = name; return b }
+func (b *Builder) SetId(id uuid.UUID) *Builder          { b.id = id; return b }
+func (b *Builder) SetTenantID(id uuid.UUID) *Builder    { b.tenantID = id; return b }
+func (b *Builder) SetHouseholdID(id uuid.UUID) *Builder { b.householdID = id; return b }
+func (b *Builder) SetName(name string) *Builder         { b.name = name; return b }
 func (b *Builder) SetPurchaseLocation(loc *string) *Builder {
 	b.purchaseLocation = loc
 	return b

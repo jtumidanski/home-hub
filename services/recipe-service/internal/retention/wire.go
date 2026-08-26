@@ -5,9 +5,10 @@ import (
 	"time"
 
 	"github.com/gorilla/mux"
-	sr "github.com/jtumidanski/home-hub/shared/go/retention"
 	"github.com/sirupsen/logrus"
 	"gorm.io/gorm"
+
+	sr "github.com/jtumidanski/home-hub/shared/go/retention"
 )
 
 func Setup(ctx context.Context, l logrus.FieldLogger, db *gorm.DB, router *mux.Router, accountURL, internalToken string, interval time.Duration) (*sr.Reaper, error) {

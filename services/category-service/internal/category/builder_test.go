@@ -13,10 +13,10 @@ func TestBuilder_Build(t *testing.T) {
 	tenantID := uuid.New()
 
 	tests := []struct {
-		name      string
-		setup     func() *Builder
-		wantErr   error
-		validate  func(t *testing.T, m Model)
+		name     string
+		setup    func() *Builder
+		wantErr  error
+		validate func(t *testing.T, m Model)
 	}{
 		{
 			name:    "requires name",

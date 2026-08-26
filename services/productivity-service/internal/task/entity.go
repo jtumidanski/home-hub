@@ -8,20 +8,20 @@ import (
 )
 
 type Entity struct {
-	Id              uuid.UUID  `gorm:"type:uuid;primaryKey"`
-	TenantId        uuid.UUID  `gorm:"type:uuid;not null;index"`
-	HouseholdId     uuid.UUID  `gorm:"type:uuid;not null;index"`
-	Title           string     `gorm:"type:text;not null"`
-	Notes           string     `gorm:"type:text"`
-	Status          string     `gorm:"type:text;not null;default:pending"`
-	DueOn           *time.Time `gorm:"type:date"`
-	RolloverEnabled bool       `gorm:"not null;default:false"`
-	OwnerUserId     *uuid.UUID `gorm:"type:uuid"`
-	CompletedAt     *time.Time
+	Id                uuid.UUID  `gorm:"type:uuid;primaryKey"`
+	TenantId          uuid.UUID  `gorm:"type:uuid;not null;index"`
+	HouseholdId       uuid.UUID  `gorm:"type:uuid;not null;index"`
+	Title             string     `gorm:"type:text;not null"`
+	Notes             string     `gorm:"type:text"`
+	Status            string     `gorm:"type:text;not null;default:pending"`
+	DueOn             *time.Time `gorm:"type:date"`
+	RolloverEnabled   bool       `gorm:"not null;default:false"`
+	OwnerUserId       *uuid.UUID `gorm:"type:uuid"`
+	CompletedAt       *time.Time
 	CompletedByUserId *uuid.UUID `gorm:"type:uuid"`
-	DeletedAt       *time.Time `gorm:"index"`
-	CreatedAt       time.Time  `gorm:"not null"`
-	UpdatedAt       time.Time  `gorm:"not null"`
+	DeletedAt         *time.Time `gorm:"index"`
+	CreatedAt         time.Time  `gorm:"not null"`
+	UpdatedAt         time.Time  `gorm:"not null"`
 }
 
 func (Entity) TableName() string { return "tasks" }

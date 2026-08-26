@@ -7,9 +7,7 @@ import (
 	"github.com/google/uuid"
 )
 
-var (
-	ErrNameRequired = errors.New("tenant name is required")
-)
+var ErrNameRequired = errors.New("tenant name is required")
 
 type Builder struct {
 	id        uuid.UUID

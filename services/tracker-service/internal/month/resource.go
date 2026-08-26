@@ -6,11 +6,12 @@ import (
 
 	"github.com/gorilla/mux"
 	"github.com/jtumidanski/api2go/jsonapi"
+	"github.com/sirupsen/logrus"
+	"gorm.io/gorm"
+
 	httpparams "github.com/jtumidanski/home-hub/shared/go/http"
 	"github.com/jtumidanski/home-hub/shared/go/server"
 	tenantctx "github.com/jtumidanski/home-hub/shared/go/tenant"
-	"github.com/sirupsen/logrus"
-	"gorm.io/gorm"
 )
 
 func InitializeRoutes(db *gorm.DB) func(l logrus.FieldLogger, si jsonapi.ServerInformation, api *mux.Router) {
@@ -104,4 +105,3 @@ func monthReportHandler(db *gorm.DB) server.GetHandler {
 		}
 	}
 }
-

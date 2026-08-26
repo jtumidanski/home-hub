@@ -6,9 +6,10 @@ import (
 	"time"
 
 	"github.com/google/uuid"
+	"gorm.io/gorm"
+
 	"github.com/jtumidanski/home-hub/services/calendar-service/internal/event"
 	sr "github.com/jtumidanski/home-hub/shared/go/retention"
-	"gorm.io/gorm"
 )
 
 func discoverHouseholdScopes(db *gorm.DB) ([]sr.Scope, error) {

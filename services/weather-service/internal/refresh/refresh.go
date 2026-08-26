@@ -4,10 +4,11 @@ import (
 	"context"
 	"time"
 
-	"github.com/jtumidanski/home-hub/services/weather-service/internal/forecast"
-	"github.com/jtumidanski/home-hub/services/weather-service/internal/openmeteo"
 	"github.com/sirupsen/logrus"
 	"gorm.io/gorm"
+
+	"github.com/jtumidanski/home-hub/services/weather-service/internal/forecast"
+	"github.com/jtumidanski/home-hub/services/weather-service/internal/openmeteo"
 )
 
 func StartRefreshLoop(ctx context.Context, db *gorm.DB, client *openmeteo.Client, interval time.Duration, l logrus.FieldLogger) {

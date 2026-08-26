@@ -9,22 +9,22 @@ import (
 
 // Entity is the GORM mapping for `workout.performances`. 1:1 with planned_items.
 type Entity struct {
-	Id                     uuid.UUID `gorm:"type:uuid;primaryKey"`
-	TenantId               uuid.UUID `gorm:"type:uuid;not null"`
-	UserId                 uuid.UUID `gorm:"type:uuid;not null"`
-	PlannedItemId          uuid.UUID `gorm:"type:uuid;not null;uniqueIndex:idx_workout_performance_planned"`
-	Status                 string    `gorm:"type:varchar(16);not null;default:'pending'"`
-	Mode                   string    `gorm:"type:varchar(16);not null;default:'summary'"`
-	WeightUnit             *string   `gorm:"type:varchar(4)"`
-	ActualSets             *int      `gorm:""`
-	ActualReps             *int      `gorm:""`
-	ActualWeight           *float64  `gorm:"type:numeric(7,2)"`
-	ActualDurationSeconds  *int      `gorm:""`
-	ActualDistance         *float64  `gorm:"type:numeric(8,3)"`
-	ActualDistanceUnit     *string   `gorm:"type:varchar(4)"`
-	Notes                  *string   `gorm:"type:varchar(500)"`
-	CreatedAt              time.Time `gorm:"not null"`
-	UpdatedAt              time.Time `gorm:"not null"`
+	Id                    uuid.UUID `gorm:"type:uuid;primaryKey"`
+	TenantId              uuid.UUID `gorm:"type:uuid;not null"`
+	UserId                uuid.UUID `gorm:"type:uuid;not null"`
+	PlannedItemId         uuid.UUID `gorm:"type:uuid;not null;uniqueIndex:idx_workout_performance_planned"`
+	Status                string    `gorm:"type:varchar(16);not null;default:'pending'"`
+	Mode                  string    `gorm:"type:varchar(16);not null;default:'summary'"`
+	WeightUnit            *string   `gorm:"type:varchar(4)"`
+	ActualSets            *int      `gorm:""`
+	ActualReps            *int      `gorm:""`
+	ActualWeight          *float64  `gorm:"type:numeric(7,2)"`
+	ActualDurationSeconds *int      `gorm:""`
+	ActualDistance        *float64  `gorm:"type:numeric(8,3)"`
+	ActualDistanceUnit    *string   `gorm:"type:varchar(4)"`
+	Notes                 *string   `gorm:"type:varchar(500)"`
+	CreatedAt             time.Time `gorm:"not null"`
+	UpdatedAt             time.Time `gorm:"not null"`
 }
 
 func (Entity) TableName() string { return "performances" }

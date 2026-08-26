@@ -8,9 +8,10 @@ import (
 	"github.com/google/uuid"
 	"github.com/gorilla/mux"
 	"github.com/jtumidanski/api2go/jsonapi"
-	"github.com/jtumidanski/home-hub/shared/go/server"
 	"github.com/sirupsen/logrus"
 	"gorm.io/gorm"
+
+	"github.com/jtumidanski/home-hub/shared/go/server"
 )
 
 // PlanProvider allows the plan item handlers to look up a plan without importing the plan package.
@@ -205,4 +206,3 @@ func RemoveItemHandler(db *gorm.DB, pp PlanProvider) server.GetHandler {
 		})
 	}
 }
-

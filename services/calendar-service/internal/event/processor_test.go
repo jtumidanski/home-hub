@@ -6,10 +6,11 @@ import (
 	"time"
 
 	"github.com/google/uuid"
-	"github.com/jtumidanski/home-hub/shared/go/database"
 	"github.com/sirupsen/logrus/hooks/test"
 	"gorm.io/driver/sqlite"
 	"gorm.io/gorm"
+
+	"github.com/jtumidanski/home-hub/shared/go/database"
 )
 
 func setupTestDB(t *testing.T) *gorm.DB {
@@ -40,25 +41,25 @@ func seedEvent(t *testing.T, db *gorm.DB, mut func(*Entity)) Entity {
 	t.Helper()
 	now := time.Now().UTC()
 	e := Entity{
-		Id:              uuid.New(),
-		TenantId:        uuid.New(),
-		HouseholdId:     uuid.New(),
-		ConnectionId:    uuid.New(),
-		SourceId:        uuid.New(),
-		UserId:          uuid.New(),
-		ExternalId:      uuid.New().String(),
+		Id:               uuid.New(),
+		TenantId:         uuid.New(),
+		HouseholdId:      uuid.New(),
+		ConnectionId:     uuid.New(),
+		SourceId:         uuid.New(),
+		UserId:           uuid.New(),
+		ExternalId:       uuid.New().String(),
 		GoogleCalendarId: "primary",
-		Title:           "Test Event",
-		Description:     "A test event",
-		StartTime:       now.Add(time.Hour),
-		EndTime:         now.Add(2 * time.Hour),
-		AllDay:          false,
-		Location:        "Office",
-		Visibility:      "default",
-		UserDisplayName: "Test User",
-		UserColor:       "#4285F4",
-		CreatedAt:       now,
-		UpdatedAt:       now,
+		Title:            "Test Event",
+		Description:      "A test event",
+		StartTime:        now.Add(time.Hour),
+		EndTime:          now.Add(2 * time.Hour),
+		AllDay:           false,
+		Location:         "Office",
+		Visibility:       "default",
+		UserDisplayName:  "Test User",
+		UserColor:        "#4285F4",
+		CreatedAt:        now,
+		UpdatedAt:        now,
 	}
 	if mut != nil {
 		mut(&e)
@@ -85,19 +86,19 @@ func TestUpsert_CreatesNewEvent(t *testing.T) {
 	now := time.Now().UTC()
 	sourceID := uuid.New()
 	e := Entity{
-		TenantId:        uuid.New(),
-		HouseholdId:     uuid.New(),
-		ConnectionId:    uuid.New(),
-		SourceId:        sourceID,
-		UserId:          uuid.New(),
-		ExternalId:      "ext-001",
+		TenantId:         uuid.New(),
+		HouseholdId:      uuid.New(),
+		ConnectionId:     uuid.New(),
+		SourceId:         sourceID,
+		UserId:           uuid.New(),
+		ExternalId:       "ext-001",
 		GoogleCalendarId: "primary",
-		Title:           "New Event",
-		StartTime:       now.Add(time.Hour),
-		EndTime:         now.Add(2 * time.Hour),
-		Visibility:      "default",
-		UserDisplayName: "User",
-		UserColor:       "#FF0000",
+		Title:            "New Event",
+		StartTime:        now.Add(time.Hour),
+		EndTime:          now.Add(2 * time.Hour),
+		Visibility:       "default",
+		UserDisplayName:  "User",
+		UserColor:        "#FF0000",
 	}
 
 	if err := p.Upsert(e); err != nil {
@@ -119,19 +120,19 @@ func TestUpsert_UpdatesExistingEvent(t *testing.T) {
 	e := seedEvent(t, db, nil)
 
 	updated := Entity{
-		TenantId:        e.TenantId,
-		HouseholdId:     e.HouseholdId,
-		ConnectionId:    e.ConnectionId,
-		SourceId:        e.SourceId,
-		UserId:          e.UserId,
-		ExternalId:      e.ExternalId,
+		TenantId:         e.TenantId,
+		HouseholdId:      e.HouseholdId,
+		ConnectionId:     e.ConnectionId,
+		SourceId:         e.SourceId,
+		UserId:           e.UserId,
+		ExternalId:       e.ExternalId,
 		GoogleCalendarId: e.GoogleCalendarId,
-		Title:           "Updated Title",
-		StartTime:       e.StartTime,
-		EndTime:         e.EndTime,
-		Visibility:      "default",
-		UserDisplayName: e.UserDisplayName,
-		UserColor:       e.UserColor,
+		Title:            "Updated Title",
+		StartTime:        e.StartTime,
+		EndTime:          e.EndTime,
+		Visibility:       "default",
+		UserDisplayName:  e.UserDisplayName,
+		UserColor:        e.UserColor,
 	}
 
 	if err := p.Upsert(updated); err != nil {

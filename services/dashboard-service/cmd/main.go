@@ -4,6 +4,7 @@ import (
 	"context"
 
 	"github.com/gorilla/mux"
+
 	"github.com/jtumidanski/home-hub/services/dashboard-service/internal/config"
 	"github.com/jtumidanski/home-hub/services/dashboard-service/internal/dashboard"
 	"github.com/jtumidanski/home-hub/services/dashboard-service/internal/events"

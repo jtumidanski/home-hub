@@ -66,7 +66,7 @@ func TestBuilder_Build(t *testing.T) {
 				return NewBuilder().
 					SetTitle("")
 			},
-			wantErr: ErrTitleRequired,
+			wantErr:     ErrTitleRequired,
 			assertModel: func(t *testing.T, m Model) {},
 		},
 		{

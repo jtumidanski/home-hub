@@ -30,17 +30,17 @@ type Model struct {
 	updatedAt         time.Time
 }
 
-func (m Model) Id() uuid.UUID              { return m.id }
-func (m Model) PlanWeekID() uuid.UUID      { return m.planWeekID }
-func (m Model) Day() time.Time             { return m.day }
-func (m Model) Slot() string               { return m.slot }
-func (m Model) RecipeID() uuid.UUID        { return m.recipeID }
+func (m Model) Id() uuid.UUID               { return m.id }
+func (m Model) PlanWeekID() uuid.UUID       { return m.planWeekID }
+func (m Model) Day() time.Time              { return m.day }
+func (m Model) Slot() string                { return m.slot }
+func (m Model) RecipeID() uuid.UUID         { return m.recipeID }
 func (m Model) ServingMultiplier() *float64 { return m.servingMultiplier }
-func (m Model) PlannedServings() *int      { return m.plannedServings }
-func (m Model) Notes() *string             { return m.notes }
-func (m Model) Position() int              { return m.position }
-func (m Model) CreatedAt() time.Time       { return m.createdAt }
-func (m Model) UpdatedAt() time.Time       { return m.updatedAt }
+func (m Model) PlannedServings() *int       { return m.plannedServings }
+func (m Model) Notes() *string              { return m.notes }
+func (m Model) Position() int               { return m.position }
+func (m Model) CreatedAt() time.Time        { return m.createdAt }
+func (m Model) UpdatedAt() time.Time        { return m.updatedAt }
 
 func IsValidSlot(slot string) bool {
 	for _, s := range ValidSlots {

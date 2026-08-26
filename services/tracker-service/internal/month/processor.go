@@ -8,11 +8,12 @@ import (
 	"time"
 
 	"github.com/google/uuid"
+	"github.com/sirupsen/logrus"
+	"gorm.io/gorm"
+
 	"github.com/jtumidanski/home-hub/services/tracker-service/internal/entry"
 	"github.com/jtumidanski/home-hub/services/tracker-service/internal/schedule"
 	"github.com/jtumidanski/home-hub/services/tracker-service/internal/trackingitem"
-	"github.com/sirupsen/logrus"
-	"gorm.io/gorm"
 )
 
 var (
@@ -307,7 +308,9 @@ func computeSentimentStats(expectedDays, filledDays, skippedDays int, entries []
 		if e.Skipped() || len(e.Value()) == 0 {
 			continue
 		}
-		var sv struct{ Rating string `json:"rating"` }
+		var sv struct {
+			Rating string `json:"rating"`
+		}
 		if err := json.Unmarshal(e.Value(), &sv); err != nil {
 			continue
 		}
@@ -343,7 +346,9 @@ func computeNumericStats(expectedDays, filledDays, skippedDays int, entries []en
 		if e.Skipped() || len(e.Value()) == 0 {
 			continue
 		}
-		var nv struct{ Count int `json:"count"` }
+		var nv struct {
+			Count int `json:"count"`
+		}
 		if err := json.Unmarshal(e.Value(), &nv); err != nil {
 			continue
 		}
@@ -385,7 +390,9 @@ func computeRangeStats(expectedDays, filledDays, skippedDays int, entries []entr
 		if e.Skipped() || len(e.Value()) == 0 {
 			continue
 		}
-		var rv struct{ Value int `json:"value"` }
+		var rv struct {
+			Value int `json:"value"`
+		}
 		if err := json.Unmarshal(e.Value(), &rv); err != nil {
 			continue
 		}

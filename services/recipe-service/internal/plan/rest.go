@@ -17,7 +17,7 @@ type RestListModel struct {
 	UpdatedAt time.Time `json:"updated_at"`
 }
 
-func (r RestListModel) GetName() string       { return "plans" }
+func (r RestListModel) GetName() string        { return "plans" }
 func (r RestListModel) GetID() string          { return r.Id.String() }
 func (r *RestListModel) SetID(id string) error { var err error; r.Id, err = uuid.Parse(id); return err }
 
@@ -49,9 +49,13 @@ type RestDetailModel struct {
 	UpdatedAt time.Time       `json:"updated_at"`
 }
 
-func (r RestDetailModel) GetName() string       { return "plans" }
-func (r RestDetailModel) GetID() string          { return r.Id.String() }
-func (r *RestDetailModel) SetID(id string) error { var err error; r.Id, err = uuid.Parse(id); return err }
+func (r RestDetailModel) GetName() string { return "plans" }
+func (r RestDetailModel) GetID() string   { return r.Id.String() }
+func (r *RestDetailModel) SetID(id string) error {
+	var err error
+	r.Id, err = uuid.Parse(id)
+	return err
+}
 
 func Transform(m Model, itemCount int64) RestListModel {
 	return RestListModel{
@@ -96,8 +100,8 @@ type CreateRequest struct {
 	Name     string    `json:"name,omitempty"`
 }
 
-func (r CreateRequest) GetName() string       { return "plans" }
-func (r CreateRequest) GetID() string          { return r.Id.String() }
+func (r CreateRequest) GetName() string { return "plans" }
+func (r CreateRequest) GetID() string   { return r.Id.String() }
 func (r *CreateRequest) SetID(id string) error {
 	if id == "" {
 		return nil
@@ -113,7 +117,7 @@ type UpdateRequest struct {
 	Name string    `json:"name"`
 }
 
-func (r UpdateRequest) GetName() string       { return "plans" }
+func (r UpdateRequest) GetName() string        { return "plans" }
 func (r UpdateRequest) GetID() string          { return r.Id.String() }
 func (r *UpdateRequest) SetID(id string) error { var err error; r.Id, err = uuid.Parse(id); return err }
 
@@ -123,8 +127,8 @@ type DuplicateRequest struct {
 	StartsOn string    `json:"starts_on"`
 }
 
-func (r DuplicateRequest) GetName() string       { return "plans" }
-func (r DuplicateRequest) GetID() string          { return r.Id.String() }
+func (r DuplicateRequest) GetName() string { return "plans" }
+func (r DuplicateRequest) GetID() string   { return r.Id.String() }
 func (r *DuplicateRequest) SetID(id string) error {
 	if id == "" {
 		return nil

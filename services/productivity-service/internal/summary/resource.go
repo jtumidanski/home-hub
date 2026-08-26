@@ -5,10 +5,11 @@ import (
 
 	"github.com/gorilla/mux"
 	"github.com/jtumidanski/api2go/jsonapi"
-	httpparams "github.com/jtumidanski/home-hub/shared/go/http"
-	"github.com/jtumidanski/home-hub/shared/go/server"
 	"github.com/sirupsen/logrus"
 	"gorm.io/gorm"
+
+	httpparams "github.com/jtumidanski/home-hub/shared/go/http"
+	"github.com/jtumidanski/home-hub/shared/go/server"
 )
 
 func InitializeRoutes(db *gorm.DB) func(l logrus.FieldLogger, si jsonapi.ServerInformation, api *mux.Router) {

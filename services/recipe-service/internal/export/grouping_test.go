@@ -6,11 +6,12 @@ import (
 	"testing"
 
 	"github.com/google/uuid"
-	"github.com/jtumidanski/home-hub/services/recipe-service/internal/categoryclient"
 	"github.com/sirupsen/logrus"
 	"github.com/sirupsen/logrus/hooks/test"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+
+	"github.com/jtumidanski/home-hub/services/recipe-service/internal/categoryclient"
 )
 
 // flatten extracts the names from a slice of CategoryGroup in render order so

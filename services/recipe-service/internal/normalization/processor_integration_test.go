@@ -5,11 +5,12 @@ import (
 	"testing"
 
 	"github.com/google/uuid"
-	"github.com/jtumidanski/home-hub/services/recipe-service/internal/ingredient"
-	database "github.com/jtumidanski/home-hub/shared/go/database"
 	"github.com/sirupsen/logrus/hooks/test"
 	"gorm.io/driver/sqlite"
 	"gorm.io/gorm"
+
+	"github.com/jtumidanski/home-hub/services/recipe-service/internal/ingredient"
+	database "github.com/jtumidanski/home-hub/shared/go/database"
 )
 
 func setupTestDB(t *testing.T) *gorm.DB {

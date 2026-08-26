@@ -13,6 +13,12 @@ import (
 	"time"
 
 	"github.com/google/uuid"
+	"github.com/sirupsen/logrus/hooks/test"
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
+	"gorm.io/driver/sqlite"
+	"gorm.io/gorm"
+
 	"github.com/jtumidanski/home-hub/services/workout-service/internal/exercise"
 	"github.com/jtumidanski/home-hub/services/workout-service/internal/performance"
 	"github.com/jtumidanski/home-hub/services/workout-service/internal/planneditem"
@@ -21,11 +27,6 @@ import (
 	"github.com/jtumidanski/home-hub/services/workout-service/internal/week"
 	"github.com/jtumidanski/home-hub/shared/go/database"
 	"github.com/jtumidanski/home-hub/shared/go/tenant"
-	"github.com/sirupsen/logrus/hooks/test"
-	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/require"
-	"gorm.io/driver/sqlite"
-	"gorm.io/gorm"
 )
 
 // setupTestDB stands up an in-memory SQLite with the auto-tenant-filter
@@ -67,11 +68,11 @@ func seedFullStack(t *testing.T, db *gorm.DB, tenantID, userID uuid.UUID) seedID
 	t.Helper()
 	now := time.Now().UTC()
 	ids := seedIDs{
-		themeID:        uuid.New(),
-		regionID:       uuid.New(),
-		exerciseID:     uuid.New(),
-		weekID:         uuid.New(),
-		plannedItemID:  uuid.New(),
+		themeID:       uuid.New(),
+		regionID:      uuid.New(),
+		exerciseID:    uuid.New(),
+		weekID:        uuid.New(),
+		plannedItemID: uuid.New(),
 		performanceID: uuid.New(),
 	}
 	require.NoError(t, db.Create(&theme.Entity{

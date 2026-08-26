@@ -10,16 +10,19 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/gorilla/mux"
-	"github.com/jtumidanski/home-hub/services/account-service/internal/householdpreference"
-	"github.com/jtumidanski/home-hub/shared/go/database"
-	sharedevents "github.com/jtumidanski/home-hub/shared/go/events"
 	"github.com/sirupsen/logrus/hooks/test"
 	"gorm.io/driver/sqlite"
 	"gorm.io/gorm"
+
+	"github.com/jtumidanski/home-hub/services/account-service/internal/householdpreference"
+	"github.com/jtumidanski/home-hub/shared/go/database"
+	sharedevents "github.com/jtumidanski/home-hub/shared/go/events"
 )
 
-const testToken = "test-internal-token"
-const testTopic = "home-hub.user.lifecycle"
+const (
+	testToken = "test-internal-token"
+	testTopic = "home-hub.user.lifecycle"
+)
 
 type stubProducer struct {
 	mu    sync.Mutex

@@ -6,12 +6,13 @@ import (
 	"time"
 
 	"github.com/google/uuid"
+	"gorm.io/driver/sqlite"
+	"gorm.io/gorm"
+
 	"github.com/jtumidanski/home-hub/services/recipe-service/internal/normalization"
 	"github.com/jtumidanski/home-hub/services/recipe-service/internal/planitem"
 	"github.com/jtumidanski/home-hub/services/recipe-service/internal/recipe"
 	sr "github.com/jtumidanski/home-hub/shared/go/retention"
-	"gorm.io/driver/sqlite"
-	"gorm.io/gorm"
 )
 
 func newDB(t *testing.T) *gorm.DB {
@@ -52,9 +53,9 @@ func TestDeletedRecipesRestoreWindowBoundary(t *testing.T) {
 		return id
 	}
 
-	oldID := mkRecipe(&past)   // past 30-day window — should be reaped
-	mkRecipe(&recent)          // inside window — should survive
-	mkRecipe(nil)              // not deleted — should survive
+	oldID := mkRecipe(&past) // past 30-day window — should be reaped
+	mkRecipe(&recent)        // inside window — should survive
+	mkRecipe(nil)            // not deleted — should survive
 
 	// Cascade targets for the old recipe.
 	db.Create(&recipe.TagEntity{Id: uuid.New(), RecipeId: oldID, Tag: "dinner"})
@@ -62,7 +63,7 @@ func TestDeletedRecipesRestoreWindowBoundary(t *testing.T) {
 		Id: uuid.New(), TenantId: tenantID, HouseholdId: householdID,
 		RecipeId: oldID, RawName: "flour", Position: 1,
 		NormalizationStatus: "unresolved",
-		CreatedAt: now, UpdatedAt: now,
+		CreatedAt:           now, UpdatedAt: now,
 	})
 	db.Create(&recipe.RestorationEntity{Id: uuid.New(), RecipeId: oldID, RestoredAt: now})
 	db.Create(&planitem.Entity{

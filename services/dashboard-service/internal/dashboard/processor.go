@@ -9,10 +9,11 @@ import (
 	"strings"
 
 	"github.com/google/uuid"
-	"github.com/jtumidanski/home-hub/services/dashboard-service/internal/layout"
 	"github.com/sirupsen/logrus"
 	"gorm.io/datatypes"
 	"gorm.io/gorm"
+
+	"github.com/jtumidanski/home-hub/services/dashboard-service/internal/layout"
 )
 
 // Processor orchestrates dashboard CRUD with scope/visibility rules.

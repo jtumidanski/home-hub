@@ -19,8 +19,8 @@ type RestModel struct {
 	UpdatedAt         time.Time `json:"updatedAt"`
 }
 
-func (r RestModel) GetName() string   { return "users" }
-func (r RestModel) GetID() string     { return r.Id.String() }
+func (r RestModel) GetName() string { return "users" }
+func (r RestModel) GetID() string   { return r.Id.String() }
 func (r *RestModel) SetID(id string) error {
 	parsed, err := uuid.Parse(id)
 	if err != nil {

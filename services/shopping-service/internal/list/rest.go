@@ -4,6 +4,7 @@ import (
 	"time"
 
 	"github.com/google/uuid"
+
 	"github.com/jtumidanski/home-hub/services/shopping-service/internal/item"
 )
 
@@ -20,7 +21,7 @@ type RestModel struct {
 	UpdatedAt     time.Time              `json:"updated_at"`
 }
 
-func (r RestModel) GetName() string       { return "shopping-lists" }
+func (r RestModel) GetName() string        { return "shopping-lists" }
 func (r RestModel) GetID() string          { return r.Id.String() }
 func (r *RestModel) SetID(id string) error { var err error; r.Id, err = uuid.Parse(id); return err }
 
@@ -29,8 +30,8 @@ type CreateRequest struct {
 	Name string    `json:"name"`
 }
 
-func (r CreateRequest) GetName() string       { return "shopping-lists" }
-func (r CreateRequest) GetID() string          { return r.Id.String() }
+func (r CreateRequest) GetName() string { return "shopping-lists" }
+func (r CreateRequest) GetID() string   { return r.Id.String() }
 func (r *CreateRequest) SetID(id string) error {
 	if id == "" {
 		return nil
@@ -45,7 +46,7 @@ type UpdateRequest struct {
 	Name string    `json:"name"`
 }
 
-func (r UpdateRequest) GetName() string       { return "shopping-lists" }
+func (r UpdateRequest) GetName() string        { return "shopping-lists" }
 func (r UpdateRequest) GetID() string          { return r.Id.String() }
 func (r *UpdateRequest) SetID(id string) error { var err error; r.Id, err = uuid.Parse(id); return err }
 
@@ -54,8 +55,8 @@ type ImportRequest struct {
 	PlanId uuid.UUID `json:"plan_id"`
 }
 
-func (r ImportRequest) GetName() string       { return "shopping-list-imports" }
-func (r ImportRequest) GetID() string          { return r.Id.String() }
+func (r ImportRequest) GetName() string { return "shopping-list-imports" }
+func (r ImportRequest) GetID() string   { return r.Id.String() }
 func (r *ImportRequest) SetID(id string) error {
 	if id == "" {
 		return nil

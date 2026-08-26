@@ -3,8 +3,9 @@ package geocoding
 import (
 	"context"
 
-	"github.com/jtumidanski/home-hub/services/weather-service/internal/openmeteo"
 	"github.com/sirupsen/logrus"
+
+	"github.com/jtumidanski/home-hub/services/weather-service/internal/openmeteo"
 )
 
 type Processor struct {

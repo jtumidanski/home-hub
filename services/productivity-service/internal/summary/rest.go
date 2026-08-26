@@ -13,7 +13,7 @@ type TaskSummary struct {
 	OverdueCount        int64     `json:"overdueCount"`
 }
 
-func (r TaskSummary) GetName() string      { return "task-summaries" }
+func (r TaskSummary) GetName() string       { return "task-summaries" }
 func (r TaskSummary) GetID() string         { return "current" }
 func (r *TaskSummary) SetID(_ string) error { return nil }
 
@@ -24,7 +24,7 @@ type ReminderSummary struct {
 	SnoozedCount  int64     `json:"snoozedCount"`
 }
 
-func (r ReminderSummary) GetName() string      { return "reminder-summaries" }
+func (r ReminderSummary) GetName() string       { return "reminder-summaries" }
 func (r ReminderSummary) GetID() string         { return "current" }
 func (r *ReminderSummary) SetID(_ string) error { return nil }
 
@@ -35,6 +35,6 @@ type DashboardSummary struct {
 	GeneratedAt      time.Time `json:"generatedAt"`
 }
 
-func (r DashboardSummary) GetName() string      { return "dashboard-summaries" }
+func (r DashboardSummary) GetName() string       { return "dashboard-summaries" }
 func (r DashboardSummary) GetID() string         { return "current" }
 func (r *DashboardSummary) SetID(_ string) error { return nil }

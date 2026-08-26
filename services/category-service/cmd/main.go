@@ -4,6 +4,7 @@ import (
 	"context"
 
 	"github.com/gorilla/mux"
+
 	"github.com/jtumidanski/home-hub/services/category-service/internal/category"
 	"github.com/jtumidanski/home-hub/services/category-service/internal/config"
 	sharedauth "github.com/jtumidanski/home-hub/shared/go/auth"

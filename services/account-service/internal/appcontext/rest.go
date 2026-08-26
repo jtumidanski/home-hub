@@ -1,11 +1,12 @@
 package appcontext
 
 import (
+	"github.com/jtumidanski/api2go/jsonapi"
+
 	"github.com/jtumidanski/home-hub/services/account-service/internal/household"
 	"github.com/jtumidanski/home-hub/services/account-service/internal/membership"
 	"github.com/jtumidanski/home-hub/services/account-service/internal/preference"
 	"github.com/jtumidanski/home-hub/services/account-service/internal/tenant"
-	"github.com/jtumidanski/api2go/jsonapi"
 )
 
 // RestModel represents the /contexts/current resource in JSON:API format.

@@ -46,16 +46,16 @@ func BuilderFromModel(m Model) *Builder {
 	}
 }
 
-func (b *Builder) SetId(id uuid.UUID) *Builder             { b.id = id; return b }
-func (b *Builder) SetTenantID(id uuid.UUID) *Builder       { b.tenantID = id; return b }
-func (b *Builder) SetHouseholdID(id uuid.UUID) *Builder    { b.householdID = id; return b }
-func (b *Builder) SetUserID(id *uuid.UUID) *Builder        { b.userID = id; return b }
-func (b *Builder) SetName(n string) *Builder               { b.name = n; return b }
-func (b *Builder) SetSortOrder(s int) *Builder             { b.sortOrder = s; return b }
-func (b *Builder) SetLayout(l datatypes.JSON) *Builder     { b.layout = l; return b }
-func (b *Builder) SetSchemaVersion(v int) *Builder         { b.schemaVersion = v; return b }
-func (b *Builder) SetCreatedAt(t time.Time) *Builder       { b.createdAt = t; return b }
-func (b *Builder) SetUpdatedAt(t time.Time) *Builder       { b.updatedAt = t; return b }
+func (b *Builder) SetId(id uuid.UUID) *Builder          { b.id = id; return b }
+func (b *Builder) SetTenantID(id uuid.UUID) *Builder    { b.tenantID = id; return b }
+func (b *Builder) SetHouseholdID(id uuid.UUID) *Builder { b.householdID = id; return b }
+func (b *Builder) SetUserID(id *uuid.UUID) *Builder     { b.userID = id; return b }
+func (b *Builder) SetName(n string) *Builder            { b.name = n; return b }
+func (b *Builder) SetSortOrder(s int) *Builder          { b.sortOrder = s; return b }
+func (b *Builder) SetLayout(l datatypes.JSON) *Builder  { b.layout = l; return b }
+func (b *Builder) SetSchemaVersion(v int) *Builder      { b.schemaVersion = v; return b }
+func (b *Builder) SetCreatedAt(t time.Time) *Builder    { b.createdAt = t; return b }
+func (b *Builder) SetUpdatedAt(t time.Time) *Builder    { b.updatedAt = t; return b }
 
 func (b *Builder) Build() (Model, error) {
 	if b.tenantID == uuid.Nil {

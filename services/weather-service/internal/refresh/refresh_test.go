@@ -10,13 +10,14 @@ import (
 	"time"
 
 	"github.com/google/uuid"
-	"github.com/jtumidanski/home-hub/services/weather-service/internal/forecast"
-	"github.com/jtumidanski/home-hub/services/weather-service/internal/openmeteo"
-	"github.com/jtumidanski/home-hub/shared/go/database"
 	"github.com/sirupsen/logrus"
 	"github.com/sirupsen/logrus/hooks/test"
 	"gorm.io/driver/sqlite"
 	"gorm.io/gorm"
+
+	"github.com/jtumidanski/home-hub/services/weather-service/internal/forecast"
+	"github.com/jtumidanski/home-hub/services/weather-service/internal/openmeteo"
+	"github.com/jtumidanski/home-hub/shared/go/database"
 )
 
 func setupRefreshTestDB(t *testing.T) *gorm.DB {

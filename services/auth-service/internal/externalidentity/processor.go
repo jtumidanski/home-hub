@@ -4,9 +4,10 @@ import (
 	"context"
 
 	"github.com/google/uuid"
-	"github.com/jtumidanski/home-hub/shared/go/model"
 	"github.com/sirupsen/logrus"
 	"gorm.io/gorm"
+
+	"github.com/jtumidanski/home-hub/shared/go/model"
 )
 
 type Processor struct {

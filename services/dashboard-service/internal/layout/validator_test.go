@@ -7,6 +7,7 @@ import (
 	"testing"
 
 	"github.com/google/uuid"
+
 	shared "github.com/jtumidanski/home-hub/shared/go/dashboard"
 )
 
@@ -158,8 +159,10 @@ func TestValidateRejectsDeepConfig(t *testing.T) {
 func TestValidateRejectsOversizedPayload(t *testing.T) {
 	big := strings.Repeat("x", shared.MaxLayoutBytes+10)
 	raw := mustJSON(map[string]any{"version": 1, "widgets": []any{
-		map[string]any{"id": uuid.New().String(), "type": "weather", "x": 0, "y": 0, "w": 1, "h": 1,
-			"config": map[string]any{"location": map[string]any{"label": big}}},
+		map[string]any{
+			"id": uuid.New().String(), "type": "weather", "x": 0, "y": 0, "w": 1, "h": 1,
+			"config": map[string]any{"location": map[string]any{"label": big}},
+		},
 	}})
 	_, err := Validate(raw)
 	ve, _ := err.(ValidationError)
