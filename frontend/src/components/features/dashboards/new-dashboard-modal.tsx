@@ -2,7 +2,6 @@ import { useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useNavigate } from "react-router-dom";
-import { z } from "zod";
 import {
   Dialog,
   DialogContent,
@@ -27,16 +26,8 @@ import {
 } from "@/lib/hooks/api/use-dashboards";
 import type { Layout, WidgetInstance } from "@/lib/dashboard/schema";
 import type { Dashboard } from "@/types/models/dashboard";
-
-export const dashboardNameSchema = z.string().trim().min(1, "Name is required").max(80, "Max 80 characters");
-
-export const newDashboardFormSchema = z.object({
-  name: dashboardNameSchema,
-  scope: z.enum(["household", "user"]),
-  copyOf: z.string().optional(),
-});
-
-export type NewDashboardFormData = z.infer<typeof newDashboardFormSchema>;
+import { newDashboardFormSchema } from "./new-dashboard-modal.schema";
+import type { NewDashboardFormData } from "./new-dashboard-modal.schema";
 
 const NONE_VALUE = "__none__";
 

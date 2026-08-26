@@ -26,7 +26,7 @@ import {
   useHouseholdPreferences,
   useUpdateHouseholdPreferences,
 } from "@/lib/hooks/api/use-household-preferences";
-import { dashboardNameSchema } from "./new-dashboard-modal";
+import { dashboardNameSchema } from "./new-dashboard-modal.schema";
 import type { Dashboard } from "@/types/models/dashboard";
 
 const renameSchema = z.object({ name: dashboardNameSchema });
