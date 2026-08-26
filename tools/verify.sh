@@ -289,7 +289,102 @@ leg_eslint() {
     (cd "$ROOT/frontend" && npx eslint .)
 }
 
-leg_docker()         { :; }
+
+# Mirrors .github/workflows/pr.yml's docker matrix exactly: 12 services built
+# from the repo root, plus the frontend built from frontend/. Keep in sync with
+# that workflow — a service added there must be added here.
+# Format: <name>|<dockerfile>|<context>
+DOCKER_IMAGES=(
+    "auth-service|services/auth-service/Dockerfile|."
+    "account-service|services/account-service/Dockerfile|."
+    "calendar-service|services/calendar-service/Dockerfile|."
+    "category-service|services/category-service/Dockerfile|."
+    "dashboard-service|services/dashboard-service/Dockerfile|."
+    "package-service|services/package-service/Dockerfile|."
+    "productivity-service|services/productivity-service/Dockerfile|."
+    "recipe-service|services/recipe-service/Dockerfile|."
+    "shopping-service|services/shopping-service/Dockerfile|."
+    "tracker-service|services/tracker-service/Dockerfile|."
+    "weather-service|services/weather-service/Dockerfile|."
+    "workout-service|services/workout-service/Dockerfile|."
+    "frontend|frontend/Dockerfile|frontend"
+)
+
+# Reason the current selection came out the way it did. Set by docker_targets,
+# read by print_facts — so --facts can never disagree with a real run.
+#
+# docker_targets is always invoked as `targets="$(docker_targets)"` by its
+# callers, i.e. inside a command-substitution subshell. A plain
+# `DOCKER_REASON=...` assignment made inside that subshell would be lost the
+# instant the subshell exits, leaving the caller's DOCKER_REASON stuck at "".
+# DOCKER_REASON_FILE routes the reason through a tmpfile instead so it
+# survives the subshell boundary; callers read it back immediately after
+# capturing $targets, before anything else can touch the file.
+DOCKER_REASON=""
+DOCKER_REASON_FILE="$(mktemp)"
+trap 'rm -f "$DOCKER_REASON_FILE"' EXIT
+
+docker_targets() {
+    local base changed entry name
+    if ! base="$(resolve_base)"; then
+        printf '%s' "no merge base with origin/main or main resolvable; building everything (never fewer)" > "$DOCKER_REASON_FILE"
+        for entry in "${DOCKER_IMAGES[@]}"; do printf '%s\n' "$entry"; done
+        return 0
+    fi
+
+    changed="$(git -C "$ROOT" diff --name-only "$base"..HEAD)"
+
+    if printf '%s\n' "$changed" | grep -q '^shared/'; then
+        local reason="shared/ changed; fanning out to all 12 service images"
+        for entry in "${DOCKER_IMAGES[@]}"; do
+            name="${entry%%|*}"
+            [ "$name" = "frontend" ] && continue
+            printf '%s\n' "$entry"
+        done
+        if printf '%s\n' "$changed" | grep -q '^frontend/'; then
+            reason="$reason; frontend/ changed too"
+            printf '%s\n' "frontend|frontend/Dockerfile|frontend"
+        fi
+        printf '%s' "$reason" > "$DOCKER_REASON_FILE"
+        return 0
+    fi
+
+    printf '%s' "per-service change detection against $base" > "$DOCKER_REASON_FILE"
+    for entry in "${DOCKER_IMAGES[@]}"; do
+        name="${entry%%|*}"
+        if [ "$name" = "frontend" ]; then
+            printf '%s\n' "$changed" | grep -q '^frontend/' && printf '%s\n' "$entry"
+        else
+            printf '%s\n' "$changed" | grep -q "^services/$name/" && printf '%s\n' "$entry"
+        fi
+    done
+    return 0
+}
+
+leg_docker() {
+    local rc=0 targets entry name dockerfile context
+    targets="$(docker_targets)"
+    DOCKER_REASON="$(cat "$DOCKER_REASON_FILE")"
+    if [ -z "$targets" ]; then
+        echo "docker: no service, shared, or frontend change since the base — nothing to build"
+        return 0
+    fi
+    if ! command -v docker >/dev/null 2>&1; then
+        echo "docker: ERROR — docker not found, but the diff selects images to build."
+        echo "docker: install docker or re-run with --no-docker (which does not count as done)."
+        return 1
+    fi
+    echo "docker: $DOCKER_REASON"
+    while IFS='|' read -r name dockerfile context; do
+        [ -z "$name" ] && continue
+        echo "--- docker: $name"
+        if ! (cd "$ROOT" && docker build -f "$dockerfile" -t "home-hub-$name:verify" "$context"); then
+            echo "DOCKER FAIL — $name"
+            rc=1
+        fi
+    done <<< "$targets"
+    return "$rc"
+}
 
 leg_fn() { printf 'leg_%s\n' "${1//-/_}"; }
 
@@ -344,6 +439,24 @@ print_summary() {
 
 # ---- facts mode ------------------------------------------------------------
 print_facts() {
+    local base targets changed
+    if base="$(resolve_base)"; then
+        printf 'base: %s\n' "$base"
+    else
+        printf 'base: <unresolvable>\n'
+    fi
+    changed="$(git -C "$ROOT" diff --name-only "$base"..HEAD 2>/dev/null)"
+    if printf '%s\n' "$changed" | grep -q '^shared/'; then
+        printf 'changed-shared: yes\n'
+    else
+        printf 'changed-shared: no\n'
+    fi
+    printf 'changed-services: %s\n' \
+        "$(printf '%s\n' "$changed" | sed -n 's|^services/\([^/]*\)/.*|\1|p' | sort -u | paste -sd, - )"
+    targets="$(docker_targets)"
+    DOCKER_REASON="$(cat "$DOCKER_REASON_FILE")"
+    printf 'fan-out: %s\n' "$DOCKER_REASON"
+    printf 'docker-images: %s\n' "$(printf '%s\n' "$targets" | cut -d'|' -f1 | paste -sd, -)"
     printf 'legs: %s\n' "${SELECTED[*]}"
     printf 'modules: %s\n' "$(discover_modules | wc -l | tr -d ' ')"
 }
