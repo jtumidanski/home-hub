@@ -68,7 +68,7 @@ func createHandler(db *gorm.DB, makeWarmer func(l logrus.FieldLogger, r *http.Re
 			})
 			if err != nil {
 				if errors.Is(err, ErrCapReached) {
-					server.WriteError(w, http.StatusConflict, "Cap Reached", err.Error())
+					server.WriteError(w, http.StatusConflict, "Cap Reached", CapReachedMessage)
 					return
 				}
 				if errors.Is(err, ErrLabelTooLong) ||

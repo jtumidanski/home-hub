@@ -203,8 +203,8 @@ func TestCreate_Cap(t *testing.T) {
 					t.Errorf("expected ErrCapReached, got %v", err)
 				}
 				expected := "Households can save up to 10 locations of interest. Remove one to add another."
-				if ErrCapReached.Error() != expected {
-					t.Errorf("ErrCapReached message must match PRD §4.1 verbatim.\n got: %q\nwant: %q", ErrCapReached.Error(), expected)
+				if CapReachedMessage != expected {
+					t.Errorf("CapReachedMessage must match PRD §4.1 verbatim.\n got: %q\nwant: %q", CapReachedMessage, expected)
 				}
 			},
 		},
