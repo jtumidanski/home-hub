@@ -54,4 +54,3 @@ func updateNameAndColor(db *gorm.DB, id uuid.UUID, name, color string, primary b
 func deleteByConnection(db *gorm.DB, connectionID uuid.UUID) error {
 	return db.Where("connection_id = ?", connectionID).Delete(&Entity{}).Error
 }
-

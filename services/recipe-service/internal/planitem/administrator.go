@@ -23,4 +23,3 @@ func updateItem(db *gorm.DB, e *Entity) error {
 func deleteItem(db *gorm.DB, id uuid.UUID) error {
 	return db.Where("id = ?", id).Delete(&Entity{}).Error
 }
-
