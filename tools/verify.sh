@@ -24,6 +24,7 @@ QUICK=0
 NO_DOCKER=0
 NO_UI=0
 FACTS=0
+FIX_FMT=0
 BASE=""
 ONLY=""
 
@@ -47,6 +48,8 @@ Options:
   --facts           Print the change base, changed services, fan-out reason,
                     module count, and every leg that would run; then exit 0
                     without building anything.
+  --fix-fmt         Apply gofumpt/goimports formatting in place across all
+                    modules, then exit 0 without running any other leg.
   -h, --help        Print this and exit 0.
 
 Exit codes:
@@ -62,6 +65,7 @@ while [ $# -gt 0 ]; do
         --no-docker) NO_DOCKER=1 ;;
         --no-ui)     NO_UI=1 ;;
         --facts)     FACTS=1 ;;
+        --fix-fmt)   FIX_FMT=1 ;;
         --base)
             [ $# -ge 2 ] || { echo "verify.sh: --base requires a value" >&2; exit 2; }
             BASE="$2"; shift
@@ -184,9 +188,107 @@ leg_build() { for_each_module build go build ./...; }
 leg_vet() { for_each_module vet go vet ./...; }
 
 leg_test() { for_each_module test go test ./... -count=1; }
-leg_lint()            { :; }
-leg_frontend_build() { :; }
-leg_eslint()         { :; }
+
+TOOLS_BIN="$ROOT/.cache/tools/bin"
+GOLANGCI="$TOOLS_BIN/golangci-lint-$GOLANGCI_LINT_VERSION"
+
+# Per-tree lint cache. The default (~/.cache/golangci-lint) is shared by every
+# worktree, and golangci-lint replays cached issues by package path — so
+# linting shared/go/model in the main repo surfaces stale findings recorded
+# from a sibling worktree whose files no longer exist. Keying the cache to
+# $ROOT gives each worktree its own and removes the crosstalk.
+#
+# The per-tree cache is NOT enough alone: `golangci-lint run` also takes an
+# exclusive flock on $TMPDIR/golangci-lint.lock, a machine-global path no cache
+# setting isolates. Two concurrent runs sharing a $TMPDIR contend on it and the
+# loser exits 3 with "parallel golangci-lint is running" and no findings — a
+# spurious failure, not a lint result. `run` is passed --allow-parallel-runners
+# below to skip that lock. What the lock protects against is concurrent writers
+# to ONE cache, which the per-tree keying already rules out.
+export GOLANGCI_LINT_CACHE="${GOLANGCI_LINT_CACHE:-$ROOT/.cache/golangci-lint}"
+
+ensure_golangci() {
+    [ -x "$GOLANGCI" ] && return 0
+    mkdir -p "$TOOLS_BIN" "$GOLANGCI_LINT_CACHE"
+
+    # Fast path: download the pinned prebuilt release and verify it against the
+    # release's published SHA256 checksums. ~10s vs the multi-minute source
+    # build. Falls back to `go install` when unavailable (no curl/sha256sum,
+    # unknown platform, or offline).
+    local ver="${GOLANGCI_LINT_VERSION#v}" os="" arch="" asset url tmp
+    case "$(uname -s)" in
+        Linux) os=linux ;;
+        Darwin) os=darwin ;;
+    esac
+    case "$(uname -m)" in
+        x86_64 | amd64) arch=amd64 ;;
+        arm64 | aarch64) arch=arm64 ;;
+    esac
+
+    if [ -n "$os" ] && [ -n "$arch" ] \
+        && command -v curl >/dev/null 2>&1 && command -v sha256sum >/dev/null 2>&1; then
+        asset="golangci-lint-${ver}-${os}-${arch}.tar.gz"
+        url="https://github.com/golangci/golangci-lint/releases/download/${GOLANGCI_LINT_VERSION}"
+        echo "verify.sh: downloading golangci-lint $GOLANGCI_LINT_VERSION prebuilt ($os-$arch) into $TOOLS_BIN ..."
+        tmp="$(mktemp -d)"
+        if curl -sSfL "$url/$asset" -o "$tmp/$asset" \
+            && curl -sSfL "$url/golangci-lint-${ver}-checksums.txt" -o "$tmp/checksums.txt" \
+            && (cd "$tmp" && grep " ${asset}\$" checksums.txt | sha256sum -c - >/dev/null 2>&1) \
+            && tar -xzf "$tmp/$asset" -C "$tmp" \
+            && mv "$tmp/golangci-lint-${ver}-${os}-${arch}/golangci-lint" "$GOLANGCI"; then
+            chmod +x "$GOLANGCI"
+            rm -rf "$tmp"
+            return 0
+        fi
+        echo "verify.sh: WARNING — prebuilt download/verify failed; falling back to 'go install' (slower)." >&2
+        rm -rf "$tmp"
+    fi
+
+    if ! command -v go >/dev/null 2>&1; then
+        echo "verify.sh: ERROR — cannot fetch prebuilt golangci-lint and no go toolchain for the source fallback" >&2
+        return 1
+    fi
+    echo "verify.sh: installing golangci-lint $GOLANGCI_LINT_VERSION from source into $TOOLS_BIN ..."
+    tmp="$(mktemp -d)"
+    GOBIN="$tmp" go install "github.com/golangci/golangci-lint/v2/cmd/golangci-lint@$GOLANGCI_LINT_VERSION" || return 1
+    mv "$tmp/golangci-lint" "$GOLANGCI"
+    rm -rf "$tmp"
+}
+
+# Two layers per module: the formatter layer (gofumpt + goimports, checked with
+# --diff so verify.sh never rewrites the tree behind you) and the linter layer
+# (the `standard` set). No --new-from-rev: home-hub's tree is clean, so the
+# gate is absolute rather than relative to a baseline.
+leg_lint() {
+    ensure_golangci || return 1
+    local rc=0 moddir rel fmt_out
+    while IFS= read -r moddir; do
+        rel="${moddir#"$ROOT"/}"
+        echo "--- lint: $rel"
+        if fmt_out="$(cd "$moddir" && "$GOLANGCI" fmt --diff -c "$ROOT/.golangci.yml" ./... 2>&1)" \
+            && [ -z "$fmt_out" ]; then
+            :
+        else
+            echo "FMT FAIL — $rel (run: tools/verify.sh --fix-fmt)"
+            printf '%s\n' "$fmt_out" | head -40
+            rc=1
+        fi
+        if ! (cd "$moddir" && "$GOLANGCI" run --allow-parallel-runners -c "$ROOT/.golangci.yml" ./...); then
+            echo "LINT FAIL — $rel"
+            rc=1
+        fi
+    done < <(discover_modules)
+    return "$rc"
+}
+
+leg_frontend_build() {
+    (cd "$ROOT/frontend" && npm ci && npm run build && npm test)
+}
+
+leg_eslint() {
+    (cd "$ROOT/frontend" && npx eslint .)
+}
+
 leg_docker()         { :; }
 
 leg_fn() { printf 'leg_%s\n' "${1//-/_}"; }
@@ -245,6 +347,15 @@ print_facts() {
     printf 'legs: %s\n' "${SELECTED[*]}"
     printf 'modules: %s\n' "$(discover_modules | wc -l | tr -d ' ')"
 }
+
+if [ "${FIX_FMT:-0}" -eq 1 ]; then
+    ensure_golangci || exit 1
+    while IFS= read -r moddir; do
+        echo "--- fmt: ${moddir#"$ROOT"/}"
+        (cd "$moddir" && "$GOLANGCI" fmt -c "$ROOT/.golangci.yml" ./...) || exit 1
+    done < <(discover_modules)
+    exit 0
+fi
 
 if [ "$FACTS" -eq 1 ]; then
     print_facts
