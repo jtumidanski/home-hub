@@ -66,7 +66,7 @@ func (c *UPSClient) Track(ctx context.Context, trackingNumber string) (TrackingR
 	if err != nil {
 		return TrackingResult{}, fmt.Errorf("UPS tracking request failed: %w", err)
 	}
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 	c.budget.Record(c.Name())
 
 	body, err := io.ReadAll(resp.Body)

@@ -577,7 +577,7 @@ func combineQuantities(existingQty, existingUnit, newQty, newUnit string) string
 
 func parseFloat(s string) float64 {
 	var f float64
-	fmt.Sscanf(s, "%f", &f)
+	_, _ = fmt.Sscanf(s, "%f", &f)
 	return f
 }
 
@@ -598,7 +598,7 @@ func ParseMinutes(s string) *int {
 	hourRe := regexp.MustCompile(`(\d+(?:\.\d+)?)\s*h(?:ours?)?`)
 	for _, m := range hourRe.FindAllStringSubmatch(s, -1) {
 		var h float64
-		fmt.Sscanf(m[1], "%f", &h)
+		_, _ = fmt.Sscanf(m[1], "%f", &h)
 		totalMinutes += h * 60
 		matched = true
 	}

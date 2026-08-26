@@ -76,7 +76,7 @@ func (c *Client) FetchForecast(lat, lon float64, units, timezone string) (*Forec
 	if err != nil {
 		return nil, fmt.Errorf("open-meteo forecast request failed: %w", err)
 	}
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 
 	if resp.StatusCode != http.StatusOK {
 		body, _ := io.ReadAll(resp.Body)
@@ -102,7 +102,7 @@ func (c *Client) SearchPlaces(query string) ([]GeocodingResult, error) {
 	if err != nil {
 		return nil, fmt.Errorf("open-meteo geocoding request failed: %w", err)
 	}
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 
 	if resp.StatusCode != http.StatusOK {
 		body, _ := io.ReadAll(resp.Body)

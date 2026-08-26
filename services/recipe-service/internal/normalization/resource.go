@@ -87,7 +87,7 @@ func renormalizeHandler(db *gorm.DB) server.InputHandler[RenormalizeRequest] {
 
 				w.Header().Set("Content-Type", "application/vnd.api+json")
 				w.WriteHeader(http.StatusOK)
-				w.Write(result)
+				_, _ = w.Write(result)
 			}
 		})
 	}

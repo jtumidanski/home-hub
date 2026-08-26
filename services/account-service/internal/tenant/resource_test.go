@@ -27,7 +27,7 @@ func setupHandlerTest(t *testing.T) (*mux.Router, *gorm.DB) {
 	}
 	l, _ := test.NewNullLogger()
 	database.RegisterTenantCallbacks(l, db)
-	db.AutoMigrate(&Entity{})
+	_ = db.AutoMigrate(&Entity{})
 
 	router := mux.NewRouter()
 	si := server.GetServerInformation()

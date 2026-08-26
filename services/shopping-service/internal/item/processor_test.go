@@ -137,8 +137,8 @@ func TestProcessor_GetByListID(t *testing.T) {
 		{
 			name: "returns items for list",
 			setup: func() {
-				p.Add(AddInput{ListID: listID, Name: "Item A"})
-				p.Add(AddInput{ListID: listID, Name: "Item B"})
+				_, _ = p.Add(AddInput{ListID: listID, Name: "Item A"})
+				_, _ = p.Add(AddInput{ListID: listID, Name: "Item B"})
 			},
 			wantCount: 2,
 		},
@@ -259,8 +259,8 @@ func TestProcessor_UncheckAll(t *testing.T) {
 
 	m1, _ := p.Add(AddInput{ListID: listID, Name: "Item 1"})
 	m2, _ := p.Add(AddInput{ListID: listID, Name: "Item 2"})
-	p.Check(m1.Id(), true)
-	p.Check(m2.Id(), true)
+	_, _ = p.Check(m1.Id(), true)
+	_, _ = p.Check(m2.Id(), true)
 
 	err := p.UncheckAll(listID)
 	require.NoError(t, err)

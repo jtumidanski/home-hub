@@ -84,7 +84,7 @@ func (c *FedExClient) Track(ctx context.Context, trackingNumber string) (Trackin
 	if err != nil {
 		return TrackingResult{}, fmt.Errorf("FedEx tracking request failed: %w", err)
 	}
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 	c.budget.Record(c.Name())
 
 	body, err := io.ReadAll(resp.Body)

@@ -20,7 +20,7 @@ func setupTestDB(t *testing.T) *gorm.DB {
 	}
 	l, _ := test.NewNullLogger()
 	database.RegisterTenantCallbacks(l, db)
-	db.AutoMigrate(&Entity{})
+	_ = db.AutoMigrate(&Entity{})
 	return db
 }
 

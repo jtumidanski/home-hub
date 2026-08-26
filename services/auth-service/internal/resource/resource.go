@@ -170,7 +170,7 @@ func handleJWKS(issuer *authjwt.Issuer) server.GetHandler {
 		return func(w http.ResponseWriter, r *http.Request) {
 			w.Header().Set("Content-Type", "application/json")
 			w.Header().Set("Cache-Control", "public, max-age=3600")
-			json.NewEncoder(w).Encode(jwks)
+			_ = json.NewEncoder(w).Encode(jwks)
 		}
 	}
 }

@@ -24,7 +24,7 @@ type jsonapiErrors struct {
 func WriteError(w http.ResponseWriter, status int, title string, detail string) {
 	w.Header().Set("Content-Type", "application/vnd.api+json")
 	w.WriteHeader(status)
-	json.NewEncoder(w).Encode(jsonapiErrors{
+	_ = json.NewEncoder(w).Encode(jsonapiErrors{
 		Errors: []jsonapiError{
 			{
 				Status: http.StatusText(status),
@@ -57,7 +57,7 @@ func WriteJSONAPIError(w http.ResponseWriter, status int, code, title, detail, p
 	if pointer != "" {
 		body.Errors[0].Source = &sourceObj{Pointer: pointer}
 	}
-	json.NewEncoder(w).Encode(body)
+	_ = json.NewEncoder(w).Encode(body)
 }
 
 // MarshalResponse marshals a single resource using api2go and writes the response.
@@ -77,7 +77,7 @@ func MarshalResponse[T jsonapi.MarshalIdentifier](l logrus.FieldLogger) func(w h
 					}
 					w.Header().Set("Content-Type", "application/vnd.api+json")
 					w.WriteHeader(http.StatusOK)
-					w.Write(result)
+					_, _ = w.Write(result)
 				}
 			}
 		}
@@ -97,7 +97,7 @@ func MarshalCreatedResponse[T jsonapi.MarshalIdentifier](l logrus.FieldLogger) f
 				}
 				w.Header().Set("Content-Type", "application/vnd.api+json")
 				w.WriteHeader(http.StatusCreated)
-				w.Write(result)
+				_, _ = w.Write(result)
 			}
 		}
 	}
@@ -121,7 +121,7 @@ func MarshalSliceResponse[T jsonapi.MarshalIdentifier](l logrus.FieldLogger) fun
 				}
 				w.Header().Set("Content-Type", "application/vnd.api+json")
 				w.WriteHeader(http.StatusOK)
-				w.Write(result)
+				_, _ = w.Write(result)
 			}
 		}
 	}

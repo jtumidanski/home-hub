@@ -27,8 +27,8 @@ func setupHandlerTest(t *testing.T) (*mux.Router, *gorm.DB, uuid.UUID, uuid.UUID
 	}
 	l, _ := test.NewNullLogger()
 	database.RegisterTenantCallbacks(l, db)
-	db.AutoMigrate(&Entity{})
-	db.AutoMigrate(&membership.Entity{})
+	_ = db.AutoMigrate(&Entity{})
+	_ = db.AutoMigrate(&membership.Entity{})
 
 	router := mux.NewRouter()
 	si := server.GetServerInformation()
@@ -83,7 +83,7 @@ func TestHandlers(t *testing.T) {
 			tenantctx.New(tenantID, uuid.Nil, userID),
 		)
 		p := NewProcessor(l, ctx, db)
-		p.Create(tenantID, "Home 1", "UTC", "metric")
+		_, _ = p.Create(tenantID, "Home 1", "UTC", "metric")
 
 		req := httptest.NewRequest(http.MethodGet, "/households", nil)
 		req = withTenant(req, tenantID, userID)

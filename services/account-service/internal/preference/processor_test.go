@@ -20,7 +20,7 @@ func setupTestDB(t *testing.T) *gorm.DB {
 	}
 	l, _ := test.NewNullLogger()
 	database.RegisterTenantCallbacks(l, db)
-	db.AutoMigrate(&Entity{})
+	_ = db.AutoMigrate(&Entity{})
 	return db
 }
 
@@ -41,7 +41,7 @@ func TestProcessor(t *testing.T) {
 			{
 				name: "finds existing",
 				setup: func(p *Processor, tenantID, userID uuid.UUID) {
-					p.FindOrCreate(tenantID, userID)
+					_, _ = p.FindOrCreate(tenantID, userID)
 				},
 				wantTheme: "light",
 			},

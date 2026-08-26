@@ -132,7 +132,7 @@ func TestProcessor_List(t *testing.T) {
 
 	createTestList(t, p, tenantID, uuid.New(), uuid.New(), "Active List")
 	archived := createTestList(t, p, tenantID, uuid.New(), uuid.New(), "Archived List")
-	p.Archive(archived.Id())
+	_, _ = p.Archive(archived.Id())
 
 	tests := []struct {
 		name      string
@@ -161,7 +161,7 @@ func TestProcessor_Update(t *testing.T) {
 
 	created := createTestList(t, p, tenantID, uuid.New(), uuid.New(), "Original")
 	archived := createTestList(t, p, tenantID, uuid.New(), uuid.New(), "To Archive")
-	p.Archive(archived.Id())
+	_, _ = p.Archive(archived.Id())
 
 	tests := []struct {
 		name    string
@@ -250,7 +250,7 @@ func TestProcessor_Unarchive(t *testing.T) {
 	p := newTestProcessor(t, db, ctx)
 
 	created := createTestList(t, p, tenantID, uuid.New(), uuid.New(), "To Unarchive")
-	p.Archive(created.Id())
+	_, _ = p.Archive(created.Id())
 
 	t.Run("unarchives archived list", func(t *testing.T) {
 		m, err := p.Unarchive(created.Id())
@@ -277,8 +277,8 @@ func TestProcessor_GetWithItems(t *testing.T) {
 	p := newTestProcessor(t, db, ctx)
 
 	created := createTestList(t, p, tenantID, uuid.New(), uuid.New(), "With Items")
-	p.AddItem(created.Id(), item.AddInput{Name: "Milk"}, "")
-	p.AddItem(created.Id(), item.AddInput{Name: "Bread"}, "")
+	_, _ = p.AddItem(created.Id(), item.AddInput{Name: "Milk"}, "")
+	_, _ = p.AddItem(created.Id(), item.AddInput{Name: "Bread"}, "")
 
 	t.Run("returns list with items", func(t *testing.T) {
 		m, items, err := p.GetWithItems(created.Id())
@@ -301,7 +301,7 @@ func TestProcessor_AddItem(t *testing.T) {
 
 	active := createTestList(t, p, tenantID, uuid.New(), uuid.New(), "Active")
 	archived := createTestList(t, p, tenantID, uuid.New(), uuid.New(), "Archived")
-	p.Archive(archived.Id())
+	_, _ = p.Archive(archived.Id())
 
 	tests := []struct {
 		name    string
@@ -381,8 +381,8 @@ func TestProcessor_UncheckAllItems(t *testing.T) {
 	active := createTestList(t, p, tenantID, uuid.New(), uuid.New(), "Active")
 	i1, _ := p.AddItem(active.Id(), item.AddInput{Name: "Item 1"}, "")
 	i2, _ := p.AddItem(active.Id(), item.AddInput{Name: "Item 2"}, "")
-	p.CheckItem(active.Id(), i1.Id(), true)
-	p.CheckItem(active.Id(), i2.Id(), true)
+	_, _ = p.CheckItem(active.Id(), i1.Id(), true)
+	_, _ = p.CheckItem(active.Id(), i2.Id(), true)
 
 	m, items, err := p.UncheckAllItems(active.Id())
 	require.NoError(t, err)

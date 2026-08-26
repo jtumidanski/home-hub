@@ -26,7 +26,7 @@ func main() {
 	cfg := config.Load()
 
 	shutdownTracing := logging.InitTracing(l, "weather-service")
-	defer shutdownTracing(context.Background())
+	defer func() { _ = shutdownTracing(context.Background()) }()
 
 	// Migration order matters: locations_of_interest must exist before
 	// forecast.Migration adds the FK on weather_caches.location_id.

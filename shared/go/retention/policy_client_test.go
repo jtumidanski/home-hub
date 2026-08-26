@@ -14,7 +14,7 @@ import (
 func TestGetPolicyDefault(t *testing.T) {
 	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
-		w.Write([]byte(`{"overrides":{}}`))
+		_, _ = w.Write([]byte(`{"overrides":{}}`))
 	}))
 	defer srv.Close()
 
@@ -31,7 +31,7 @@ func TestGetPolicyDefault(t *testing.T) {
 func TestGetPolicyOverride(t *testing.T) {
 	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
-		w.Write([]byte(`{"overrides":{"productivity.completed_tasks":180}}`))
+		_, _ = w.Write([]byte(`{"overrides":{"productivity.completed_tasks":180}}`))
 	}))
 	defer srv.Close()
 
@@ -62,7 +62,7 @@ func TestUnavailableUsesStaleCache(t *testing.T) {
 	var ok int32 = 1
 	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if atomic.LoadInt32(&ok) == 1 {
-			w.Write([]byte(`{"overrides":{"productivity.completed_tasks":42}}`))
+			_, _ = w.Write([]byte(`{"overrides":{"productivity.completed_tasks":42}}`))
 			return
 		}
 		w.WriteHeader(http.StatusServiceUnavailable)
@@ -88,7 +88,7 @@ func TestUnavailableUsesStaleCache(t *testing.T) {
 
 func TestNeverReturnsZeroDays(t *testing.T) {
 	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		w.Write([]byte(`{"overrides":{}}`))
+		_, _ = w.Write([]byte(`{"overrides":{}}`))
 	}))
 	defer srv.Close()
 	c := NewPolicyClient(srv.URL, "")

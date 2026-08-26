@@ -102,7 +102,7 @@ func TestProcessorCreate(t *testing.T) {
 				l, _ := test.NewNullLogger()
 				ctx := withTenantCtx(tenantID, ownerID)
 				proc := NewProcessor(l, ctx, db)
-				proc.Create(tenantID, householdID, "dup@example.com", "viewer", ownerID)
+				_, _ = proc.Create(tenantID, householdID, "dup@example.com", "viewer", ownerID)
 			},
 			wantErr: ErrAlreadyInvited,
 		},
@@ -363,7 +363,7 @@ func TestProcessorDecline(t *testing.T) {
 			inv, _ := proc.Create(tenantID, hh.Id(), tt.email, "viewer", ownerID)
 
 			if tt.preDecline {
-				proc.Decline(inv.Id(), tt.email)
+				_, _ = proc.Decline(inv.Id(), tt.email)
 			}
 
 			result, err := proc.Decline(inv.Id(), tt.declineEmail)

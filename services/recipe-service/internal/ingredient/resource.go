@@ -85,7 +85,7 @@ func listIngredientsHandler(db *gorm.DB) server.GetHandler {
 
 			w.Header().Set("Content-Type", "application/vnd.api+json")
 			w.WriteHeader(http.StatusOK)
-			json.NewEncoder(w).Encode(resp)
+			_ = json.NewEncoder(w).Encode(resp)
 		}
 	}
 }
@@ -286,7 +286,7 @@ func ingredientRecipesHandler(db *gorm.DB) server.GetHandler {
 
 				w.Header().Set("Content-Type", "application/vnd.api+json")
 				w.WriteHeader(http.StatusOK)
-				json.NewEncoder(w).Encode(map[string]interface{}{
+				_ = json.NewEncoder(w).Encode(map[string]interface{}{
 					"data": refs,
 					"meta": map[string]interface{}{
 						"total":    total,
@@ -325,7 +325,7 @@ func reassignHandler(db *gorm.DB) server.InputHandler[ReassignRequest] {
 
 				w.Header().Set("Content-Type", "application/vnd.api+json")
 				w.WriteHeader(http.StatusOK)
-				json.NewEncoder(w).Encode(map[string]interface{}{
+				_ = json.NewEncoder(w).Encode(map[string]interface{}{
 					"meta": map[string]interface{}{
 						"reassigned": reassigned,
 					},

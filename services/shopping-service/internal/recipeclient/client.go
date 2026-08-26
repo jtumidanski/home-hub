@@ -84,7 +84,7 @@ func (c *Client) GetPlanIngredients(planID uuid.UUID, accessToken string, tenant
 	if err != nil {
 		return nil, err
 	}
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 
 	if resp.StatusCode != http.StatusOK {
 		body, _ := io.ReadAll(resp.Body)
@@ -175,7 +175,7 @@ func (c *Client) LookupIngredient(name, accessToken string, tenantID, householdI
 	if err != nil {
 		return nil, false, err
 	}
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 
 	if resp.StatusCode == http.StatusNotFound {
 		return nil, false, nil

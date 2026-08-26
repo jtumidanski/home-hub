@@ -25,11 +25,11 @@ func setupTestDB(t *testing.T) *gorm.DB {
 	}
 	l, _ := test.NewNullLogger()
 	database.RegisterTenantCallbacks(l, db)
-	db.AutoMigrate(&tenant.Entity{})
-	db.AutoMigrate(&household.Entity{})
-	db.AutoMigrate(&membership.Entity{})
-	db.AutoMigrate(&preference.Entity{})
-	db.AutoMigrate(&invitation.Entity{})
+	_ = db.AutoMigrate(&tenant.Entity{})
+	_ = db.AutoMigrate(&household.Entity{})
+	_ = db.AutoMigrate(&membership.Entity{})
+	_ = db.AutoMigrate(&preference.Entity{})
+	_ = db.AutoMigrate(&invitation.Entity{})
 	return db
 }
 

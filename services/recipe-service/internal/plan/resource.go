@@ -175,7 +175,7 @@ func listPlansHandler(db *gorm.DB) server.GetHandler {
 
 			w.Header().Set("Content-Type", "application/vnd.api+json")
 			w.WriteHeader(http.StatusOK)
-			json.NewEncoder(w).Encode(resp)
+			_ = json.NewEncoder(w).Encode(resp)
 		}
 	}
 }
@@ -341,7 +341,7 @@ func exportMarkdownHandler(db *gorm.DB, catClient *categoryclient.Client) server
 
 				w.Header().Set("Content-Type", "text/markdown; charset=utf-8")
 				w.WriteHeader(http.StatusOK)
-				w.Write([]byte(markdown))
+				_, _ = w.Write([]byte(markdown))
 			}
 		})
 	}

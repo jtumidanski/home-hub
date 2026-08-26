@@ -89,7 +89,7 @@ func (m *OAuthTokenManager) refreshToken(ctx context.Context, carrierName string
 	if err != nil {
 		return "", fmt.Errorf("token request failed for %s: %w", carrierName, err)
 	}
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 
 	body, err := io.ReadAll(resp.Body)
 	if err != nil {

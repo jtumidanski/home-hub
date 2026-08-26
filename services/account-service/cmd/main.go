@@ -27,7 +27,7 @@ func main() {
 	cfg := config.Load()
 
 	shutdownTracing := logging.InitTracing(l, "account-service")
-	defer shutdownTracing(context.Background())
+	defer func() { _ = shutdownTracing(context.Background()) }()
 
 	db := database.Connect(l, cfg.DB,
 		database.SetMigrations(

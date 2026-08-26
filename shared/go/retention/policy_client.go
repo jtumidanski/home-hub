@@ -142,7 +142,7 @@ func (c *PolicyClient) fetch(ctx context.Context, tenantID uuid.UUID, scope Scop
 	if err != nil {
 		return nil, err
 	}
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 	if resp.StatusCode != http.StatusOK {
 		return nil, fmt.Errorf("retention: overrides fetch returned %d", resp.StatusCode)
 	}

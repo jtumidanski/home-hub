@@ -20,7 +20,7 @@ func setupTestDB(t *testing.T) *gorm.DB {
 	}
 	l, _ := test.NewNullLogger()
 	database.RegisterTenantCallbacks(l, db)
-	db.AutoMigrate(&Entity{})
+	_ = db.AutoMigrate(&Entity{})
 	return db
 }
 
@@ -107,9 +107,9 @@ func TestProcessor(t *testing.T) {
 
 		tenantID := uuid.New()
 		userID := uuid.New()
-		p.Create(tenantID, uuid.New(), userID, "owner")
-		p.Create(tenantID, uuid.New(), userID, "editor")
-		p.Create(uuid.New(), uuid.New(), uuid.New(), "viewer") // different user
+		_, _ = p.Create(tenantID, uuid.New(), userID, "owner")
+		_, _ = p.Create(tenantID, uuid.New(), userID, "editor")
+		_, _ = p.Create(uuid.New(), uuid.New(), uuid.New(), "viewer") // different user
 
 		models, err := p.ByUserProvider(userID)()
 		if err != nil {

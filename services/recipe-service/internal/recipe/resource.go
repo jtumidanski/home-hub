@@ -155,7 +155,7 @@ func listHandler(db *gorm.DB) server.GetHandler {
 
 			w.Header().Set("Content-Type", "application/vnd.api+json")
 			w.WriteHeader(http.StatusOK)
-			json.NewEncoder(w).Encode(resp)
+			_ = json.NewEncoder(w).Encode(resp)
 		}
 	}
 }
@@ -411,5 +411,5 @@ func writeCooklangErrors(w http.ResponseWriter, errs []cooklang.ParseError) {
 			Source: map[string]string{"pointer": "/data/attributes/source"},
 		}
 	}
-	json.NewEncoder(w).Encode(map[string]interface{}{"errors": apiErrors})
+	_ = json.NewEncoder(w).Encode(map[string]interface{}{"errors": apiErrors})
 }
