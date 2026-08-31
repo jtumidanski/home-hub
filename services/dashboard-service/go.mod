@@ -16,7 +16,7 @@ require (
 	github.com/jtumidanski/home-hub/shared/go/server v0.0.0
 	github.com/jtumidanski/home-hub/shared/go/tenant v0.0.0
 	github.com/segmentio/kafka-go v0.4.51
-	github.com/sirupsen/logrus v1.10.1
+	github.com/sirupsen/logrus v1.10.2
 	github.com/stretchr/testify v1.12.1
 	gorm.io/datatypes v1.2.7
 	gorm.io/driver/sqlite v1.6.0
