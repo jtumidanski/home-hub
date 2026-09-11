@@ -6,11 +6,12 @@ import (
 	"time"
 
 	"github.com/google/uuid"
+	"github.com/sirupsen/logrus"
+	"gorm.io/gorm"
+
 	"github.com/jtumidanski/home-hub/services/weather-service/internal/openmeteo"
 	"github.com/jtumidanski/home-hub/services/weather-service/internal/weathercode"
 	"github.com/jtumidanski/home-hub/shared/go/model"
-	"github.com/sirupsen/logrus"
-	"gorm.io/gorm"
 )
 
 var (

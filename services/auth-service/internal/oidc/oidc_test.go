@@ -11,7 +11,7 @@ import (
 func TestDiscover(t *testing.T) {
 	mux := http.NewServeMux()
 	mux.HandleFunc("/.well-known/openid-configuration", func(w http.ResponseWriter, r *http.Request) {
-		json.NewEncoder(w).Encode(Discovery{
+		_ = json.NewEncoder(w).Encode(Discovery{
 			AuthorizationEndpoint: "https://example.com/auth",
 			TokenEndpoint:         "https://example.com/token",
 			UserinfoEndpoint:      "https://example.com/userinfo",
@@ -68,7 +68,7 @@ func TestExchangeCode(t *testing.T) {
 		if r.Method != http.MethodPost {
 			t.Errorf("expected POST, got %s", r.Method)
 		}
-		json.NewEncoder(w).Encode(TokenResponse{
+		_ = json.NewEncoder(w).Encode(TokenResponse{
 			AccessToken: "access-123",
 			IDToken:     "id-token-123",
 			TokenType:   "Bearer",
@@ -113,7 +113,7 @@ func TestFetchUserInfo(t *testing.T) {
 		if auth != "Bearer test-token" {
 			t.Errorf("expected Bearer test-token, got %s", auth)
 		}
-		json.NewEncoder(w).Encode(map[string]string{
+		_ = json.NewEncoder(w).Encode(map[string]string{
 			"sub":         "sub-123",
 			"email":       "user@example.com",
 			"name":        "Test User",

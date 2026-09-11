@@ -67,6 +67,6 @@ type RestModel struct {
 	ByRegion              []regionGroup `json:"byRegion"`
 }
 
-func (r RestModel) GetName() string         { return "week-summaries" }
-func (r RestModel) GetID() string           { return r.Id }
+func (r RestModel) GetName() string        { return "week-summaries" }
+func (r RestModel) GetID() string          { return r.Id }
 func (r *RestModel) SetID(id string) error { r.Id = id; return nil }

@@ -1,25 +1,8 @@
 #!/bin/bash
+# Thin delegate — see scripts/ci-build.sh (task-055). This script previously
+# invoked an unpinned `golangci-lint` from PATH against a hardcoded 17-module
+# list. It now delegates to the pinned binary and the discovered module set
+# (FR-L4).
 set -e
-
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-ROOT_DIR="$(cd "$SCRIPT_DIR/.." && pwd)"
-
-echo "Linting all services..."
-
-for service in auth-service account-service productivity-service recipe-service calendar-service weather-service category-service shopping-service package-service; do
-  echo "Linting $service..."
-  cd "$ROOT_DIR/services/$service"
-  golangci-lint run ./...
-done
-
-for pkg in model tenant logging database server auth http testing; do
-  echo "Linting shared/go/$pkg..."
-  cd "$ROOT_DIR/shared/go/$pkg"
-  golangci-lint run ./...
-done
-
-echo "Linting frontend..."
-cd "$ROOT_DIR/frontend"
-npx eslint .
-
-echo "All linting complete."
+exec "$SCRIPT_DIR/../tools/verify.sh" --only lint,eslint "$@"

@@ -9,6 +9,9 @@ import (
 
 	"github.com/google/uuid"
 
+	"github.com/sirupsen/logrus"
+	"gorm.io/gorm"
+
 	"github.com/jtumidanski/home-hub/services/recipe-service/internal/categoryclient"
 	"github.com/jtumidanski/home-hub/services/recipe-service/internal/ingredient"
 	"github.com/jtumidanski/home-hub/services/recipe-service/internal/normalization"
@@ -16,8 +19,6 @@ import (
 	"github.com/jtumidanski/home-hub/services/recipe-service/internal/planner"
 	"github.com/jtumidanski/home-hub/services/recipe-service/internal/recipe"
 	tenantctx "github.com/jtumidanski/home-hub/shared/go/tenant"
-	"github.com/sirupsen/logrus"
-	"gorm.io/gorm"
 )
 
 // tokenPrefix returns the first 12 characters of an access token (the JWT
@@ -139,10 +140,10 @@ func (p *Processor) ConsolidateIngredients(pd PlanData) []ConsolidatedIngredient
 	// tenant tells us whether the inbound auth is misrouted vs. the
 	// outbound categoryclient call hitting a different tenant.
 	diagFields := logrus.Fields{
-		"plan_id":          pd.ID,
-		"plan_tenant_id":   pd.TenantID,
-		"token_len":        len(pd.AccessToken),
-		"token_prefix":     tokenPrefix(pd.AccessToken),
+		"plan_id":        pd.ID,
+		"plan_tenant_id": pd.TenantID,
+		"token_len":      len(pd.AccessToken),
+		"token_prefix":   tokenPrefix(pd.AccessToken),
 	}
 	if t, ok := tenantctx.FromContext(p.ctx); ok {
 		diagFields["request_tenant_id"] = t.Id()

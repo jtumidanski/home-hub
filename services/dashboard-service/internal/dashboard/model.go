@@ -20,17 +20,17 @@ type Model struct {
 	updatedAt     time.Time
 }
 
-func (m Model) Id() uuid.UUID            { return m.id }
-func (m Model) TenantID() uuid.UUID      { return m.tenantID }
-func (m Model) HouseholdID() uuid.UUID   { return m.householdID }
-func (m Model) UserID() *uuid.UUID       { return m.userID }
-func (m Model) Name() string             { return m.name }
-func (m Model) SortOrder() int           { return m.sortOrder }
-func (m Model) Layout() datatypes.JSON   { return m.layout }
-func (m Model) LayoutJSON() []byte       { return []byte(m.layout) }
-func (m Model) SchemaVersion() int       { return m.schemaVersion }
-func (m Model) CreatedAt() time.Time     { return m.createdAt }
-func (m Model) UpdatedAt() time.Time     { return m.updatedAt }
+func (m Model) Id() uuid.UUID          { return m.id }
+func (m Model) TenantID() uuid.UUID    { return m.tenantID }
+func (m Model) HouseholdID() uuid.UUID { return m.householdID }
+func (m Model) UserID() *uuid.UUID     { return m.userID }
+func (m Model) Name() string           { return m.name }
+func (m Model) SortOrder() int         { return m.sortOrder }
+func (m Model) Layout() datatypes.JSON { return m.layout }
+func (m Model) LayoutJSON() []byte     { return []byte(m.layout) }
+func (m Model) SchemaVersion() int     { return m.schemaVersion }
+func (m Model) CreatedAt() time.Time   { return m.createdAt }
+func (m Model) UpdatedAt() time.Time   { return m.updatedAt }
 
 // IsHouseholdScoped reports whether this dashboard is shared across the household
 // (i.e., not owned by a specific user).

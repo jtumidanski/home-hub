@@ -28,17 +28,17 @@ type Builder struct {
 
 func NewBuilder() *Builder { return &Builder{} }
 
-func (b *Builder) SetId(id uuid.UUID) *Builder                  { b.id = id; return b }
-func (b *Builder) SetListID(id uuid.UUID) *Builder              { b.listID = id; return b }
-func (b *Builder) SetName(name string) *Builder                 { b.name = name; return b }
-func (b *Builder) SetQuantity(q *string) *Builder               { b.quantity = q; return b }
-func (b *Builder) SetCategoryID(id *uuid.UUID) *Builder         { b.categoryID = id; return b }
-func (b *Builder) SetCategoryName(name *string) *Builder        { b.categoryName = name; return b }
-func (b *Builder) SetCategorySortOrder(order *int) *Builder     { b.categorySortOrder = order; return b }
-func (b *Builder) SetChecked(checked bool) *Builder             { b.checked = checked; return b }
-func (b *Builder) SetPosition(pos int) *Builder                 { b.position = pos; return b }
-func (b *Builder) SetCreatedAt(t time.Time) *Builder            { b.createdAt = t; return b }
-func (b *Builder) SetUpdatedAt(t time.Time) *Builder            { b.updatedAt = t; return b }
+func (b *Builder) SetId(id uuid.UUID) *Builder              { b.id = id; return b }
+func (b *Builder) SetListID(id uuid.UUID) *Builder          { b.listID = id; return b }
+func (b *Builder) SetName(name string) *Builder             { b.name = name; return b }
+func (b *Builder) SetQuantity(q *string) *Builder           { b.quantity = q; return b }
+func (b *Builder) SetCategoryID(id *uuid.UUID) *Builder     { b.categoryID = id; return b }
+func (b *Builder) SetCategoryName(name *string) *Builder    { b.categoryName = name; return b }
+func (b *Builder) SetCategorySortOrder(order *int) *Builder { b.categorySortOrder = order; return b }
+func (b *Builder) SetChecked(checked bool) *Builder         { b.checked = checked; return b }
+func (b *Builder) SetPosition(pos int) *Builder             { b.position = pos; return b }
+func (b *Builder) SetCreatedAt(t time.Time) *Builder        { b.createdAt = t; return b }
+func (b *Builder) SetUpdatedAt(t time.Time) *Builder        { b.updatedAt = t; return b }
 
 func (b *Builder) Build() (Model, error) {
 	if b.name == "" {

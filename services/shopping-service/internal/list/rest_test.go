@@ -5,9 +5,10 @@ import (
 	"time"
 
 	"github.com/google/uuid"
-	"github.com/jtumidanski/home-hub/services/shopping-service/internal/item"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+
+	"github.com/jtumidanski/home-hub/services/shopping-service/internal/item"
 )
 
 func TestTransform(t *testing.T) {

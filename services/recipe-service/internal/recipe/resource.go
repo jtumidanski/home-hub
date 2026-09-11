@@ -10,12 +10,13 @@ import (
 	"github.com/google/uuid"
 	"github.com/gorilla/mux"
 	"github.com/jtumidanski/api2go/jsonapi"
+	"github.com/sirupsen/logrus"
+	"gorm.io/gorm"
+
 	"github.com/jtumidanski/home-hub/services/recipe-service/internal/normalization"
 	"github.com/jtumidanski/home-hub/services/recipe-service/internal/recipe/cooklang"
 	"github.com/jtumidanski/home-hub/shared/go/server"
 	tenantctx "github.com/jtumidanski/home-hub/shared/go/tenant"
-	"github.com/sirupsen/logrus"
-	"gorm.io/gorm"
 )
 
 func InitializeRoutes(db *gorm.DB) func(l logrus.FieldLogger, si jsonapi.ServerInformation, api *mux.Router) {
@@ -154,7 +155,7 @@ func listHandler(db *gorm.DB) server.GetHandler {
 
 			w.Header().Set("Content-Type", "application/vnd.api+json")
 			w.WriteHeader(http.StatusOK)
-			json.NewEncoder(w).Encode(resp)
+			_ = json.NewEncoder(w).Encode(resp)
 		}
 	}
 }
@@ -368,7 +369,7 @@ func listTagsHandler(db *gorm.DB) server.GetHandler {
 
 			rest := make([]RestTagModel, len(tags))
 			for i, t := range tags {
-				rest[i] = RestTagModel{Tag: t.Tag, Count: t.Count}
+				rest[i] = RestTagModel(t)
 			}
 
 			server.MarshalSliceResponse[RestTagModel](d.Logger())(w)(c.ServerInformation())(rest)
@@ -410,5 +411,5 @@ func writeCooklangErrors(w http.ResponseWriter, errs []cooklang.ParseError) {
 			Source: map[string]string{"pointer": "/data/attributes/source"},
 		}
 	}
-	json.NewEncoder(w).Encode(map[string]interface{}{"errors": apiErrors})
+	_ = json.NewEncoder(w).Encode(map[string]interface{}{"errors": apiErrors})
 }

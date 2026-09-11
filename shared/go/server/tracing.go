@@ -3,8 +3,9 @@ package server
 import (
 	"net/http"
 
-	"github.com/jtumidanski/home-hub/shared/go/logging"
 	"go.opentelemetry.io/otel/trace"
+
+	"github.com/jtumidanski/home-hub/shared/go/logging"
 )
 
 // TracingMiddleware adds trace and span IDs to the request context log fields.

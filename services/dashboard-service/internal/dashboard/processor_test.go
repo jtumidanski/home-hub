@@ -9,11 +9,12 @@ import (
 	"testing"
 
 	"github.com/google/uuid"
-	database "github.com/jtumidanski/home-hub/shared/go/database"
 	"github.com/sirupsen/logrus/hooks/test"
 	"github.com/stretchr/testify/require"
 	"gorm.io/driver/sqlite"
 	"gorm.io/gorm"
+
+	database "github.com/jtumidanski/home-hub/shared/go/database"
 )
 
 func setupTestDB(t *testing.T) *gorm.DB {
@@ -355,7 +356,7 @@ func TestProcessorSeedIdempotent(t *testing.T) {
 
 func TestProcessorSeedRace(t *testing.T) {
 	db := setupTestDB(t)
-	if db.Dialector.Name() != "postgres" {
+	if db.Name() != "postgres" {
 		t.Skip("sqlite does not provide pg_advisory_xact_lock; race covered by production dialect")
 	}
 	p := newTestProcessor(t, db)

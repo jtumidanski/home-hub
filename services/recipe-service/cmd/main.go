@@ -4,6 +4,7 @@ import (
 	"context"
 
 	"github.com/gorilla/mux"
+
 	"github.com/jtumidanski/home-hub/services/recipe-service/internal/audit"
 	"github.com/jtumidanski/home-hub/services/recipe-service/internal/categoryclient"
 	"github.com/jtumidanski/home-hub/services/recipe-service/internal/config"
@@ -25,7 +26,7 @@ func main() {
 	cfg := config.Load()
 
 	shutdownTracing := logging.InitTracing(l, "recipe-service")
-	defer shutdownTracing(context.Background())
+	defer func() { _ = shutdownTracing(context.Background()) }()
 
 	db := database.Connect(l, cfg.DB,
 		database.SetMigrations(

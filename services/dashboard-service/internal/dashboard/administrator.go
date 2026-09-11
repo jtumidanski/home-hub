@@ -4,7 +4,6 @@ import (
 	"time"
 
 	"github.com/google/uuid"
-	"gorm.io/datatypes"
 	"gorm.io/gorm"
 )
 
@@ -66,6 +65,3 @@ func updateSortOrders(db *gorm.DB, updates map[uuid.UUID]int) error {
 		return nil
 	})
 }
-
-// layoutAsJSON casts a validated Layout into datatypes.JSON safely.
-func layoutAsJSON(raw []byte) datatypes.JSON { return datatypes.JSON(raw) }

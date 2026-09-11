@@ -5,8 +5,9 @@ import (
 	"strings"
 
 	"github.com/google/uuid"
-	database "github.com/jtumidanski/home-hub/shared/go/database"
 	"gorm.io/gorm"
+
+	database "github.com/jtumidanski/home-hub/shared/go/database"
 )
 
 func getByID(id uuid.UUID) database.EntityProvider[Entity] {
@@ -101,13 +102,14 @@ func getAll(filters ListFilters) func(db *gorm.DB) ([]Entity, map[uuid.UUID]reci
 			}
 		}
 
-		if filters.NormalizationStatus == "complete" {
+		switch filters.NormalizationStatus {
+		case "complete":
 			query = query.Where("id IN (?)",
 				db.Table("recipe_ingredients").Select("DISTINCT recipe_id"),
 			).Where("id NOT IN (?)",
 				db.Table("recipe_ingredients").Select("DISTINCT recipe_id").Where("normalization_status = 'unresolved'"),
 			)
-		} else if filters.NormalizationStatus == "incomplete" {
+		case "incomplete":
 			query = query.Where("id IN (?)",
 				db.Table("recipe_ingredients").Select("DISTINCT recipe_id").Where("normalization_status = 'unresolved'"),
 			)
@@ -164,8 +166,8 @@ func getAll(filters ListFilters) func(db *gorm.DB) ([]Entity, map[uuid.UUID]reci
 		usageMap := make(map[uuid.UUID]recipeUsageResult, len(rows))
 		for i, row := range rows {
 			entities[i] = row.Entity
-			usageMap[row.Entity.Id] = recipeUsageResult{
-				recipeID:    row.Entity.Id,
+			usageMap[row.Id] = recipeUsageResult{
+				recipeID:    row.Id,
 				lastUsedDay: row.LastUsedDay,
 				usageCount:  row.UsageCount,
 			}

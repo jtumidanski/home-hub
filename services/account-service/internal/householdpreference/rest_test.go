@@ -9,12 +9,13 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/gorilla/mux"
-	"github.com/jtumidanski/home-hub/shared/go/database"
-	"github.com/jtumidanski/home-hub/shared/go/server"
-	tenantctx "github.com/jtumidanski/home-hub/shared/go/tenant"
 	"github.com/sirupsen/logrus/hooks/test"
 	"gorm.io/driver/sqlite"
 	"gorm.io/gorm"
+
+	"github.com/jtumidanski/home-hub/shared/go/database"
+	"github.com/jtumidanski/home-hub/shared/go/server"
+	tenantctx "github.com/jtumidanski/home-hub/shared/go/tenant"
 )
 
 func setupTestDB(t *testing.T) *gorm.DB {

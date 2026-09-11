@@ -27,14 +27,14 @@ type Builder struct {
 func NewBuilder() *Builder { return &Builder{status: "active"} }
 
 func (b *Builder) SetId(id uuid.UUID) *Builder          { b.id = id; return b }
-func (b *Builder) SetTenantID(id uuid.UUID) *Builder     { b.tenantID = id; return b }
-func (b *Builder) SetHouseholdID(id uuid.UUID) *Builder  { b.householdID = id; return b }
-func (b *Builder) SetName(name string) *Builder          { b.name = name; return b }
-func (b *Builder) SetStatus(status string) *Builder      { b.status = status; return b }
-func (b *Builder) SetArchivedAt(t *time.Time) *Builder   { b.archivedAt = t; return b }
-func (b *Builder) SetCreatedBy(id uuid.UUID) *Builder    { b.createdBy = id; return b }
-func (b *Builder) SetCreatedAt(t time.Time) *Builder     { b.createdAt = t; return b }
-func (b *Builder) SetUpdatedAt(t time.Time) *Builder     { b.updatedAt = t; return b }
+func (b *Builder) SetTenantID(id uuid.UUID) *Builder    { b.tenantID = id; return b }
+func (b *Builder) SetHouseholdID(id uuid.UUID) *Builder { b.householdID = id; return b }
+func (b *Builder) SetName(name string) *Builder         { b.name = name; return b }
+func (b *Builder) SetStatus(status string) *Builder     { b.status = status; return b }
+func (b *Builder) SetArchivedAt(t *time.Time) *Builder  { b.archivedAt = t; return b }
+func (b *Builder) SetCreatedBy(id uuid.UUID) *Builder   { b.createdBy = id; return b }
+func (b *Builder) SetCreatedAt(t time.Time) *Builder    { b.createdAt = t; return b }
+func (b *Builder) SetUpdatedAt(t time.Time) *Builder    { b.updatedAt = t; return b }
 
 func (b *Builder) Build() (Model, error) {
 	if b.name == "" {

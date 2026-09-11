@@ -5,8 +5,9 @@ import (
 	"time"
 
 	"github.com/google/uuid"
-	database "github.com/jtumidanski/home-hub/shared/go/database"
 	"gorm.io/gorm"
+
+	database "github.com/jtumidanski/home-hub/shared/go/database"
 )
 
 func GetByID(id uuid.UUID) database.EntityProvider[Entity] {
@@ -116,7 +117,7 @@ func reassignCanonical(db *gorm.DB, fromID, toID uuid.UUID) (int64, error) {
 		Where("canonical_ingredient_id = ?", fromID).
 		Updates(map[string]interface{}{
 			"canonical_ingredient_id": toID,
-			"updated_at":             time.Now().UTC(),
+			"updated_at":              time.Now().UTC(),
 		})
 	return result.RowsAffected, result.Error
 }

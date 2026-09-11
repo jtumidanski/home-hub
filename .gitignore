@@ -49,6 +49,9 @@ deploy/k8s/tls/
 # Docker
 .docker/
 
+# Tool cache (pinned golangci-lint binary, golangci-lint cache)
+.cache/
+
 # Dev artifacts
 dev/
 recipes/

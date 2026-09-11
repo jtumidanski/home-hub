@@ -10,10 +10,11 @@ import (
 	"time"
 
 	"github.com/google/uuid"
-	"github.com/jtumidanski/home-hub/services/workout-service/internal/week"
-	"github.com/jtumidanski/home-hub/services/workout-service/internal/weekview"
 	"github.com/sirupsen/logrus"
 	"gorm.io/gorm"
+
+	"github.com/jtumidanski/home-hub/services/workout-service/internal/week"
+	"github.com/jtumidanski/home-hub/services/workout-service/internal/weekview"
 )
 
 type Processor struct {

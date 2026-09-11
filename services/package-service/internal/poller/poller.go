@@ -4,11 +4,12 @@ import (
 	"context"
 	"time"
 
+	"github.com/sirupsen/logrus"
+	"gorm.io/gorm"
+
 	"github.com/jtumidanski/home-hub/services/package-service/internal/carrier"
 	"github.com/jtumidanski/home-hub/services/package-service/internal/tracking"
 	"github.com/jtumidanski/home-hub/shared/go/database"
-	"github.com/sirupsen/logrus"
-	"gorm.io/gorm"
 )
 
 // Engine handles background polling of carrier APIs for package status updates.
@@ -61,7 +62,6 @@ func (e *Engine) pollDue(ctx context.Context, normalInterval, urgentInterval tim
 			now.Add(-normalInterval),
 		).
 		Find(&packages).Error
-
 	if err != nil {
 		e.l.WithError(err).Error("failed to query packages for polling")
 		return

@@ -42,7 +42,7 @@ func (r *PolicyRest) SetID(id string) error {
 // unmarshalers do not preserve null vs missing distinction in a generic map,
 // so we use *int and rely on the JSON decoder to set nil for explicit null.
 type PatchRequest struct {
-	Id         uuid.UUID    `json:"-"`
+	Id         uuid.UUID       `json:"-"`
 	Categories map[string]*int `json:"categories"`
 }
 

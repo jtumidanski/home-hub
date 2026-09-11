@@ -4,9 +4,10 @@ import (
 	"context"
 	"time"
 
+	"gorm.io/gorm"
+
 	"github.com/jtumidanski/home-hub/services/package-service/internal/tracking"
 	"github.com/jtumidanski/home-hub/shared/go/database"
-	"gorm.io/gorm"
 )
 
 // CleanupConfig holds configuration for the residual cleanup job. After

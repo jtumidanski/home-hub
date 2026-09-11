@@ -7,10 +7,11 @@ import (
 	"github.com/google/uuid"
 	"github.com/gorilla/mux"
 	"github.com/jtumidanski/api2go/jsonapi"
-	"github.com/jtumidanski/home-hub/shared/go/server"
-	tenantctx "github.com/jtumidanski/home-hub/shared/go/tenant"
 	"github.com/sirupsen/logrus"
 	"gorm.io/gorm"
+
+	"github.com/jtumidanski/home-hub/shared/go/server"
+	tenantctx "github.com/jtumidanski/home-hub/shared/go/tenant"
 )
 
 // InitializeRoutes mounts the performance write endpoints. PATCH and PUT use
@@ -96,7 +97,7 @@ func putSetsHandler(db *gorm.DB) server.InputHandler[PutPerformanceSetsRequest] 
 			}
 			inputs := make([]SetInput, len(input.Sets))
 			for i, s := range input.Sets {
-				inputs[i] = SetInput{Reps: s.Reps, Weight: s.Weight}
+				inputs[i] = SetInput(s)
 			}
 			proc := NewProcessor(d.Logger(), r.Context(), db)
 			m, sets, err := proc.ReplaceSets(t.Id(), t.UserId(), itemID, input.WeightUnit, inputs)

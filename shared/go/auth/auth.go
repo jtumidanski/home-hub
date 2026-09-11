@@ -11,9 +11,10 @@ import (
 
 	"github.com/golang-jwt/jwt/v5"
 	"github.com/google/uuid"
+	"github.com/sirupsen/logrus"
+
 	"github.com/jtumidanski/home-hub/shared/go/logging"
 	"github.com/jtumidanski/home-hub/shared/go/tenant"
-	"github.com/sirupsen/logrus"
 )
 
 // Claims represents the JWT claims used by Home Hub.
@@ -27,9 +28,9 @@ type Claims struct {
 
 // Validator validates JWTs against a JWKS endpoint.
 type Validator struct {
-	jwksURL    string
-	keySet     *cachedKeySet
-	logger     *logrus.Logger
+	jwksURL string
+	keySet  *cachedKeySet
+	logger  *logrus.Logger
 }
 
 type cachedKeySet struct {

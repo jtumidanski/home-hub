@@ -32,6 +32,8 @@ export default function DashboardDesigner() {
   const navigate = useNavigate();
   const updateDashboard = useUpdateDashboard();
   const isMobile = useMobile();
+  useUnsavedGuard(state.dirty);
+  const [discardConfirmOpen, setDiscardConfirmOpen] = useState(false);
 
   if (isMobile) {
     return (
@@ -52,9 +54,6 @@ export default function DashboardDesigner() {
       </div>
     );
   }
-
-  useUnsavedGuard(state.dirty);
-  const [discardConfirmOpen, setDiscardConfirmOpen] = useState(false);
 
   const onSave = () => {
     updateDashboard.mutate(

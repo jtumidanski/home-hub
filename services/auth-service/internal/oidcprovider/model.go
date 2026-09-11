@@ -11,11 +11,11 @@ type Model struct {
 	enabled   bool
 }
 
-func (m Model) Id() uuid.UUID   { return m.id }
-func (m Model) Name() string    { return m.name }
+func (m Model) Id() uuid.UUID     { return m.id }
+func (m Model) Name() string      { return m.name }
 func (m Model) IssuerURL() string { return m.issuerURL }
-func (m Model) ClientID() string { return m.clientID }
-func (m Model) Enabled() bool   { return m.enabled }
+func (m Model) ClientID() string  { return m.clientID }
+func (m Model) Enabled() bool     { return m.enabled }
 
 // ToEntity converts the domain model back to a database entity.
 func (m Model) ToEntity() Entity {
@@ -27,4 +27,3 @@ func (m Model) ToEntity() Entity {
 		Enabled:   m.enabled,
 	}
 }
-

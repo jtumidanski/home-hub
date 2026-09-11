@@ -8,13 +8,13 @@ import (
 )
 
 const (
-	StatusPreTransit      = "pre_transit"
-	StatusInTransit       = "in_transit"
-	StatusOutForDelivery  = "out_for_delivery"
-	StatusDelivered       = "delivered"
-	StatusException       = "exception"
-	StatusStale           = "stale"
-	StatusArchived        = "archived"
+	StatusPreTransit     = "pre_transit"
+	StatusInTransit      = "in_transit"
+	StatusOutForDelivery = "out_for_delivery"
+	StatusDelivered      = "delivered"
+	StatusException      = "exception"
+	StatusStale          = "stale"
+	StatusArchived       = "archived"
 
 	CarrierUSPS  = "usps"
 	CarrierUPS   = "ups"
@@ -88,23 +88,27 @@ func BuilderFromModel(m Model) *Builder {
 	}
 }
 
-func (b *Builder) SetId(id uuid.UUID) *Builder                         { b.id = id; return b }
-func (b *Builder) SetTenantID(id uuid.UUID) *Builder                   { b.tenantID = id; return b }
-func (b *Builder) SetHouseholdID(id uuid.UUID) *Builder                { b.householdID = id; return b }
-func (b *Builder) SetUserID(id uuid.UUID) *Builder                     { b.userID = id; return b }
-func (b *Builder) SetTrackingNumber(tn string) *Builder                { b.trackingNumber = tn; return b }
-func (b *Builder) SetCarrier(c string) *Builder                        { b.carrier = c; return b }
-func (b *Builder) SetLabel(l *string) *Builder                         { b.label = l; return b }
-func (b *Builder) SetNotes(n *string) *Builder                         { b.notes = n; return b }
-func (b *Builder) SetStatus(s string) *Builder                         { b.status = s; return b }
-func (b *Builder) SetPrivate(p bool) *Builder                          { b.private = p; return b }
-func (b *Builder) SetEstimatedDelivery(t *time.Time) *Builder          { b.estimatedDelivery = t; return b }
-func (b *Builder) SetActualDelivery(t *time.Time) *Builder             { b.actualDelivery = t; return b }
-func (b *Builder) SetLastPolledAt(t *time.Time) *Builder               { b.lastPolledAt = t; return b }
-func (b *Builder) SetLastStatusChangeAt(t *time.Time) *Builder         { b.lastStatusChangeAt = t; return b }
-func (b *Builder) SetArchivedAt(t *time.Time) *Builder                 { b.archivedAt = t; return b }
-func (b *Builder) SetCreatedAt(t time.Time) *Builder                   { b.createdAt = t; return b }
-func (b *Builder) SetUpdatedAt(t time.Time) *Builder                   { b.updatedAt = t; return b }
+func (b *Builder) SetId(id uuid.UUID) *Builder                { b.id = id; return b }
+func (b *Builder) SetTenantID(id uuid.UUID) *Builder          { b.tenantID = id; return b }
+func (b *Builder) SetHouseholdID(id uuid.UUID) *Builder       { b.householdID = id; return b }
+func (b *Builder) SetUserID(id uuid.UUID) *Builder            { b.userID = id; return b }
+func (b *Builder) SetTrackingNumber(tn string) *Builder       { b.trackingNumber = tn; return b }
+func (b *Builder) SetCarrier(c string) *Builder               { b.carrier = c; return b }
+func (b *Builder) SetLabel(l *string) *Builder                { b.label = l; return b }
+func (b *Builder) SetNotes(n *string) *Builder                { b.notes = n; return b }
+func (b *Builder) SetStatus(s string) *Builder                { b.status = s; return b }
+func (b *Builder) SetPrivate(p bool) *Builder                 { b.private = p; return b }
+func (b *Builder) SetEstimatedDelivery(t *time.Time) *Builder { b.estimatedDelivery = t; return b }
+
+func (b *Builder) SetActualDelivery(t *time.Time) *Builder { b.actualDelivery = t; return b }
+
+func (b *Builder) SetLastPolledAt(t *time.Time) *Builder { b.lastPolledAt = t; return b }
+
+func (b *Builder) SetLastStatusChangeAt(t *time.Time) *Builder { b.lastStatusChangeAt = t; return b }
+
+func (b *Builder) SetArchivedAt(t *time.Time) *Builder { b.archivedAt = t; return b }
+func (b *Builder) SetCreatedAt(t time.Time) *Builder   { b.createdAt = t; return b }
+func (b *Builder) SetUpdatedAt(t time.Time) *Builder   { b.updatedAt = t; return b }
 
 func (b *Builder) Build() (Model, error) {
 	if b.trackingNumber == "" {

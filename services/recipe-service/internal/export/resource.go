@@ -22,9 +22,13 @@ type RestIngredientModel struct {
 	CategorySortOrder *int               `json:"category_sort_order"`
 }
 
-func (r RestIngredientModel) GetName() string       { return "plan-ingredients" }
-func (r RestIngredientModel) GetID() string          { return r.Id.String() }
-func (r *RestIngredientModel) SetID(id string) error { var err error; r.Id, err = uuid.Parse(id); return err }
+func (r RestIngredientModel) GetName() string { return "plan-ingredients" }
+func (r RestIngredientModel) GetID() string   { return r.Id.String() }
+func (r *RestIngredientModel) SetID(id string) error {
+	var err error
+	r.Id, err = uuid.Parse(id)
+	return err
+}
 
 func TransformIngredientSlice(ingredients []ConsolidatedIngredient) []RestIngredientModel {
 	result := make([]RestIngredientModel, len(ingredients))
@@ -57,10 +61,7 @@ func TransformIngredient(ci ConsolidatedIngredient) RestIngredientModel {
 		CategorySortOrder: categorySortOrder,
 	}
 	for _, eq := range ci.ExtraQuantities {
-		rest.ExtraQuantities = append(rest.ExtraQuantities, RestQuantityUnit{
-			Quantity: eq.Quantity,
-			Unit:     eq.Unit,
-		})
+		rest.ExtraQuantities = append(rest.ExtraQuantities, RestQuantityUnit(eq))
 	}
 	return rest
 }

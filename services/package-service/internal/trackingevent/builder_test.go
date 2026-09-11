@@ -72,7 +72,7 @@ func TestBuilder_Build(t *testing.T) {
 					SetStatus("delivered").
 					SetDescription("")
 			},
-			wantErr: ErrDescriptionRequired,
+			wantErr:     ErrDescriptionRequired,
 			assertModel: func(t *testing.T, m Model) {},
 		},
 		{
@@ -82,7 +82,7 @@ func TestBuilder_Build(t *testing.T) {
 					SetStatus("").
 					SetDescription("Something happened")
 			},
-			wantErr: ErrStatusRequired,
+			wantErr:     ErrStatusRequired,
 			assertModel: func(t *testing.T, m Model) {},
 		},
 	}

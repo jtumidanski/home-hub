@@ -5,15 +5,16 @@ import (
 	"testing"
 
 	"github.com/google/uuid"
+	"github.com/sirupsen/logrus/hooks/test"
+	"gorm.io/driver/sqlite"
+	"gorm.io/gorm"
+
 	"github.com/jtumidanski/home-hub/services/account-service/internal/household"
 	"github.com/jtumidanski/home-hub/services/account-service/internal/invitation"
 	"github.com/jtumidanski/home-hub/services/account-service/internal/membership"
 	"github.com/jtumidanski/home-hub/services/account-service/internal/preference"
 	"github.com/jtumidanski/home-hub/services/account-service/internal/tenant"
 	"github.com/jtumidanski/home-hub/shared/go/database"
-	"github.com/sirupsen/logrus/hooks/test"
-	"gorm.io/driver/sqlite"
-	"gorm.io/gorm"
 )
 
 func setupTestDB(t *testing.T) *gorm.DB {
@@ -24,22 +25,22 @@ func setupTestDB(t *testing.T) *gorm.DB {
 	}
 	l, _ := test.NewNullLogger()
 	database.RegisterTenantCallbacks(l, db)
-	db.AutoMigrate(&tenant.Entity{})
-	db.AutoMigrate(&household.Entity{})
-	db.AutoMigrate(&membership.Entity{})
-	db.AutoMigrate(&preference.Entity{})
-	db.AutoMigrate(&invitation.Entity{})
+	_ = db.AutoMigrate(&tenant.Entity{})
+	_ = db.AutoMigrate(&household.Entity{})
+	_ = db.AutoMigrate(&membership.Entity{})
+	_ = db.AutoMigrate(&preference.Entity{})
+	_ = db.AutoMigrate(&invitation.Entity{})
 	return db
 }
 
 func TestResolve(t *testing.T) {
 	tests := []struct {
-		name               string
-		setup              func(t *testing.T, db *gorm.DB) (tenantID, userID uuid.UUID)
-		wantErr            bool
-		wantActiveHH       bool
-		wantRole           string
-		wantCanCreate      bool
+		name                string
+		setup               func(t *testing.T, db *gorm.DB) (tenantID, userID uuid.UUID)
+		wantErr             bool
+		wantActiveHH        bool
+		wantRole            string
+		wantCanCreate       bool
 		wantMembershipCount int
 	}{
 		{

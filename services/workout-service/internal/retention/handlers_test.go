@@ -7,14 +7,15 @@ import (
 	"time"
 
 	"github.com/google/uuid"
+	"gorm.io/driver/sqlite"
+	"gorm.io/gorm"
+
 	"github.com/jtumidanski/home-hub/services/workout-service/internal/exercise"
 	"github.com/jtumidanski/home-hub/services/workout-service/internal/performance"
 	"github.com/jtumidanski/home-hub/services/workout-service/internal/planneditem"
 	"github.com/jtumidanski/home-hub/services/workout-service/internal/region"
 	"github.com/jtumidanski/home-hub/services/workout-service/internal/theme"
 	sr "github.com/jtumidanski/home-hub/shared/go/retention"
-	"gorm.io/driver/sqlite"
-	"gorm.io/gorm"
 )
 
 func newDB(t *testing.T) *gorm.DB {

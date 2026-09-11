@@ -8,18 +8,18 @@ import (
 )
 
 type Entity struct {
-	Id                 uuid.UUID  `gorm:"type:uuid;primaryKey"`
-	TenantId           uuid.UUID  `gorm:"type:uuid;not null;index:idx_connections_tenant_household"`
-	HouseholdId        uuid.UUID  `gorm:"type:uuid;not null;index:idx_connections_tenant_household"`
-	UserId             uuid.UUID  `gorm:"type:uuid;not null;index:idx_connections_user"`
-	Provider           string     `gorm:"type:varchar(50);not null"`
-	Status             string     `gorm:"type:varchar(20);not null;default:connected"`
-	Email              string     `gorm:"type:varchar(255);not null"`
-	AccessToken        string     `gorm:"type:text;not null"`
-	RefreshToken       string     `gorm:"type:text;not null"`
-	TokenExpiry        time.Time  `gorm:"not null"`
-	UserDisplayName    string     `gorm:"type:varchar(255);not null"`
-	UserColor          string     `gorm:"type:varchar(7);not null"`
+	Id                  uuid.UUID  `gorm:"type:uuid;primaryKey"`
+	TenantId            uuid.UUID  `gorm:"type:uuid;not null;index:idx_connections_tenant_household"`
+	HouseholdId         uuid.UUID  `gorm:"type:uuid;not null;index:idx_connections_tenant_household"`
+	UserId              uuid.UUID  `gorm:"type:uuid;not null;index:idx_connections_user"`
+	Provider            string     `gorm:"type:varchar(50);not null"`
+	Status              string     `gorm:"type:varchar(20);not null;default:connected"`
+	Email               string     `gorm:"type:varchar(255);not null"`
+	AccessToken         string     `gorm:"type:text;not null"`
+	RefreshToken        string     `gorm:"type:text;not null"`
+	TokenExpiry         time.Time  `gorm:"not null"`
+	UserDisplayName     string     `gorm:"type:varchar(255);not null"`
+	UserColor           string     `gorm:"type:varchar(7);not null"`
 	WriteAccess         bool       `gorm:"not null;default:false"`
 	LastSyncAt          *time.Time `gorm:""`
 	LastSyncAttemptAt   *time.Time `gorm:""`
@@ -43,18 +43,18 @@ func Migration(db *gorm.DB) error {
 
 func (m Model) ToEntity() Entity {
 	return Entity{
-		Id:                 m.id,
-		TenantId:           m.tenantID,
-		HouseholdId:        m.householdID,
-		UserId:             m.userID,
-		Provider:           m.provider,
-		Status:             m.status,
-		Email:              m.email,
-		AccessToken:        m.accessToken,
-		RefreshToken:       m.refreshToken,
-		TokenExpiry:        m.tokenExpiry,
-		UserDisplayName:    m.userDisplayName,
-		UserColor:          m.userColor,
+		Id:                  m.id,
+		TenantId:            m.tenantID,
+		HouseholdId:         m.householdID,
+		UserId:              m.userID,
+		Provider:            m.provider,
+		Status:              m.status,
+		Email:               m.email,
+		AccessToken:         m.accessToken,
+		RefreshToken:        m.refreshToken,
+		TokenExpiry:         m.tokenExpiry,
+		UserDisplayName:     m.userDisplayName,
+		UserColor:           m.userColor,
 		WriteAccess:         m.writeAccess,
 		LastSyncAt:          m.lastSyncAt,
 		LastSyncAttemptAt:   m.lastSyncAttemptAt,

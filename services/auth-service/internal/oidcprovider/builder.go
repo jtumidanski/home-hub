@@ -6,9 +6,7 @@ import (
 	"github.com/google/uuid"
 )
 
-var (
-	ErrNameRequired = errors.New("OIDC provider name is required")
-)
+var ErrNameRequired = errors.New("OIDC provider name is required")
 
 type Builder struct {
 	id        uuid.UUID
@@ -22,11 +20,11 @@ func NewBuilder() *Builder {
 	return &Builder{}
 }
 
-func (b *Builder) SetId(id uuid.UUID) *Builder         { b.id = id; return b }
-func (b *Builder) SetName(name string) *Builder         { b.name = name; return b }
-func (b *Builder) SetIssuerURL(url string) *Builder     { b.issuerURL = url; return b }
-func (b *Builder) SetClientID(cid string) *Builder      { b.clientID = cid; return b }
-func (b *Builder) SetEnabled(enabled bool) *Builder     { b.enabled = enabled; return b }
+func (b *Builder) SetId(id uuid.UUID) *Builder      { b.id = id; return b }
+func (b *Builder) SetName(name string) *Builder     { b.name = name; return b }
+func (b *Builder) SetIssuerURL(url string) *Builder { b.issuerURL = url; return b }
+func (b *Builder) SetClientID(cid string) *Builder  { b.clientID = cid; return b }
+func (b *Builder) SetEnabled(enabled bool) *Builder { b.enabled = enabled; return b }
 
 func (b *Builder) Build() (Model, error) {
 	if b.name == "" {

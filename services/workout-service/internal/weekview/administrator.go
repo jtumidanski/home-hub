@@ -2,8 +2,9 @@ package weekview
 
 import (
 	"github.com/google/uuid"
-	"github.com/jtumidanski/home-hub/services/workout-service/internal/planneditem"
 	"gorm.io/gorm"
+
+	"github.com/jtumidanski/home-hub/services/workout-service/internal/planneditem"
 )
 
 // cloneItems writes a batch of cloned planned items into the target week

@@ -18,7 +18,7 @@ type RestModel struct {
 	UpdatedAt   time.Time  `json:"updatedAt"`
 }
 
-func (r RestModel) GetName() string       { return "ingredients" }
+func (r RestModel) GetName() string        { return "ingredients" }
 func (r RestModel) GetID() string          { return r.Id.String() }
 func (r *RestModel) SetID(id string) error { var err error; r.Id, err = uuid.Parse(id); return err }
 
@@ -33,9 +33,13 @@ type RestDetailModel struct {
 	UpdatedAt   time.Time        `json:"updatedAt"`
 }
 
-func (r RestDetailModel) GetName() string       { return "ingredients" }
-func (r RestDetailModel) GetID() string          { return r.Id.String() }
-func (r *RestDetailModel) SetID(id string) error { var err error; r.Id, err = uuid.Parse(id); return err }
+func (r RestDetailModel) GetName() string { return "ingredients" }
+func (r RestDetailModel) GetID() string   { return r.Id.String() }
+func (r *RestDetailModel) SetID(id string) error {
+	var err error
+	r.Id, err = uuid.Parse(id)
+	return err
+}
 
 type RestAliasModel struct {
 	Id   uuid.UUID `json:"id"`
@@ -52,9 +56,13 @@ type RestLookupModel struct {
 	CategoryId  *uuid.UUID `json:"category_id"`
 }
 
-func (r RestLookupModel) GetName() string       { return "ingredient-lookups" }
-func (r RestLookupModel) GetID() string          { return r.Id.String() }
-func (r *RestLookupModel) SetID(id string) error { var err error; r.Id, err = uuid.Parse(id); return err }
+func (r RestLookupModel) GetName() string { return "ingredient-lookups" }
+func (r RestLookupModel) GetID() string   { return r.Id.String() }
+func (r *RestLookupModel) SetID(id string) error {
+	var err error
+	r.Id, err = uuid.Parse(id)
+	return err
+}
 
 func TransformLookup(m Model) RestLookupModel {
 	return RestLookupModel{
@@ -74,9 +82,13 @@ type RestCategorySummary struct {
 	UpdatedAt       time.Time `json:"updated_at"`
 }
 
-func (r RestCategorySummary) GetName() string       { return "categories" }
-func (r RestCategorySummary) GetID() string          { return r.Id.String() }
-func (r *RestCategorySummary) SetID(id string) error { var err error; r.Id, err = uuid.Parse(id); return err }
+func (r RestCategorySummary) GetName() string { return "categories" }
+func (r RestCategorySummary) GetID() string   { return r.Id.String() }
+func (r *RestCategorySummary) SetID(id string) error {
+	var err error
+	r.Id, err = uuid.Parse(id)
+	return err
+}
 
 type CreateRequest struct {
 	Id          uuid.UUID `json:"-"`
@@ -86,11 +98,15 @@ type CreateRequest struct {
 	CategoryId  *string   `json:"categoryId,omitempty"`
 }
 
-func (r CreateRequest) GetName() string       { return "ingredients" }
-func (r CreateRequest) GetID() string          { return r.Id.String() }
+func (r CreateRequest) GetName() string { return "ingredients" }
+func (r CreateRequest) GetID() string   { return r.Id.String() }
 func (r *CreateRequest) SetID(id string) error {
-	if id == "" { return nil }
-	var err error; r.Id, err = uuid.Parse(id); return err
+	if id == "" {
+		return nil
+	}
+	var err error
+	r.Id, err = uuid.Parse(id)
+	return err
 }
 
 type UpdateRequest struct {
@@ -101,7 +117,7 @@ type UpdateRequest struct {
 	CategoryId  *string   `json:"categoryId"`
 }
 
-func (r UpdateRequest) GetName() string       { return "ingredients" }
+func (r UpdateRequest) GetName() string        { return "ingredients" }
 func (r UpdateRequest) GetID() string          { return r.Id.String() }
 func (r *UpdateRequest) SetID(id string) error { var err error; r.Id, err = uuid.Parse(id); return err }
 
@@ -110,23 +126,31 @@ type AddAliasRequest struct {
 	Name string    `json:"name"`
 }
 
-func (r AddAliasRequest) GetName() string       { return "ingredient-aliases" }
-func (r AddAliasRequest) GetID() string          { return r.Id.String() }
+func (r AddAliasRequest) GetName() string { return "ingredient-aliases" }
+func (r AddAliasRequest) GetID() string   { return r.Id.String() }
 func (r *AddAliasRequest) SetID(id string) error {
-	if id == "" { return nil }
-	var err error; r.Id, err = uuid.Parse(id); return err
+	if id == "" {
+		return nil
+	}
+	var err error
+	r.Id, err = uuid.Parse(id)
+	return err
 }
 
 type ReassignRequest struct {
-	Id                uuid.UUID `json:"-"`
-	TargetIngredientId string   `json:"targetIngredientId"`
+	Id                 uuid.UUID `json:"-"`
+	TargetIngredientId string    `json:"targetIngredientId"`
 }
 
-func (r ReassignRequest) GetName() string       { return "ingredient-reassignments" }
-func (r ReassignRequest) GetID() string          { return r.Id.String() }
+func (r ReassignRequest) GetName() string { return "ingredient-reassignments" }
+func (r ReassignRequest) GetID() string   { return r.Id.String() }
 func (r *ReassignRequest) SetID(id string) error {
-	if id == "" { return nil }
-	var err error; r.Id, err = uuid.Parse(id); return err
+	if id == "" {
+		return nil
+	}
+	var err error
+	r.Id, err = uuid.Parse(id)
+	return err
 }
 
 type BulkCategorizeRequest struct {
@@ -135,8 +159,8 @@ type BulkCategorizeRequest struct {
 	CategoryId    string    `json:"category_id"`
 }
 
-func (r BulkCategorizeRequest) GetName() string       { return "ingredient-bulk-categorize" }
-func (r BulkCategorizeRequest) GetID() string          { return r.Id.String() }
+func (r BulkCategorizeRequest) GetName() string { return "ingredient-bulk-categorize" }
+func (r BulkCategorizeRequest) GetID() string   { return r.Id.String() }
 func (r *BulkCategorizeRequest) SetID(id string) error {
 	if id == "" {
 		return nil
@@ -171,7 +195,7 @@ func TransformDetail(m Model) RestDetailModel {
 	return RestDetailModel{
 		Id: m.Id(), Name: m.Name(), DisplayName: m.DisplayName(),
 		UnitFamily: m.UnitFamily(), CategoryId: m.CategoryID(),
-		Aliases: aliases,
+		Aliases:   aliases,
 		CreatedAt: m.CreatedAt(), UpdatedAt: m.UpdatedAt(),
 	}
 }

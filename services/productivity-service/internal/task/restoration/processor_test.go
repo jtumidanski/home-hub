@@ -5,12 +5,13 @@ import (
 	"testing"
 
 	"github.com/google/uuid"
-	database "github.com/jtumidanski/home-hub/shared/go/database"
-	"github.com/jtumidanski/home-hub/services/productivity-service/internal/task"
 	"github.com/sirupsen/logrus/hooks/test"
 	"github.com/stretchr/testify/require"
 	"gorm.io/driver/sqlite"
 	"gorm.io/gorm"
+
+	"github.com/jtumidanski/home-hub/services/productivity-service/internal/task"
+	database "github.com/jtumidanski/home-hub/shared/go/database"
 )
 
 func setupTestDB(t *testing.T) *gorm.DB {
@@ -30,10 +31,10 @@ func TestRestorationProcessor_Create(t *testing.T) {
 	userID := uuid.New()
 
 	tests := []struct {
-		name      string
-		setup     func(t *testing.T, db *gorm.DB) uuid.UUID
-		wantErr   bool
-		checkErr  func(t *testing.T, err error)
+		name        string
+		setup       func(t *testing.T, db *gorm.DB) uuid.UUID
+		wantErr     bool
+		checkErr    func(t *testing.T, err error)
 		checkResult func(t *testing.T, m Model)
 	}{
 		{

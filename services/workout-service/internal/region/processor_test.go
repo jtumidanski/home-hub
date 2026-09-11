@@ -5,12 +5,13 @@ import (
 	"testing"
 
 	"github.com/google/uuid"
-	"github.com/jtumidanski/home-hub/shared/go/database"
 	"github.com/sirupsen/logrus/hooks/test"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"gorm.io/driver/sqlite"
 	"gorm.io/gorm"
+
+	"github.com/jtumidanski/home-hub/shared/go/database"
 )
 
 // setupTestDB stands up an in-memory SQLite for the region processor. The
@@ -51,10 +52,10 @@ func TestProcessor_List_SeedsDefaults(t *testing.T) {
 func TestProcessor_Create_Validation(t *testing.T) {
 	tenantID, userID := uuid.New(), uuid.New()
 	cases := []struct {
-		name      string
+		name       string
 		regionName string
-		sortOrder int
-		wantErr   error
+		sortOrder  int
+		wantErr    error
 	}{
 		{"empty name", "", 0, ErrNameRequired},
 		{"too long", string(make([]byte, 51)), 0, ErrNameTooLong},

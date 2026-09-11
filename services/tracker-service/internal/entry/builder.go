@@ -34,16 +34,16 @@ type Builder struct {
 
 func NewBuilder() *Builder { return &Builder{} }
 
-func (b *Builder) SetId(id uuid.UUID) *Builder                { b.id = id; return b }
-func (b *Builder) SetTenantID(id uuid.UUID) *Builder           { b.tenantID = id; return b }
-func (b *Builder) SetUserID(id uuid.UUID) *Builder             { b.userID = id; return b }
-func (b *Builder) SetTrackingItemID(id uuid.UUID) *Builder     { b.trackingItemID = id; return b }
-func (b *Builder) SetDate(d time.Time) *Builder                { b.date = d; return b }
-func (b *Builder) SetValue(v json.RawMessage) *Builder         { b.value = v; return b }
-func (b *Builder) SetSkipped(s bool) *Builder                  { b.skipped = s; return b }
-func (b *Builder) SetNote(n *string) *Builder                  { b.note = n; return b }
-func (b *Builder) SetCreatedAt(t time.Time) *Builder           { b.createdAt = t; return b }
-func (b *Builder) SetUpdatedAt(t time.Time) *Builder           { b.updatedAt = t; return b }
+func (b *Builder) SetId(id uuid.UUID) *Builder             { b.id = id; return b }
+func (b *Builder) SetTenantID(id uuid.UUID) *Builder       { b.tenantID = id; return b }
+func (b *Builder) SetUserID(id uuid.UUID) *Builder         { b.userID = id; return b }
+func (b *Builder) SetTrackingItemID(id uuid.UUID) *Builder { b.trackingItemID = id; return b }
+func (b *Builder) SetDate(d time.Time) *Builder            { b.date = d; return b }
+func (b *Builder) SetValue(v json.RawMessage) *Builder     { b.value = v; return b }
+func (b *Builder) SetSkipped(s bool) *Builder              { b.skipped = s; return b }
+func (b *Builder) SetNote(n *string) *Builder              { b.note = n; return b }
+func (b *Builder) SetCreatedAt(t time.Time) *Builder       { b.createdAt = t; return b }
+func (b *Builder) SetUpdatedAt(t time.Time) *Builder       { b.updatedAt = t; return b }
 
 func (b *Builder) Build() (Model, error) {
 	if b.trackingItemID == uuid.Nil {

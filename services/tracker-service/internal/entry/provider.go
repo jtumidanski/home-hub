@@ -4,8 +4,9 @@ import (
 	"time"
 
 	"github.com/google/uuid"
-	"github.com/jtumidanski/home-hub/shared/go/database"
 	"gorm.io/gorm"
+
+	"github.com/jtumidanski/home-hub/shared/go/database"
 )
 
 func GetByItemAndDate(itemID uuid.UUID, date time.Time) database.EntityProvider[Entity] {

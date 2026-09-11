@@ -6,12 +6,13 @@ import (
 	"time"
 
 	"github.com/google/uuid"
+	"gorm.io/driver/sqlite"
+	"gorm.io/gorm"
+
 	"github.com/jtumidanski/home-hub/services/productivity-service/internal/reminder"
 	"github.com/jtumidanski/home-hub/services/productivity-service/internal/reminder/dismissal"
 	"github.com/jtumidanski/home-hub/services/productivity-service/internal/reminder/snooze"
 	sr "github.com/jtumidanski/home-hub/shared/go/retention"
-	"gorm.io/driver/sqlite"
-	"gorm.io/gorm"
 )
 
 func newReminderDB(t *testing.T) *gorm.DB {

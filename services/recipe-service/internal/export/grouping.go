@@ -4,8 +4,9 @@ import (
 	"sort"
 
 	"github.com/google/uuid"
-	"github.com/jtumidanski/home-hub/services/recipe-service/internal/categoryclient"
 	"github.com/sirupsen/logrus"
+
+	"github.com/jtumidanski/home-hub/services/recipe-service/internal/categoryclient"
 )
 
 // catInfo is the per-category data the consolidation pipeline needs from

@@ -31,8 +31,10 @@ var validWeightTypes = map[string]bool{
 	WeightTypeFree: true, WeightTypeBodyweight: true,
 }
 
-var validWeightUnits = map[string]bool{WeightUnitLb: true, WeightUnitKg: true}
-var validDistanceUnits = map[string]bool{DistanceUnitMi: true, DistanceUnitKm: true, DistanceUnitM: true}
+var (
+	validWeightUnits   = map[string]bool{WeightUnitLb: true, WeightUnitKg: true}
+	validDistanceUnits = map[string]bool{DistanceUnitMi: true, DistanceUnitKm: true, DistanceUnitM: true}
+)
 
 func ValidWeightUnit(u string) bool   { return validWeightUnits[u] }
 func ValidDistanceUnit(u string) bool { return validDistanceUnits[u] }
@@ -62,26 +64,34 @@ type Builder struct {
 
 func NewBuilder() *Builder { return &Builder{weightType: WeightTypeFree} }
 
-func (b *Builder) SetId(id uuid.UUID) *Builder                { b.id = id; return b }
-func (b *Builder) SetTenantID(id uuid.UUID) *Builder          { b.tenantID = id; return b }
-func (b *Builder) SetUserID(id uuid.UUID) *Builder            { b.userID = id; return b }
-func (b *Builder) SetName(n string) *Builder                   { b.name = n; return b }
-func (b *Builder) SetKind(k string) *Builder                   { b.kind = k; return b }
-func (b *Builder) SetWeightType(w string) *Builder             { if w != "" { b.weightType = w }; return b }
-func (b *Builder) SetThemeID(id uuid.UUID) *Builder           { b.themeID = id; return b }
-func (b *Builder) SetRegionID(id uuid.UUID) *Builder          { b.regionID = id; return b }
-func (b *Builder) SetSecondaryRegionIDs(ids []uuid.UUID) *Builder { b.secondaryRegionIDs = ids; return b }
-func (b *Builder) SetDefaultSets(v *int) *Builder              { b.defaultSets = v; return b }
-func (b *Builder) SetDefaultReps(v *int) *Builder              { b.defaultReps = v; return b }
-func (b *Builder) SetDefaultWeight(v *float64) *Builder        { b.defaultWeight = v; return b }
-func (b *Builder) SetDefaultWeightUnit(v *string) *Builder     { b.defaultWeightUnit = v; return b }
-func (b *Builder) SetDefaultDurationSeconds(v *int) *Builder   { b.defaultDurationSeconds = v; return b }
-func (b *Builder) SetDefaultDistance(v *float64) *Builder      { b.defaultDistance = v; return b }
-func (b *Builder) SetDefaultDistanceUnit(v *string) *Builder   { b.defaultDistanceUnit = v; return b }
-func (b *Builder) SetNotes(v *string) *Builder                 { b.notes = v; return b }
-func (b *Builder) SetCreatedAt(t time.Time) *Builder           { b.createdAt = t; return b }
-func (b *Builder) SetUpdatedAt(t time.Time) *Builder           { b.updatedAt = t; return b }
-func (b *Builder) SetDeletedAt(t *time.Time) *Builder          { b.deletedAt = t; return b }
+func (b *Builder) SetId(id uuid.UUID) *Builder       { b.id = id; return b }
+func (b *Builder) SetTenantID(id uuid.UUID) *Builder { b.tenantID = id; return b }
+func (b *Builder) SetUserID(id uuid.UUID) *Builder   { b.userID = id; return b }
+func (b *Builder) SetName(n string) *Builder         { b.name = n; return b }
+func (b *Builder) SetKind(k string) *Builder         { b.kind = k; return b }
+func (b *Builder) SetWeightType(w string) *Builder {
+	if w != "" {
+		b.weightType = w
+	}
+	return b
+}
+func (b *Builder) SetThemeID(id uuid.UUID) *Builder  { b.themeID = id; return b }
+func (b *Builder) SetRegionID(id uuid.UUID) *Builder { b.regionID = id; return b }
+func (b *Builder) SetSecondaryRegionIDs(ids []uuid.UUID) *Builder {
+	b.secondaryRegionIDs = ids
+	return b
+}
+func (b *Builder) SetDefaultSets(v *int) *Builder            { b.defaultSets = v; return b }
+func (b *Builder) SetDefaultReps(v *int) *Builder            { b.defaultReps = v; return b }
+func (b *Builder) SetDefaultWeight(v *float64) *Builder      { b.defaultWeight = v; return b }
+func (b *Builder) SetDefaultWeightUnit(v *string) *Builder   { b.defaultWeightUnit = v; return b }
+func (b *Builder) SetDefaultDurationSeconds(v *int) *Builder { b.defaultDurationSeconds = v; return b }
+func (b *Builder) SetDefaultDistance(v *float64) *Builder    { b.defaultDistance = v; return b }
+func (b *Builder) SetDefaultDistanceUnit(v *string) *Builder { b.defaultDistanceUnit = v; return b }
+func (b *Builder) SetNotes(v *string) *Builder               { b.notes = v; return b }
+func (b *Builder) SetCreatedAt(t time.Time) *Builder         { b.createdAt = t; return b }
+func (b *Builder) SetUpdatedAt(t time.Time) *Builder         { b.updatedAt = t; return b }
+func (b *Builder) SetDeletedAt(t *time.Time) *Builder        { b.deletedAt = t; return b }
 
 func (b *Builder) Build() (Model, error) {
 	if b.name == "" {

@@ -14,8 +14,9 @@ import (
 	"time"
 
 	"github.com/google/uuid"
-	sharedretention "github.com/jtumidanski/home-hub/shared/go/retention"
 	"github.com/sirupsen/logrus"
+
+	sharedretention "github.com/jtumidanski/home-hub/shared/go/retention"
 )
 
 // Errors returned by the Fanout layer.
@@ -137,7 +138,7 @@ func (f *HTTPFanout) Purge(ctx context.Context, tenantID uuid.UUID, scope shared
 	if err != nil {
 		return PurgeResult{}, ErrServiceUnreachable
 	}
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 	if resp.StatusCode == http.StatusTooManyRequests {
 		return PurgeResult{}, ErrRateLimited
 	}
@@ -222,7 +223,7 @@ func (f *HTTPFanout) ListRuns(ctx context.Context, tenantID uuid.UUID, category,
 				f.Logger.WithError(err).WithField("service", svc).Warn("retention: list runs unreachable")
 				return
 			}
-			defer resp.Body.Close()
+			defer func() { _ = resp.Body.Close() }()
 			if resp.StatusCode/100 != 2 {
 				return
 			}

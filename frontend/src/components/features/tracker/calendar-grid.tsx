@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import { Check, ChevronLeft, ChevronRight } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -245,11 +245,11 @@ function MobileDayView({ month, items, entryMap, putEntry, deleteEntry, skipEntr
   const initialDay = isCurrentMonth ? parseInt(today.slice(8, 10)) : 1;
 
   const [selectedDay, setSelectedDay] = useState<number>(initialDay);
-
-  useEffect(() => {
+  const [renderedMonth, setRenderedMonth] = useState(month);
+  if (month !== renderedMonth) {
+    setRenderedMonth(month);
     setSelectedDay(isCurrentMonth ? parseInt(today.slice(8, 10)) : 1);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [month]);
+  }
 
   const dayStr = String(selectedDay).padStart(2, "0");
   const dateStr = `${y}-${m}-${dayStr}`;

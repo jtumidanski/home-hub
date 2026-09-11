@@ -78,7 +78,7 @@ func TestBuilder_Build(t *testing.T) {
 					SetTrackingNumber("").
 					SetCarrier(CarrierUPS)
 			},
-			wantErr: ErrTrackingNumberRequired,
+			wantErr:     ErrTrackingNumberRequired,
 			assertModel: func(t *testing.T, m Model) {},
 		},
 		{
@@ -88,7 +88,7 @@ func TestBuilder_Build(t *testing.T) {
 					SetTrackingNumber("1Z999AA10123456784").
 					SetCarrier("")
 			},
-			wantErr: ErrCarrierRequired,
+			wantErr:     ErrCarrierRequired,
 			assertModel: func(t *testing.T, m Model) {},
 		},
 		{
@@ -98,7 +98,7 @@ func TestBuilder_Build(t *testing.T) {
 					SetTrackingNumber("1Z999AA10123456784").
 					SetCarrier("dhl")
 			},
-			wantErr: ErrInvalidCarrier,
+			wantErr:     ErrInvalidCarrier,
 			assertModel: func(t *testing.T, m Model) {},
 		},
 		{
@@ -109,7 +109,7 @@ func TestBuilder_Build(t *testing.T) {
 					SetCarrier(CarrierFedEx).
 					SetStatus("unknown_status")
 			},
-			wantErr: ErrInvalidStatus,
+			wantErr:     ErrInvalidStatus,
 			assertModel: func(t *testing.T, m Model) {},
 		},
 		{

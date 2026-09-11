@@ -7,6 +7,12 @@ import (
 	"time"
 
 	"github.com/google/uuid"
+	"github.com/sirupsen/logrus/hooks/test"
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
+	"gorm.io/driver/sqlite"
+	"gorm.io/gorm"
+
 	"github.com/jtumidanski/home-hub/services/workout-service/internal/exercise"
 	"github.com/jtumidanski/home-hub/services/workout-service/internal/performance"
 	"github.com/jtumidanski/home-hub/services/workout-service/internal/planneditem"
@@ -14,11 +20,6 @@ import (
 	"github.com/jtumidanski/home-hub/services/workout-service/internal/theme"
 	"github.com/jtumidanski/home-hub/services/workout-service/internal/week"
 	"github.com/jtumidanski/home-hub/shared/go/database"
-	"github.com/sirupsen/logrus/hooks/test"
-	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/require"
-	"gorm.io/driver/sqlite"
-	"gorm.io/gorm"
 )
 
 func summaryTestDB(t *testing.T) *gorm.DB {
@@ -184,7 +185,10 @@ func TestBuild_PerSetRowsEmittedOnlyForPerSetMode(t *testing.T) {
 		CreatedAt:  now, UpdatedAt: now,
 	}
 	require.NoError(t, db.Create(&perf).Error)
-	for i, row := range []struct{ reps int; weight float64 }{{10, 135}, {10, 140}, {8, 145}} {
+	for i, row := range []struct {
+		reps   int
+		weight float64
+	}{{10, 135}, {10, 140}, {8, 145}} {
 		require.NoError(t, db.Create(&performance.SetEntity{
 			Id: uuid.New(), TenantId: f.tenantID, UserId: f.userID,
 			PerformanceId: perf.Id,

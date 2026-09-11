@@ -11,13 +11,14 @@ import (
 	"time"
 
 	"github.com/google/uuid"
+	"gorm.io/gorm"
+
 	"github.com/jtumidanski/home-hub/services/productivity-service/internal/reminder"
 	"github.com/jtumidanski/home-hub/services/productivity-service/internal/reminder/dismissal"
 	"github.com/jtumidanski/home-hub/services/productivity-service/internal/reminder/snooze"
 	"github.com/jtumidanski/home-hub/services/productivity-service/internal/task"
 	"github.com/jtumidanski/home-hub/services/productivity-service/internal/task/restoration"
 	sr "github.com/jtumidanski/home-hub/shared/go/retention"
-	"gorm.io/gorm"
 )
 
 // CompletedTasks reaps tasks whose completed_at is older than the configured

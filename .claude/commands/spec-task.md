@@ -15,10 +15,19 @@ Run `git rev-parse --show-toplevel` and `pwd`. If the result is under `.worktree
 
 ### Step 2 — Determine task number and working slug
 
-1. Scan BOTH `docs/tasks/` in the main repo AND every `.worktrees/*/docs/tasks/` folder (use `find .worktrees -maxdepth 4 -type d -name 'task-*'`). Tasks-in-flight reserve their numbers even if not yet on main.
-2. Pick the next free `NNN` (zero-padded, three digits).
-3. Derive a working slug from `$ARGUMENTS` (lowercase, hyphenated, 3–4 words). Examples: "recurring reminders" → `recurring-reminders`, "household invitations" → `household-invitations`.
-4. Compose the task identifier: `task-NNN-<slug>`.
+1. Get the next free task number from the one source that knows about main,
+   every worktree, and every local branch:
+
+   ```sh
+   tools/task-numbers.sh next
+   ```
+
+   Do not scan folders by hand. Hand-scanning is what lets two concurrent
+   `/spec-task` runs claim the same `NNN`; `task-numbers.sh` also counts
+   numbers reserved by an in-flight branch whose `docs/tasks/` folder does not
+   exist yet, which a folder scan cannot see.
+2. Derive a working slug from `$ARGUMENTS` (lowercase, hyphenated, 3–4 words). Examples: "recurring reminders" → `recurring-reminders`, "household invitations" → `household-invitations`.
+3. Compose the task identifier: `task-NNN-<slug>`.
 
 ### Step 3 — Lightweight context scan
 

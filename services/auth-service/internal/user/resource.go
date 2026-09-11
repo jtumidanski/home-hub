@@ -8,10 +8,11 @@ import (
 	"github.com/google/uuid"
 	"github.com/gorilla/mux"
 	"github.com/jtumidanski/api2go/jsonapi"
-	authjwt "github.com/jtumidanski/home-hub/services/auth-service/internal/jwt"
-	"github.com/jtumidanski/home-hub/shared/go/server"
 	"github.com/sirupsen/logrus"
 	"gorm.io/gorm"
+
+	authjwt "github.com/jtumidanski/home-hub/services/auth-service/internal/jwt"
+	"github.com/jtumidanski/home-hub/shared/go/server"
 )
 
 // InitializeRoutes registers user domain routes.

@@ -6,10 +6,11 @@ import (
 	"testing"
 
 	"github.com/google/uuid"
-	"github.com/jtumidanski/home-hub/shared/go/database"
 	"github.com/sirupsen/logrus/hooks/test"
 	"gorm.io/driver/sqlite"
 	"gorm.io/gorm"
+
+	"github.com/jtumidanski/home-hub/shared/go/database"
 )
 
 func setupTestDB(t *testing.T) *gorm.DB {
@@ -202,8 +203,8 @@ func TestCreate_Cap(t *testing.T) {
 					t.Errorf("expected ErrCapReached, got %v", err)
 				}
 				expected := "Households can save up to 10 locations of interest. Remove one to add another."
-				if ErrCapReached.Error() != expected {
-					t.Errorf("ErrCapReached message must match PRD §4.1 verbatim.\n got: %q\nwant: %q", ErrCapReached.Error(), expected)
+				if CapReachedMessage != expected {
+					t.Errorf("CapReachedMessage must match PRD §4.1 verbatim.\n got: %q\nwant: %q", CapReachedMessage, expected)
 				}
 			},
 		},

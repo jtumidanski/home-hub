@@ -3,6 +3,12 @@ import { recipeService } from "@/services/api/recipe";
 import { useTenant } from "@/context/tenant-context";
 import type { Ingredient, Step, ParseError, RecipeMetadata, NormalizationStatus, PositionalNote } from "@/types/models/recipe";
 
+// Sentinel used to seed `trackedRequestKey` so that the very first render
+// is always treated as a "key changed" transition, even when `requestKey`
+// happens to be `null` on mount. A real `requestKey` is always either
+// `null` or a string, so `UNSET` can never collide with it.
+const UNSET = Symbol("unset");
+
 interface CooklangPreview {
   ingredients: Ingredient[];
   steps: Step[];
@@ -25,24 +31,38 @@ export function useCooklangPreview(source: string, debounceMs = 300): CooklangPr
   const cancelledRef = useRef(false);
   const timeoutRef = useRef<ReturnType<typeof setTimeout>>(undefined);
 
+  const isEmpty = !source.trim() || !tenant;
+
+  // The request key changes whenever a new fetch needs to be kicked off.
+  // Flipping `isLoading` here (during render, in response to the key
+  // changing) rather than synchronously inside the effect avoids an
+  // extra cascading render while preserving the same "loading starts
+  // immediately when the input changes" behaviour.
+  //
+  // `trackedRequestKey` is seeded with `UNSET` (rather than the initial
+  // `requestKey`) so that mounting with a non-empty `source`/`tenant`
+  // (e.g. editing an existing recipe) still takes the "key changed"
+  // branch below and sets `isLoading(true)` for the first parse, matching
+  // the pre-refactor effect-based behaviour.
+  const requestKey = isEmpty ? null : `${tenant}\0${source}`;
+  const [trackedRequestKey, setTrackedRequestKey] = useState<string | null | typeof UNSET>(UNSET);
+  if (requestKey !== trackedRequestKey) {
+    setTrackedRequestKey(requestKey);
+    if (requestKey !== null) {
+      setIsLoading(true);
+    }
+  }
+
   useEffect(() => {
     if (timeoutRef.current) {
       clearTimeout(timeoutRef.current);
     }
     cancelledRef.current = true;
 
-    if (!source.trim() || !tenant) {
-      setIngredients([]);
-      setSteps([]);
-      setErrors([]);
-      setMetadata(null);
-      setNotes([]);
-      setNormalization(null);
-      setIsLoading(false);
+    if (isEmpty) {
       return;
     }
 
-    setIsLoading(true);
     cancelledRef.current = false;
 
     timeoutRef.current = setTimeout(async () => {
@@ -71,7 +91,19 @@ export function useCooklangPreview(source: string, debounceMs = 300): CooklangPr
       }
       cancelledRef.current = true;
     };
-  }, [source, tenant, debounceMs]);
+  }, [source, tenant, debounceMs, isEmpty]);
+
+  if (isEmpty) {
+    return {
+      ingredients: [],
+      steps: [],
+      errors: [],
+      metadata: null,
+      notes: [],
+      normalization: null,
+      isLoading: false,
+    };
+  }
 
   return { ingredients, steps, errors, metadata, notes, normalization, isLoading };
 }

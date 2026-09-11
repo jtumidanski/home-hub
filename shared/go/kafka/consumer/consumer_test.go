@@ -37,6 +37,7 @@ func (f *fakeReader) FetchMessage(ctx context.Context) (kafka.Message, error) {
 	f.idx++
 	return m, nil
 }
+
 func (f *fakeReader) CommitMessages(_ context.Context, _ ...kafka.Message) error {
 	f.mu.Lock()
 	defer f.mu.Unlock()

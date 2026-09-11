@@ -13,11 +13,12 @@ package retention
 
 import (
 	"context"
+	"time"
 
 	"github.com/google/uuid"
-	sr "github.com/jtumidanski/home-hub/shared/go/retention"
 	"gorm.io/gorm"
-	"time"
+
+	sr "github.com/jtumidanski/home-hub/shared/go/retention"
 )
 
 func discoverHouseholdScopes(db *gorm.DB) ([]sr.Scope, error) {

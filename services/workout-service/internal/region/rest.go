@@ -14,9 +14,9 @@ type RestModel struct {
 	UpdatedAt time.Time `json:"updatedAt"`
 }
 
-func (r RestModel) GetName() string         { return "regions" }
-func (r RestModel) GetID() string            { return r.Id.String() }
-func (r *RestModel) SetID(id string) error   { var err error; r.Id, err = uuid.Parse(id); return err }
+func (r RestModel) GetName() string        { return "regions" }
+func (r RestModel) GetID() string          { return r.Id.String() }
+func (r *RestModel) SetID(id string) error { var err error; r.Id, err = uuid.Parse(id); return err }
 
 type CreateRequest struct {
 	Id        uuid.UUID `json:"-"`
@@ -24,8 +24,8 @@ type CreateRequest struct {
 	SortOrder int       `json:"sortOrder"`
 }
 
-func (r CreateRequest) GetName() string       { return "regions" }
-func (r CreateRequest) GetID() string          { return r.Id.String() }
+func (r CreateRequest) GetName() string { return "regions" }
+func (r CreateRequest) GetID() string   { return r.Id.String() }
 func (r *CreateRequest) SetID(id string) error {
 	if id == "" {
 		return nil
@@ -41,7 +41,7 @@ type UpdateRequest struct {
 	SortOrder *int      `json:"sortOrder,omitempty"`
 }
 
-func (r UpdateRequest) GetName() string       { return "regions" }
+func (r UpdateRequest) GetName() string        { return "regions" }
 func (r UpdateRequest) GetID() string          { return r.Id.String() }
 func (r *UpdateRequest) SetID(id string) error { var err error; r.Id, err = uuid.Parse(id); return err }
 

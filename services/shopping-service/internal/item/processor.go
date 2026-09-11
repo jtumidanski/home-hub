@@ -10,9 +10,7 @@ import (
 	"gorm.io/gorm"
 )
 
-var (
-	ErrNotFound = errors.New("shopping item not found")
-)
+var ErrNotFound = errors.New("shopping item not found")
 
 type Processor struct {
 	l   logrus.FieldLogger

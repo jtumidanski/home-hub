@@ -34,7 +34,7 @@ func nullifyReferences(db *gorm.DB, canonicalIngredientID uuid.UUID) error {
 		Updates(map[string]interface{}{
 			"canonical_ingredient_id": nil,
 			"normalization_status":    "unresolved",
-			"updated_at":             time.Now().UTC(),
+			"updated_at":              time.Now().UTC(),
 		}).Error
 }
 

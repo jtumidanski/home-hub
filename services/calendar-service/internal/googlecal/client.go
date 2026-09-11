@@ -72,7 +72,7 @@ func (c *Client) ExchangeCode(ctx context.Context, code, redirectURI string) (*T
 	if err != nil {
 		return nil, fmt.Errorf("token exchange failed: %w", err)
 	}
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 
 	if resp.StatusCode != http.StatusOK {
 		body, _ := io.ReadAll(resp.Body)
@@ -98,7 +98,7 @@ func (c *Client) RefreshToken(ctx context.Context, refreshToken string) (*TokenR
 	if err != nil {
 		return nil, fmt.Errorf("token refresh failed: %w", err)
 	}
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 
 	if resp.StatusCode != http.StatusOK {
 		body, _ := io.ReadAll(resp.Body)
@@ -127,7 +127,7 @@ func (c *Client) RevokeToken(ctx context.Context, token string) error {
 	if err != nil {
 		return fmt.Errorf("token revocation failed: %w", err)
 	}
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 
 	if resp.StatusCode != http.StatusOK {
 		c.l.WithField("status", resp.StatusCode).Warn("token revocation returned non-200")
@@ -260,18 +260,18 @@ func (c *Client) DeleteEvent(ctx context.Context, accessToken, calendarID, event
 			lastErr = err
 			continue
 		}
-		resp.Body.Close()
+		_ = resp.Body.Close()
 
 		if resp.StatusCode == http.StatusNoContent || resp.StatusCode == http.StatusOK {
 			return nil
 		}
 		if resp.StatusCode == http.StatusTooManyRequests || resp.StatusCode >= 500 {
-			lastErr = fmt.Errorf("Google API returned %d", resp.StatusCode)
+			lastErr = fmt.Errorf("google API returned %d", resp.StatusCode)
 			continue
 		}
-		return fmt.Errorf("Google API delete returned %d", resp.StatusCode)
+		return fmt.Errorf("google API delete returned %d", resp.StatusCode)
 	}
-	return fmt.Errorf("Google API delete failed after %d retries: %w", maxRetries, lastErr)
+	return fmt.Errorf("google API delete failed after %d retries: %w", maxRetries, lastErr)
 }
 
 func (c *Client) doWithRetry(req *http.Request, result interface{}) error {
@@ -298,7 +298,7 @@ func (c *Client) doWithRetry(req *http.Request, result interface{}) error {
 		}
 
 		body, err := io.ReadAll(resp.Body)
-		resp.Body.Close()
+		_ = resp.Body.Close()
 		if err != nil {
 			lastErr = err
 			continue
@@ -313,13 +313,13 @@ func (c *Client) doWithRetry(req *http.Request, result interface{}) error {
 		}
 
 		if resp.StatusCode == http.StatusTooManyRequests || resp.StatusCode >= 500 {
-			lastErr = fmt.Errorf("Google API returned %d: %s", resp.StatusCode, string(body))
+			lastErr = fmt.Errorf("google API returned %d: %s", resp.StatusCode, string(body))
 			continue
 		}
 
-		return fmt.Errorf("Google API returned %d: %s", resp.StatusCode, string(body))
+		return fmt.Errorf("google API returned %d: %s", resp.StatusCode, string(body))
 	}
-	return fmt.Errorf("Google API call failed after %d retries: %w", maxRetries, lastErr)
+	return fmt.Errorf("google API call failed after %d retries: %w", maxRetries, lastErr)
 }
 
 func (c *Client) FetchUserEmail(ctx context.Context, accessToken string) (string, error) {
@@ -333,7 +333,7 @@ func (c *Client) FetchUserEmail(ctx context.Context, accessToken string) (string
 	if err != nil {
 		return "", fmt.Errorf("fetch user info failed: %w", err)
 	}
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 
 	var info struct {
 		Email string `json:"email"`

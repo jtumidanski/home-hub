@@ -11,11 +11,12 @@ import (
 	"time"
 
 	"github.com/google/uuid"
+	"github.com/sirupsen/logrus"
+	"gorm.io/gorm"
+
 	"github.com/jtumidanski/home-hub/services/workout-service/internal/performance"
 	"github.com/jtumidanski/home-hub/services/workout-service/internal/planneditem"
 	"github.com/jtumidanski/home-hub/services/workout-service/internal/week"
-	"github.com/sirupsen/logrus"
-	"gorm.io/gorm"
 )
 
 // Domain-level errors surfaced by this package. The handlers map them onto

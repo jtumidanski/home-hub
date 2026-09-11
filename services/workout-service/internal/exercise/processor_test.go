@@ -7,14 +7,15 @@ import (
 	"time"
 
 	"github.com/google/uuid"
-	"github.com/jtumidanski/home-hub/services/workout-service/internal/region"
-	"github.com/jtumidanski/home-hub/services/workout-service/internal/theme"
-	"github.com/jtumidanski/home-hub/shared/go/database"
 	"github.com/sirupsen/logrus/hooks/test"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"gorm.io/driver/sqlite"
 	"gorm.io/gorm"
+
+	"github.com/jtumidanski/home-hub/services/workout-service/internal/region"
+	"github.com/jtumidanski/home-hub/services/workout-service/internal/theme"
+	"github.com/jtumidanski/home-hub/shared/go/database"
 )
 
 // setupTestDB stands up an in-memory SQLite for the exercise processor.
@@ -100,8 +101,10 @@ func TestProcessor_Create_DuplicateNameAllowedAcrossUsers(t *testing.T) {
 	regionB := seedRegion(t, db, tenantID, userB)
 
 	in := func(tID, rID uuid.UUID) CreateInput {
-		return CreateInput{Name: "Deadlift", Kind: KindStrength, ThemeID: tID, RegionID: rID,
-			Defaults: Defaults{Sets: ptrInt(5), Reps: ptrInt(5), Weight: ptrFloat(225), WeightUnit: ptrString("lb")}}
+		return CreateInput{
+			Name: "Deadlift", Kind: KindStrength, ThemeID: tID, RegionID: rID,
+			Defaults: Defaults{Sets: ptrInt(5), Reps: ptrInt(5), Weight: ptrFloat(225), WeightUnit: ptrString("lb")},
+		}
 	}
 	_, err := p.Create(tenantID, userA, in(themeA, regionA))
 	require.NoError(t, err)

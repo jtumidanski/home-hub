@@ -5,10 +5,11 @@ import (
 	"errors"
 
 	"github.com/google/uuid"
-	"github.com/jtumidanski/home-hub/services/account-service/internal/membership"
-	sharedretention "github.com/jtumidanski/home-hub/shared/go/retention"
 	"github.com/sirupsen/logrus"
 	"gorm.io/gorm"
+
+	"github.com/jtumidanski/home-hub/services/account-service/internal/membership"
+	sharedretention "github.com/jtumidanski/home-hub/shared/go/retention"
 )
 
 var (
@@ -31,8 +32,8 @@ func NewProcessor(l logrus.FieldLogger, ctx context.Context, db *gorm.DB) *Proce
 // ResolvePolicy returns the fully-resolved policy for both household and user
 // scopes, merging defaults with overrides.
 type ResolvedPolicy struct {
-	Household   *ResolvedScope
-	UserScope   *ResolvedScope
+	Household *ResolvedScope
+	UserScope *ResolvedScope
 }
 
 type ResolvedScope struct {

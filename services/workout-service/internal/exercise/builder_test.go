@@ -7,9 +7,9 @@ import (
 	"github.com/google/uuid"
 )
 
-func ptrInt(v int) *int             { return &v }
-func ptrFloat(v float64) *float64   { return &v }
-func ptrString(v string) *string    { return &v }
+func ptrInt(v int) *int           { return &v }
+func ptrFloat(v float64) *float64 { return &v }
+func ptrString(v string) *string  { return &v }
 
 func newValidStrengthBuilder(t *testing.T) *Builder {
 	t.Helper()

@@ -252,7 +252,7 @@ func parseSourceForTest(source string) struct {
 			CookTime string
 		}{
 			Tags:     result.Metadata.Tags,
-			Source:    result.Metadata.Source,
+			Source:   result.Metadata.Source,
 			Servings: result.Metadata.Servings,
 			PrepTime: result.Metadata.PrepTime,
 			CookTime: result.Metadata.CookTime,

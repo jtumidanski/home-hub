@@ -4,6 +4,7 @@ import (
 	"context"
 
 	"github.com/gorilla/mux"
+
 	"github.com/jtumidanski/home-hub/services/shopping-service/internal/config"
 	"github.com/jtumidanski/home-hub/services/shopping-service/internal/item"
 	"github.com/jtumidanski/home-hub/services/shopping-service/internal/list"
@@ -19,7 +20,7 @@ func main() {
 	cfg := config.Load()
 
 	shutdownTracing := logging.InitTracing(l, "shopping-service")
-	defer shutdownTracing(context.Background())
+	defer func() { _ = shutdownTracing(context.Background()) }()
 
 	db := database.Connect(l, cfg.DB,
 		database.SetMigrations(

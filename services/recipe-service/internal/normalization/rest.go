@@ -17,21 +17,29 @@ type RestIngredientModel struct {
 	NormalizationStatus   string     `json:"normalizationStatus"`
 }
 
-func (r RestIngredientModel) GetName() string       { return "recipe-ingredients" }
-func (r RestIngredientModel) GetID() string          { return r.Id.String() }
-func (r *RestIngredientModel) SetID(id string) error { var err error; r.Id, err = uuid.Parse(id); return err }
-
-type ResolveRequest struct {
-	Id                   uuid.UUID `json:"-"`
-	CanonicalIngredientId string   `json:"canonicalIngredientId"`
-	SaveAsAlias          bool      `json:"saveAsAlias"`
+func (r RestIngredientModel) GetName() string { return "recipe-ingredients" }
+func (r RestIngredientModel) GetID() string   { return r.Id.String() }
+func (r *RestIngredientModel) SetID(id string) error {
+	var err error
+	r.Id, err = uuid.Parse(id)
+	return err
 }
 
-func (r ResolveRequest) GetName() string       { return "ingredient-resolutions" }
-func (r ResolveRequest) GetID() string          { return r.Id.String() }
+type ResolveRequest struct {
+	Id                    uuid.UUID `json:"-"`
+	CanonicalIngredientId string    `json:"canonicalIngredientId"`
+	SaveAsAlias           bool      `json:"saveAsAlias"`
+}
+
+func (r ResolveRequest) GetName() string { return "ingredient-resolutions" }
+func (r ResolveRequest) GetID() string   { return r.Id.String() }
 func (r *ResolveRequest) SetID(id string) error {
-	if id == "" { return nil }
-	var err error; r.Id, err = uuid.Parse(id); return err
+	if id == "" {
+		return nil
+	}
+	var err error
+	r.Id, err = uuid.Parse(id)
+	return err
 }
 
 func Transform(m Model) RestIngredientModel {
@@ -57,11 +65,15 @@ type RenormalizeRequest struct {
 	Id uuid.UUID `json:"-"`
 }
 
-func (r RenormalizeRequest) GetName() string       { return "recipe-renormalize" }
-func (r RenormalizeRequest) GetID() string          { return r.Id.String() }
+func (r RenormalizeRequest) GetName() string { return "recipe-renormalize" }
+func (r RenormalizeRequest) GetID() string   { return r.Id.String() }
 func (r *RenormalizeRequest) SetID(id string) error {
-	if id == "" { return nil }
-	var err error; r.Id, err = uuid.Parse(id); return err
+	if id == "" {
+		return nil
+	}
+	var err error
+	r.Id, err = uuid.Parse(id)
+	return err
 }
 
 func TransformSlice(models []Model) []RestIngredientModel {

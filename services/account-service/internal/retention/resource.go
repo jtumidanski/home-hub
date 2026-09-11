@@ -7,11 +7,12 @@ import (
 	"github.com/google/uuid"
 	"github.com/gorilla/mux"
 	"github.com/jtumidanski/api2go/jsonapi"
-	"github.com/jtumidanski/home-hub/shared/go/server"
-	tenantctx "github.com/jtumidanski/home-hub/shared/go/tenant"
-	sharedretention "github.com/jtumidanski/home-hub/shared/go/retention"
 	"github.com/sirupsen/logrus"
 	"gorm.io/gorm"
+
+	sharedretention "github.com/jtumidanski/home-hub/shared/go/retention"
+	"github.com/jtumidanski/home-hub/shared/go/server"
+	tenantctx "github.com/jtumidanski/home-hub/shared/go/tenant"
 )
 
 // InitializeRoutes wires the public /api/v1 retention endpoints. The fanout
@@ -91,7 +92,7 @@ func scopeToRest(s *ResolvedScope) *PolicyScope {
 		Categories: make(map[string]CategoryView, len(s.Values)),
 	}
 	for cat, v := range s.Values {
-		out.Categories[string(cat)] = CategoryView{Days: v.Days, Source: v.Source}
+		out.Categories[string(cat)] = CategoryView(v)
 	}
 	return out
 }

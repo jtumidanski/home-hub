@@ -1,8 +1,9 @@
 package database
 
 import (
-	"github.com/jtumidanski/home-hub/shared/go/model"
 	"gorm.io/gorm"
+
+	"github.com/jtumidanski/home-hub/shared/go/model"
 )
 
 // EntityProvider is a function that takes a GORM DB and returns a model.Provider.

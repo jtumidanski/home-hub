@@ -5,11 +5,12 @@ import (
 	"testing"
 
 	"github.com/google/uuid"
-	"github.com/jtumidanski/home-hub/shared/go/database"
-	sharedretention "github.com/jtumidanski/home-hub/shared/go/retention"
 	"github.com/sirupsen/logrus/hooks/test"
 	"gorm.io/driver/sqlite"
 	"gorm.io/gorm"
+
+	"github.com/jtumidanski/home-hub/shared/go/database"
+	sharedretention "github.com/jtumidanski/home-hub/shared/go/retention"
 )
 
 func setupTestDB(t *testing.T) *gorm.DB {

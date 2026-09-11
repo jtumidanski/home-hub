@@ -5,13 +5,14 @@ import (
 	"fmt"
 
 	"github.com/google/uuid"
+	"github.com/sirupsen/logrus"
+	"gorm.io/gorm"
+
 	"github.com/jtumidanski/home-hub/services/auth-service/internal/externalidentity"
 	authjwt "github.com/jtumidanski/home-hub/services/auth-service/internal/jwt"
 	"github.com/jtumidanski/home-hub/services/auth-service/internal/oidc"
 	"github.com/jtumidanski/home-hub/services/auth-service/internal/refreshtoken"
 	"github.com/jtumidanski/home-hub/services/auth-service/internal/user"
-	"github.com/sirupsen/logrus"
-	"gorm.io/gorm"
 )
 
 // CallbackResult holds the result of a successful OIDC callback.

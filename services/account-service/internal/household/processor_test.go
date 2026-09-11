@@ -5,11 +5,12 @@ import (
 	"testing"
 
 	"github.com/google/uuid"
-	"github.com/jtumidanski/home-hub/services/account-service/internal/membership"
-	"github.com/jtumidanski/home-hub/shared/go/database"
 	"github.com/sirupsen/logrus/hooks/test"
 	"gorm.io/driver/sqlite"
 	"gorm.io/gorm"
+
+	"github.com/jtumidanski/home-hub/services/account-service/internal/membership"
+	"github.com/jtumidanski/home-hub/shared/go/database"
 )
 
 func setupTestDB(t *testing.T) *gorm.DB {
@@ -20,8 +21,8 @@ func setupTestDB(t *testing.T) *gorm.DB {
 	}
 	l, _ := test.NewNullLogger()
 	database.RegisterTenantCallbacks(l, db)
-	db.AutoMigrate(&Entity{})
-	db.AutoMigrate(&membership.Entity{})
+	_ = db.AutoMigrate(&Entity{})
+	_ = db.AutoMigrate(&membership.Entity{})
 	return db
 }
 
@@ -78,7 +79,7 @@ func TestProcessor(t *testing.T) {
 
 				tenantID := uuid.New()
 				for i := 0; i < tt.count; i++ {
-					p.Create(tenantID, "Home", "UTC", "metric")
+					_, _ = p.Create(tenantID, "Home", "UTC", "metric")
 				}
 
 				models, err := p.AllProvider()()

@@ -35,22 +35,22 @@ type Model struct {
 	updatedAt             time.Time
 }
 
-func (m Model) Id() uuid.UUID                 { return m.id }
-func (m Model) TenantID() uuid.UUID           { return m.tenantID }
-func (m Model) UserID() uuid.UUID             { return m.userID }
-func (m Model) PlannedItemID() uuid.UUID      { return m.plannedItemID }
-func (m Model) Status() string                { return m.status }
-func (m Model) Mode() string                  { return m.mode }
-func (m Model) WeightUnit() *string           { return m.weightUnit }
-func (m Model) ActualSets() *int              { return m.actualSets }
-func (m Model) ActualReps() *int              { return m.actualReps }
-func (m Model) ActualWeight() *float64        { return m.actualWeight }
-func (m Model) ActualDurationSeconds() *int   { return m.actualDurationSeconds }
-func (m Model) ActualDistance() *float64      { return m.actualDistance }
-func (m Model) ActualDistanceUnit() *string   { return m.actualDistanceUnit }
-func (m Model) Notes() *string                { return m.notes }
-func (m Model) CreatedAt() time.Time          { return m.createdAt }
-func (m Model) UpdatedAt() time.Time          { return m.updatedAt }
+func (m Model) Id() uuid.UUID               { return m.id }
+func (m Model) TenantID() uuid.UUID         { return m.tenantID }
+func (m Model) UserID() uuid.UUID           { return m.userID }
+func (m Model) PlannedItemID() uuid.UUID    { return m.plannedItemID }
+func (m Model) Status() string              { return m.status }
+func (m Model) Mode() string                { return m.mode }
+func (m Model) WeightUnit() *string         { return m.weightUnit }
+func (m Model) ActualSets() *int            { return m.actualSets }
+func (m Model) ActualReps() *int            { return m.actualReps }
+func (m Model) ActualWeight() *float64      { return m.actualWeight }
+func (m Model) ActualDurationSeconds() *int { return m.actualDurationSeconds }
+func (m Model) ActualDistance() *float64    { return m.actualDistance }
+func (m Model) ActualDistanceUnit() *string { return m.actualDistanceUnit }
+func (m Model) Notes() *string              { return m.notes }
+func (m Model) CreatedAt() time.Time        { return m.createdAt }
+func (m Model) UpdatedAt() time.Time        { return m.updatedAt }
 
 type SetModel struct {
 	id            uuid.UUID

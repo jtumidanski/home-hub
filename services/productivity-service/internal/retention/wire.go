@@ -5,9 +5,10 @@ import (
 	"time"
 
 	"github.com/gorilla/mux"
-	sr "github.com/jtumidanski/home-hub/shared/go/retention"
 	"github.com/sirupsen/logrus"
 	"gorm.io/gorm"
+
+	sr "github.com/jtumidanski/home-hub/shared/go/retention"
 )
 
 // Setup builds the productivity-service reaper, registers the internal HTTP

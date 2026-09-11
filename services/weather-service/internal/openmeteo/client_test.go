@@ -47,7 +47,7 @@ func TestFetchForecast(t *testing.T) {
 			t.Errorf("expected hourly params, got %s", r.URL.Query().Get("hourly"))
 		}
 		w.Header().Set("Content-Type", "application/json")
-		json.NewEncoder(w).Encode(expected)
+		_ = json.NewEncoder(w).Encode(expected)
 	}))
 	defer srv.Close()
 
@@ -81,7 +81,7 @@ func TestFetchForecast(t *testing.T) {
 func TestFetchForecastServerError(t *testing.T) {
 	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusInternalServerError)
-		w.Write([]byte("internal error"))
+		_, _ = w.Write([]byte("internal error"))
 	}))
 	defer srv.Close()
 
@@ -108,7 +108,7 @@ func TestSearchPlaces(t *testing.T) {
 			t.Errorf("expected count=10, got %s", r.URL.Query().Get("count"))
 		}
 		w.Header().Set("Content-Type", "application/json")
-		json.NewEncoder(w).Encode(expected)
+		_ = json.NewEncoder(w).Encode(expected)
 	}))
 	defer srv.Close()
 
@@ -133,7 +133,7 @@ func TestSearchPlaces(t *testing.T) {
 func TestSearchPlacesServerError(t *testing.T) {
 	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusServiceUnavailable)
-		w.Write([]byte("unavailable"))
+		_, _ = w.Write([]byte("unavailable"))
 	}))
 	defer srv.Close()
 
@@ -148,7 +148,7 @@ func TestSearchPlacesServerError(t *testing.T) {
 func TestSearchPlacesEmptyResults(t *testing.T) {
 	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
-		w.Write([]byte(`{"results":[]}`))
+		_, _ = w.Write([]byte(`{"results":[]}`))
 	}))
 	defer srv.Close()
 

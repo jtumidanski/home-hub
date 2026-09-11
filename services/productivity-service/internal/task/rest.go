@@ -20,7 +20,7 @@ type RestModel struct {
 	UpdatedAt       time.Time  `json:"updatedAt"`
 }
 
-func (r RestModel) GetName() string       { return "tasks" }
+func (r RestModel) GetName() string        { return "tasks" }
 func (r RestModel) GetID() string          { return r.Id.String() }
 func (r *RestModel) SetID(id string) error { var err error; r.Id, err = uuid.Parse(id); return err }
 
@@ -65,8 +65,8 @@ type CreateRequest struct {
 	OwnerUserId     *string   `json:"ownerUserId,omitempty"`
 }
 
-func (r CreateRequest) GetName() string       { return "tasks" }
-func (r CreateRequest) GetID() string          { return r.Id.String() }
+func (r CreateRequest) GetName() string { return "tasks" }
+func (r CreateRequest) GetID() string   { return r.Id.String() }
 func (r *CreateRequest) SetID(id string) error {
 	if id == "" {
 		return nil
@@ -86,6 +86,6 @@ type UpdateRequest struct {
 	OwnerUserId     *string   `json:"ownerUserId,omitempty"`
 }
 
-func (r UpdateRequest) GetName() string       { return "tasks" }
+func (r UpdateRequest) GetName() string        { return "tasks" }
 func (r UpdateRequest) GetID() string          { return r.Id.String() }
 func (r *UpdateRequest) SetID(id string) error { var err error; r.Id, err = uuid.Parse(id); return err }

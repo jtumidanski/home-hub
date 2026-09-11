@@ -6,11 +6,12 @@ import (
 	"time"
 
 	"github.com/google/uuid"
+	"gorm.io/gorm"
+
 	"github.com/jtumidanski/home-hub/services/recipe-service/internal/normalization"
 	"github.com/jtumidanski/home-hub/services/recipe-service/internal/planitem"
 	"github.com/jtumidanski/home-hub/services/recipe-service/internal/recipe"
 	sr "github.com/jtumidanski/home-hub/shared/go/retention"
-	"gorm.io/gorm"
 )
 
 func discoverRecipeScopes(db *gorm.DB) ([]sr.Scope, error) {

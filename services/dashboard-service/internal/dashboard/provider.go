@@ -2,8 +2,9 @@ package dashboard
 
 import (
 	"github.com/google/uuid"
-	database "github.com/jtumidanski/home-hub/shared/go/database"
 	"gorm.io/gorm"
+
+	database "github.com/jtumidanski/home-hub/shared/go/database"
 )
 
 func getByID(id uuid.UUID) database.EntityProvider[Entity] {
@@ -18,13 +19,6 @@ func visibleToCaller(tenantID, householdID, callerUserID uuid.UUID) database.Ent
 	return database.SliceQuery[Entity](func(db *gorm.DB) *gorm.DB {
 		return db.Where("tenant_id = ? AND household_id = ? AND (user_id IS NULL OR user_id = ?)",
 			tenantID, householdID, callerUserID).
-			Order("sort_order ASC, created_at ASC")
-	})
-}
-
-func householdScoped(tenantID, householdID uuid.UUID) database.EntityProvider[[]Entity] {
-	return database.SliceQuery[Entity](func(db *gorm.DB) *gorm.DB {
-		return db.Where("tenant_id = ? AND household_id = ? AND user_id IS NULL", tenantID, householdID).
 			Order("sort_order ASC, created_at ASC")
 	})
 }

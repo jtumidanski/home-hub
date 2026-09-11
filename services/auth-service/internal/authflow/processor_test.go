@@ -9,15 +9,16 @@ import (
 	"testing"
 
 	"github.com/google/uuid"
+	"github.com/sirupsen/logrus/hooks/test"
+	"gorm.io/driver/sqlite"
+	"gorm.io/gorm"
+
 	"github.com/jtumidanski/home-hub/services/auth-service/internal/externalidentity"
 	authjwt "github.com/jtumidanski/home-hub/services/auth-service/internal/jwt"
 	"github.com/jtumidanski/home-hub/services/auth-service/internal/oidc"
 	"github.com/jtumidanski/home-hub/services/auth-service/internal/refreshtoken"
 	"github.com/jtumidanski/home-hub/services/auth-service/internal/user"
 	"github.com/jtumidanski/home-hub/shared/go/database"
-	"github.com/sirupsen/logrus/hooks/test"
-	"gorm.io/driver/sqlite"
-	"gorm.io/gorm"
 )
 
 func setupTestDB(t *testing.T) *gorm.DB {

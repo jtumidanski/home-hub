@@ -44,7 +44,7 @@ func Discover(issuerURL string) (*Discovery, error) {
 	if err != nil {
 		return nil, fmt.Errorf("failed to fetch discovery: %w", err)
 	}
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 
 	var doc Discovery
 	if err := json.NewDecoder(resp.Body).Decode(&doc); err != nil {
@@ -87,7 +87,7 @@ func ExchangeCode(ctx context.Context, disc *Discovery, cfg ProviderConfig, code
 	if err != nil {
 		return nil, fmt.Errorf("token exchange failed: %w", err)
 	}
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 
 	if resp.StatusCode != http.StatusOK {
 		return nil, fmt.Errorf("token endpoint returned %d", resp.StatusCode)
@@ -113,7 +113,7 @@ func FetchUserInfo(ctx context.Context, disc *Discovery, accessToken string) (*U
 	if err != nil {
 		return nil, fmt.Errorf("userinfo request failed: %w", err)
 	}
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 
 	var raw struct {
 		Sub        string `json:"sub"`

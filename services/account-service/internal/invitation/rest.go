@@ -5,6 +5,7 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/jtumidanski/api2go/jsonapi"
+
 	"github.com/jtumidanski/home-hub/services/account-service/internal/household"
 )
 

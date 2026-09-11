@@ -24,12 +24,12 @@ type Builder struct {
 
 func NewBuilder() *Builder { return &Builder{} }
 
-func (b *Builder) SetId(id uuid.UUID) *Builder          { b.id = id; return b }
-func (b *Builder) SetTenantID(id uuid.UUID) *Builder     { b.tenantID = id; return b }
-func (b *Builder) SetName(name string) *Builder          { b.name = name; return b }
-func (b *Builder) SetSortOrder(order int) *Builder       { b.sortOrder = order; return b }
-func (b *Builder) SetCreatedAt(t time.Time) *Builder     { b.createdAt = t; return b }
-func (b *Builder) SetUpdatedAt(t time.Time) *Builder     { b.updatedAt = t; return b }
+func (b *Builder) SetId(id uuid.UUID) *Builder       { b.id = id; return b }
+func (b *Builder) SetTenantID(id uuid.UUID) *Builder { b.tenantID = id; return b }
+func (b *Builder) SetName(name string) *Builder      { b.name = name; return b }
+func (b *Builder) SetSortOrder(order int) *Builder   { b.sortOrder = order; return b }
+func (b *Builder) SetCreatedAt(t time.Time) *Builder { b.createdAt = t; return b }
+func (b *Builder) SetUpdatedAt(t time.Time) *Builder { b.updatedAt = t; return b }
 
 func (b *Builder) Build() (Model, error) {
 	if b.name == "" {

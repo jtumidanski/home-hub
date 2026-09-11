@@ -2,8 +2,9 @@ package oidcprovider
 
 import (
 	"github.com/google/uuid"
-	"github.com/jtumidanski/home-hub/services/auth-service/internal/config"
 	"github.com/sirupsen/logrus"
+
+	"github.com/jtumidanski/home-hub/services/auth-service/internal/config"
 )
 
 // googleProviderID is a fixed UUID for the Google OIDC provider.

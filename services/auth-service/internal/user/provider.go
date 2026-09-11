@@ -2,9 +2,10 @@ package user
 
 import (
 	"github.com/google/uuid"
+	"gorm.io/gorm"
+
 	"github.com/jtumidanski/home-hub/shared/go/database"
 	"github.com/jtumidanski/home-hub/shared/go/model"
-	"gorm.io/gorm"
 )
 
 func getByID(id uuid.UUID) database.EntityProvider[Entity] {

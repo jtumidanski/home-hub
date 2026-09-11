@@ -21,13 +21,19 @@ type Builder struct {
 
 func NewBuilder() *Builder { return &Builder{restDayFlags: []int{}} }
 
-func (b *Builder) SetId(id uuid.UUID) *Builder            { b.id = id; return b }
-func (b *Builder) SetTenantID(id uuid.UUID) *Builder      { b.tenantID = id; return b }
-func (b *Builder) SetUserID(id uuid.UUID) *Builder        { b.userID = id; return b }
-func (b *Builder) SetWeekStartDate(t time.Time) *Builder  { b.weekStartDate = t; return b }
-func (b *Builder) SetRestDayFlags(f []int) *Builder       { if f == nil { f = []int{} }; b.restDayFlags = f; return b }
-func (b *Builder) SetCreatedAt(t time.Time) *Builder      { b.createdAt = t; return b }
-func (b *Builder) SetUpdatedAt(t time.Time) *Builder      { b.updatedAt = t; return b }
+func (b *Builder) SetId(id uuid.UUID) *Builder           { b.id = id; return b }
+func (b *Builder) SetTenantID(id uuid.UUID) *Builder     { b.tenantID = id; return b }
+func (b *Builder) SetUserID(id uuid.UUID) *Builder       { b.userID = id; return b }
+func (b *Builder) SetWeekStartDate(t time.Time) *Builder { b.weekStartDate = t; return b }
+func (b *Builder) SetRestDayFlags(f []int) *Builder {
+	if f == nil {
+		f = []int{}
+	}
+	b.restDayFlags = f
+	return b
+}
+func (b *Builder) SetCreatedAt(t time.Time) *Builder { b.createdAt = t; return b }
+func (b *Builder) SetUpdatedAt(t time.Time) *Builder { b.updatedAt = t; return b }
 
 func ValidateRestDayFlags(flags []int) error {
 	for _, d := range flags {

@@ -10,15 +10,6 @@ import (
 	"github.com/jtumidanski/home-hub/services/weather-service/internal/openmeteo"
 )
 
-type mockClient struct {
-	results []openmeteo.GeocodingResult
-	err     error
-}
-
-func (m *mockClient) searchPlaces(query string) ([]openmeteo.GeocodingResult, error) {
-	return m.results, m.err
-}
-
 func TestSearchHandlerShortQuery(t *testing.T) {
 	client := openmeteo.NewClient()
 
@@ -83,7 +74,7 @@ func TestRestModelJSON(t *testing.T) {
 	}
 
 	var m map[string]interface{}
-	json.Unmarshal(data, &m)
+	_ = json.Unmarshal(data, &m)
 
 	// Id should be omitted (json:"-")
 	if _, ok := m["Id"]; ok {
@@ -105,7 +96,7 @@ func testSearchHandler(client *openmeteo.Client) http.HandlerFunc {
 		q := r.URL.Query().Get("q")
 		if len(q) < 2 {
 			w.WriteHeader(http.StatusBadRequest)
-			w.Write([]byte(`{"errors":[{"title":"Invalid Query","detail":"Search query must be at least 2 characters."}]}`))
+			_, _ = w.Write([]byte(`{"errors":[{"title":"Invalid Query","detail":"Search query must be at least 2 characters."}]}`))
 			return
 		}
 
@@ -128,6 +119,6 @@ func testSearchHandler(client *openmeteo.Client) http.HandlerFunc {
 		}
 
 		w.Header().Set("Content-Type", "application/json")
-		json.NewEncoder(w).Encode(rest)
+		_ = json.NewEncoder(w).Encode(rest)
 	}
 }

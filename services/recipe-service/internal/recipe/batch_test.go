@@ -5,8 +5,9 @@ import (
 	"testing"
 
 	"github.com/google/uuid"
-	tenantctx "github.com/jtumidanski/home-hub/shared/go/tenant"
 	"github.com/sirupsen/logrus/hooks/test"
+
+	tenantctx "github.com/jtumidanski/home-hub/shared/go/tenant"
 )
 
 func TestProcessorGetByIDs(t *testing.T) {

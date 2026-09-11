@@ -4,6 +4,7 @@ import (
 	"context"
 
 	"github.com/gorilla/mux"
+
 	"github.com/jtumidanski/home-hub/services/workout-service/internal/config"
 	"github.com/jtumidanski/home-hub/services/workout-service/internal/exercise"
 	"github.com/jtumidanski/home-hub/services/workout-service/internal/performance"
@@ -26,7 +27,7 @@ func main() {
 	cfg := config.Load()
 
 	shutdownTracing := logging.InitTracing(l, "workout-service")
-	defer shutdownTracing(context.Background())
+	defer func() { _ = shutdownTracing(context.Background()) }()
 
 	// Migration order matters: parents (themes, regions, exercises, weeks)
 	// must exist before children (planned_items, performances) so the

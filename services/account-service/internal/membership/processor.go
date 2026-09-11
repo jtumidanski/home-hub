@@ -5,18 +5,19 @@ import (
 	"errors"
 
 	"github.com/google/uuid"
-	"github.com/jtumidanski/home-hub/services/account-service/internal/preference"
-	"github.com/jtumidanski/home-hub/shared/go/model"
 	"github.com/sirupsen/logrus"
 	"gorm.io/gorm"
+
+	"github.com/jtumidanski/home-hub/services/account-service/internal/preference"
+	"github.com/jtumidanski/home-hub/shared/go/model"
 )
 
 var (
-	ErrNotAuthorized    = errors.New("user does not have owner or admin role")
-	ErrCannotModifySelf = errors.New("user cannot modify their own role")
+	ErrNotAuthorized     = errors.New("user does not have owner or admin role")
+	ErrCannotModifySelf  = errors.New("user cannot modify their own role")
 	ErrCannotModifyOwner = errors.New("admin cannot modify an owner's role")
 	ErrCannotRemoveOwner = errors.New("admin cannot remove an owner")
-	ErrLastOwner        = errors.New("cannot leave: you are the last owner of this household")
+	ErrLastOwner         = errors.New("cannot leave: you are the last owner of this household")
 )
 
 type Processor struct {

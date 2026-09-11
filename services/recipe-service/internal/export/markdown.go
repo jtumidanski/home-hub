@@ -35,7 +35,7 @@ func (p *Processor) GenerateMarkdown(pd PlanData) string {
 	var sb strings.Builder
 
 	// Heading
-	sb.WriteString(fmt.Sprintf("# Meal Plan: %s\n", pd.Name))
+	fmt.Fprintf(&sb, "# Meal Plan: %s\n", pd.Name)
 
 	// Group items by day
 	type dayGroup struct {
@@ -64,7 +64,7 @@ func (p *Processor) GenerateMarkdown(pd PlanData) string {
 	for _, dg := range sortedDays {
 		dayName := dg.date.Format("Monday")
 		dateStr := dg.date.Format("2006-01-02")
-		sb.WriteString(fmt.Sprintf("\n## %s (%s)\n", dayName, dateStr))
+		fmt.Fprintf(&sb, "\n## %s (%s)\n", dayName, dateStr)
 
 		// Sort items by slot order then position
 		sort.Slice(dg.items, func(i, j int) bool {
@@ -86,9 +86,9 @@ func (p *Processor) GenerateMarkdown(pd PlanData) string {
 
 			servingsNote := servingsAnnotation(item, recipeProc, plannerProc)
 			if servingsNote != "" {
-				sb.WriteString(fmt.Sprintf("- **%s:** %s (%s)\n", slotLabel, title, servingsNote))
+				fmt.Fprintf(&sb, "- **%s:** %s (%s)\n", slotLabel, title, servingsNote)
 			} else {
-				sb.WriteString(fmt.Sprintf("- **%s:** %s\n", slotLabel, title))
+				fmt.Fprintf(&sb, "- **%s:** %s\n", slotLabel, title)
 			}
 		}
 	}
@@ -105,16 +105,16 @@ func (p *Processor) GenerateMarkdown(pd PlanData) string {
 			if heading == "" {
 				heading = "Uncategorized"
 			}
-			sb.WriteString(fmt.Sprintf("\n### %s\n", heading))
+			fmt.Fprintf(&sb, "\n### %s\n", heading)
 			for _, ci := range g.Ingredients {
 				name := ci.DisplayName
 				if name == "" {
 					name = ci.Name
 				}
 				if !ci.Resolved {
-					sb.WriteString(fmt.Sprintf("- %s %s %s _(unresolved)_\n", formatQuantity(ci.Quantity), ci.Unit, name))
+					fmt.Fprintf(&sb, "- %s %s %s _(unresolved)_\n", formatQuantity(ci.Quantity), ci.Unit, name)
 				} else {
-					sb.WriteString(fmt.Sprintf("- %s %s %s\n", formatQuantity(ci.Quantity), ci.Unit, name))
+					fmt.Fprintf(&sb, "- %s %s %s\n", formatQuantity(ci.Quantity), ci.Unit, name)
 				}
 			}
 		}

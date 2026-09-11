@@ -124,7 +124,7 @@ type MonthSummaryRest struct {
 	Completion CompletionStats `json:"completion"`
 }
 
-func (r MonthSummaryRest) GetName() string       { return "tracker-months" }
+func (r MonthSummaryRest) GetName() string        { return "tracker-months" }
 func (r MonthSummaryRest) GetID() string          { return r.Id }
 func (r *MonthSummaryRest) SetID(id string) error { r.Id = id; return nil }
 
@@ -135,7 +135,7 @@ type ReportRest struct {
 	Items   []ItemReport  `json:"items"`
 }
 
-func (r ReportRest) GetName() string       { return "tracker-reports" }
+func (r ReportRest) GetName() string        { return "tracker-reports" }
 func (r ReportRest) GetID() string          { return r.Id }
 func (r *ReportRest) SetID(id string) error { r.Id = id; return nil }
 
@@ -262,4 +262,3 @@ func MarshalReport(report Report) ([]byte, error) {
 	}
 	return json.Marshal(doc)
 }
-

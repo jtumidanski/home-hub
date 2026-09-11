@@ -4,7 +4,6 @@ export function eventStartInstant(
   startDate: string,
   startTime: string,
   allDay: boolean,
-  _timeZone: string,
 ): Date {
   if (allDay) {
     return new Date(`${startDate}T00:00:00`);

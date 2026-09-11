@@ -7,10 +7,11 @@ import (
 	"time"
 
 	"github.com/google/uuid"
-	"github.com/jtumidanski/home-hub/services/recipe-service/internal/audit"
-	"github.com/jtumidanski/home-hub/services/recipe-service/internal/ingredient"
 	"github.com/sirupsen/logrus"
 	"gorm.io/gorm"
+
+	"github.com/jtumidanski/home-hub/services/recipe-service/internal/audit"
+	"github.com/jtumidanski/home-hub/services/recipe-service/internal/ingredient"
 )
 
 var (
@@ -206,7 +207,7 @@ func (p *Processor) ReconcileIngredients(tenantID, householdID, recipeID uuid.UU
 }
 
 type ResolveResult struct {
-	Model       Model
+	Model        Model
 	AliasCreated bool
 }
 

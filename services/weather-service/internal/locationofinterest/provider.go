@@ -2,8 +2,9 @@ package locationofinterest
 
 import (
 	"github.com/google/uuid"
-	"github.com/jtumidanski/home-hub/shared/go/database"
 	"gorm.io/gorm"
+
+	"github.com/jtumidanski/home-hub/shared/go/database"
 )
 
 func GetByID(id, householdID uuid.UUID) database.EntityProvider[Entity] {

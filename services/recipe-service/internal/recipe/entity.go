@@ -9,20 +9,20 @@ import (
 )
 
 type Entity struct {
-	Id              uuid.UUID  `gorm:"type:uuid;primaryKey"`
-	TenantId        uuid.UUID  `gorm:"type:uuid;not null;index:idx_recipe_tenant_household"`
-	HouseholdId     uuid.UUID  `gorm:"type:uuid;not null;index:idx_recipe_tenant_household"`
-	Title           string     `gorm:"type:varchar(255);not null"`
-	Description     *string    `gorm:"type:text"`
-	Source          string     `gorm:"type:text;not null"`
-	Servings        *int       `gorm:"type:int"`
-	PrepTimeMinutes *int       `gorm:"type:int"`
-	CookTimeMinutes *int       `gorm:"type:int"`
-	SourceURL       *string    `gorm:"type:varchar(2048)"`
+	Id              uuid.UUID   `gorm:"type:uuid;primaryKey"`
+	TenantId        uuid.UUID   `gorm:"type:uuid;not null;index:idx_recipe_tenant_household"`
+	HouseholdId     uuid.UUID   `gorm:"type:uuid;not null;index:idx_recipe_tenant_household"`
+	Title           string      `gorm:"type:varchar(255);not null"`
+	Description     *string     `gorm:"type:text"`
+	Source          string      `gorm:"type:text;not null"`
+	Servings        *int        `gorm:"type:int"`
+	PrepTimeMinutes *int        `gorm:"type:int"`
+	CookTimeMinutes *int        `gorm:"type:int"`
+	SourceURL       *string     `gorm:"type:varchar(2048)"`
 	Tags            []TagEntity `gorm:"foreignKey:RecipeId;constraint:OnDelete:CASCADE"`
-	DeletedAt       *time.Time `gorm:"index:idx_recipe_soft_delete"`
-	CreatedAt       time.Time  `gorm:"not null"`
-	UpdatedAt       time.Time  `gorm:"not null"`
+	DeletedAt       *time.Time  `gorm:"index:idx_recipe_soft_delete"`
+	CreatedAt       time.Time   `gorm:"not null"`
+	UpdatedAt       time.Time   `gorm:"not null"`
 }
 
 func (Entity) TableName() string { return "recipes" }

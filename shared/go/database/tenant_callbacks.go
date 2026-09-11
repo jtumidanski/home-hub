@@ -5,9 +5,10 @@ import (
 	"reflect"
 	"sync"
 
-	"github.com/jtumidanski/home-hub/shared/go/tenant"
 	"github.com/sirupsen/logrus"
 	"gorm.io/gorm"
+
+	"github.com/jtumidanski/home-hub/shared/go/tenant"
 )
 
 // hasTenantIDCache memoizes the result of struct introspection so the tenant
@@ -68,7 +69,7 @@ func hasTenantIDField(db *gorm.DB) bool {
 	}
 
 	t := reflect.TypeOf(target)
-	for t.Kind() == reflect.Ptr || t.Kind() == reflect.Slice {
+	for t.Kind() == reflect.Pointer || t.Kind() == reflect.Slice {
 		t = t.Elem()
 	}
 	if t.Kind() != reflect.Struct {

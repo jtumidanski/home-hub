@@ -6,20 +6,21 @@ import (
 	"time"
 
 	"github.com/google/uuid"
+	"github.com/sirupsen/logrus"
+	"gorm.io/gorm"
+
 	"github.com/jtumidanski/home-hub/services/calendar-service/internal/crypto"
 	"github.com/jtumidanski/home-hub/services/calendar-service/internal/googlecal"
 	"github.com/jtumidanski/home-hub/services/calendar-service/internal/oauthstate"
 	"github.com/jtumidanski/home-hub/shared/go/database"
 	"github.com/jtumidanski/home-hub/shared/go/model"
-	"github.com/sirupsen/logrus"
-	"gorm.io/gorm"
 )
 
 var (
-	ErrNotFound          = errors.New("connection not found")
-	ErrAlreadyExists     = errors.New("user already has a connection for this provider in this household")
-	ErrSyncRateLimited   = errors.New("manual sync rate limited")
-	ErrNotOwner          = errors.New("connection does not belong to this user")
+	ErrNotFound        = errors.New("connection not found")
+	ErrAlreadyExists   = errors.New("user already has a connection for this provider in this household")
+	ErrSyncRateLimited = errors.New("manual sync rate limited")
+	ErrNotOwner        = errors.New("connection does not belong to this user")
 )
 
 const manualSyncCooldown = 5 * time.Minute

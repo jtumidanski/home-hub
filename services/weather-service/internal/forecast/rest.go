@@ -99,14 +99,7 @@ func TransformDaily(m Model) ([]DailyRestModel, error) {
 	for i, d := range m.ForecastData() {
 		hourly := make([]HourlyRestModel, len(d.HourlyForecast))
 		for j, h := range d.HourlyForecast {
-			hourly[j] = HourlyRestModel{
-				Time:                     h.Time,
-				Temperature:              h.Temperature,
-				WeatherCode:              h.WeatherCode,
-				Summary:                  h.Summary,
-				Icon:                     h.Icon,
-				PrecipitationProbability: h.PrecipitationProbability,
-			}
+			hourly[j] = HourlyRestModel(h)
 		}
 		result[i] = DailyRestModel{
 			Id:              d.Date,

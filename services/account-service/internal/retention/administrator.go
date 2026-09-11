@@ -4,8 +4,9 @@ import (
 	"time"
 
 	"github.com/google/uuid"
-	sharedretention "github.com/jtumidanski/home-hub/shared/go/retention"
 	"gorm.io/gorm"
+
+	sharedretention "github.com/jtumidanski/home-hub/shared/go/retention"
 )
 
 func upsertOverride(db *gorm.DB, tenantID uuid.UUID, scopeKind sharedretention.ScopeKind, scopeID uuid.UUID, cat sharedretention.Category, days int) (Entity, error) {

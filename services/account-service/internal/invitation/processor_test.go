@@ -6,14 +6,15 @@ import (
 	"time"
 
 	"github.com/google/uuid"
+	"github.com/sirupsen/logrus/hooks/test"
+	"gorm.io/driver/sqlite"
+	"gorm.io/gorm"
+
 	"github.com/jtumidanski/home-hub/services/account-service/internal/household"
 	"github.com/jtumidanski/home-hub/services/account-service/internal/membership"
 	"github.com/jtumidanski/home-hub/services/account-service/internal/preference"
 	"github.com/jtumidanski/home-hub/shared/go/database"
 	tenantctx "github.com/jtumidanski/home-hub/shared/go/tenant"
-	"github.com/sirupsen/logrus/hooks/test"
-	"gorm.io/driver/sqlite"
-	"gorm.io/gorm"
 )
 
 func setupTestDB(t *testing.T) *gorm.DB {
@@ -101,7 +102,7 @@ func TestProcessorCreate(t *testing.T) {
 				l, _ := test.NewNullLogger()
 				ctx := withTenantCtx(tenantID, ownerID)
 				proc := NewProcessor(l, ctx, db)
-				proc.Create(tenantID, householdID, "dup@example.com", "viewer", ownerID)
+				_, _ = proc.Create(tenantID, householdID, "dup@example.com", "viewer", ownerID)
 			},
 			wantErr: ErrAlreadyInvited,
 		},
@@ -233,14 +234,14 @@ func TestProcessorRevoke(t *testing.T) {
 
 func TestProcessorAccept(t *testing.T) {
 	tests := []struct {
-		name        string
-		email       string
-		acceptEmail string
-		tenantID    func(invTenantID uuid.UUID) uuid.UUID
+		name         string
+		email        string
+		acceptEmail  string
+		tenantID     func(invTenantID uuid.UUID) uuid.UUID
 		timeOverride func()
 		timeRestore  func()
-		wantErr     error
-		wantStatus  string
+		wantErr      error
+		wantStatus   string
 	}{
 		{
 			name:        "accept creates membership",
@@ -362,7 +363,7 @@ func TestProcessorDecline(t *testing.T) {
 			inv, _ := proc.Create(tenantID, hh.Id(), tt.email, "viewer", ownerID)
 
 			if tt.preDecline {
-				proc.Decline(inv.Id(), tt.email)
+				_, _ = proc.Decline(inv.Id(), tt.email)
 			}
 
 			result, err := proc.Decline(inv.Id(), tt.declineEmail)

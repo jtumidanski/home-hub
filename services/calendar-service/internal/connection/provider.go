@@ -2,8 +2,9 @@ package connection
 
 import (
 	"github.com/google/uuid"
-	database "github.com/jtumidanski/home-hub/shared/go/database"
 	"gorm.io/gorm"
+
+	database "github.com/jtumidanski/home-hub/shared/go/database"
 )
 
 func getByID(id uuid.UUID) database.EntityProvider[Entity] {
@@ -15,12 +16,6 @@ func getByID(id uuid.UUID) database.EntityProvider[Entity] {
 func getByUserAndHousehold(userID, householdID uuid.UUID) database.EntityProvider[[]Entity] {
 	return database.SliceQuery[Entity](func(db *gorm.DB) *gorm.DB {
 		return db.Where("user_id = ? AND household_id = ?", userID, householdID)
-	})
-}
-
-func getByHousehold(householdID uuid.UUID) database.EntityProvider[[]Entity] {
-	return database.SliceQuery[Entity](func(db *gorm.DB) *gorm.DB {
-		return db.Where("household_id = ?", householdID)
 	})
 }
 

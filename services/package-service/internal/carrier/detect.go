@@ -25,8 +25,8 @@ type RestDetectionModel struct {
 }
 
 func (r RestDetectionModel) GetName() string       { return "carrierDetections" }
-func (r RestDetectionModel) GetID() string          { return "detect" }
-func (r *RestDetectionModel) SetID(_ string) error  { return nil }
+func (r RestDetectionModel) GetID() string         { return "detect" }
+func (r *RestDetectionModel) SetID(_ string) error { return nil }
 func (r *RestDetectionModel) SetToOneReferenceID(_ string, _ string) error {
 	return nil
 }
@@ -42,7 +42,7 @@ var (
 	fedexPattern20 = regexp.MustCompile(`^\d{20}$`)
 
 	// USPS: 20-22 digits, or starts with specific prefixes
-	uspsPattern20_22 = regexp.MustCompile(`^\d{20,22}$`)
+	uspsPattern20_22  = regexp.MustCompile(`^\d{20,22}$`)
 	uspsPrefixPattern = regexp.MustCompile(`^(94|92|93|70|23)\d{18,20}$`)
 )
 

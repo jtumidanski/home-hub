@@ -23,8 +23,8 @@ type Entity struct {
 	LastPolledAt       *time.Time
 	LastStatusChangeAt *time.Time
 	ArchivedAt         *time.Time
-	CreatedAt          time.Time  `gorm:"not null"`
-	UpdatedAt          time.Time  `gorm:"not null"`
+	CreatedAt          time.Time `gorm:"not null"`
+	UpdatedAt          time.Time `gorm:"not null"`
 }
 
 func (Entity) TableName() string { return "packages" }

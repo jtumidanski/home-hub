@@ -45,13 +45,13 @@ type ActualsRest struct {
 // PerformanceRest is the embedded performance projection. `Actuals` is null in
 // per_set mode and populated in summary mode; `Sets` is the inverse.
 type PerformanceRest struct {
-	Status     string                `json:"status"`
-	Mode       string                `json:"mode"`
-	WeightUnit *string               `json:"weightUnit,omitempty"`
-	Actuals    *ActualsRest          `json:"actuals,omitempty"`
-	Sets       []PerformanceSetRest  `json:"sets,omitempty"`
-	Notes      *string               `json:"notes,omitempty"`
-	UpdatedAt  *time.Time            `json:"updatedAt,omitempty"`
+	Status     string               `json:"status"`
+	Mode       string               `json:"mode"`
+	WeightUnit *string              `json:"weightUnit,omitempty"`
+	Actuals    *ActualsRest         `json:"actuals,omitempty"`
+	Sets       []PerformanceSetRest `json:"sets,omitempty"`
+	Notes      *string              `json:"notes,omitempty"`
+	UpdatedAt  *time.Time           `json:"updatedAt,omitempty"`
 }
 
 // ItemRest is one row inside `weeks.attributes.items`. The naming convention

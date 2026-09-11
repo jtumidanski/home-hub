@@ -14,11 +14,12 @@ import (
 	"context"
 	"encoding/json"
 
-	"github.com/jtumidanski/home-hub/services/dashboard-service/internal/dashboard"
-	sharedevents "github.com/jtumidanski/home-hub/shared/go/events"
 	"github.com/segmentio/kafka-go"
 	"github.com/sirupsen/logrus"
 	"gorm.io/gorm"
+
+	"github.com/jtumidanski/home-hub/services/dashboard-service/internal/dashboard"
+	sharedevents "github.com/jtumidanski/home-hub/shared/go/events"
 )
 
 type Handler struct {

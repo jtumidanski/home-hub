@@ -39,9 +39,11 @@ export function SidebarProvider({
   const [openMobile, setOpenMobile] = React.useState(false);
 
   // Collapse the mobile drawer whenever we grow back to the desktop layout.
-  React.useEffect(() => {
+  const [prevIsMobile, setPrevIsMobile] = React.useState(isMobile);
+  if (isMobile !== prevIsMobile) {
+    setPrevIsMobile(isMobile);
     if (!isMobile) setOpenMobile(false);
-  }, [isMobile]);
+  }
 
   const toggleSidebar = React.useCallback(() => {
     setOpenMobile((open) => !open);

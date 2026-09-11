@@ -5,18 +5,19 @@ import (
 	"errors"
 
 	"github.com/google/uuid"
-	"github.com/jtumidanski/home-hub/services/workout-service/internal/exercise"
-	"github.com/jtumidanski/home-hub/services/workout-service/internal/planneditem"
 	"github.com/sirupsen/logrus"
 	"gorm.io/gorm"
+
+	"github.com/jtumidanski/home-hub/services/workout-service/internal/exercise"
+	"github.com/jtumidanski/home-hub/services/workout-service/internal/planneditem"
 )
 
 var (
-	ErrPlannedItemNotFound  = errors.New("planned item not found")
-	ErrPerSetNotAllowed     = errors.New("per-set logging is only valid for strength items")
-	ErrSummaryWhilePerSet   = errors.New("cannot write summary actuals while per-set rows exist; collapse first")
-	ErrUnitChangeWithSets   = errors.New("cannot change weightUnit while per-set rows exist")
-	ErrInvalidSetNumeric    = errors.New("set reps and weight must be non-negative")
+	ErrPlannedItemNotFound = errors.New("planned item not found")
+	ErrPerSetNotAllowed    = errors.New("per-set logging is only valid for strength items")
+	ErrSummaryWhilePerSet  = errors.New("cannot write summary actuals while per-set rows exist; collapse first")
+	ErrUnitChangeWithSets  = errors.New("cannot change weightUnit while per-set rows exist")
+	ErrInvalidSetNumeric   = errors.New("set reps and weight must be non-negative")
 )
 
 type Processor struct {
@@ -126,8 +127,7 @@ func (p *Processor) Patch(tenantID, userID uuid.UUID, plannedItemID uuid.UUID, i
 
 	// Validate the merged state through the builder so unit/numeric/status
 	// invariants are enforced even when the patch arrived in slices.
-	m, err := Make(e)
-	if err != nil {
+	if _, err := Make(e); err != nil {
 		return Model{}, nil, err
 	}
 
@@ -140,7 +140,7 @@ func (p *Processor) Patch(tenantID, userID uuid.UUID, plannedItemID uuid.UUID, i
 			return Model{}, nil, err
 		}
 	}
-	m, err = Make(e)
+	m, err := Make(e)
 	if err != nil {
 		return Model{}, nil, err
 	}

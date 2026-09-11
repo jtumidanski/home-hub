@@ -5,9 +5,10 @@ import (
 
 	"github.com/gorilla/mux"
 	"github.com/jtumidanski/api2go/jsonapi"
+	"github.com/sirupsen/logrus"
+
 	"github.com/jtumidanski/home-hub/services/weather-service/internal/openmeteo"
 	"github.com/jtumidanski/home-hub/shared/go/server"
-	"github.com/sirupsen/logrus"
 )
 
 func InitializeRoutes(client *openmeteo.Client) func(l logrus.FieldLogger, si jsonapi.ServerInformation, api *mux.Router) {

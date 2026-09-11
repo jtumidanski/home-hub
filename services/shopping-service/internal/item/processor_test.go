@@ -5,12 +5,13 @@ import (
 	"testing"
 
 	"github.com/google/uuid"
-	database "github.com/jtumidanski/home-hub/shared/go/database"
 	"github.com/sirupsen/logrus/hooks/test"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"gorm.io/driver/sqlite"
 	"gorm.io/gorm"
+
+	database "github.com/jtumidanski/home-hub/shared/go/database"
 )
 
 func setupTestDB(t *testing.T) *gorm.DB {
@@ -136,8 +137,8 @@ func TestProcessor_GetByListID(t *testing.T) {
 		{
 			name: "returns items for list",
 			setup: func() {
-				p.Add(AddInput{ListID: listID, Name: "Item A"})
-				p.Add(AddInput{ListID: listID, Name: "Item B"})
+				_, _ = p.Add(AddInput{ListID: listID, Name: "Item A"})
+				_, _ = p.Add(AddInput{ListID: listID, Name: "Item B"})
 			},
 			wantCount: 2,
 		},
@@ -258,8 +259,8 @@ func TestProcessor_UncheckAll(t *testing.T) {
 
 	m1, _ := p.Add(AddInput{ListID: listID, Name: "Item 1"})
 	m2, _ := p.Add(AddInput{ListID: listID, Name: "Item 2"})
-	p.Check(m1.Id(), true)
-	p.Check(m2.Id(), true)
+	_, _ = p.Check(m1.Id(), true)
+	_, _ = p.Check(m2.Id(), true)
 
 	err := p.UncheckAll(listID)
 	require.NoError(t, err)

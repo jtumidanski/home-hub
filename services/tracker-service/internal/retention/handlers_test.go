@@ -7,11 +7,12 @@ import (
 	"time"
 
 	"github.com/google/uuid"
+	"gorm.io/driver/sqlite"
+	"gorm.io/gorm"
+
 	"github.com/jtumidanski/home-hub/services/tracker-service/internal/entry"
 	"github.com/jtumidanski/home-hub/services/tracker-service/internal/trackingitem"
 	sr "github.com/jtumidanski/home-hub/shared/go/retention"
-	"gorm.io/driver/sqlite"
-	"gorm.io/gorm"
 )
 
 func newDB(t *testing.T) *gorm.DB {

@@ -7,14 +7,15 @@ import (
 	"net/http/httptest"
 	"testing"
 
-	"github.com/gorilla/mux"
-	"github.com/jtumidanski/home-hub/shared/go/database"
-	"github.com/jtumidanski/home-hub/shared/go/server"
-	tenantctx "github.com/jtumidanski/home-hub/shared/go/tenant"
 	"github.com/google/uuid"
+	"github.com/gorilla/mux"
 	"github.com/sirupsen/logrus/hooks/test"
 	"gorm.io/driver/sqlite"
 	"gorm.io/gorm"
+
+	"github.com/jtumidanski/home-hub/shared/go/database"
+	"github.com/jtumidanski/home-hub/shared/go/server"
+	tenantctx "github.com/jtumidanski/home-hub/shared/go/tenant"
 )
 
 func setupHandlerTest(t *testing.T) (*mux.Router, *gorm.DB, uuid.UUID, uuid.UUID) {
@@ -25,7 +26,7 @@ func setupHandlerTest(t *testing.T) (*mux.Router, *gorm.DB, uuid.UUID, uuid.UUID
 	}
 	l, _ := test.NewNullLogger()
 	database.RegisterTenantCallbacks(l, db)
-	db.AutoMigrate(&Entity{})
+	_ = db.AutoMigrate(&Entity{})
 
 	router := mux.NewRouter()
 	si := server.GetServerInformation()
@@ -81,7 +82,7 @@ func TestHandlers(t *testing.T) {
 			tenantctx.New(tenantID, uuid.Nil, userID),
 		)
 		p := NewProcessor(l, ctx, db)
-		p.Create(tenantID, uuid.New(), userID, "owner")
+		_, _ = p.Create(tenantID, uuid.New(), userID, "owner")
 
 		req := httptest.NewRequest(http.MethodGet, "/memberships", nil)
 		req = withTenant(req, tenantID, userID)
@@ -105,7 +106,7 @@ func TestHandlers(t *testing.T) {
 		p := NewProcessor(l, ctx, db)
 		householdID := uuid.New()
 		// Create owner membership for the requester
-		p.Create(tenantID, householdID, ownerID, "owner")
+		_, _ = p.Create(tenantID, householdID, ownerID, "owner")
 		// Create target membership for another user
 		targetUserID := uuid.New()
 		target, _ := p.Create(tenantID, householdID, targetUserID, "viewer")

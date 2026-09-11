@@ -4,8 +4,9 @@ import (
 	"net/http"
 
 	"github.com/google/uuid"
-	"github.com/jtumidanski/home-hub/shared/go/logging"
 	"github.com/sirupsen/logrus"
+
+	"github.com/jtumidanski/home-hub/shared/go/logging"
 )
 
 // RequestIDMiddleware generates a unique request ID and adds it to the

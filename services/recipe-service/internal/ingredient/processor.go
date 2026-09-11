@@ -7,15 +7,16 @@ import (
 	"time"
 
 	"github.com/google/uuid"
-	"github.com/jtumidanski/home-hub/shared/go/model"
 	"github.com/sirupsen/logrus"
 	"gorm.io/gorm"
+
+	"github.com/jtumidanski/home-hub/shared/go/model"
 )
 
 var (
-	ErrNotFound       = errors.New("canonical ingredient not found")
-	ErrAliasConflict  = errors.New("alias conflicts with existing canonical ingredient name or alias")
-	ErrHasReferences  = errors.New("canonical ingredient is still referenced by recipe ingredients")
+	ErrNotFound      = errors.New("canonical ingredient not found")
+	ErrAliasConflict = errors.New("alias conflicts with existing canonical ingredient name or alias")
+	ErrHasReferences = errors.New("canonical ingredient is still referenced by recipe ingredients")
 )
 
 type Processor struct {

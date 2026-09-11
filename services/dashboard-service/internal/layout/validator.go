@@ -8,6 +8,7 @@ import (
 	"fmt"
 
 	"github.com/google/uuid"
+
 	shared "github.com/jtumidanski/home-hub/shared/go/dashboard"
 )
 
@@ -54,27 +55,35 @@ func (e ValidationError) Error() string {
 
 func Validate(raw json.RawMessage) (Layout, error) {
 	if len(raw) > shared.MaxLayoutBytes {
-		return Layout{}, ValidationError{Code: CodePayloadTooLarge, Pointer: "/data/attributes/layout",
-			Message: fmt.Sprintf("layout exceeds %d bytes", shared.MaxLayoutBytes)}
+		return Layout{}, ValidationError{
+			Code: CodePayloadTooLarge, Pointer: "/data/attributes/layout",
+			Message: fmt.Sprintf("layout exceeds %d bytes", shared.MaxLayoutBytes),
+		}
 	}
 	var out Layout
 	if err := json.Unmarshal(raw, &out); err != nil {
 		return Layout{}, ValidationError{Code: CodeMalformed, Pointer: "/data/attributes/layout", Message: err.Error()}
 	}
 	if out.Version != shared.LayoutSchemaVersion {
-		return Layout{}, ValidationError{Code: CodeUnsupportedSchemaVersion, Pointer: "/data/attributes/layout/version",
-			Message: fmt.Sprintf("expected version %d, got %d", shared.LayoutSchemaVersion, out.Version)}
+		return Layout{}, ValidationError{
+			Code: CodeUnsupportedSchemaVersion, Pointer: "/data/attributes/layout/version",
+			Message: fmt.Sprintf("expected version %d, got %d", shared.LayoutSchemaVersion, out.Version),
+		}
 	}
 	if len(out.Widgets) > shared.MaxWidgets {
-		return Layout{}, ValidationError{Code: CodeWidgetCountExceeded, Pointer: "/data/attributes/layout/widgets",
-			Message: fmt.Sprintf("at most %d widgets allowed", shared.MaxWidgets)}
+		return Layout{}, ValidationError{
+			Code: CodeWidgetCountExceeded, Pointer: "/data/attributes/layout/widgets",
+			Message: fmt.Sprintf("at most %d widgets allowed", shared.MaxWidgets),
+		}
 	}
 	seen := make(map[uuid.UUID]struct{}, len(out.Widgets))
 	for i, w := range out.Widgets {
 		ptr := func(f string) string { return fmt.Sprintf("/data/attributes/layout/widgets/%d/%s", i, f) }
 		if !shared.IsKnownWidgetType(w.Type) {
-			return Layout{}, ValidationError{Code: CodeWidgetUnknownType, Pointer: ptr("type"),
-				Message: fmt.Sprintf("widget type %q is not in the registry", w.Type)}
+			return Layout{}, ValidationError{
+				Code: CodeWidgetUnknownType, Pointer: ptr("type"),
+				Message: fmt.Sprintf("widget type %q is not in the registry", w.Type),
+			}
 		}
 		if w.X < 0 || w.Y < 0 || w.W < 1 || w.H < 1 || w.X+w.W > shared.GridColumns {
 			return Layout{}, ValidationError{Code: CodeWidgetBadGeometry, Pointer: ptr(""), Message: "widget geometry out of grid"}

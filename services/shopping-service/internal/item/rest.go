@@ -19,7 +19,7 @@ type RestModel struct {
 	UpdatedAt         time.Time  `json:"updated_at"`
 }
 
-func (r RestModel) GetName() string       { return "shopping-items" }
+func (r RestModel) GetName() string        { return "shopping-items" }
 func (r RestModel) GetID() string          { return r.Id.String() }
 func (r *RestModel) SetID(id string) error { var err error; r.Id, err = uuid.Parse(id); return err }
 
@@ -49,8 +49,8 @@ type CreateRequest struct {
 	Position   *int       `json:"position,omitempty"`
 }
 
-func (r CreateRequest) GetName() string       { return "shopping-items" }
-func (r CreateRequest) GetID() string          { return r.Id.String() }
+func (r CreateRequest) GetName() string { return "shopping-items" }
+func (r CreateRequest) GetID() string   { return r.Id.String() }
 func (r *CreateRequest) SetID(id string) error {
 	if id == "" {
 		return nil
@@ -68,7 +68,7 @@ type UpdateRequest struct {
 	Position   *int       `json:"position,omitempty"`
 }
 
-func (r UpdateRequest) GetName() string       { return "shopping-items" }
+func (r UpdateRequest) GetName() string        { return "shopping-items" }
 func (r UpdateRequest) GetID() string          { return r.Id.String() }
 func (r *UpdateRequest) SetID(id string) error { var err error; r.Id, err = uuid.Parse(id); return err }
 
@@ -77,7 +77,7 @@ type CheckRequest struct {
 	Checked bool      `json:"checked"`
 }
 
-func (r CheckRequest) GetName() string       { return "shopping-items" }
+func (r CheckRequest) GetName() string        { return "shopping-items" }
 func (r CheckRequest) GetID() string          { return r.Id.String() }
 func (r *CheckRequest) SetID(id string) error { var err error; r.Id, err = uuid.Parse(id); return err }
 

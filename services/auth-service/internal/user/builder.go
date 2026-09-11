@@ -29,14 +29,14 @@ func NewBuilder() *Builder {
 }
 
 func (b *Builder) SetId(id uuid.UUID) *Builder              { b.id = id; return b }
-func (b *Builder) SetEmail(email string) *Builder            { b.email = email; return b }
-func (b *Builder) SetDisplayName(name string) *Builder       { b.displayName = name; return b }
-func (b *Builder) SetGivenName(name string) *Builder         { b.givenName = name; return b }
-func (b *Builder) SetFamilyName(name string) *Builder        { b.familyName = name; return b }
-func (b *Builder) SetAvatarURL(url string) *Builder          { b.avatarURL = url; return b }
-func (b *Builder) SetProviderAvatarURL(url string) *Builder  { b.providerAvatarURL = url; return b }
-func (b *Builder) SetCreatedAt(t time.Time) *Builder         { b.createdAt = t; return b }
-func (b *Builder) SetUpdatedAt(t time.Time) *Builder         { b.updatedAt = t; return b }
+func (b *Builder) SetEmail(email string) *Builder           { b.email = email; return b }
+func (b *Builder) SetDisplayName(name string) *Builder      { b.displayName = name; return b }
+func (b *Builder) SetGivenName(name string) *Builder        { b.givenName = name; return b }
+func (b *Builder) SetFamilyName(name string) *Builder       { b.familyName = name; return b }
+func (b *Builder) SetAvatarURL(url string) *Builder         { b.avatarURL = url; return b }
+func (b *Builder) SetProviderAvatarURL(url string) *Builder { b.providerAvatarURL = url; return b }
+func (b *Builder) SetCreatedAt(t time.Time) *Builder        { b.createdAt = t; return b }
+func (b *Builder) SetUpdatedAt(t time.Time) *Builder        { b.updatedAt = t; return b }
 
 func (b *Builder) Build() (Model, error) {
 	if b.email == "" {

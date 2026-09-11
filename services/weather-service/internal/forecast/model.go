@@ -47,18 +47,18 @@ type Model struct {
 	updatedAt    time.Time
 }
 
-func (m Model) Id() uuid.UUID              { return m.id }
-func (m Model) TenantID() uuid.UUID        { return m.tenantID }
-func (m Model) HouseholdID() uuid.UUID     { return m.householdID }
-func (m Model) LocationID() *uuid.UUID     { return m.locationID }
-func (m Model) Latitude() float64          { return m.latitude }
-func (m Model) Longitude() float64         { return m.longitude }
-func (m Model) Units() string              { return m.units }
-func (m Model) CurrentData() CurrentData   { return m.currentData }
+func (m Model) Id() uuid.UUID                 { return m.id }
+func (m Model) TenantID() uuid.UUID           { return m.tenantID }
+func (m Model) HouseholdID() uuid.UUID        { return m.householdID }
+func (m Model) LocationID() *uuid.UUID        { return m.locationID }
+func (m Model) Latitude() float64             { return m.latitude }
+func (m Model) Longitude() float64            { return m.longitude }
+func (m Model) Units() string                 { return m.units }
+func (m Model) CurrentData() CurrentData      { return m.currentData }
 func (m Model) ForecastData() []DailyForecast { return m.forecastData }
-func (m Model) FetchedAt() time.Time       { return m.fetchedAt }
-func (m Model) CreatedAt() time.Time       { return m.createdAt }
-func (m Model) UpdatedAt() time.Time       { return m.updatedAt }
+func (m Model) FetchedAt() time.Time          { return m.fetchedAt }
+func (m Model) CreatedAt() time.Time          { return m.createdAt }
+func (m Model) UpdatedAt() time.Time          { return m.updatedAt }
 
 func (m Model) TemperatureUnit() string {
 	if m.units == "imperial" {

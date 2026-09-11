@@ -66,7 +66,7 @@ func (c *UPSClient) Track(ctx context.Context, trackingNumber string) (TrackingR
 	if err != nil {
 		return TrackingResult{}, fmt.Errorf("UPS tracking request failed: %w", err)
 	}
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 	c.budget.Record(c.Name())
 
 	body, err := io.ReadAll(resp.Body)
@@ -100,7 +100,7 @@ func (c *UPSClient) parseResponse(body []byte) (TrackingResult, error) {
 		Status: normalizeUPSStatus(pkg.CurrentStatus.Type),
 	}
 
-	if pkg.DeliveryDate != nil && len(pkg.DeliveryDate) > 0 {
+	if len(pkg.DeliveryDate) > 0 {
 		dateStr := pkg.DeliveryDate[0].Date
 		if t, err := time.Parse("20060102", dateStr); err == nil {
 			result.EstimatedDelivery = &t

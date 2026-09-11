@@ -31,7 +31,6 @@ func TestBuilder_Build(t *testing.T) {
 			SetCreatedAt(now).
 			SetUpdatedAt(now).
 			Build()
-
 		if err != nil {
 			t.Fatalf("expected no error, got %v", err)
 		}
@@ -92,7 +91,6 @@ func TestBuilder_Build(t *testing.T) {
 			SetRawName("mystery ingredient").
 			SetNormalizationStatus(StatusUnresolved).
 			Build()
-
 		if err != nil {
 			t.Fatalf("expected no error, got %v", err)
 		}

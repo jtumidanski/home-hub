@@ -20,10 +20,11 @@ import (
 	"time"
 
 	"github.com/google/uuid"
+	"gorm.io/gorm"
+
 	"github.com/jtumidanski/home-hub/services/package-service/internal/tracking"
 	"github.com/jtumidanski/home-hub/services/package-service/internal/trackingevent"
 	sr "github.com/jtumidanski/home-hub/shared/go/retention"
-	"gorm.io/gorm"
 )
 
 func discoverHouseholdScopes(db *gorm.DB) ([]sr.Scope, error) {

@@ -2,7 +2,13 @@ import { describe, it, expect, vi, beforeEach } from "vitest";
 import { render, screen, fireEvent } from "@testing-library/react";
 import { MemoryRouter, Route, Routes } from "react-router-dom";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import type { PerformanceStatus, SummaryDocument, WorkoutKind } from "@/types/models/workout";
+import type {
+  PerformanceStatus,
+  SummaryActual,
+  SummaryDocument,
+  SummaryPlanned,
+  WorkoutKind,
+} from "@/types/models/workout";
 
 const mockUseWorkoutWeekSummary = vi.fn();
 const mockUseWorkoutNearestPopulatedWeek = vi.fn();
@@ -52,8 +58,18 @@ function summaryDoc(overrides?: {
                 exerciseName: "Bench Press",
                 kind: overrides?.kind ?? "strength",
                 status: overrides?.status ?? "done",
-                planned: (overrides?.planned as any) ?? { sets: 3, reps: 10, weight: 135, weightUnit: "lb" },
-                actualSummary: (overrides?.actualSummary as any) ?? { sets: 3, reps: 10, weight: 140, weightUnit: "lb" },
+                planned: (overrides?.planned as SummaryPlanned | undefined) ?? {
+                  sets: 3,
+                  reps: 10,
+                  weight: 135,
+                  weightUnit: "lb",
+                },
+                actualSummary: (overrides?.actualSummary as SummaryActual | null | undefined) ?? {
+                  sets: 3,
+                  reps: 10,
+                  weight: 140,
+                  weightUnit: "lb",
+                },
               },
             ],
           },

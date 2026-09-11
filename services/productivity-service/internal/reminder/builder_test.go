@@ -15,10 +15,10 @@ func TestBuilder_Build(t *testing.T) {
 	validScheduledFor := time.Date(2026, 4, 1, 9, 0, 0, 0, time.UTC)
 
 	tests := []struct {
-		name        string
-		setup       func(b *Builder) *Builder
-		wantErr     error
-		wantNoErr   bool
+		name      string
+		setup     func(b *Builder) *Builder
+		wantErr   error
+		wantNoErr bool
 	}{
 		{
 			name: "valid build with all fields",

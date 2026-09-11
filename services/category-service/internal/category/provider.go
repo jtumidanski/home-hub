@@ -2,8 +2,9 @@ package category
 
 import (
 	"github.com/google/uuid"
-	database "github.com/jtumidanski/home-hub/shared/go/database"
 	"gorm.io/gorm"
+
+	database "github.com/jtumidanski/home-hub/shared/go/database"
 )
 
 func GetByID(id uuid.UUID) database.EntityProvider[Entity] {

@@ -48,7 +48,7 @@ func (m Model) ToEntity() Entity {
 		RawQuantity: rawQty, RawUnit: rawUnit, Position: m.position,
 		CanonicalIngredientId: m.canonicalIngredientID, CanonicalUnit: canonicalUnit,
 		NormalizationStatus: string(m.normalizationStatus),
-		CreatedAt: m.createdAt, UpdatedAt: m.updatedAt,
+		CreatedAt:           m.createdAt, UpdatedAt: m.updatedAt,
 	}
 }
 

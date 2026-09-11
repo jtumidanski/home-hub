@@ -19,15 +19,15 @@ type Model struct {
 	updatedAt         time.Time
 }
 
-func (m Model) Id() uuid.UUID           { return m.id }
-func (m Model) Email() string            { return m.email }
-func (m Model) DisplayName() string      { return m.displayName }
-func (m Model) GivenName() string        { return m.givenName }
-func (m Model) FamilyName() string       { return m.familyName }
-func (m Model) AvatarURL() string        { return m.avatarURL }
+func (m Model) Id() uuid.UUID             { return m.id }
+func (m Model) Email() string             { return m.email }
+func (m Model) DisplayName() string       { return m.displayName }
+func (m Model) GivenName() string         { return m.givenName }
+func (m Model) FamilyName() string        { return m.familyName }
+func (m Model) AvatarURL() string         { return m.avatarURL }
 func (m Model) ProviderAvatarURL() string { return m.providerAvatarURL }
-func (m Model) CreatedAt() time.Time     { return m.createdAt }
-func (m Model) UpdatedAt() time.Time     { return m.updatedAt }
+func (m Model) CreatedAt() time.Time      { return m.createdAt }
+func (m Model) UpdatedAt() time.Time      { return m.updatedAt }
 
 // ToEntity converts the domain model back to a database entity.
 func (m Model) ToEntity() Entity {

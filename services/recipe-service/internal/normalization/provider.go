@@ -2,8 +2,9 @@ package normalization
 
 import (
 	"github.com/google/uuid"
-	database "github.com/jtumidanski/home-hub/shared/go/database"
 	"gorm.io/gorm"
+
+	database "github.com/jtumidanski/home-hub/shared/go/database"
 )
 
 func getByRecipeID(recipeID uuid.UUID) database.EntityProvider[[]Entity] {

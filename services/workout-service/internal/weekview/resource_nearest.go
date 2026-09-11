@@ -5,10 +5,11 @@ import (
 	"net/http"
 	"time"
 
+	"gorm.io/gorm"
+
 	"github.com/jtumidanski/home-hub/services/workout-service/internal/week"
 	"github.com/jtumidanski/home-hub/shared/go/server"
 	tenantctx "github.com/jtumidanski/home-hub/shared/go/tenant"
-	"gorm.io/gorm"
 )
 
 // NearestPointer is the JSON:API resource returned by GET /weeks/nearest. The
@@ -19,8 +20,8 @@ type NearestPointer struct {
 	WeekStartDate string `json:"weekStartDate"`
 }
 
-func (r NearestPointer) GetName() string         { return "workoutWeekPointer" }
-func (r NearestPointer) GetID() string           { return r.Id }
+func (r NearestPointer) GetName() string        { return "workoutWeekPointer" }
+func (r NearestPointer) GetID() string          { return r.Id }
 func (r *NearestPointer) SetID(id string) error { r.Id = id; return nil }
 
 // normalizeToMonday rolls a calendar date back to the Monday of the same

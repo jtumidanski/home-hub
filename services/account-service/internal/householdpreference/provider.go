@@ -2,8 +2,9 @@ package householdpreference
 
 import (
 	"github.com/google/uuid"
-	database "github.com/jtumidanski/home-hub/shared/go/database"
 	"gorm.io/gorm"
+
+	database "github.com/jtumidanski/home-hub/shared/go/database"
 )
 
 // getByIDProvider returns a household preference by primary key.

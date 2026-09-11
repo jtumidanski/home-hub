@@ -4,6 +4,7 @@ import (
 	"context"
 
 	"github.com/gorilla/mux"
+
 	"github.com/jtumidanski/home-hub/services/package-service/internal/carrier"
 	"github.com/jtumidanski/home-hub/services/package-service/internal/config"
 	"github.com/jtumidanski/home-hub/services/package-service/internal/poller"
@@ -21,7 +22,7 @@ func main() {
 	cfg := config.Load()
 
 	shutdownTracing := logging.InitTracing(l, "package-service")
-	defer shutdownTracing(context.Background())
+	defer func() { _ = shutdownTracing(context.Background()) }()
 
 	db := database.Connect(l, cfg.DB,
 		database.SetMigrations(

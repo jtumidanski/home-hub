@@ -8,12 +8,12 @@ import (
 )
 
 var (
-	ErrNameRequired           = errors.New("household name is required")
-	ErrTimezoneRequired       = errors.New("household timezone is required")
-	ErrUnitsRequired          = errors.New("household units is required")
-	ErrPartialCoordinates     = errors.New("both latitude and longitude must be provided together")
-	ErrLatitudeOutOfRange     = errors.New("latitude must be between -90 and 90")
-	ErrLongitudeOutOfRange    = errors.New("longitude must be between -180 and 180")
+	ErrNameRequired        = errors.New("household name is required")
+	ErrTimezoneRequired    = errors.New("household timezone is required")
+	ErrUnitsRequired       = errors.New("household units is required")
+	ErrPartialCoordinates  = errors.New("both latitude and longitude must be provided together")
+	ErrLatitudeOutOfRange  = errors.New("latitude must be between -90 and 90")
+	ErrLongitudeOutOfRange = errors.New("longitude must be between -180 and 180")
 )
 
 type Builder struct {

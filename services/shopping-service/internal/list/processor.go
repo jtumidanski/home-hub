@@ -7,19 +7,20 @@ import (
 	"time"
 
 	"github.com/google/uuid"
+	"github.com/sirupsen/logrus"
+	"gorm.io/gorm"
+
 	"github.com/jtumidanski/home-hub/services/shopping-service/internal/categoryclient"
 	"github.com/jtumidanski/home-hub/services/shopping-service/internal/item"
 	"github.com/jtumidanski/home-hub/services/shopping-service/internal/recipeclient"
 	tenantctx "github.com/jtumidanski/home-hub/shared/go/tenant"
-	"github.com/sirupsen/logrus"
-	"gorm.io/gorm"
 )
 
 var (
-	ErrNotFound       = errors.New("shopping list not found")
+	ErrNotFound        = errors.New("shopping list not found")
 	ErrAlreadyArchived = errors.New("shopping list is already archived")
-	ErrNotArchived    = errors.New("shopping list is not archived")
-	ErrArchived       = errors.New("shopping list is archived")
+	ErrNotArchived     = errors.New("shopping list is not archived")
+	ErrArchived        = errors.New("shopping list is archived")
 )
 
 type Processor struct {
