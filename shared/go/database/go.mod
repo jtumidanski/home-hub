@@ -6,7 +6,7 @@ require (
 	github.com/jtumidanski/home-hub/shared/go/model v0.0.0
 	github.com/jtumidanski/home-hub/shared/go/tenant v0.0.0
 	github.com/sirupsen/logrus v1.10.2
-	gorm.io/driver/postgres v1.6.2
+	gorm.io/driver/postgres v1.6.3
 	gorm.io/gorm v1.31.2
 )
 
