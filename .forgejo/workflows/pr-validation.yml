@@ -1,0 +1,265 @@
+name: PR Validation
+
+# Forge port of .github/workflows/pr.yml (Phase 5c).
+#
+# Departures from the original:
+#
+#   1. The twelve near-identical `build-<service>` jobs collapse into one
+#      matrix. They differed only in the service name; the original repeated
+#      the same six lines twelve times, and the service list was already
+#      duplicated four times across the two workflows.
+#   2. actions/setup-go and actions/setup-node are dropped. Both resolve and
+#      download a toolchain from github.com at job time -- the dependency this
+#      exit exists to remove, and the same reason Phase 5b dropped
+#      actions/setup-python. The runner image ships Go 1.27.0 (k3s 92f9cb2)
+#      and Node 24.19.0. Both match what the original pinned.
+#   3. `docker build` is gone. Host-mode runners have no Docker daemon, so the
+#      image check runs through buildx `driver: remote` with
+#      `--output type=cacheonly` -- it never had a reason to keep the image.
+#   4. Both matrices are floored. See main-build.yml's "Matrix floor": an
+#      empty dynamic matrix on Forgejo leaves no job row at all, and every
+#      dependent blocks forever. `docker-build-result` in the original is
+#      exactly the job that would have hung -- it is `needs: [docker-build]`
+#      with `if: always()`, which is the shape that deadlocked atlas.
+
+on:
+  pull_request:
+    branches: [main]
+
+env:
+  REGISTRY: registry.tumidanski
+
+jobs:
+  detect-changes:
+    name: Detect Changes
+    runs-on: ubuntu-latest
+    outputs:
+      frontend: ${{ steps.changes.outputs.frontend }}
+      shared: ${{ steps.changes.outputs.shared }}
+      go-matrix-floor: ${{ steps.matrix.outputs.go-matrix-floor }}
+      has-go: ${{ steps.matrix.outputs.has-go }}
+      docker-matrix-floor: ${{ steps.matrix.outputs.docker-matrix-floor }}
+      has-docker: ${{ steps.matrix.outputs.has-docker }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
+
+      - uses: dorny/paths-filter@ceb8a2b8f2d89434be7ff52d3de7ec3738c5cc9d  # v4.0.3
+        id: changes
+        with:
+          filters: |
+            auth:
+              - 'services/auth-service/**'
+              - 'shared/go/**'
+            account:
+              - 'services/account-service/**'
+              - 'shared/go/**'
+            calendar:
+              - 'services/calendar-service/**'
+              - 'shared/go/**'
+            productivity:
+              - 'services/productivity-service/**'
+              - 'shared/go/**'
+            weather:
+              - 'services/weather-service/**'
+              - 'shared/go/**'
+            recipe:
+              - 'services/recipe-service/**'
+              - 'shared/go/**'
+            category:
+              - 'services/category-service/**'
+              - 'shared/go/**'
+            shopping:
+              - 'services/shopping-service/**'
+              - 'shared/go/**'
+            package:
+              - 'services/package-service/**'
+              - 'shared/go/**'
+            tracker:
+              - 'services/tracker-service/**'
+              - 'shared/go/**'
+            workout:
+              - 'services/workout-service/**'
+              - 'shared/go/**'
+            dashboard:
+              - 'services/dashboard-service/**'
+              - 'shared/go/**'
+            frontend:
+              - 'frontend/**'
+            shared:
+              - 'shared/go/**'
+
+      - name: Compute matrices
+        id: matrix
+        env:
+          CHANGES: ${{ steps.changes.outputs.changes }}
+        run: |
+          set -euo pipefail
+          ALL='[
+            {"service":"auth-service","context":".","dockerfile":"services/auth-service/Dockerfile","changed":"auth"},
+            {"service":"account-service","context":".","dockerfile":"services/account-service/Dockerfile","changed":"account"},
+            {"service":"calendar-service","context":".","dockerfile":"services/calendar-service/Dockerfile","changed":"calendar"},
+            {"service":"productivity-service","context":".","dockerfile":"services/productivity-service/Dockerfile","changed":"productivity"},
+            {"service":"weather-service","context":".","dockerfile":"services/weather-service/Dockerfile","changed":"weather"},
+            {"service":"recipe-service","context":".","dockerfile":"services/recipe-service/Dockerfile","changed":"recipe"},
+            {"service":"category-service","context":".","dockerfile":"services/category-service/Dockerfile","changed":"category"},
+            {"service":"shopping-service","context":".","dockerfile":"services/shopping-service/Dockerfile","changed":"shopping"},
+            {"service":"package-service","context":".","dockerfile":"services/package-service/Dockerfile","changed":"package"},
+            {"service":"tracker-service","context":".","dockerfile":"services/tracker-service/Dockerfile","changed":"tracker"},
+            {"service":"workout-service","context":".","dockerfile":"services/workout-service/Dockerfile","changed":"workout"},
+            {"service":"dashboard-service","context":".","dockerfile":"services/dashboard-service/Dockerfile","changed":"dashboard"},
+            {"service":"frontend","context":"frontend","dockerfile":"frontend/Dockerfile","changed":"frontend"}
+          ]'
+          DOCKER=$(echo "$ALL" | jq -c --argjson changes "$CHANGES" 'map(select(.changed as $c | $changes | index($c)))')
+          # The Go matrix is the docker matrix minus the frontend, which has no
+          # Go module.
+          GO=$(echo "$DOCKER" | jq -c 'map(select(.service != "frontend"))')
+
+          emit() {
+            local key="$1" val="$2" sentinel="$3"
+            if [ "$(echo "$val" | jq 'length')" -gt 0 ]; then
+              echo "has-${key}=true" >> "$GITHUB_OUTPUT"
+              echo "${key}-matrix-floor=$val" >> "$GITHUB_OUTPUT"
+            else
+              echo "has-${key}=false" >> "$GITHUB_OUTPUT"
+              echo "${key}-matrix-floor=$sentinel" >> "$GITHUB_OUTPUT"
+            fi
+          }
+          emit go "$GO" '[{"service":"(no affected services)","context":".","dockerfile":"","changed":""}]'
+          emit docker "$DOCKER" '[{"service":"(no affected services)","context":".","dockerfile":"","changed":""}]'
+
+  test-go:
+    name: Test Go - ${{ matrix.service }}
+    needs: detect-changes
+    if: needs.detect-changes.outputs.has-go == 'true'
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        include: ${{ fromJSON(needs.detect-changes.outputs.go-matrix-floor) }}
+
+    steps:
+      - name: Reset the job cache
+        run: rm -rf /work/ci-cache
+
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
+
+      - name: Report the toolchain
+        run: go version
+
+      - name: Build
+        run: go build ./services/${{ matrix.service }}/...
+
+      - name: Test
+        working-directory: services/${{ matrix.service }}
+        run: go test ./... -count=1
+
+  test-shared:
+    name: Test Shared Modules
+    needs: detect-changes
+    if: needs.detect-changes.outputs.shared == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Reset the job cache
+        run: rm -rf /work/ci-cache
+
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
+
+      - name: Report the toolchain
+        run: go version
+
+      # The package list is the original's, unchanged. It is hand-maintained
+      # and will drift from shared/go/* -- worth replacing with a glob, but
+      # not in the same change as the platform port.
+      - name: Build and test shared modules
+        run: |
+          set -euo pipefail
+          for pkg in model tenant logging database server auth http testing dashboard events kafka retention; do
+            echo "== shared/go/$pkg"
+            go build ./shared/go/$pkg/...
+            ( cd "shared/go/$pkg" && go test ./... -count=1 )
+          done
+
+  test-frontend:
+    name: Test Frontend
+    needs: detect-changes
+    if: needs.detect-changes.outputs.frontend == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Reset the job cache
+        run: rm -rf /work/ci-cache
+
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
+
+      - name: Report the toolchain
+        run: node --version && npm --version
+
+      - name: Install
+        working-directory: frontend
+        run: npm ci
+
+      - name: Test
+        working-directory: frontend
+        run: npm test
+
+      - name: Build
+        working-directory: frontend
+        run: npm run build
+
+  docker-build:
+    name: Build image - ${{ matrix.service }}
+    needs: detect-changes
+    if: needs.detect-changes.outputs.has-docker == 'true'
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        include: ${{ fromJSON(needs.detect-changes.outputs.docker-matrix-floor) }}
+
+    steps:
+      - name: Reset the job cache
+        run: rm -rf /work/ci-cache
+
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
+
+      - name: Select an amd64 BuildKit replica
+        id: amd64
+        uses: ci/actions/select-amd64-builder@v1
+        with:
+          index: 0
+
+      # push=false, so no registry credential and nothing is written.
+      - name: Build (no push)
+        uses: ci/actions/buildx-build@v1
+        with:
+          context: ${{ matrix.context }}
+          dockerfile: ${{ matrix.dockerfile }}
+          image: ${{ env.REGISTRY }}/jtumidanski/home-hub-${{ matrix.service }}
+          tags: pr-${{ github.event.pull_request.number }}
+          platform: linux/amd64
+          buildkit-endpoint: ${{ steps.amd64.outputs.endpoint }}
+          push: 'false'
+          cache-scope: home-hub-${{ matrix.service }}-amd64
+
+  pr-validation-complete:
+    name: PR Validation Complete
+    needs: [detect-changes, test-go, test-shared, test-frontend, docker-build]
+    if: always()
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check results
+        env:
+          DETECT: ${{ needs.detect-changes.result }}
+          GO: ${{ needs.test-go.result }}
+          SHARED: ${{ needs.test-shared.result }}
+          FRONTEND: ${{ needs.test-frontend.result }}
+          DOCKER: ${{ needs.docker-build.result }}
+        run: |
+          set -euo pipefail
+          echo "detect=$DETECT go=$GO shared=$SHARED frontend=$FRONTEND docker=$DOCKER"
+          for r in "$DETECT" "$GO" "$SHARED" "$FRONTEND" "$DOCKER"; do
+            case "$r" in
+              success|skipped) ;;
+              *) echo "FAIL: a validation job reported '$r'" >&2; exit 1 ;;
+            esac
+          done
+          echo "OK"

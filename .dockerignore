@@ -1,0 +1,12 @@
+# The runners build against a REMOTE BuildKit, so the whole context is sent
+# over the network rather than handed to a local daemon. Anything excluded
+# here is not transferred and, just as usefully, cannot invalidate the
+# registry build cache when it changes.
+#
+# Kept deliberately small: every entry is something no Dockerfile in this repo
+# reads. The Go services build with context "." because their Dockerfiles
+# COPY shared/go, so the source tree itself has to stay.
+.git
+**/node_modules
+.forgejo
+.github
