@@ -4,7 +4,7 @@
   "enabledManagers": ["gomod", "npm", "github-actions", "dockerfile"],
   "automerge": true,
   "automergeType": "pr",
-  "platformAutomerge": true,
+  "platformAutomerge": false,
   "labels": ["dependencies"],
   "minimumReleaseAge": "3 days",
   "internalChecksFilter": "strict",
