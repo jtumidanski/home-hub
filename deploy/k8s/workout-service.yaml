@@ -16,7 +16,7 @@ spec:
     spec:
       containers:
       - name: workout-service
-        image: ghcr.io/jtumidanski/home-hub-workout-service:main
+        image: registry.tumidanski/jtumidanski/home-hub-workout-service:main
         imagePullPolicy: Always
         ports:
         - containerPort: 8080

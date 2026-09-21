@@ -16,7 +16,7 @@ spec:
     spec:
       containers:
       - name: dashboard-service
-        image: ghcr.io/jtumidanski/home-hub-dashboard-service:main
+        image: registry.tumidanski/jtumidanski/home-hub-dashboard-service:main
         imagePullPolicy: Always
         ports:
         - containerPort: 8080

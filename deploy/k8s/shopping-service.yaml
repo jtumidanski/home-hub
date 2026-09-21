@@ -16,7 +16,7 @@ spec:
     spec:
       containers:
       - name: shopping-service
-        image: ghcr.io/jtumidanski/home-hub-shopping-service:main
+        image: registry.tumidanski/jtumidanski/home-hub-shopping-service:main
         imagePullPolicy: Always
         ports:
         - containerPort: 8080
