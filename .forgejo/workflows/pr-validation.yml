@@ -227,7 +227,18 @@ jobs:
         with:
           index: 0
 
-      # push=false, so no registry credential and nothing is written.
+      # buildx-build only logs in when push=true, but its `cache-to` is
+      # unconditional: every build writes a registry cache to
+      # registry.tumidanski/ci/buildcache, and zot rejects an anonymous write.
+      # So log in here even though nothing is pushed. The image itself is
+      # still discarded via `--output type=cacheonly`.
+      - name: Log in to the registry (for the buildx registry cache)
+        uses: docker/login-action@dbcb813823bdd20940b903addbd779551569679f  # v4.6.0
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ci
+          password: ${{ secrets.ZOT_CI_PASSWORD }}
+
       - name: Build (no push)
         uses: ci/actions/buildx-build@v1
         with:
