@@ -223,7 +223,7 @@ jobs:
 
       - name: Select an amd64 BuildKit replica
         id: amd64
-        uses: ci/actions/select-amd64-builder@v1
+        uses: https://git.tumidanski/ci/actions/select-amd64-builder@v1
         with:
           index: 0
 
@@ -240,7 +240,7 @@ jobs:
           password: ${{ secrets.ZOT_CI_PASSWORD }}
 
       - name: Build (no push)
-        uses: ci/actions/buildx-build@v1
+        uses: https://git.tumidanski/ci/actions/buildx-build@v1
         with:
           context: ${{ matrix.context }}
           dockerfile: ${{ matrix.dockerfile }}
