@@ -258,8 +258,7 @@ cd services/recipe-service && go test ./internal/recipeimage/imaging/ -run=^$ -b
 BenchmarkProcess12MP-24    5    540229533 ns/op    0.36 MB/s
 ```
 
-Result: about 0.54 s/op. Machine: x86_64, AMD Ryzen 9 5900X 12-Core Processor (24 threads), WSL2 (Linux 5.15 microsoft-standard). Task 3 recorded the same figure.
-
+Result: about 0.54 s/op. Machine: x86_64, AMD Ryzen 9 5900X 12-Core Processor (24 threads), WSL2 (Linux 5.15 microsoft-standard).
 ### Backups
 
 Image objects are outside the Postgres backups. Backing up the bucket is the operator's responsibility; a Postgres restore without a matching bucket restore leaves `recipe_images` rows pointing at missing objects (served as 404).

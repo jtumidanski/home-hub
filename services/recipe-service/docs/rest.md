@@ -244,7 +244,7 @@ List all tags in use across non-deleted recipes with usage counts.
 
 ### Recipe images
 
-A recipe has at most one image. The service stores two JPEG renditions (`thumb`, `full`) in the S3-compatible object store (RustFS) and serves them through the endpoints below. When `S3_ENDPOINT` is empty, all three endpoints return 503.
+A recipe has at most one image. The service stores two JPEG renditions (`thumb`, `full`) in the S3-compatible object store (RustFS) and serves them through the endpoints below. When `S3_ENDPOINT` is empty, upload and serve return 503 (GET only when it has to stream from the store; a 404 for a recipe with no image or a 304 ETag match is returned before the store is touched). Delete only touches the database and outbox, so it is unaffected.
 
 #### PUT `/recipes/{id}/image`
 

@@ -21,7 +21,7 @@ The recipe service manages recipes, ingredients, meal planning, and ingredient c
 | `PORT` | `8080` | HTTP listen port |
 | `JWKS_URL` | `http://auth-service:8080/api/v1/auth/.well-known/jwks.json` | JWKS endpoint for JWT validation |
 | `CATEGORY_SERVICE_URL` | `http://category-service:8080` | Category service base URL |
-| `S3_ENDPOINT` | _(empty)_ | Object store host:port for recipe images; empty `S3_ENDPOINT` disables image endpoints (503) |
+| `S3_ENDPOINT` | _(empty)_ | Object store host:port for recipe images; empty `S3_ENDPOINT` makes image upload and serve return 503 (delete still works) |
 | `S3_BUCKET` | `home-hub-recipes` | Bucket for recipe image renditions |
 | `S3_ACCESS_KEY` | _(empty)_ | Object store access key |
 | `S3_SECRET_KEY` | _(empty)_ | Object store secret key |
