@@ -6,6 +6,7 @@ The recipe service manages recipes, ingredients, meal planning, and ingredient c
 
 - **PostgreSQL** — persistent storage (schema: `recipe`)
 - **Auth service** — JWT validation via JWKS endpoint
+- **S3-compatible object store** (RustFS) — recipe image renditions
 - **Category service** — ingredient category lookup for sorting and display
 
 ## Runtime Configuration
@@ -20,6 +21,12 @@ The recipe service manages recipes, ingredients, meal planning, and ingredient c
 | `PORT` | `8080` | HTTP listen port |
 | `JWKS_URL` | `http://auth-service:8080/api/v1/auth/.well-known/jwks.json` | JWKS endpoint for JWT validation |
 | `CATEGORY_SERVICE_URL` | `http://category-service:8080` | Category service base URL |
+| `S3_ENDPOINT` | _(empty)_ | Object store host:port for recipe images; empty `S3_ENDPOINT` makes image upload and serve return 503 (delete still works) |
+| `S3_BUCKET` | `home-hub-recipes` | Bucket for recipe image renditions |
+| `S3_ACCESS_KEY` | _(empty)_ | Object store access key |
+| `S3_SECRET_KEY` | _(empty)_ | Object store secret key |
+| `S3_USE_SSL` | `false` | Use TLS to reach the object store |
+| `S3_REGION` | `us-east-1` | Object store region |
 
 ## Documentation
 

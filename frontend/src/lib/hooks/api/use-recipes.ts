@@ -134,6 +134,31 @@ export function useDeleteRecipe() {
   });
 }
 
+export function useUploadRecipeImage() {
+  const qc = useQueryClient();
+  const { tenant, household } = useTenant();
+  return useMutation({
+    mutationFn: ({ id, file }: { id: string; file: File }) =>
+      recipeService.uploadRecipeImage(tenant!, id, file),
+    onSuccess: (_data, variables) => {
+      qc.invalidateQueries({ queryKey: recipeKeys.lists(tenant, household) });
+      qc.invalidateQueries({ queryKey: recipeKeys.detail(tenant, household, variables.id) });
+    },
+  });
+}
+
+export function useDeleteRecipeImage() {
+  const qc = useQueryClient();
+  const { tenant, household } = useTenant();
+  return useMutation({
+    mutationFn: (id: string) => recipeService.deleteRecipeImage(tenant!, id),
+    onSuccess: (_data, id) => {
+      qc.invalidateQueries({ queryKey: recipeKeys.lists(tenant, household) });
+      qc.invalidateQueries({ queryKey: recipeKeys.detail(tenant, household, id) });
+    },
+  });
+}
+
 // --- Parse hook for live preview ---
 
 export function useParseRecipe() {

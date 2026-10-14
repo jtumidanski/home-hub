@@ -1,0 +1,69 @@
+{
+  "service": "recipe-service",
+  "path": "services/recipe-service",
+  "date": "2026-10-14",
+  "build": "pass",
+  "testsPassed": 15,
+  "testsFailed": 0,
+  "overallStatus": "needs-work",
+  "domains": [
+    {
+      "name": "recipeimage",
+      "type": "domain",
+      "checks": [
+        {"id": "DOM-01", "name": "builder.go exists", "status": "pass", "evidence": "recipeimage/builder.go:27,43"},
+        {"id": "DOM-02", "name": "ToEntity()", "status": "pass", "evidence": "recipeimage/entity.go"},
+        {"id": "DOM-03", "name": "Make(Entity)", "status": "pass", "evidence": "recipeimage/entity.go"},
+        {"id": "DOM-04", "name": "Transform", "status": "pass", "evidence": "recipeimage/rest.go:27"},
+        {"id": "DOM-05", "name": "TransformSlice", "status": "fail", "evidence": "absent in rest.go; singleton resource, no list endpoint (waiver candidate)"},
+        {"id": "DOM-06", "name": "Processor FieldLogger", "status": "pass", "evidence": "recipeimage/processor.go:38"},
+        {"id": "DOM-07", "name": "Handlers pass d.Logger()", "status": "pass", "evidence": "recipeimage/resource.go:84,184,253"},
+        {"id": "DOM-08", "name": "Write routes use RegisterInputHandler", "status": "warn", "evidence": "PUT on RegisterHandler resource.go:38-39; documented multipart deviation"},
+        {"id": "DOM-09", "name": "Transform errors handled", "status": "pass", "evidence": "Transform returns no error rest.go:27"},
+        {"id": "DOM-10", "name": "Test DB tenant callbacks", "status": "pass", "evidence": "recipeimage/testdb_test.go:30"},
+        {"id": "DOM-11", "name": "Lazy providers", "status": "warn", "evidence": "provider.go:19,30,38 hand-rolled closures, not database.SliceQuery"},
+        {"id": "DOM-12", "name": "No os.Getenv in handlers", "status": "pass", "evidence": "none in resource.go"},
+        {"id": "DOM-13", "name": "No cross-domain logic in handlers", "status": "warn", "evidence": "resource.go:47-60,65,91,261 visibility check and reaper drain in handlers"},
+        {"id": "DOM-14", "name": "Handlers don't call providers", "status": "pass", "evidence": "none in resource.go"},
+        {"id": "DOM-15", "name": "No direct writes in handlers", "status": "pass", "evidence": "none in resource.go; administrator.go"},
+        {"id": "DOM-16", "name": "administrator.go", "status": "pass", "evidence": "recipeimage/administrator.go"},
+        {"id": "DOM-17", "name": "Error to HTTP mapping", "status": "pass", "evidence": "resource.go:47-58,136-157"},
+        {"id": "DOM-18", "name": "JSON:API interface", "status": "pass", "evidence": "recipeimage/rest.go"},
+        {"id": "DOM-19", "name": "Flat request models", "status": "pass", "evidence": "no request model; multipart"},
+        {"id": "DOM-20", "name": "Table-driven tests", "status": "fail", "evidence": "no t.Run/[]struct in recipeimage, objectstore, recipe image tests; only imaging tests use tables"}
+      ]
+    }
+  ],
+  "blocking": [
+    "DOM-20: recipeimage/objectstore/recipe/retention tests are not table-driven (no t.Run)",
+    "DOM-05: no TransformSlice in recipeimage/rest.go (waiver candidate)"
+  ],
+  "nonBlocking": [
+    "DOM-08: PUT multipart on RegisterHandler (documented deviation)",
+    "DOM-09: Transform has no error return",
+    "DOM-11: provider.go:19,30,38 not database.SliceQuery",
+    "DOM-13: visibility check and go reaper.DrainKeys in handlers"
+  ],
+  "reaudit": {
+    "title": "Re-audit after DOM-20 fix",
+    "date": "2026-10-14",
+    "fixRange": "c4d5504..3cb1afd",
+    "build": "pass",
+    "testsPassed": 15,
+    "testsFailed": 0,
+    "overallStatus": "pass",
+    "changes": [
+      {"id": "DOM-05", "status": "waived", "evidence": "singleton per recipe, no list endpoint; TransformSlice would be dead code (ruling). recipeimage/rest.go has none."},
+      {"id": "DOM-20", "status": "warn", "evidence": "tables+t.Run at recipeimage/resource_test.go:129,153,246,276; processor_test.go:233,242; recipe/visibility_test.go:28,51; objectstore/objectstore_test.go:16,26; recipe/processor_integration_test.go:38,111. Residual same-shape untabled: recipeimage/domain_test.go:46 TestParseSize, :60 TestBuilderValidation. Pins intact: image_enrichment_test.go:82, resource_test.go:231."}
+    ],
+    "carriedForward": ["DOM-08", "DOM-09", "DOM-11", "DOM-13"],
+    "blocking": [],
+    "nonBlocking": [
+      "DOM-20: recipeimage/domain_test.go TestParseSize (:46) and TestBuilderValidation (:60) not table-driven",
+      "DOM-08: PUT multipart on RegisterHandler (documented deviation)",
+      "DOM-09: Transform has no error return",
+      "DOM-11: provider.go:19,30,38 not database.SliceQuery",
+      "DOM-13: visibility check and go reaper.DrainKeys in handlers"
+    ]
+  }
+}

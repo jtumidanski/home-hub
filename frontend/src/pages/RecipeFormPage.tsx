@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -6,7 +6,15 @@ import { ArrowLeft, Loader2, Clock, Users, ExternalLink } from "lucide-react";
 import { toast } from "sonner";
 import { recipeFormSchema, recipeFormDefaults } from "@/lib/schemas/recipe.schema";
 import type { RecipeFormData } from "@/lib/schemas/recipe.schema";
-import { useRecipe, useCreateRecipe, useUpdateRecipe } from "@/lib/hooks/api/use-recipes";
+import {
+  useRecipe,
+  useCreateRecipe,
+  useUpdateRecipe,
+  useUploadRecipeImage,
+  useDeleteRecipeImage,
+} from "@/lib/hooks/api/use-recipes";
+import { RecipeImageField } from "@/components/features/recipes/recipe-image-field";
+import { useRecipeImageDraft } from "@/lib/hooks/use-recipe-image-draft";
 import { useCooklangPreview } from "@/lib/hooks/use-cooklang-preview";
 import { CooklangPreview } from "@/components/features/recipes/cooklang-preview";
 import { CooklangHelp } from "@/components/features/recipes/cooklang-help";
@@ -31,6 +39,22 @@ export function RecipeFormPage() {
   const { data: existingData } = useRecipe(id ?? "");
   const createRecipe = useCreateRecipe();
   const updateRecipe = useUpdateRecipe();
+  const uploadImage = useUploadRecipeImage();
+  const deleteImage = useDeleteRecipeImage();
+
+  // Set when a create succeeded but the image step failed (FR-6): the page
+  // then behaves as edit mode for that recipe without remounting, so the
+  // staged File survives.
+  const [persistedId, setPersistedId] = useState<string | null>(null);
+  // Serialized attrs of the last successful recipe save; lets a retry skip
+  // the recipe step when nothing changed.
+  const lastSavedAttrs = useRef<string | null>(null);
+  const recipeId = id ?? persistedId;
+  const editing = recipeId !== null;
+
+  const existingImage = existingData?.data?.attributes.image ?? null;
+  const imageDraft = useRecipeImageDraft(existingImage);
+  const imageBusy = uploadImage.isPending || deleteImage.isPending;
 
   const [plannerConfig, setPlannerConfig] = useState<PlannerConfig>({});
 
@@ -93,19 +117,37 @@ export function RecipeFormPage() {
       plannerConfig: hasPlanner ? mergedConfig : undefined,
     };
 
+    let savedId = recipeId;
+    const serialized = JSON.stringify(attrs);
     try {
-      if (isEditing) {
-        await updateRecipe.mutateAsync({ id, attrs });
-        toast.success("Recipe updated");
-        navigate(`/app/recipes/${id}`);
-      } else {
+      if (!savedId) {
         const result = await createRecipe.mutateAsync(attrs);
-        toast.success("Recipe created");
-        navigate(`/app/recipes/${result.data.id}`);
+        savedId = result.data.id;
+        setPersistedId(savedId);
+        lastSavedAttrs.current = serialized;
+      } else if (lastSavedAttrs.current !== serialized) {
+        await updateRecipe.mutateAsync({ id: savedId, attrs });
+        lastSavedAttrs.current = serialized;
       }
     } catch (error) {
-      toast.error(createErrorFromUnknown(error, `Failed to ${isEditing ? "update" : "create"} recipe`).message);
+      toast.error(createErrorFromUnknown(error, `Failed to ${editing ? "update" : "create"} recipe`).message);
+      return;
     }
+    if (!savedId) return; // unreachable; narrows the type for the image step
+
+    try {
+      if (imageDraft.draft.kind === "staged") {
+        await uploadImage.mutateAsync({ id: savedId, file: imageDraft.draft.file });
+      } else if (imageDraft.draft.kind === "removed" && existingImage) {
+        await deleteImage.mutateAsync(savedId);
+      }
+    } catch {
+      toast.error("Recipe saved, but the photo failed to upload — try again.");
+      return;
+    }
+
+    toast.success(editing ? "Recipe updated" : "Recipe created");
+    navigate(`/app/recipes/${savedId}`);
   };
 
   const existingIngredients = existingData?.data?.attributes?.ingredients ?? [];
@@ -121,6 +163,15 @@ export function RecipeFormPage() {
       <Form {...form}>
         <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
           <PlannerConfigForm value={plannerConfig} onChange={setPlannerConfig} />
+
+          <RecipeImageField
+            draft={imageDraft.draft}
+            previewSrc={imageDraft.previewSrc}
+            onStage={imageDraft.stage}
+            onRemove={imageDraft.remove}
+            onUndo={imageDraft.undo}
+            disabled={form.formState.isSubmitting}
+          />
 
           <div className={isMobile ? "space-y-4" : "grid grid-cols-2 gap-6"}>
             <div className="space-y-2">
@@ -147,6 +198,13 @@ export function RecipeFormPage() {
             <div className="space-y-2">
               <label className="text-sm font-medium leading-none">Preview</label>
               <div className="rounded-md border p-4 bg-muted/30 min-h-[400px] space-y-4">
+                {imageDraft.previewSrc && (
+                  <img
+                    src={imageDraft.previewSrc}
+                    alt=""
+                    className="aspect-video w-full rounded-md object-cover"
+                  />
+                )}
                 {(derivedTitle || derivedDescription) && (
                   <div className="space-y-1 border-b pb-3">
                     {derivedTitle ? (
@@ -242,9 +300,9 @@ export function RecipeFormPage() {
           )}
 
           <div className="flex gap-3">
-            <Button type="submit" disabled={form.formState.isSubmitting}>
-              {form.formState.isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-              {isEditing ? "Update Recipe" : "Create Recipe"}
+            <Button type="submit" disabled={form.formState.isSubmitting || imageBusy}>
+              {(form.formState.isSubmitting || imageBusy) && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+              {imageBusy ? "Uploading photo…" : editing ? "Update Recipe" : "Create Recipe"}
             </Button>
             <Button
               type="button"

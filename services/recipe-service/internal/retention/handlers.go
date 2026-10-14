@@ -11,6 +11,7 @@ import (
 	"github.com/jtumidanski/home-hub/services/recipe-service/internal/normalization"
 	"github.com/jtumidanski/home-hub/services/recipe-service/internal/planitem"
 	"github.com/jtumidanski/home-hub/services/recipe-service/internal/recipe"
+	"github.com/jtumidanski/home-hub/services/recipe-service/internal/recipeimage"
 	sr "github.com/jtumidanski/home-hub/shared/go/retention"
 )
 
@@ -33,7 +34,9 @@ func discoverRecipeScopes(db *gorm.DB) ([]sr.Scope, error) {
 }
 
 // DeletedRecipesRestoreWindow reaps soft-deleted recipes past their restore
-// window. Cascade: recipes → tags → recipe_restorations → plan_items.
+// window. Cascade: recipes → tags → ingredients → recipe_restorations →
+// plan_items → recipe_images (objects enqueued to the deletion outbox and
+// removed from storage after commit).
 type DeletedRecipesRestoreWindow struct{}
 
 func (DeletedRecipesRestoreWindow) Category() sr.Category {
@@ -90,6 +93,12 @@ func cascadeDeleteRecipes(tx *gorm.DB, ids []uuid.UUID) (int, error) {
 		return 0, r.Error
 	}
 	total += int(r.RowsAffected)
+
+	n, err := recipeimage.PurgeByRecipeIDsTx(tx, ids)
+	if err != nil {
+		return 0, err
+	}
+	total += n
 
 	r = tx.Where("id IN ?", ids).Delete(&recipe.Entity{})
 	if r.Error != nil {

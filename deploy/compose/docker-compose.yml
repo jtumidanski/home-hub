@@ -171,6 +171,40 @@ services:
       - KAFKA_CONSUMER_GROUP=dashboard-service
       - RETENTION_INTERVAL=${RETENTION_INTERVAL:-6h}
 
+  rustfs:
+    container_name: hh-rustfs
+    image: rustfs/rustfs:1.0.1
+    expose:
+      - "9000"
+    environment:
+      - RUSTFS_ACCESS_KEY=${S3_ACCESS_KEY:-homehub}
+      - RUSTFS_SECRET_KEY=${S3_SECRET_KEY:-homehub-dev-secret}
+      - RUSTFS_VOLUMES=/data
+      - RUSTFS_ADDRESS=:9000
+      - RUSTFS_REGION=us-east-1
+    volumes:
+      - rustfs-data:/data
+    healthcheck:
+      test: ["CMD", "curl", "-fsS", "http://localhost:9000/health/ready"]
+      interval: 5s
+      timeout: 5s
+      retries: 12
+
+  rustfs-init:
+    container_name: hh-rustfs-init
+    image: rustfs/rustfs:1.0.1
+    depends_on:
+      rustfs:
+        condition: service_healthy
+    environment:
+      - S3_ACCESS_KEY=${S3_ACCESS_KEY:-homehub}
+      - S3_SECRET_KEY=${S3_SECRET_KEY:-homehub-dev-secret}
+      - S3_BUCKET=${S3_BUCKET:-home-hub-recipes}
+      - S3_REGION=us-east-1
+    entrypoint: ["sh", "-c"]
+    command:
+      - curl -fsS --aws-sigv4 "aws:amz:$$S3_REGION:s3" --user "$$S3_ACCESS_KEY:$$S3_SECRET_KEY" -X PUT "http://rustfs:9000/$$S3_BUCKET"
+
   recipe-service:
     container_name: hh-recipe
     build:
@@ -187,6 +221,15 @@ services:
       - PORT=8080
       - JWKS_URL=http://auth-service:8080/api/v1/auth/.well-known/jwks.json
       - CATEGORY_SERVICE_URL=http://category-service:8080
+      - S3_ENDPOINT=rustfs:9000
+      - S3_BUCKET=${S3_BUCKET:-home-hub-recipes}
+      - S3_ACCESS_KEY=${S3_ACCESS_KEY:-homehub}
+      - S3_SECRET_KEY=${S3_SECRET_KEY:-homehub-dev-secret}
+      - S3_USE_SSL=false
+      - S3_REGION=us-east-1
+    depends_on:
+      rustfs-init:
+        condition: service_completed_successfully
 
   category-service:
     container_name: hh-category
@@ -253,3 +296,6 @@ services:
       - JWKS_URL=http://auth-service:8080/api/v1/auth/.well-known/jwks.json
       - CATEGORY_SERVICE_URL=http://category-service:8080
       - RECIPE_SERVICE_URL=http://recipe-service:8080
+
+volumes:
+  rustfs-data:

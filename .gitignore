@@ -54,7 +54,7 @@ deploy/k8s/tls/
 
 # Dev artifacts
 dev/
-recipes/
+/recipes/
 
 # Temporary
 *.tmp

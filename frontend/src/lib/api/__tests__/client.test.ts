@@ -219,4 +219,32 @@ describe("ApiClient", () => {
     await expect(api.post("/tasks", {})).rejects.toThrow("Server error");
     expect(globalThis.fetch).toHaveBeenCalledTimes(1);
   });
+
+  it("upload defaults to POST and sends FormData without a content type", async () => {
+    const api = await getApi();
+    (globalThis.fetch as ReturnType<typeof vi.fn>).mockResolvedValue({
+      ok: true,
+      status: 200,
+      json: () => Promise.resolve({ data: {} }),
+    });
+    const form = new FormData();
+    await api.upload("/things", form);
+    const [, init] = (globalThis.fetch as ReturnType<typeof vi.fn>).mock.calls[0]!;
+    expect(init.method).toBe("POST");
+    expect(init.body).toBe(form);
+    expect(Object.keys(init.headers as Record<string, string>).map((k) => k.toLowerCase())).not.toContain("content-type");
+  });
+
+  it("upload honours method PUT", async () => {
+    const api = await getApi();
+    (globalThis.fetch as ReturnType<typeof vi.fn>).mockResolvedValue({
+      ok: true,
+      status: 200,
+      json: () => Promise.resolve({ data: {} }),
+    });
+    await api.upload("/recipes/r1/image", new FormData(), { method: "PUT" });
+    const [url, init] = (globalThis.fetch as ReturnType<typeof vi.fn>).mock.calls[0]!;
+    expect(url).toBe("/api/v1/recipes/r1/image");
+    expect(init.method).toBe("PUT");
+  });
 });

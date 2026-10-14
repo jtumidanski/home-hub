@@ -21,6 +21,8 @@ export interface RequestOptions {
   staleWhileRevalidate?: boolean;
 }
 
+export type UploadOptions = RequestOptions & { method?: "POST" | "PUT" };
+
 interface CacheEntry<T = unknown> {
   value: T;
   expiresAt: number;
@@ -391,7 +393,7 @@ class ApiClient {
   async upload<T>(
     path: string,
     formData: FormData,
-    options?: RequestOptions,
+    options?: UploadOptions,
   ): Promise<T> {
     const url = `${this.baseUrl}${path}`;
 
@@ -405,7 +407,7 @@ class ApiClient {
       const response = await this.fetchWithRetry(
         url,
         {
-          method: "POST",
+          method: options?.method ?? "POST",
           credentials: "include",
           headers,
           body: formData,
@@ -472,11 +474,11 @@ class ApiClient {
     path: string,
     url: string,
     formData: FormData,
-    options: RequestOptions,
+    options: UploadOptions,
   ): Promise<T> {
     return new Promise((resolve, reject) => {
       const xhr = new XMLHttpRequest();
-      xhr.open("POST", url, true);
+      xhr.open(options.method ?? "POST", url, true);
       xhr.withCredentials = true;
 
       const headers = this.buildHeaders(undefined, options);

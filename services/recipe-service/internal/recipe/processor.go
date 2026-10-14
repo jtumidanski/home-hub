@@ -14,6 +14,7 @@ import (
 	"github.com/jtumidanski/home-hub/services/recipe-service/internal/normalization"
 	"github.com/jtumidanski/home-hub/services/recipe-service/internal/planner"
 	"github.com/jtumidanski/home-hub/services/recipe-service/internal/recipe/cooklang"
+	"github.com/jtumidanski/home-hub/services/recipe-service/internal/recipeimage"
 	"github.com/jtumidanski/home-hub/shared/go/model"
 	tenantctx "github.com/jtumidanski/home-hub/shared/go/tenant"
 )
@@ -388,13 +389,19 @@ func (p *Processor) BuildDetailEnrichment(m Model, ingredients []normalization.M
 	} else {
 		enrichment.Readiness = planner.ComputeReadiness(nil, m.Servings())
 	}
+	imgProc := recipeimage.NewProcessor(p.l, p.ctx, p.db)
+	if img, err := imgProc.GetByRecipeID(m.Id()); err == nil {
+		enrichment.Image = toImageRestModel(img)
+	} else if !errors.Is(err, recipeimage.ErrImageNotFound) {
+		p.l.WithError(err).Error("Failed to fetch recipe image for detail enrichment")
+	}
 	return enrichment
 }
 
 // BuildListEnrichments computes ListEnrichment values for many recipes using
 // batched fetches for normalized ingredients and planner configs. The result
 // preserves the input ordering. Compared with calling BuildListEnrichment per
-// model, this issues exactly two extra queries regardless of page size.
+// model, this issues exactly three extra queries regardless of page size.
 func (p *Processor) BuildListEnrichments(models []Model) []ListEnrichment {
 	enrichments := make([]ListEnrichment, len(models))
 	if len(models) == 0 {
@@ -419,6 +426,12 @@ func (p *Processor) BuildListEnrichments(models []Model) []ListEnrichment {
 		p.l.WithError(err).Error("Failed to batch-fetch planner configs for list enrichment")
 		plannerByRecipe = map[uuid.UUID]planner.Model{}
 	}
+	imgProc := recipeimage.NewProcessor(p.l, p.ctx, p.db)
+	imagesByRecipe, err := imgProc.GetByRecipeIDs(recipeIDs)
+	if err != nil {
+		p.l.WithError(err).Error("Failed to batch-fetch recipe images for list enrichment")
+		imagesByRecipe = map[uuid.UUID]recipeimage.Model{}
+	}
 
 	for i, m := range models {
 		e := ListEnrichment{}
@@ -433,6 +446,9 @@ func (p *Processor) BuildListEnrichments(models []Model) []ListEnrichment {
 		if pc, ok := plannerByRecipe[m.Id()]; ok {
 			e.PlannerReady = planner.ComputeReadiness(&pc, m.Servings()).Ready
 			e.Classification = pc.Classification()
+		}
+		if img, ok := imagesByRecipe[m.Id()]; ok {
+			e.Image = toImageRestModel(img)
 		}
 		enrichments[i] = e
 	}
@@ -456,6 +472,11 @@ func toPlannerAttrs(pc *RestPlannerConfigModel) planner.ConfigAttrs {
 		attrs.Classification = &pc.Classification
 	}
 	return attrs
+}
+
+func toImageRestModel(m recipeimage.Model) *RestImageModel {
+	thumb, full := recipeimage.URLs(m.RecipeID(), m.Id())
+	return &RestImageModel{ThumbURL: thumb, FullURL: full, Width: m.Width(), Height: m.Height()}
 }
 
 func toPlannerRestModel(pc *planner.Model) *RestPlannerConfigModel {

@@ -1,0 +1,598 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>task-056 — Recipe Images — Design Proposal</title>
+<style>
+  :root {
+    --bg: #ffffff; --fg: #0a0a0a; --muted: #f4f4f5; --muted-fg: #71717a;
+    --border: #e4e4e7; --primary: #18181b; --primary-fg: #fafafa;
+    --destructive: #dc2626; --ring: #a1a1aa; --green: #22c55e; --yellow: #eab308;
+    --radius: 10px; --accent: #2563eb;
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+         color: var(--fg); background: #fafafa; font-size: 14px; line-height: 1.45; }
+  button { font: inherit; cursor: pointer; }
+
+  /* ---------- proposal chrome ---------- */
+  .topbar { position: sticky; top: 0; z-index: 20; background: #111827; color: #f9fafb;
+            display: flex; align-items: center; gap: 16px; padding: 10px 20px; flex-wrap: wrap; }
+  .topbar h1 { font-size: 15px; margin: 0; font-weight: 600; }
+  .topbar .tag { font-size: 11px; background: #374151; padding: 2px 8px; border-radius: 999px; }
+  .tabs { display: flex; gap: 4px; margin-left: auto; flex-wrap: wrap; }
+  .tabs button { background: transparent; color: #d1d5db; border: 1px solid #374151;
+                 padding: 5px 12px; border-radius: 6px; }
+  .tabs button.active { background: #f9fafb; color: #111827; border-color: #f9fafb; }
+  .controls { display: flex; gap: 14px; align-items: center; padding: 10px 20px;
+              background: #eef2ff; border-bottom: 1px solid #c7d2fe; flex-wrap: wrap; font-size: 13px; }
+  .controls label { display: inline-flex; gap: 6px; align-items: center; }
+  .seg { display: inline-flex; border: 1px solid #a5b4fc; border-radius: 6px; overflow: hidden; }
+  .seg button { border: 0; background: white; padding: 4px 10px; }
+  .seg button.active { background: #4f46e5; color: white; }
+  .note { background: #fffbeb; border: 1px solid #fde68a; color: #78350f; border-radius: 8px;
+          padding: 10px 14px; margin: 0 0 16px; font-size: 13px; }
+  .note b { color: #451a03; }
+  .anno { display: inline-block; font-size: 11px; font-weight: 600; color: #4f46e5;
+          background: #eef2ff; border: 1px dashed #818cf8; border-radius: 4px; padding: 1px 6px; margin-left: 6px;
+          vertical-align: middle; }
+  .stage { padding: 24px 20px 60px; display: flex; justify-content: center; }
+  .frame { background: var(--bg); border: 1px solid var(--border); border-radius: 12px;
+           box-shadow: 0 1px 3px rgba(0,0,0,.06); width: 100%; max-width: 1180px; overflow: hidden;
+           transition: max-width .25s ease; display: flex; min-height: 640px; }
+  .frame.mobile { max-width: 390px; }
+  .view { display: none; } .view.active { display: block; }
+
+  /* ---------- fake app shell ---------- */
+  .sidebar { width: 200px; border-right: 1px solid var(--border); padding: 16px 10px; background: #fcfcfc; flex-shrink: 0; }
+  .frame.mobile .sidebar { display: none; }
+  .sidebar .brand { font-weight: 700; padding: 0 8px 14px; }
+  .sidebar a { display: block; padding: 6px 8px; border-radius: 6px; color: var(--muted-fg); text-decoration: none; font-size: 13px; }
+  .sidebar a.on { background: var(--muted); color: var(--fg); font-weight: 500; }
+  .main { flex: 1; min-width: 0; }
+  .page { padding: 24px; max-width: 1024px; }
+  .frame.mobile .page { padding: 16px; }
+  .h1 { font-size: 24px; font-weight: 700; margin: 0; }
+  .frame.mobile .h1 { font-size: 20px; }
+  .muted { color: var(--muted-fg); }
+  .row { display: flex; align-items: center; gap: 8px; }
+  .btn { display: inline-flex; align-items: center; gap: 6px; border: 1px solid var(--border); background: white;
+         padding: 6px 12px; border-radius: 8px; font-size: 13px; font-weight: 500; }
+  .btn.primary { background: var(--primary); color: var(--primary-fg); border-color: var(--primary); }
+  .btn.ghost { border-color: transparent; background: transparent; }
+  .btn.danger { color: var(--destructive); }
+  .btn:disabled { opacity: .55; cursor: not-allowed; }
+  .badge { display: inline-block; background: var(--muted); border-radius: 6px; padding: 1px 7px; font-size: 11px; font-weight: 500; }
+  .input { border: 1px solid var(--border); border-radius: 8px; padding: 7px 10px; width: 100%; font: inherit; background: white; }
+  svg.i { width: 16px; height: 16px; stroke: currentColor; fill: none; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; flex-shrink: 0; }
+  svg.i.sm { width: 13px; height: 13px; }
+
+  /* ---------- recipe list ---------- */
+  .toolbar { display: flex; gap: 8px; margin: 16px 0; }
+  .grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; }
+  .frame.mobile .grid { grid-template-columns: 1fr; gap: 12px; }
+  .card { border: 1px solid var(--border); border-radius: var(--radius); background: white; overflow: hidden;
+          cursor: pointer; transition: box-shadow .15s; display: flex; flex-direction: column; }
+  .card:hover { box-shadow: 0 4px 14px rgba(0,0,0,.08); }
+  .card .media { aspect-ratio: 16/9; background: var(--muted); position: relative; overflow: hidden; }
+  .card .media img { width: 100%; height: 100%; object-fit: cover; display: block; }
+  .card .body { padding: 12px 14px 14px; }
+  .card .title { font-weight: 600; font-size: 15px; }
+  .card .desc { font-size: 13px; color: var(--muted-fg); margin: 4px 0 8px;
+                display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+  .meta { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; font-size: 12px; color: var(--muted-fg); }
+  .placeholder { width: 100%; height: 100%; display: grid; place-items: center; color: #a1a1aa;
+                 background: repeating-linear-gradient(45deg, #f4f4f5, #f4f4f5 10px, #efeff1 10px, #efeff1 20px); }
+  .placeholder svg.i { width: 34px; height: 34px; stroke-width: 1.5; }
+  /* mobile card: thumbnail left */
+  .frame.mobile .card { flex-direction: row; align-items: flex-start; gap: 12px; padding: 12px; }
+  .frame.mobile .card .media { width: 64px; height: 64px; aspect-ratio: auto; border-radius: 8px; flex-shrink: 0; }
+  .frame.mobile .card .placeholder svg.i { width: 22px; height: 22px; }
+  .frame.mobile .card .body { padding: 0; min-width: 0; }
+
+  /* ---------- detail ---------- */
+  .hero { margin: 12px 0 18px; border-radius: 12px; overflow: hidden; aspect-ratio: 16/9; background: var(--muted);
+          cursor: zoom-in; position: relative; }
+  .hero img { width: 100%; height: 100%; object-fit: cover; display: block; }
+  .hero .zoom { position: absolute; right: 10px; bottom: 10px; background: rgba(0,0,0,.55); color: white;
+                border-radius: 999px; padding: 4px 10px; font-size: 12px; display: inline-flex; gap: 5px; align-items: center; }
+  .frame.mobile .hero { aspect-ratio: 4/3; margin-left: -16px; margin-right: -16px; border-radius: 0; }
+  .detail-head { display: flex; justify-content: space-between; gap: 16px; align-items: flex-start; }
+  .frame.mobile .detail-head { flex-direction: column; gap: 10px; }
+  .cols { display: grid; grid-template-columns: 260px 1fr; gap: 32px; margin-top: 22px; }
+  .frame.mobile .cols { grid-template-columns: 1fr; gap: 20px; }
+  .cols h2 { font-size: 17px; margin: 0 0 10px; }
+  .cols ul, .cols ol { margin: 0; padding-left: 18px; } .cols li { margin-bottom: 6px; }
+  .lightbox { position: fixed; inset: 0; background: rgba(0,0,0,.85); display: none; place-items: center; z-index: 50; }
+  .lightbox.open { display: grid; }
+  .lightbox img { max-width: 92vw; max-height: 88vh; object-fit: contain; border-radius: 6px; }
+  .lightbox .x { position: absolute; top: 16px; right: 20px; color: white; background: rgba(255,255,255,.15);
+                 border: 0; border-radius: 999px; width: 36px; height: 36px; font-size: 18px; }
+
+  /* ---------- form ---------- */
+  .section-label { font-weight: 600; font-size: 14px; margin: 0 0 8px; display: flex; align-items: center; gap: 6px; }
+  .planner-box { border: 1px solid var(--border); border-radius: 10px; padding: 12px 14px; color: var(--muted-fg); font-size: 13px; margin-bottom: 20px; }
+  .photo { margin-bottom: 20px; }
+  .drop { border: 2px dashed #d4d4d8; border-radius: 12px; padding: 28px 16px; text-align: center; color: var(--muted-fg);
+          background: #fcfcfc; transition: all .15s; cursor: pointer; }
+  .drop:hover, .drop.drag { border-color: var(--accent); background: #eff6ff; color: #1e40af; }
+  .drop.err { border-color: var(--destructive); background: #fef2f2; }
+  .drop .big { font-weight: 600; color: var(--fg); margin: 8px 0 2px; }
+  .drop svg.i { width: 28px; height: 28px; stroke-width: 1.5; }
+  .drop .errmsg { color: var(--destructive); font-size: 12px; margin-top: 8px; font-weight: 500; }
+  .preview { display: flex; gap: 16px; align-items: flex-start; border: 1px solid var(--border); border-radius: 12px; padding: 12px; }
+  .frame.mobile .preview { flex-direction: column; }
+  .preview .pimg { width: 240px; aspect-ratio: 16/9; border-radius: 8px; overflow: hidden; background: var(--muted); flex-shrink: 0; position: relative; }
+  .frame.mobile .preview .pimg { width: 100%; }
+  .preview .pimg img { width: 100%; height: 100%; object-fit: cover; display: block; }
+  .preview .pimg.removed img { filter: grayscale(1) opacity(.35); }
+  .preview .pimg .ribbon { position: absolute; left: 8px; top: 8px; font-size: 11px; font-weight: 600; padding: 2px 8px; border-radius: 999px; }
+  .ribbon.staged { background: #dbeafe; color: #1e40af; }
+  .ribbon.saved { background: #dcfce7; color: #166534; }
+  .ribbon.rm { background: #fee2e2; color: #991b1b; }
+  .pinfo { font-size: 13px; min-width: 0; } .pinfo .fname { font-weight: 600; word-break: break-all; }
+  .pinfo .actions { display: flex; gap: 8px; margin-top: 10px; flex-wrap: wrap; }
+  .editor { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; }
+  .frame.mobile .editor { grid-template-columns: 1fr; }
+  textarea.cook { width: 100%; min-height: 300px; font-family: ui-monospace, Menlo, monospace; font-size: 12.5px;
+                  border: 1px solid var(--border); border-radius: 8px; padding: 10px; resize: vertical; }
+  .live { border: 1px solid var(--border); border-radius: 10px; padding: 14px; }
+  .live .limg { border-radius: 8px; overflow: hidden; aspect-ratio: 16/9; margin-bottom: 10px; }
+  .live .limg img { width: 100%; height: 100%; object-fit: cover; display: block; }
+  .formbar { display: flex; gap: 10px; margin-top: 22px; align-items: center; flex-wrap: wrap; }
+  .spinner { width: 14px; height: 14px; border: 2px solid rgba(255,255,255,.4); border-top-color: white; border-radius: 50%; animation: spin .8s linear infinite; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  .toast { position: fixed; right: 20px; bottom: 20px; background: white; border: 1px solid var(--border); border-left: 4px solid var(--green);
+           border-radius: 8px; padding: 12px 16px; box-shadow: 0 10px 30px rgba(0,0,0,.12); max-width: 360px; font-size: 13px;
+           transform: translateY(140%); transition: transform .25s; z-index: 60; }
+  .toast.show { transform: none; } .toast.err { border-left-color: var(--destructive); }
+
+  /* ---------- how it works ---------- */
+  .doc { padding: 28px; max-width: 980px; }
+  .doc h2 { font-size: 18px; margin: 28px 0 10px; } .doc h2:first-child { margin-top: 0; }
+  .doc p, .doc li { color: #3f3f46; }
+  .arch { display: grid; grid-template-columns: repeat(5, 1fr); gap: 0; align-items: center; margin: 12px 0 4px; }
+  .box { border: 1.5px solid #a1a1aa; border-radius: 10px; padding: 12px; text-align: center; background: white; font-size: 13px; }
+  .box b { display: block; margin-bottom: 2px; } .box small { color: var(--muted-fg); }
+  .box.svc { border-color: #4f46e5; background: #eef2ff; }
+  .box.store { border-color: #059669; background: #ecfdf5; }
+  .arrow { text-align: center; color: var(--muted-fg); font-size: 12px; }
+  .arrow::after { content: "⟶"; display: block; font-size: 22px; line-height: 1; color: #71717a; }
+  .stores { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+  table.t { border-collapse: collapse; width: 100%; font-size: 13px; margin: 6px 0; }
+  table.t th, table.t td { border: 1px solid var(--border); padding: 6px 9px; text-align: left; vertical-align: top; }
+  table.t th { background: var(--muted); font-weight: 600; }
+  code { font-family: ui-monospace, Menlo, monospace; font-size: 12px; background: #f4f4f5; padding: 1px 5px; border-radius: 4px; }
+  pre { background: #18181b; color: #e4e4e7; border-radius: 8px; padding: 12px 14px; font-size: 12px; overflow-x: auto; }
+  .seq { display: grid; gap: 6px; counter-reset: s; padding: 0; list-style: none; }
+  .seq li { counter-increment: s; display: flex; gap: 10px; align-items: flex-start; }
+  .seq li::before { content: counter(s); background: #4f46e5; color: white; border-radius: 999px; width: 22px; height: 22px;
+                    display: grid; place-items: center; font-size: 12px; font-weight: 600; flex-shrink: 0; margin-top: 1px; }
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <h1>Recipe Images — design proposal</h1>
+  <span class="tag">task-056 · mockup, not production code</span>
+  <div class="tabs" id="tabs">
+    <button data-view="list" class="active">1 · Recipe list</button>
+    <button data-view="detail">2 · Recipe detail</button>
+    <button data-view="form">3 · Add / edit photo</button>
+    <button data-view="how">4 · How it works</button>
+  </div>
+</div>
+
+<div class="controls" id="controls">
+  <span><b>Viewport</b></span>
+  <span class="seg" id="vp"><button data-vp="desktop" class="active">Desktop</button><button data-vp="mobile">Mobile</button></span>
+  <span id="ctl-detail" style="display:none"><label><input type="checkbox" id="detailHasImg" checked> Recipe has an image</label></span>
+  <span id="ctl-form" style="display:none">
+    <b>Mode</b>
+    <span class="seg" id="fmode"><button data-mode="create" class="active">New recipe</button><button data-mode="edit">Edit (has image)</button></span>
+    <label><input type="checkbox" id="simFail"> Simulate upload failure on Save</label>
+  </span>
+</div>
+
+<div class="stage">
+  <div class="frame" id="frame">
+    <aside class="sidebar">
+      <div class="brand">Home Hub</div>
+      <a href="#">Dashboard</a><a href="#">Calendar</a><a href="#">Tasks</a>
+      <a href="#" class="on">Recipes</a><a href="#">Meal Planner</a><a href="#">Shopping</a>
+    </aside>
+    <div class="main">
+
+      <!-- ================= LIST ================= -->
+      <section class="view active" id="view-list">
+        <div class="page">
+          <div class="note"><b>Recipe list.</b> Each card gets a 16:9 <code>thumb</code> image (≤480px JPEG, lazy-loaded).
+            Recipes without an image get a <b>chef-hat placeholder</b> so the grid stays even.
+            Switch to <b>Mobile</b>: the thumbnail becomes a 64×64 square left of the title, so rows stay compact.</div>
+          <div class="row" style="justify-content:space-between">
+            <h1 class="h1">Recipes</h1>
+            <button class="btn primary"><svg class="i"><use href="#ic-plus"/></svg>New Recipe</button>
+          </div>
+          <div class="toolbar"><input class="input" placeholder="Search recipes…" style="max-width:320px"><button class="btn">Tags ▾</button><button class="btn">Sort: Name ▾</button></div>
+          <div class="grid" id="grid"></div>
+        </div>
+      </section>
+
+      <!-- ================= DETAIL ================= -->
+      <section class="view" id="view-detail">
+        <div class="page">
+          <div class="note"><b>Recipe detail.</b> When there is an image it is a <b>hero</b> above the title (16:9 desktop, 4:3 edge-to-edge on mobile),
+            using the <code>full</code> rendition (≤1600px). <b>Click it</b> to open the uncropped lightbox. With no image the page looks exactly like today.</div>
+          <button class="btn ghost"><svg class="i"><use href="#ic-left"/></svg>Recipes</button>
+          <div class="hero" id="hero"><img alt="Shakshuka" id="heroImg"><span class="zoom"><svg class="i sm"><use href="#ic-zoom"/></svg>View full</span></div>
+          <div class="detail-head" id="detailHead">
+            <div>
+              <div class="row"><svg class="i" style="color:var(--green)"><use href="#ic-check"/></svg><h1 class="h1">Shakshuka</h1></div>
+              <p class="muted" style="margin:4px 0 0">Eggs poached in a spiced tomato and pepper sauce. Great for brunch.</p>
+            </div>
+            <div class="row" style="flex-wrap:wrap">
+              <button class="btn"><svg class="i"><use href="#ic-max"/></svg>Cook Mode</button>
+              <button class="btn" onclick="goForm('edit')"><svg class="i"><use href="#ic-pencil"/></svg>Edit</button>
+              <button class="btn danger"><svg class="i"><use href="#ic-trash"/></svg>Delete</button>
+            </div>
+          </div>
+          <div class="meta" style="margin-top:12px;font-size:13px">
+            <span class="row" style="gap:4px"><svg class="i sm"><use href="#ic-users"/></svg>4 servings</span>
+            <span class="row" style="gap:4px"><svg class="i sm"><use href="#ic-clock"/></svg>10m prep + 25m cook</span>
+            <span style="color:var(--accent)">↗ Source</span>
+          </div>
+          <div class="row" style="margin-top:10px;gap:6px"><span class="badge">Breakfast</span><span class="badge">Vegetarian</span><span class="badge">One Pan</span></div>
+          <div class="cols">
+            <div><h2>Ingredients</h2><ul>
+              <li>6 eggs</li><li>1 can crushed tomatoes</li><li>1 red bell pepper</li><li>1 onion</li>
+              <li>2 cloves garlic</li><li>1 tsp cumin</li><li>1 tsp smoked paprika</li><li>Feta, to serve</li></ul></div>
+            <div><h2>Instructions</h2><ol>
+              <li>Sauté the onion and pepper in olive oil until soft, about 8 minutes.</li>
+              <li>Add garlic, cumin and paprika; cook 1 minute.</li>
+              <li>Pour in tomatoes and simmer 10 minutes until thickened.</li>
+              <li>Make 6 wells, crack in the eggs, cover and cook 6–8 minutes.</li>
+              <li>Top with feta and herbs. Serve with crusty bread.</li></ol></div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ================= FORM ================= -->
+      <section class="view" id="view-form">
+        <div class="page">
+          <div class="note"><b>Add / edit photo.</b> A new <b>Photo</b> section sits between planner settings and the Cooklang editor.
+            <b>Try it:</b> drag a real image from your computer onto the drop zone, or click it. Try a non-image or a &gt;10 MB file to see validation.
+            The image is <b>staged locally</b> and is only uploaded when you press <b>Save</b>
+            (recipe saved first, then <code>PUT /recipes/{id}/image</code>). Remove is staged too, and you can undo it.</div>
+          <h1 class="h1" id="formTitle" style="margin-bottom:20px">New Recipe</h1>
+          <div class="planner-box">▸ Planner settings (classification, eat-within, gap days…) — unchanged</div>
+
+          <div class="photo">
+            <div class="section-label"><svg class="i"><use href="#ic-image"/></svg>Photo <span class="muted" style="font-weight:400">(optional)</span><span class="anno">NEW</span></div>
+            <input type="file" id="file" accept="image/jpeg,image/png,image/webp" hidden>
+            <div id="photoSlot"></div>
+          </div>
+
+          <div class="editor">
+            <div>
+              <div class="section-label">Recipe (Cooklang)</div>
+              <textarea class="cook" id="cook">---
+title: Shakshuka
+servings: 4
+prep time: 10 minutes
+cook time: 25 minutes
+tags: breakfast, vegetarian, one pan
+---
+
+Sauté @onion{1} and @red bell pepper{1} in @olive oil{2%tbsp} until soft.
+
+Add @garlic{2%cloves}, @cumin{1%tsp} and @smoked paprika{1%tsp}.
+
+Pour in @crushed tomatoes{1%can} and simmer ~{10%minutes}.
+
+Crack in @eggs{6}, cover and cook ~{7%minutes}.</textarea>
+            </div>
+            <div>
+              <div class="section-label">Preview</div>
+              <div class="live">
+                <div class="limg" id="liveImg" style="display:none"><img alt=""></div>
+                <div style="font-size:17px;font-weight:600">Shakshuka</div>
+                <div class="muted" style="font-size:12px;margin:4px 0 10px">4 servings · 10m prep · 25m cook</div>
+                <div class="muted" style="font-size:13px">Ingredients: onion, red bell pepper, olive oil, garlic, cumin, smoked paprika, crushed tomatoes, eggs…</div>
+              </div>
+            </div>
+          </div>
+
+          <div class="formbar">
+            <button class="btn primary" id="saveBtn">Save</button>
+            <button class="btn" id="cancelBtn">Cancel</button>
+            <span class="muted" id="reqlog" style="font-size:12px"></span>
+          </div>
+        </div>
+      </section>
+
+      <!-- ================= HOW IT WORKS ================= -->
+      <section class="view" id="view-how">
+        <div class="doc">
+          <h2>Architecture</h2>
+          <div class="arch">
+            <div class="box"><b>Browser</b><small>&lt;img src&gt; + multipart upload<br>access_token cookie</small></div>
+            <div class="arrow">/api/v1/recipes/…</div>
+            <div class="box"><b>nginx / ingress</b><small>body limit → 11m</small></div>
+            <div class="arrow">proxy</div>
+            <div class="box svc"><b>recipe-service</b><small>auth · tenant/household check<br>decode · orient · resize · re-encode</small></div>
+          </div>
+          <div style="display:grid;grid-template-columns:3fr 2fr;gap:0;margin-top:8px">
+            <div></div>
+            <div class="stores">
+              <div class="box store"><b>Postgres</b><small><code>recipe.recipe_images</code><br>metadata · keys · size</small></div>
+              <div class="box store"><b>MinIO (private)</b><small><code>home-hub-recipes</code><br>full.jpg · thumb.jpg</small></div>
+            </div>
+          </div>
+          <p>The browser never talks to MinIO. Image bytes are streamed through recipe-service, so the existing cookie auth and
+            tenant/household scoping protect them and no presigned URLs are needed. If MinIO is down, only image features
+            degrade (503). Recipes, the planner and shopping keep working.</p>
+
+          <h2>Endpoints</h2>
+          <table class="t">
+            <tr><th>Method / path</th><th>Purpose</th><th>Result</th></tr>
+            <tr><td><code>PUT /recipes/{id}/image</code></td><td>Upload or replace (multipart field <code>file</code>, ≤10 MiB, JPEG/PNG/WebP)</td><td>200 <code>recipe-images</code> · 413 / 415 / 422 / 503</td></tr>
+            <tr><td><code>GET /recipes/{id}/image?size=thumb|full</code></td><td>Serve bytes (image/jpeg), immutable cache + ETag</td><td>200 / 304 / 404</td></tr>
+            <tr><td><code>DELETE /recipes/{id}/image</code></td><td>Remove (idempotent)</td><td>204</td></tr>
+            <tr><td><code>GET /recipes</code>, <code>GET /recipes/{id}</code>, …</td><td>Gain a nullable <code>image</code> attribute</td><td>see below</td></tr>
+          </table>
+<pre>"attributes": {
+  "title": "Shakshuka",
+  …
+  "image": {
+    "thumbUrl": "/api/v1/recipes/9a0c…/image?size=thumb&amp;v=4b1e…",
+    "fullUrl":  "/api/v1/recipes/9a0c…/image?size=full&amp;v=4b1e…",
+    "width": 1600, "height": 1067
+  }            // or null
+}</pre>
+          <p><code>v</code> is the image id, which is new on every replace. That lets the browser cache images
+            "forever" while a new photo still shows up immediately.</p>
+
+          <h2>What happens on upload</h2>
+          <ol class="seq">
+            <li>Recipe looked up within the caller's tenant + household (else 404).</li>
+            <li><code>DecodeConfig</code> sniffs the real type and dimensions. Rejected if not JPEG/PNG/WebP (415) or &gt; 40 MP (422), <i>before</i> the full decode.</li>
+            <li>Decode, apply the EXIF orientation, composite transparency onto white.</li>
+            <li>Resize to <b>full</b> (longest edge ≤ 1600px) and <b>thumb</b> (≤ 480px) and re-encode as JPEG q82. <b>All EXIF/GPS metadata is dropped.</b></li>
+            <li>Put both objects at <code>{tenant}/{household}/recipes/{recipeId}/{imageId}/…</code>.</li>
+            <li>Upsert the <code>recipe_images</code> row (one per recipe) in a transaction.</li>
+            <li>Delete the previous image's objects (best effort, logged).</li>
+          </ol>
+
+          <h2>Lifecycle</h2>
+          <table class="t">
+            <tr><th>Event</th><th>Image</th></tr>
+            <tr><td>Recipe soft-deleted</td><td>Kept; comes back on restore</td></tr>
+            <tr><td>Retention purges recipe</td><td>Row deleted in the cascade; objects deleted after commit</td></tr>
+            <tr><td>Image replaced</td><td>New objects + new id; old objects deleted</td></tr>
+            <tr><td>Image removed</td><td>Row deleted, then objects</td></tr>
+          </table>
+
+          <h2>Out of scope (v1)</h2>
+          <ul>
+            <li>Multiple images / galleries, step photos</li>
+            <li>Add by URL, auto-import from source URL (og:image), clipboard paste</li>
+            <li>In-app cropping or rotation</li>
+            <li>Images in cook mode, the meal planner or the dashboard</li>
+            <li>HEIC/AVIF input; WebP output</li>
+          </ul>
+        </div>
+      </section>
+
+    </div>
+  </div>
+</div>
+
+<div class="lightbox" id="lightbox"><button class="x" aria-label="Close">✕</button><img alt="Shakshuka (full)"></div>
+<div class="toast" id="toast"></div>
+
+<!-- lucide-style icons -->
+<svg width="0" height="0" style="position:absolute">
+  <symbol id="ic-plus" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></symbol>
+  <symbol id="ic-left" viewBox="0 0 24 24"><path d="m12 19-7-7 7-7M19 12H5"/></symbol>
+  <symbol id="ic-clock" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></symbol>
+  <symbol id="ic-users" viewBox="0 0 24 24"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75"/></symbol>
+  <symbol id="ic-check" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="m9 12 2 2 4-4"/></symbol>
+  <symbol id="ic-alert" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M12 8v4M12 16h.01"/></symbol>
+  <symbol id="ic-pencil" viewBox="0 0 24 24"><path d="M17 3a2.85 2.85 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/></symbol>
+  <symbol id="ic-trash" viewBox="0 0 24 24"><path d="M3 6h18M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></symbol>
+  <symbol id="ic-max" viewBox="0 0 24 24"><path d="M15 3h6v6M9 21H3v-6M21 3l-7 7M3 21l7-7"/></symbol>
+  <symbol id="ic-zoom" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3M11 8v6M8 11h6"/></symbol>
+  <symbol id="ic-image" viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="9" cy="9" r="2"/><path d="m21 15-3.1-3.1a2 2 0 0 0-2.8 0L6 21"/></symbol>
+  <symbol id="ic-upload" viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M17 8l-5-5-5 5M12 3v12"/></symbol>
+  <symbol id="ic-chef" viewBox="0 0 24 24"><path d="M17 21a1 1 0 0 0 1-1v-5.35c0-.457.316-.844.727-1.041a4 4 0 0 0-2.134-7.589 5 5 0 0 0-9.186 0 4 4 0 0 0-2.134 7.588c.411.198.727.585.727 1.041V20a1 1 0 0 0 1 1Z"/><path d="M6 17h12"/></symbol>
+  <symbol id="ic-refresh" viewBox="0 0 24 24"><path d="M21 12a9 9 0 1 1-3-6.7L21 8M21 3v5h-5"/></symbol>
+  <symbol id="ic-undo" viewBox="0 0 24 24"><path d="M3 7v6h6"/><path d="M21 17a9 9 0 0 0-15-6.7L3 13"/></symbol>
+</svg>
+
+<script>
+// ---------- fake "photos" (generated SVG so the mockup works offline) ----------
+function photo(c1, c2, emoji, w = 1600, h = 1000) {
+  const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="${w}" height="${h}" viewBox="0 0 ${w} ${h}">
+    <defs><radialGradient id="g" cx="40%" cy="35%" r="85%"><stop offset="0" stop-color="${c1}"/><stop offset="1" stop-color="${c2}"/></radialGradient></defs>
+    <rect width="100%" height="100%" fill="url(#g)"/>
+    <circle cx="${w*0.5}" cy="${h*0.52}" r="${h*0.36}" fill="rgba(255,255,255,.85)"/>
+    <circle cx="${w*0.5}" cy="${h*0.52}" r="${h*0.29}" fill="rgba(0,0,0,.06)"/>
+    <text x="50%" y="56%" font-size="${h*0.34}" text-anchor="middle" dominant-baseline="middle">${emoji}</text></svg>`;
+  return "data:image/svg+xml;charset=utf-8," + encodeURIComponent(svg);
+}
+const recipes = [
+  { t: "Shakshuka", d: "Eggs poached in a spiced tomato and pepper sauce. Great for brunch.", m: 35, c: 6, tags: ["Breakfast","Vegetarian"], img: photo("#f97316","#7c2d12","🍳"), ok: true },
+  { t: "Thai Green Curry", d: "Coconut curry with chicken, bamboo shoots and Thai basil.", m: 40, c: 3, tags: ["Dinner","Spicy"], img: photo("#84cc16","#14532d","🍛"), ok: true },
+  { t: "Weeknight Lasagna", d: "Layers of ragù, béchamel and fresh pasta sheets.", m: 90, c: 0, tags: ["Dinner"], img: null, ok: false },
+  { t: "Banana Bread", d: "Moist loaf with brown butter and walnuts.", m: 75, c: 8, tags: ["Baking","Snack"], img: photo("#fbbf24","#78350f","🍞"), ok: true },
+  { t: "Greek Salad", d: "Tomato, cucumber, red onion, olives and feta.", m: 15, c: 2, tags: ["Lunch","Vegetarian"], img: null, ok: true },
+  { t: "Salmon Teriyaki", d: "Glazed salmon fillets with sesame and scallions.", m: 25, c: 4, tags: ["Dinner","Fish"], img: photo("#fb7185","#881337","🍣"), ok: true },
+];
+const heroSrc = recipes[0].img;
+
+// ---------- chrome: tabs + viewport ----------
+const frame = document.getElementById("frame");
+function show(view) {
+  document.querySelectorAll(".view").forEach(v => v.classList.toggle("active", v.id === "view-" + view));
+  document.querySelectorAll("#tabs button").forEach(b => b.classList.toggle("active", b.dataset.view === view));
+  document.getElementById("ctl-detail").style.display = view === "detail" ? "" : "none";
+  document.getElementById("ctl-form").style.display = view === "form" ? "" : "none";
+  frame.querySelector(".sidebar").style.display = view === "how" ? "none" : "";
+  window.scrollTo(0, 0);
+}
+document.getElementById("tabs").onclick = e => { if (e.target.dataset.view) show(e.target.dataset.view); };
+document.getElementById("vp").onclick = e => {
+  const vp = e.target.dataset.vp; if (!vp) return;
+  frame.classList.toggle("mobile", vp === "mobile");
+  document.querySelectorAll("#vp button").forEach(b => b.classList.toggle("active", b === e.target));
+};
+
+// ---------- list ----------
+const icon = (id, cls = "i sm", style = "") => `<svg class="${cls}" style="${style}"><use href="#${id}"/></svg>`;
+document.getElementById("grid").innerHTML = recipes.map((r, i) => `
+  <div class="card" onclick="show('detail')">
+    <div class="media">${r.img
+      ? `<img loading="lazy" src="${r.img}" alt="${r.t}" onerror="this.replaceWith(Object.assign(document.createElement('div'),{className:'placeholder',innerHTML:'${icon("ic-chef","i").replace(/"/g,"&quot;")}'}))">`
+      : `<div class="placeholder" title="No photo yet">${icon("ic-chef", "i")}</div>`}</div>
+    <div class="body">
+      <div class="row">${r.ok ? icon("ic-check", "i", "color:var(--green)") : icon("ic-alert", "i", "color:var(--yellow)")}<span class="title">${r.t}</span></div>
+      <div class="desc">${r.d}</div>
+      <div class="meta"><span class="row" style="gap:3px">${icon("ic-clock")}${r.m} min</span>${r.c ? `<span>cooked ${r.c}x</span>` : ""}
+        ${r.tags.map(t => `<span class="badge">${t}</span>`).join("")}</div>
+    </div>
+  </div>`).join("");
+
+// ---------- detail ----------
+const hero = document.getElementById("hero"), heroImg = document.getElementById("heroImg");
+heroImg.src = heroSrc;
+document.getElementById("detailHasImg").onchange = e => { hero.style.display = e.target.checked ? "" : "none"; };
+const lb = document.getElementById("lightbox");
+hero.onclick = () => { lb.querySelector("img").src = heroImg.src; lb.classList.add("open"); };
+lb.onclick = e => { if (e.target !== lb.querySelector("img")) lb.classList.remove("open"); };
+document.addEventListener("keydown", e => { if (e.key === "Escape") lb.classList.remove("open"); });
+
+// ---------- form ----------
+const MAX = 10 * 1024 * 1024, TYPES = ["image/jpeg", "image/png", "image/webp"];
+const fileInput = document.getElementById("file"), slot = document.getElementById("photoSlot");
+const liveImg = document.getElementById("liveImg"), saveBtn = document.getElementById("saveBtn"), reqlog = document.getElementById("reqlog");
+let mode = "create";
+// state: { saved: {src,name}|null, staged: {src,name,size}|null, removed: bool, error: string|null }
+let st;
+function reset(m) {
+  mode = m;
+  st = { saved: m === "edit" ? { src: heroSrc, name: "shakshuka.jpg (1600×1000, stored)" } : null, staged: null, removed: false, error: null };
+  document.getElementById("formTitle").textContent = m === "edit" ? "Edit Recipe" : "New Recipe";
+  document.querySelectorAll("#fmode button").forEach(b => b.classList.toggle("active", b.dataset.mode === m));
+  reqlog.textContent = ""; render();
+}
+function fmtSize(b) { return b > 1048576 ? (b / 1048576).toFixed(1) + " MB" : Math.round(b / 1024) + " KB"; }
+function render() {
+  const shown = st.staged || (st.saved && !st.removed ? st.saved : null);
+  if (!st.staged && !st.saved || (st.removed && !st.staged && false)) {
+    slot.innerHTML = dropZone();
+  } else if (st.staged) {
+    slot.innerHTML = previewCard(st.staged.src, st.staged.name + " · " + fmtSize(st.staged.size), "staged", "New — uploads on Save");
+  } else if (st.removed) {
+    slot.innerHTML = previewCard(st.saved.src, st.saved.name, "rm", "Will be removed on Save");
+  } else {
+    slot.innerHTML = previewCard(st.saved.src, st.saved.name, "saved", "Current photo");
+  }
+  liveImg.style.display = shown && !st.removed || st.staged ? "" : "none";
+  if (shown) liveImg.querySelector("img").src = shown.src;
+  bindSlot();
+}
+function dropZone() {
+  return `<div class="drop ${st.error ? "err" : ""}" id="drop" tabindex="0" role="button" aria-label="Add photo">
+    ${icon("ic-upload", "i")}
+    <div class="big">Drag a photo here, or click to choose</div>
+    <div style="font-size:12px">JPEG, PNG or WebP · up to 10 MB · on mobile: camera or photo library</div>
+    ${st.error ? `<div class="errmsg">${st.error}</div>` : ""}</div>`;
+}
+function previewCard(src, name, kind, label) {
+  const removed = kind === "rm";
+  return `<div class="preview">
+    <div class="pimg ${removed ? "removed" : ""}"><img src="${src}" alt=""><span class="ribbon ${kind}">${label}</span></div>
+    <div class="pinfo">
+      <div class="fname">${name}</div>
+      <div class="muted" style="font-size:12px;margin-top:2px">${kind === "staged"
+        ? "Server will auto-rotate, resize (1600px + 480px thumb) and strip location/EXIF data."
+        : removed ? "The photo stays on the server until you press Save." : "Shown on the recipe page and list card."}</div>
+      <div class="actions">${removed
+        ? `<button class="btn" data-act="undo" type="button">${icon("ic-undo")}Undo remove</button>`
+        : `<button class="btn" data-act="replace" type="button">${icon("ic-refresh")}Replace</button>
+           <button class="btn danger" data-act="remove" type="button">${icon("ic-trash")}Remove</button>`}</div>
+      ${st.error ? `<div class="errmsg" style="color:var(--destructive);font-size:12px;margin-top:8px;font-weight:500">${st.error}</div>` : ""}
+    </div></div>`;
+}
+function bindSlot() {
+  const drop = document.getElementById("drop");
+  if (drop) {
+    drop.onclick = () => fileInput.click();
+    drop.onkeydown = e => { if (e.key === "Enter" || e.key === " ") fileInput.click(); };
+    drop.ondragover = e => { e.preventDefault(); drop.classList.add("drag"); };
+    drop.ondragleave = () => drop.classList.remove("drag");
+    drop.ondrop = e => { e.preventDefault(); drop.classList.remove("drag"); if (e.dataTransfer.files[0]) stage(e.dataTransfer.files[0]); };
+  }
+  slot.querySelectorAll("[data-act]").forEach(b => b.onclick = () => {
+    const a = b.dataset.act;
+    if (a === "replace") fileInput.click();
+    if (a === "remove") { if (st.staged) { st.staged = null; } else { st.removed = true; } st.error = null; render(); }
+    if (a === "undo") { st.removed = false; render(); }
+  });
+}
+function stage(f) {
+  if (!TYPES.includes(f.type)) { st.error = `“${f.name}” isn't a JPEG, PNG or WebP image.`; st.staged = null; render(); return; }
+  if (f.size > MAX) { st.error = `“${f.name}” is ${fmtSize(f.size)}. Use an image under 10 MB.`; st.staged = null; render(); return; }
+  st.error = null; st.removed = false;
+  st.staged = { src: URL.createObjectURL(f), name: f.name, size: f.size };
+  render();
+}
+fileInput.onchange = () => { if (fileInput.files[0]) stage(fileInput.files[0]); fileInput.value = ""; };
+document.getElementById("fmode").onclick = e => { if (e.target.dataset.mode) reset(e.target.dataset.mode); };
+document.getElementById("cancelBtn").onclick = () => { reset(mode); toast("Changes discarded — no requests sent."); };
+
+function toast(msg, err) {
+  const t = document.getElementById("toast"); t.textContent = msg; t.className = "toast show" + (err ? " err" : "");
+  clearTimeout(toast.h); toast.h = setTimeout(() => t.classList.remove("show"), 4200);
+}
+const wait = ms => new Promise(r => setTimeout(r, ms));
+saveBtn.onclick = async () => {
+  const fail = document.getElementById("simFail").checked;
+  const steps = [];
+  saveBtn.disabled = true;
+  saveBtn.innerHTML = `<span class="spinner"></span>Saving recipe…`;
+  steps.push(mode === "create" ? "POST /recipes → 201" : "PATCH /recipes/9a0c… → 200");
+  reqlog.textContent = steps.join("  ·  ");
+  await wait(600);
+  if (mode === "create") { mode = "edit"; document.getElementById("formTitle").textContent = "Edit Recipe"; }
+  if (st.staged) {
+    saveBtn.innerHTML = `<span class="spinner"></span>Uploading photo…`;
+    await wait(1100);
+    if (fail) {
+      steps.push("PUT /recipes/9a0c…/image → 503");
+      reqlog.textContent = steps.join("  ·  ");
+      saveBtn.disabled = false; saveBtn.textContent = "Save";
+      toast("Recipe saved, but the photo failed to upload — try again. (Save now retries only the photo.)", true);
+      return;
+    }
+    steps.push("PUT /recipes/9a0c…/image → 200");
+    st.saved = { src: st.staged.src, name: st.staged.name + " (stored as 1600px JPEG + 480px thumb)" };
+    st.staged = null;
+  } else if (st.removed) {
+    saveBtn.innerHTML = `<span class="spinner"></span>Removing photo…`;
+    await wait(500);
+    steps.push("DELETE /recipes/9a0c…/image → 204");
+    st.saved = null; st.removed = false;
+  }
+  reqlog.textContent = steps.join("  ·  ");
+  saveBtn.disabled = false; saveBtn.textContent = "Save";
+  render();
+  toast("Saved. (Real app navigates to the recipe detail page here.)");
+};
+
+function goForm(m) { show("form"); reset(m); }
+reset("create");
+</script>
+</body>
+</html>
