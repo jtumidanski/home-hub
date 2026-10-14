@@ -11,6 +11,7 @@ import (
 	"gorm.io/gorm"
 
 	"github.com/jtumidanski/home-hub/services/recipe-service/internal/audit"
+	"github.com/jtumidanski/home-hub/services/recipe-service/internal/recipeimage"
 	database "github.com/jtumidanski/home-hub/shared/go/database"
 	tenantctx "github.com/jtumidanski/home-hub/shared/go/tenant"
 )
@@ -23,7 +24,7 @@ func setupTestDB(t *testing.T) *gorm.DB {
 	}
 	l, _ := test.NewNullLogger()
 	database.RegisterTenantCallbacks(l, db)
-	if err := db.AutoMigrate(&Entity{}, &TagEntity{}, &RestorationEntity{}, &audit.Entity{}); err != nil {
+	if err := db.AutoMigrate(&Entity{}, &TagEntity{}, &RestorationEntity{}, &audit.Entity{}, &recipeimage.Entity{}, &recipeimage.ObjectDeletionEntity{}); err != nil {
 		t.Fatalf("failed to migrate: %v", err)
 	}
 	return db

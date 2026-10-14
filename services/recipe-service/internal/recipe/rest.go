@@ -12,21 +12,22 @@ import (
 
 // RestModel is the JSON:API list representation (no source/parsed data).
 type RestModel struct {
-	Id                  uuid.UUID `json:"-"`
-	Title               string    `json:"title"`
-	Description         string    `json:"description,omitempty"`
-	Servings            *int      `json:"servings,omitempty"`
-	PrepTimeMinutes     *int      `json:"prepTimeMinutes,omitempty"`
-	CookTimeMinutes     *int      `json:"cookTimeMinutes,omitempty"`
-	Tags                []string  `json:"tags"`
-	PlannerReady        bool      `json:"plannerReady"`
-	Classification      string    `json:"classification,omitempty"`
-	ResolvedIngredients int       `json:"resolvedIngredients"`
-	TotalIngredients    int       `json:"totalIngredients"`
-	LastUsedDate        *string   `json:"lastUsedDate,omitempty"`
-	UsageCount          int64     `json:"usageCount,omitempty"`
-	CreatedAt           time.Time `json:"createdAt"`
-	UpdatedAt           time.Time `json:"updatedAt"`
+	Id                  uuid.UUID       `json:"-"`
+	Title               string          `json:"title"`
+	Description         string          `json:"description,omitempty"`
+	Servings            *int            `json:"servings,omitempty"`
+	PrepTimeMinutes     *int            `json:"prepTimeMinutes,omitempty"`
+	CookTimeMinutes     *int            `json:"cookTimeMinutes,omitempty"`
+	Tags                []string        `json:"tags"`
+	PlannerReady        bool            `json:"plannerReady"`
+	Classification      string          `json:"classification,omitempty"`
+	ResolvedIngredients int             `json:"resolvedIngredients"`
+	TotalIngredients    int             `json:"totalIngredients"`
+	LastUsedDate        *string         `json:"lastUsedDate,omitempty"`
+	UsageCount          int64           `json:"usageCount,omitempty"`
+	Image               *RestImageModel `json:"image"`
+	CreatedAt           time.Time       `json:"createdAt"`
+	UpdatedAt           time.Time       `json:"updatedAt"`
 }
 
 func (r RestModel) GetName() string        { return "recipes" }
@@ -59,6 +60,7 @@ type RestDetailModel struct {
 	PlannerConfig   *RestPlannerConfigModel             `json:"plannerConfig,omitempty"`
 	PlannerReady    bool                                `json:"plannerReady"`
 	PlannerIssues   []string                            `json:"plannerIssues"`
+	Image           *RestImageModel                     `json:"image"`
 	CreatedAt       time.Time                           `json:"createdAt"`
 	UpdatedAt       time.Time                           `json:"updatedAt"`
 }
@@ -71,6 +73,14 @@ func (r *RestDetailModel) SetID(id string) error {
 	return err
 }
 
+// RestImageModel is the nullable `image` attribute on recipe resources.
+type RestImageModel struct {
+	ThumbURL string `json:"thumbUrl"`
+	FullURL  string `json:"fullUrl"`
+	Width    int    `json:"width"`
+	Height   int    `json:"height"`
+}
+
 type ListEnrichment struct {
 	PlannerReady        bool
 	Classification      string
@@ -78,6 +88,7 @@ type ListEnrichment struct {
 	TotalIngredients    int
 	LastUsedDate        *string
 	UsageCount          int64
+	Image               *RestImageModel
 }
 
 func Transform(m Model, enrichment ListEnrichment) RestModel {
@@ -92,6 +103,7 @@ func Transform(m Model, enrichment ListEnrichment) RestModel {
 		PlannerReady: enrichment.PlannerReady, Classification: enrichment.Classification,
 		ResolvedIngredients: enrichment.ResolvedIngredients, TotalIngredients: enrichment.TotalIngredients,
 		LastUsedDate: enrichment.LastUsedDate, UsageCount: enrichment.UsageCount,
+		Image:     enrichment.Image,
 		CreatedAt: m.CreatedAt(), UpdatedAt: m.UpdatedAt(),
 	}
 }
@@ -108,6 +120,7 @@ type DetailEnrichment struct {
 	Ingredients   []normalization.RestIngredientModel
 	PlannerConfig *RestPlannerConfigModel
 	Readiness     planner.Readiness
+	Image         *RestImageModel
 }
 
 func TransformDetail(m Model, parsed cooklang.ParseResult, enrichment DetailEnrichment) RestDetailModel {
@@ -133,6 +146,7 @@ func TransformDetail(m Model, parsed cooklang.ParseResult, enrichment DetailEnri
 		SourceURL: m.SourceURL(), Tags: tags, Source: m.Source(),
 		Ingredients: ingredients, Steps: steps, Notes: notes,
 		PlannerConfig: enrichment.PlannerConfig, PlannerReady: enrichment.Readiness.Ready, PlannerIssues: enrichment.Readiness.Issues,
+		Image:     enrichment.Image,
 		CreatedAt: m.CreatedAt(), UpdatedAt: m.UpdatedAt(),
 	}
 }
