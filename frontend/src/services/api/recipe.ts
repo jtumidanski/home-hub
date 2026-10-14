@@ -8,9 +8,10 @@ import type {
   RecipeParseResult,
   RecipeIngredient,
   RecipeSort,
+  RecipeImageResource,
 } from "@/types/models/recipe";
 import type { Tenant } from "@/types/models/tenant";
-import type { ApiListResponse } from "@/types/api/responses";
+import type { ApiListResponse, ApiResponse } from "@/types/api/responses";
 import { api } from "@/lib/api/client";
 
 interface RecipeListParams {
@@ -35,6 +36,17 @@ export interface RecipeListResponse extends ApiListResponse<RecipeListItem> {
 class RecipeService extends BaseService {
   constructor() {
     super("/recipes");
+  }
+
+  uploadRecipeImage(tenant: Tenant, id: string, file: File): Promise<ApiResponse<RecipeImageResource>> {
+    this.setTenant(tenant);
+    const form = new FormData();
+    form.append("file", file);
+    return api.upload<ApiResponse<RecipeImageResource>>(`/recipes/${id}/image`, form, { method: "PUT" });
+  }
+
+  deleteRecipeImage(tenant: Tenant, id: string) {
+    return this.remove(tenant, `/recipes/${id}/image`);
   }
 
   listRecipes(tenant: Tenant, params?: RecipeListParams): Promise<RecipeListResponse> {

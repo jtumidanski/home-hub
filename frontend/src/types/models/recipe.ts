@@ -71,6 +71,7 @@ export interface RecipeListAttributes {
   totalIngredients: number;
   lastUsedDate?: string;
   usageCount?: number;
+  image: RecipeImage | null;
   createdAt: string;
   updatedAt: string;
 }
@@ -157,4 +158,17 @@ export interface RecipeParseResult {
     errors?: ParseError[];
     normalization?: NormalizationStatus[];
   };
+}
+
+export interface RecipeImage {
+  thumbUrl: string;
+  fullUrl: string;
+  width: number;
+  height: number;
+}
+
+export interface RecipeImageResource {
+  id: string;
+  type: "recipe-images";
+  attributes: RecipeImage & { updatedAt: string };
 }
