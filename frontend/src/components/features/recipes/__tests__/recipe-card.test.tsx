@@ -115,4 +115,19 @@ describe("RecipeCard", () => {
     render(<RecipeCard recipe={makeRecipe()} onDelete={vi.fn()} />);
     expect(screen.queryByText(/cooked/i)).not.toBeInTheDocument();
   });
+
+  it("renders the thumbnail when the recipe has an image", () => {
+    render(
+      <RecipeCard
+        recipe={makeRecipe({ image: { thumbUrl: "/t.jpg", fullUrl: "/f.jpg", width: 10, height: 10 } })}
+        onDelete={vi.fn()}
+      />,
+    );
+    expect(screen.getByRole("img", { name: "Pasta Carbonara" })).toHaveAttribute("src", "/t.jpg");
+  });
+
+  it("renders the placeholder when the recipe has no image", () => {
+    render(<RecipeCard recipe={makeRecipe()} onDelete={vi.fn()} />);
+    expect(screen.getByTestId("recipe-image-placeholder")).toBeInTheDocument();
+  });
 });

@@ -4,6 +4,7 @@ import { Card, CardHeader, CardTitle, CardContent, CardAction } from "@/componen
 import { Badge } from "@/components/ui/badge";
 import { CardActionMenu } from "@/components/common/card-action-menu";
 import { filterClassificationTags } from "@/lib/constants/recipe";
+import { RecipeImage } from "./recipe-image";
 import { toTitleCase } from "@/lib/utils";
 import type { RecipeListItem, RecipeListAttributes } from "@/types/models/recipe";
 
@@ -53,55 +54,65 @@ export function RecipeCard({ recipe, onDelete }: RecipeCardProps) {
   return (
     <Card
       size="sm"
-      className="cursor-pointer"
+      className="cursor-pointer md:pt-0"
       onClick={() => navigate(`/app/recipes/${id}`)}
     >
-      <CardHeader>
-        <div className="flex items-center gap-2">
-          <RecipeStatusIcon attrs={attributes} />
-          <CardTitle className="text-base">{attributes.title}</CardTitle>
+      <div className="flex items-start gap-3 pl-3 md:flex-col md:items-stretch md:pl-0">
+        <RecipeImage
+          image={attributes.image}
+          variant="card"
+          alt={attributes.title}
+          className="size-16 shrink-0 rounded-md md:aspect-video md:h-auto md:w-full md:rounded-none"
+        />
+        <div className="flex min-w-0 flex-1 flex-col gap-3">
+          <CardHeader className="max-md:pl-0">
+            <div className="flex items-center gap-2">
+              <RecipeStatusIcon attrs={attributes} />
+              <CardTitle className="text-base">{attributes.title}</CardTitle>
+            </div>
+            <CardAction>
+              <CardActionMenu
+                actions={[
+                  {
+                    icon: <Pencil className="h-4 w-4" />,
+                    label: "Edit",
+                    onClick: () => navigate(`/app/recipes/${id}/edit`),
+                  },
+                  {
+                    icon: <Trash2 className="h-4 w-4" />,
+                    label: "Delete",
+                    onClick: () => onDelete(id),
+                    variant: "destructive",
+                  },
+                ]}
+              />
+            </CardAction>
+          </CardHeader>
+          <CardContent className="max-md:pl-0">
+            {attributes.description && (
+              <p className="text-sm text-muted-foreground line-clamp-2 mb-2">
+                {attributes.description}
+              </p>
+            )}
+            <div className="flex flex-wrap items-center gap-2">
+              <span className="inline-flex items-center gap-1 text-xs text-muted-foreground">
+                <Clock className="h-3 w-3" />
+                {totalTime > 0 ? `${totalTime} min` : "??? min"}
+              </span>
+              {(attributes.usageCount ?? 0) > 0 && (
+                <span className="text-xs text-muted-foreground">
+                  cooked {attributes.usageCount}x
+                </span>
+              )}
+              {allTags.map((tag) => (
+                <Badge key={tag} variant="secondary" className="text-xs">
+                  {toTitleCase(tag)}
+                </Badge>
+              ))}
+            </div>
+          </CardContent>
         </div>
-        <CardAction>
-          <CardActionMenu
-            actions={[
-              {
-                icon: <Pencil className="h-4 w-4" />,
-                label: "Edit",
-                onClick: () => navigate(`/app/recipes/${id}/edit`),
-              },
-              {
-                icon: <Trash2 className="h-4 w-4" />,
-                label: "Delete",
-                onClick: () => onDelete(id),
-                variant: "destructive",
-              },
-            ]}
-          />
-        </CardAction>
-      </CardHeader>
-      <CardContent>
-        {attributes.description && (
-          <p className="text-sm text-muted-foreground line-clamp-2 mb-2">
-            {attributes.description}
-          </p>
-        )}
-        <div className="flex flex-wrap items-center gap-2">
-          <span className="inline-flex items-center gap-1 text-xs text-muted-foreground">
-            <Clock className="h-3 w-3" />
-            {totalTime > 0 ? `${totalTime} min` : "??? min"}
-          </span>
-          {(attributes.usageCount ?? 0) > 0 && (
-            <span className="text-xs text-muted-foreground">
-              cooked {attributes.usageCount}x
-            </span>
-          )}
-          {allTags.map((tag) => (
-            <Badge key={tag} variant="secondary" className="text-xs">
-              {toTitleCase(tag)}
-            </Badge>
-          ))}
-        </div>
-      </CardContent>
+      </div>
     </Card>
   );
 }

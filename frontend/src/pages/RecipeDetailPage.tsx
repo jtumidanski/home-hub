@@ -7,6 +7,8 @@ import { useRenormalize } from "@/lib/hooks/api/use-ingredient-normalization";
 import { RecipeIngredients } from "@/components/features/recipes/recipe-ingredients";
 import { RecipeSteps } from "@/components/features/recipes/recipe-steps";
 import { CookMode } from "@/components/features/recipes/cook-mode";
+import { RecipeImage } from "@/components/features/recipes/recipe-image";
+import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -21,6 +23,7 @@ export function RecipeDetailPage() {
   const deleteRecipe = useDeleteRecipe();
   const renormalize = useRenormalize();
   const [cookModeOpen, setCookModeOpen] = useState(false);
+  const [lightboxOpen, setLightboxOpen] = useState(false);
 
   const recipe = data?.data;
 
@@ -79,6 +82,22 @@ export function RecipeDetailPage() {
         <Button variant="ghost" size="sm" onClick={() => navigate("/app/recipes")}>
           <ArrowLeft className="mr-1 h-4 w-4" /> Recipes
         </Button>
+
+        {attrs.image && (
+          <button
+            type="button"
+            aria-label="View photo full size"
+            className="-mx-4 block w-[calc(100%+2rem)] md:mx-0 md:w-full"
+            onClick={() => setLightboxOpen(true)}
+          >
+            <RecipeImage
+              image={attrs.image}
+              variant="hero"
+              alt={attrs.title}
+              className="aspect-[4/3] w-full md:aspect-video md:rounded-lg"
+            />
+          </button>
+        )}
 
         <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3 sm:gap-4">
           <div className="min-w-0">
@@ -173,6 +192,19 @@ export function RecipeDetailPage() {
           <RecipeSteps steps={attrs.steps} notes={attrs.notes} />
         </div>
       </div>
+
+      {attrs.image && (
+        <Dialog open={lightboxOpen} onOpenChange={setLightboxOpen}>
+          <DialogContent className="max-w-[95vw] p-2 sm:max-w-[95vw]">
+            <DialogTitle className="sr-only">{attrs.title}</DialogTitle>
+            <img
+              src={attrs.image.fullUrl}
+              alt={attrs.title}
+              className="max-h-[85vh] w-full object-contain"
+            />
+          </DialogContent>
+        </Dialog>
+      )}
 
       <CookMode
         steps={attrs.steps}
