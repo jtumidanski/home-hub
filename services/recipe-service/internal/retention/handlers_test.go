@@ -2,6 +2,7 @@ package retention
 
 import (
 	"context"
+	"errors"
 	"testing"
 	"time"
 
@@ -12,6 +13,7 @@ import (
 	"github.com/jtumidanski/home-hub/services/recipe-service/internal/normalization"
 	"github.com/jtumidanski/home-hub/services/recipe-service/internal/planitem"
 	"github.com/jtumidanski/home-hub/services/recipe-service/internal/recipe"
+	"github.com/jtumidanski/home-hub/services/recipe-service/internal/recipeimage"
 	sr "github.com/jtumidanski/home-hub/shared/go/retention"
 )
 
@@ -28,6 +30,8 @@ func newDB(t *testing.T) *gorm.DB {
 		&normalization.Entity{},
 		&planitem.Entity{},
 		&sr.RunEntity{},
+		&recipeimage.Entity{},
+		&recipeimage.ObjectDeletionEntity{},
 	); err != nil {
 		t.Fatal(err)
 	}
@@ -127,5 +131,91 @@ func TestRestorationAuditBoundary(t *testing.T) {
 	db.Model(&recipe.RestorationEntity{}).Count(&remaining)
 	if remaining != 1 {
 		t.Errorf("remaining restorations = %d, want 1", remaining)
+	}
+}
+
+func seedPurgeable(t *testing.T, db *gorm.DB) (tenantID, householdID, recipeID uuid.UUID) {
+	t.Helper()
+	tenantID, householdID, recipeID = uuid.New(), uuid.New(), uuid.New()
+	now := time.Now()
+	past := now.Add(-31 * 24 * time.Hour)
+	db.Create(&recipe.Entity{
+		Id: recipeID, TenantId: tenantID, HouseholdId: householdID,
+		Title: "Old", Source: "manual", DeletedAt: &past, CreatedAt: now, UpdatedAt: now,
+	})
+	db.Create(&recipeimage.Entity{
+		Id: uuid.New(), TenantId: tenantID, HouseholdId: householdID, RecipeId: recipeID,
+		FullKey: "k/full.jpg", ThumbKey: "k/thumb.jpg", ContentType: "image/jpeg",
+		Width: 10, Height: 10, FullBytes: 1, ThumbBytes: 1, CreatedAt: now, UpdatedAt: now,
+	})
+	return
+}
+
+func TestDeletedRecipesRestoreWindowPurgesImages(t *testing.T) {
+	db := newDB(t)
+	tid, hid, _ := seedPurgeable(t, db)
+	scope := sr.Scope{TenantId: tid, Kind: sr.ScopeHousehold, ScopeId: hid}
+
+	res, err := DeletedRecipesRestoreWindow{}.Reap(context.Background(), db, scope, 30, false)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if res.Deleted != 2 { // 1 image row + 1 recipe row
+		t.Fatalf("Deleted = %d, want 2", res.Deleted)
+	}
+	var images, outbox int64
+	db.Model(&recipeimage.Entity{}).Count(&images)
+	db.Model(&recipeimage.ObjectDeletionEntity{}).Count(&outbox)
+	if images != 0 || outbox != 2 {
+		t.Fatalf("images=%d outbox=%d, want 0 and 2", images, outbox)
+	}
+}
+
+func TestDeletedRecipesRestoreWindowDryRunLeavesImages(t *testing.T) {
+	db := newDB(t)
+	tid, hid, _ := seedPurgeable(t, db)
+	scope := sr.Scope{TenantId: tid, Kind: sr.ScopeHousehold, ScopeId: hid}
+	rollback := errors.New("dry run")
+
+	// The shared reaper implements dry-run by rolling back the tx.
+	err := db.Transaction(func(tx *gorm.DB) error {
+		res, err := DeletedRecipesRestoreWindow{}.Reap(context.Background(), tx, scope, 30, true)
+		if err != nil {
+			return err
+		}
+		if res.Deleted != 2 {
+			t.Fatalf("dry-run Deleted = %d, want 2 (counts images)", res.Deleted)
+		}
+		return rollback
+	})
+	if !errors.Is(err, rollback) {
+		t.Fatal(err)
+	}
+	var images, outbox int64
+	db.Model(&recipeimage.Entity{}).Count(&images)
+	db.Model(&recipeimage.ObjectDeletionEntity{}).Count(&outbox)
+	if images != 1 || outbox != 0 {
+		t.Fatalf("images=%d outbox=%d, want 1 and 0", images, outbox)
+	}
+}
+
+func TestDeletedRecipesRestoreWindowLeavesOtherTenantImages(t *testing.T) {
+	db := newDB(t)
+	tidA, hidA, _ := seedPurgeable(t, db)
+	_, _, recipeB := seedPurgeable(t, db) // tenant B: equally purgeable, different scope
+	scope := sr.Scope{TenantId: tidA, Kind: sr.ScopeHousehold, ScopeId: hidA}
+
+	if _, err := (DeletedRecipesRestoreWindow{}).Reap(context.Background(), db, scope, 30, false); err != nil {
+		t.Fatal(err)
+	}
+	var imagesB, recipesB, outbox int64
+	db.Model(&recipeimage.Entity{}).Where("recipe_id = ?", recipeB).Count(&imagesB)
+	db.Model(&recipe.Entity{}).Where("id = ?", recipeB).Count(&recipesB)
+	db.Model(&recipeimage.ObjectDeletionEntity{}).Count(&outbox)
+	if imagesB != 1 || recipesB != 1 {
+		t.Fatalf("tenant B imagesB=%d recipesB=%d, want 1 and 1", imagesB, recipesB)
+	}
+	if outbox != 2 {
+		t.Fatalf("outbox=%d, want 2 (tenant A only)", outbox)
 	}
 }
