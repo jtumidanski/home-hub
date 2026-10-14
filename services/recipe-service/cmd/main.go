@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"time"
 
 	"github.com/gorilla/mux"
 
@@ -10,14 +11,17 @@ import (
 	"github.com/jtumidanski/home-hub/services/recipe-service/internal/config"
 	"github.com/jtumidanski/home-hub/services/recipe-service/internal/ingredient"
 	"github.com/jtumidanski/home-hub/services/recipe-service/internal/normalization"
+	"github.com/jtumidanski/home-hub/services/recipe-service/internal/objectstore"
 	"github.com/jtumidanski/home-hub/services/recipe-service/internal/plan"
 	"github.com/jtumidanski/home-hub/services/recipe-service/internal/planitem"
 	"github.com/jtumidanski/home-hub/services/recipe-service/internal/planner"
 	"github.com/jtumidanski/home-hub/services/recipe-service/internal/recipe"
+	"github.com/jtumidanski/home-hub/services/recipe-service/internal/recipeimage"
 	"github.com/jtumidanski/home-hub/services/recipe-service/internal/retention"
 	sharedauth "github.com/jtumidanski/home-hub/shared/go/auth"
 	"github.com/jtumidanski/home-hub/shared/go/database"
 	"github.com/jtumidanski/home-hub/shared/go/logging"
+	sr "github.com/jtumidanski/home-hub/shared/go/retention"
 	"github.com/jtumidanski/home-hub/shared/go/server"
 )
 
@@ -37,6 +41,7 @@ func main() {
 			audit.Migration,
 			plan.Migration,
 			planitem.Migration,
+			recipeimage.Migration,
 		),
 	)
 
@@ -46,6 +51,18 @@ func main() {
 
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
+
+	store := objectstore.New(l, cfg.ObjectStore)
+	go func() {
+		pctx, pcancel := context.WithTimeout(ctx, 5*time.Second)
+		defer pcancel()
+		if err := store.Ping(pctx); err != nil {
+			recipeimage.RecordStorageError("ping")
+			l.WithError(err).Error("object storage unreachable at startup; image endpoints will return 503 until it recovers")
+		}
+	}()
+	imageReaper := recipeimage.NewObjectReaper(l, db, store)
+	go sr.Loop(ctx, l, 5*time.Minute, imageReaper.Run)
 
 	server.New(l).
 		WithAddr(":" + cfg.Port).
@@ -62,6 +79,7 @@ func main() {
 			normalization.InitializeRoutes(db)(l, si, api)
 			plan.InitializeRoutes(db, catClient)(l, si, api)
 			planitem.InitializeRoutes(db, plan.NewPlanProvider(db), plan.NewRecipeValidator(db))(l, si, api)
+			recipeimage.InitializeRoutes(db, store, recipe.ImageVisibility(db), imageReaper)(l, si, api)
 		}).
 		Run()
 }
