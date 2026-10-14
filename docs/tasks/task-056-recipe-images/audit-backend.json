@@ -43,5 +43,27 @@
     "DOM-09: Transform has no error return",
     "DOM-11: provider.go:19,30,38 not database.SliceQuery",
     "DOM-13: visibility check and go reaper.DrainKeys in handlers"
-  ]
+  ],
+  "reaudit": {
+    "title": "Re-audit after DOM-20 fix",
+    "date": "2026-10-14",
+    "fixRange": "c4d5504..3cb1afd",
+    "build": "pass",
+    "testsPassed": 15,
+    "testsFailed": 0,
+    "overallStatus": "pass",
+    "changes": [
+      {"id": "DOM-05", "status": "waived", "evidence": "singleton per recipe, no list endpoint; TransformSlice would be dead code (ruling). recipeimage/rest.go has none."},
+      {"id": "DOM-20", "status": "warn", "evidence": "tables+t.Run at recipeimage/resource_test.go:129,153,246,276; processor_test.go:233,242; recipe/visibility_test.go:28,51; objectstore/objectstore_test.go:16,26; recipe/processor_integration_test.go:38,111. Residual same-shape untabled: recipeimage/domain_test.go:46 TestParseSize, :60 TestBuilderValidation. Pins intact: image_enrichment_test.go:82, resource_test.go:231."}
+    ],
+    "carriedForward": ["DOM-08", "DOM-09", "DOM-11", "DOM-13"],
+    "blocking": [],
+    "nonBlocking": [
+      "DOM-20: recipeimage/domain_test.go TestParseSize (:46) and TestBuilderValidation (:60) not table-driven",
+      "DOM-08: PUT multipart on RegisterHandler (documented deviation)",
+      "DOM-09: Transform has no error return",
+      "DOM-11: provider.go:19,30,38 not database.SliceQuery",
+      "DOM-13: visibility check and go reaper.DrainKeys in handlers"
+    ]
+  }
 }

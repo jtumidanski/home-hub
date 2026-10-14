@@ -94,6 +94,29 @@ Paths below are relative to `services/recipe-service/internal/`.
 - DOM-11: provider.go:19,30,38 hand-rolled closures vs `database.SliceQuery`.
 - DOM-13: visibility check and `go reaper.DrainKeys` live in handlers.
 
+### Re-audit after DOM-20 fix (2026-10-14)
+
+- **Scope:** `services/recipe-service`, fix range c4d5504..3cb1afd (test-only, commit 3cb1afd) against the current tree. Test files from `git diff --name-only c55e085..HEAD`.
+- **Build:** PASS. **Tests:** `go build ./...` and `go test ./... -count=1` ok, 15 packages, 0 failed.
+- **Overall: PASS** (0 FAIL, 5 WARN, 1 WAIVED). Production code is untouched by the fix, so DOM-08/09/11/13 are carried forward unchanged.
+
+| ID | Status | Evidence |
+|----|--------|----------|
+| DOM-05 | WAIVED | `recipeimage/rest.go` has no `TransformSlice`. By ruling, recipe-images is a singleton per recipe with no list endpoint, so it would be dead code. |
+| DOM-20 | WARN (was FAIL) | Tables with `t.Run` now exist where cases share a shape: `recipeimage/resource_test.go:129,153` (`TestPutImageErrors`), `:246,276` (`TestGetImageErrors`), `recipeimage/processor_test.go:233,242` (`TestOpenMapsErrors`), `recipe/visibility_test.go:28,51`, `objectstore/objectstore_test.go:16,26`, `recipe/processor_integration_test.go:38,111`, and `imaging/*`. Review-focus pins remain top-level and named: `image_enrichment_test.go:82`, `resource_test.go:231`. |
+| DOM-08 | WARN | Unchanged. PUT on `RegisterHandler` (documented multipart deviation). |
+| DOM-09 | WARN | Unchanged. `Transform` has no error return. |
+| DOM-11 | WARN | Unchanged. `provider.go:19,30,38` hand-rolled closures. |
+| DOM-13 | WARN | Unchanged. Visibility check and `go reaper.DrainKeys` in handlers. |
+
+DOM-20 residual (non-blocking). Two tests in `recipeimage/domain_test.go` still repeat one setup and assertion shape as loops or sequential `if`s:
+- `TestParseSize` (`:46-58`), which was a named candidate in the fix brief. It uses a map loop plus a reject loop instead of one table.
+- `TestBuilderValidation` (`:60-67`), two builder-input to expected-error cases.
+
+The remaining untabled tests (processor upload, replace, failure and retry paths, reaper, retention, objectstoretest, enrichment) have distinct setup and assertions, which the brief allows. The two above are the only same-shape cases left, so DOM-20 is WARN, not PASS. Converting them is a trivial test-only change.
+
+**Blocking (must fix):** None.
+
 ## Frontend guidelines
 
 - **Scope:** 20 changed files under `frontend/` (c55e085..HEAD), 12 source, 8 test.
