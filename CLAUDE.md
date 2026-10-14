@@ -36,7 +36,7 @@ Go is the primary language; TypeScript is used only for the frontend UI.
   1. `/spec-task <idea>` — run from the main repo. Creates the worktree at
      `.worktrees/task-NNN-slug/` on branch `task-NNN-slug` and commits the
      PRD to `docs/tasks/task-NNN-slug/prd.md`.
-  2. `cd .worktrees/task-NNN-slug`, `/clear`, then `/design-task <task-id>`
+  2. `/clear`, then `/design-task <task-id>` (it `cd`s into the worktree)
      — invokes `superpowers:brainstorming`. Output: `design.md`.
   3. `/clear`, then `/plan-task <task-id>` — invokes
      `superpowers:writing-plans`. Output: `plan.md` + `context.md`.
@@ -53,8 +53,7 @@ Go is the primary language; TypeScript is used only for the frontend UI.
   skills directly (outside the phase commands), pass the task folder
   explicitly so artifacts land in the right place.
 - Verify cwd is the correct worktree before planning, designing, or
-  executing a task; if it is not, tell the user to `cd` into it rather than
-  proceeding from the wrong directory. When searching for a task's
+  executing a task; if it is not, `cd` there yourself. When searching for a task's
   PRD/design/plan, search across all worktrees (`git worktree list`) before
   concluding a file is missing.
 - When producing `design.md` or `plan.md`, write the full document directly
