@@ -45,6 +45,34 @@ spec:
           value: "http://auth-service:8080/api/v1/auth/.well-known/jwks.json"
         - name: CATEGORY_SERVICE_URL
           value: "http://category-service:8080"
+        - name: S3_ENDPOINT
+          valueFrom:
+            secretKeyRef:
+              name: object-store-credentials
+              key: S3_ENDPOINT
+              optional: true
+        - name: S3_BUCKET
+          valueFrom:
+            secretKeyRef:
+              name: object-store-credentials
+              key: S3_BUCKET
+              optional: true
+        - name: S3_ACCESS_KEY
+          valueFrom:
+            secretKeyRef:
+              name: object-store-credentials
+              key: S3_ACCESS_KEY
+              optional: true
+        - name: S3_SECRET_KEY
+          valueFrom:
+            secretKeyRef:
+              name: object-store-credentials
+              key: S3_SECRET_KEY
+              optional: true
+        - name: S3_USE_SSL
+          value: "false"
+        - name: S3_REGION
+          value: "us-east-1"
         livenessProbe:
           httpGet:
             path: /healthz
