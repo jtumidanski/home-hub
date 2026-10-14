@@ -44,25 +44,59 @@ func TestObjectKeysAndURLs(t *testing.T) {
 }
 
 func TestParseSize(t *testing.T) {
-	for in, want := range map[string]Size{"": SizeFull, "full": SizeFull, "thumb": SizeThumb} {
-		got, ok := ParseSize(in)
-		if !ok || got != want {
-			t.Errorf("ParseSize(%q) = %q,%v", in, got, ok)
-		}
+	tests := []struct {
+		name string
+		in   string
+		want Size
+		ok   bool
+	}{
+		{name: "empty defaults to full", in: "", want: SizeFull, ok: true},
+		{name: "full", in: "full", want: SizeFull, ok: true},
+		{name: "thumb", in: "thumb", want: SizeThumb, ok: true},
+		{name: "uppercase rejected", in: "FULL", ok: false},
+		{name: "unknown rejected", in: "medium", ok: false},
+		{name: "trailing space rejected", in: "thumb ", ok: false},
 	}
-	for _, bad := range []string{"FULL", "medium", "thumb "} {
-		if _, ok := ParseSize(bad); ok {
-			t.Errorf("ParseSize(%q) accepted", bad)
-		}
+	for _, tc := range tests {
+		t.Run(tc.name, func(t *testing.T) {
+			got, ok := ParseSize(tc.in)
+			if ok != tc.ok {
+				t.Fatalf("ParseSize(%q) ok = %v, want %v", tc.in, ok, tc.ok)
+			}
+			if tc.ok && got != tc.want {
+				t.Fatalf("ParseSize(%q) = %q, want %q", tc.in, got, tc.want)
+			}
+		})
 	}
 }
 
 func TestBuilderValidation(t *testing.T) {
-	if _, err := NewBuilder().SetFullKey("a").SetThumbKey("b").Build(); !errors.Is(err, ErrRecipeIDRequired) {
-		t.Fatalf("err = %v", err)
+	tests := []struct {
+		name  string
+		build func() (any, error)
+		want  error
+	}{
+		{
+			name: "missing recipe ID",
+			build: func() (any, error) {
+				return NewBuilder().SetFullKey("a").SetThumbKey("b").Build()
+			},
+			want: ErrRecipeIDRequired,
+		},
+		{
+			name: "missing keys",
+			build: func() (any, error) {
+				return NewBuilder().SetRecipeID(uuid.New()).Build()
+			},
+			want: ErrKeysRequired,
+		},
 	}
-	if _, err := NewBuilder().SetRecipeID(uuid.New()).Build(); !errors.Is(err, ErrKeysRequired) {
-		t.Fatalf("err = %v", err)
+	for _, tc := range tests {
+		t.Run(tc.name, func(t *testing.T) {
+			if _, err := tc.build(); !errors.Is(err, tc.want) {
+				t.Fatalf("err = %v, want %v", err, tc.want)
+			}
+		})
 	}
 }
 
