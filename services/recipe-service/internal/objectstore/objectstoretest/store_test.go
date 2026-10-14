@@ -19,7 +19,7 @@ func TestFakeRoundTrip(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	defer obj.Body.Close()
+	defer func() { _ = obj.Body.Close() }()
 	got, _ := io.ReadAll(obj.Body)
 	if string(got) != "hello" || obj.Size != 5 || obj.ContentType != "image/jpeg" {
 		t.Fatalf("got %q size=%d ct=%q", got, obj.Size, obj.ContentType)

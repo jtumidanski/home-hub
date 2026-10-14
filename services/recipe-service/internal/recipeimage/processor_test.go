@@ -239,7 +239,7 @@ func TestOpenMapsErrors(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	obj.Body.Close()
+	_ = obj.Body.Close()
 
 	f.store.GetErr = errors.New("down")
 	if _, err := f.proc.Open(res.Model, SizeFull); !errors.Is(err, ErrStorage) {

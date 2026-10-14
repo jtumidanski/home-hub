@@ -209,7 +209,7 @@ func getHandler(db *gorm.DB, store objectstore.Store, visible RecipeVisibility) 
 					server.WriteError(w, http.StatusServiceUnavailable, "Service Unavailable", "Image storage is unavailable")
 					return
 				}
-				defer obj.Body.Close()
+				defer func() { _ = obj.Body.Close() }()
 
 				h := w.Header()
 				h.Set("Content-Type", "image/jpeg")
