@@ -25,22 +25,43 @@ func TestImageVisibility(t *testing.T) {
 	}
 	visible := ImageVisibility(db)
 
-	if err := visible(ctxA, m.Id()); err != nil {
-		t.Fatalf("own household: %v", err)
+	tests := []struct {
+		name   string
+		before func(t *testing.T)
+		ctx    context.Context
+		id     uuid.UUID
+		want   error
+	}{
+		{name: "own household", ctx: ctxA, id: m.Id()},
+		{name: "other household", ctx: ctxB, id: m.Id(), want: recipeimage.ErrRecipeNotFound},
+		{name: "missing recipe", ctx: ctxA, id: uuid.New(), want: recipeimage.ErrRecipeNotFound},
+		{name: "no tenant", ctx: context.Background(), id: m.Id(), want: recipeimage.ErrRecipeNotFound},
+		{
+			name: "soft-deleted",
+			before: func(t *testing.T) {
+				if err := p.Delete(m.Id()); err != nil {
+					t.Fatal(err)
+				}
+			},
+			ctx: ctxA, id: m.Id(), want: recipeimage.ErrRecipeNotFound,
+		},
 	}
-	if err := visible(ctxB, m.Id()); !errors.Is(err, recipeimage.ErrRecipeNotFound) {
-		t.Fatalf("other household err = %v", err)
-	}
-	if err := visible(ctxA, uuid.New()); !errors.Is(err, recipeimage.ErrRecipeNotFound) {
-		t.Fatalf("missing err = %v", err)
-	}
-	if err := visible(context.Background(), m.Id()); !errors.Is(err, recipeimage.ErrRecipeNotFound) {
-		t.Fatalf("no tenant err = %v", err)
-	}
-	if err := p.Delete(m.Id()); err != nil {
-		t.Fatal(err)
-	}
-	if err := visible(ctxA, m.Id()); !errors.Is(err, recipeimage.ErrRecipeNotFound) {
-		t.Fatalf("soft-deleted err = %v", err)
+	// Cases run in order: the soft-delete case mutates the shared recipe.
+	for _, tc := range tests {
+		t.Run(tc.name, func(t *testing.T) {
+			if tc.before != nil {
+				tc.before(t)
+			}
+			err := visible(tc.ctx, tc.id)
+			if tc.want == nil {
+				if err != nil {
+					t.Fatalf("err = %v", err)
+				}
+				return
+			}
+			if !errors.Is(err, tc.want) {
+				t.Fatalf("err = %v, want %v", err, tc.want)
+			}
+		})
 	}
 }

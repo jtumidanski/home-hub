@@ -230,25 +230,32 @@ func TestGetIsHouseholdScoped(t *testing.T) {
 }
 
 func TestOpenMapsErrors(t *testing.T) {
-	f := newFixture(t)
-	res, err := f.proc.Upload(uuid.New(), testJPEG(t, 64, 64))
-	if err != nil {
-		t.Fatal(err)
+	tests := []struct {
+		name    string
+		degrade func(f fixture, m Model)
+		want    error
+	}{
+		{"storage failure", func(f fixture, _ Model) { f.store.GetErr = errors.New("down") }, ErrStorage},
+		{"missing object", func(f fixture, m Model) { _ = f.store.Delete(context.Background(), m.FullKey()) }, ErrObjectMissing},
 	}
-	obj, err := f.proc.Open(res.Model, SizeThumb)
-	if err != nil {
-		t.Fatal(err)
-	}
-	_ = obj.Body.Close()
+	for _, tc := range tests {
+		t.Run(tc.name, func(t *testing.T) {
+			f := newFixture(t)
+			res, err := f.proc.Upload(uuid.New(), testJPEG(t, 64, 64))
+			if err != nil {
+				t.Fatal(err)
+			}
+			obj, err := f.proc.Open(res.Model, SizeThumb)
+			if err != nil {
+				t.Fatal(err)
+			}
+			_ = obj.Body.Close()
 
-	f.store.GetErr = errors.New("down")
-	if _, err := f.proc.Open(res.Model, SizeFull); !errors.Is(err, ErrStorage) {
-		t.Fatalf("err = %v, want ErrStorage", err)
-	}
-	f.store.GetErr = nil
-	_ = f.store.Delete(context.Background(), res.Model.FullKey())
-	if _, err := f.proc.Open(res.Model, SizeFull); !errors.Is(err, ErrObjectMissing) {
-		t.Fatalf("err = %v, want ErrObjectMissing", err)
+			tc.degrade(f, res.Model)
+			if _, err := f.proc.Open(res.Model, SizeFull); !errors.Is(err, tc.want) {
+				t.Fatalf("err = %v, want %v", err, tc.want)
+			}
+		})
 	}
 }
 

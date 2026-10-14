@@ -13,17 +13,21 @@ func TestNewWithEmptyEndpointIsDisabled(t *testing.T) {
 	s := New(l, Config{Bucket: "b"})
 	ctx := context.Background()
 
-	if err := s.Put(ctx, "k", []byte("x"), "image/jpeg"); !errors.Is(err, ErrUnavailable) {
-		t.Fatalf("Put err = %v, want ErrUnavailable", err)
+	tests := []struct {
+		name string
+		call func() error
+	}{
+		{"Put", func() error { return s.Put(ctx, "k", []byte("x"), "image/jpeg") }},
+		{"Get", func() error { _, err := s.Get(ctx, "k"); return err }},
+		{"Delete", func() error { return s.Delete(ctx, "k") }},
+		{"Ping", func() error { return s.Ping(ctx) }},
 	}
-	if _, err := s.Get(ctx, "k"); !errors.Is(err, ErrUnavailable) {
-		t.Fatalf("Get err = %v, want ErrUnavailable", err)
-	}
-	if err := s.Delete(ctx, "k"); !errors.Is(err, ErrUnavailable) {
-		t.Fatalf("Delete err = %v, want ErrUnavailable", err)
-	}
-	if err := s.Ping(ctx); !errors.Is(err, ErrUnavailable) {
-		t.Fatalf("Ping err = %v, want ErrUnavailable", err)
+	for _, tc := range tests {
+		t.Run(tc.name, func(t *testing.T) {
+			if err := tc.call(); !errors.Is(err, ErrUnavailable) {
+				t.Fatalf("err = %v, want ErrUnavailable", err)
+			}
+		})
 	}
 }
 

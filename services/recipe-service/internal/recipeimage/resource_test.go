@@ -116,48 +116,51 @@ func TestPutImageSuccessShape(t *testing.T) {
 }
 
 func TestPutImageErrors(t *testing.T) {
-	h := newHTTPFixture(t, nil)
-	rid := uuid.New()
+	multipartOf := func(field string, data func(t *testing.T) []byte) func(t *testing.T) (io.Reader, string) {
+		return func(t *testing.T) (io.Reader, string) {
+			body, ct := multipartBody(t, field, data(t))
+			return body, ct
+		}
+	}
+	jpeg := func(w, h int) func(t *testing.T) []byte {
+		return func(t *testing.T) []byte { return testJPEG(t, w, h) }
+	}
 
-	// 400: not multipart
-	if rec := h.do(http.MethodPut, imagePath(rid), strings.NewReader("{}"), "application/json", nil); rec.Code != http.StatusBadRequest {
-		t.Errorf("not multipart: %d", rec.Code)
+	tests := []struct {
+		name   string
+		hidden bool
+		body   func(t *testing.T) (io.Reader, string)
+		want   int
+	}{
+		{"not multipart", false, func(*testing.T) (io.Reader, string) { return strings.NewReader("{}"), "application/json" }, http.StatusBadRequest},
+		{"no file part", false, multipartOf("other", jpeg(64, 64)), http.StatusBadRequest},
+		{"invisible recipe", true, multipartOf("file", jpeg(64, 64)), http.StatusNotFound},
+		{"file too large", false, multipartOf("file", func(*testing.T) []byte { return make([]byte, maxFileBytes+1) }), http.StatusRequestEntityTooLarge},
+		{"body too large via non-file part", false, func(t *testing.T) (io.Reader, string) {
+			var buf bytes.Buffer
+			mw := multipart.NewWriter(&buf)
+			junk, _ := mw.CreateFormField("junk")
+			_, _ = junk.Write(make([]byte, maxBodyBytes))
+			fw, _ := mw.CreateFormFile("file", "a.jpg")
+			_, _ = fw.Write(testJPEG(t, 64, 64))
+			_ = mw.Close()
+			return &buf, mw.FormDataContentType()
+		}, http.StatusRequestEntityTooLarge},
+		{"not an image", false, multipartOf("file", func(*testing.T) []byte { return []byte("hello") }), http.StatusUnsupportedMediaType},
+		{"too small", false, multipartOf("file", jpeg(8, 8)), http.StatusUnprocessableEntity},
 	}
-	// 400: no file part
-	body, ct := multipartBody(t, "other", testJPEG(t, 64, 64))
-	if rec := h.do(http.MethodPut, imagePath(rid), body, ct, nil); rec.Code != http.StatusBadRequest {
-		t.Errorf("no file part: %d", rec.Code)
-	}
-	// 404: invisible recipe
-	body, ct = multipartBody(t, "file", testJPEG(t, 64, 64))
-	if rec := h.do(http.MethodPut, imagePath(h.hiddenID), body, ct, nil); rec.Code != http.StatusNotFound {
-		t.Errorf("hidden: %d", rec.Code)
-	}
-	// 413: file part > 10 MiB
-	body, ct = multipartBody(t, "file", make([]byte, maxFileBytes+1))
-	if rec := h.do(http.MethodPut, imagePath(rid), body, ct, nil); rec.Code != http.StatusRequestEntityTooLarge {
-		t.Errorf("file too large: %d", rec.Code)
-	}
-	// 413: body over the cap via a large non-file part before the file
-	var buf bytes.Buffer
-	mw := multipart.NewWriter(&buf)
-	junk, _ := mw.CreateFormField("junk")
-	_, _ = junk.Write(make([]byte, maxBodyBytes))
-	fw, _ := mw.CreateFormFile("file", "a.jpg")
-	_, _ = fw.Write(testJPEG(t, 64, 64))
-	_ = mw.Close()
-	if rec := h.do(http.MethodPut, imagePath(rid), &buf, mw.FormDataContentType(), nil); rec.Code != http.StatusRequestEntityTooLarge {
-		t.Errorf("body too large: %d", rec.Code)
-	}
-	// 415: not an image
-	body, ct = multipartBody(t, "file", []byte("hello"))
-	if rec := h.do(http.MethodPut, imagePath(rid), body, ct, nil); rec.Code != http.StatusUnsupportedMediaType {
-		t.Errorf("not an image: %d", rec.Code)
-	}
-	// 422: too small
-	body, ct = multipartBody(t, "file", testJPEG(t, 8, 8))
-	if rec := h.do(http.MethodPut, imagePath(rid), body, ct, nil); rec.Code != http.StatusUnprocessableEntity {
-		t.Errorf("too small: %d", rec.Code)
+	for _, tc := range tests {
+		t.Run(tc.name, func(t *testing.T) {
+			h := newHTTPFixture(t, nil)
+			rid := uuid.New()
+			if tc.hidden {
+				rid = h.hiddenID
+			}
+			body, ct := tc.body(t)
+			if rec := h.do(http.MethodPut, imagePath(rid), body, ct, nil); rec.Code != tc.want {
+				t.Errorf("status = %d, want %d", rec.Code, tc.want)
+			}
+		})
 	}
 }
 
@@ -240,28 +243,49 @@ func TestGetImageNotModifiedWeakList(t *testing.T) {
 }
 
 func TestGetImageErrors(t *testing.T) {
-	h := newHTTPFixture(t, nil)
-	rid := uuid.New()
-	if rec := h.do(http.MethodGet, imagePath(rid)+"?size=huge", nil, "", nil); rec.Code != http.StatusBadRequest {
-		t.Errorf("bad size: %d", rec.Code)
+	tests := []struct {
+		name   string
+		query  string
+		hidden bool
+		setup  func(t *testing.T, h httpFixture, rid uuid.UUID)
+		want   int
+	}{
+		{name: "bad size", query: "?size=huge", want: http.StatusBadRequest},
+		{name: "no image", want: http.StatusNotFound},
+		{name: "hidden recipe", hidden: true, want: http.StatusNotFound},
+		{
+			name: "storage down",
+			setup: func(t *testing.T, h httpFixture, rid uuid.UUID) {
+				uploadVia(t, h, rid)
+				h.store.GetErr = objectstore.ErrUnavailable
+			},
+			want: http.StatusServiceUnavailable,
+		},
+		{
+			name: "missing object",
+			setup: func(t *testing.T, h httpFixture, rid uuid.UUID) {
+				uploadVia(t, h, rid)
+				for _, k := range h.store.Keys() {
+					_ = h.store.Delete(context.Background(), k)
+				}
+			},
+			want: http.StatusNotFound,
+		},
 	}
-	if rec := h.do(http.MethodGet, imagePath(rid), nil, "", nil); rec.Code != http.StatusNotFound {
-		t.Errorf("no image: %d", rec.Code)
-	}
-	if rec := h.do(http.MethodGet, imagePath(h.hiddenID), nil, "", nil); rec.Code != http.StatusNotFound {
-		t.Errorf("hidden: %d", rec.Code)
-	}
-	uploadVia(t, h, rid)
-	h.store.GetErr = objectstore.ErrUnavailable
-	if rec := h.do(http.MethodGet, imagePath(rid), nil, "", nil); rec.Code != http.StatusServiceUnavailable {
-		t.Errorf("storage down: %d", rec.Code)
-	}
-	h.store.GetErr = nil
-	for _, k := range h.store.Keys() {
-		_ = h.store.Delete(context.Background(), k)
-	}
-	if rec := h.do(http.MethodGet, imagePath(rid), nil, "", nil); rec.Code != http.StatusNotFound {
-		t.Errorf("missing object: %d", rec.Code)
+	for _, tc := range tests {
+		t.Run(tc.name, func(t *testing.T) {
+			h := newHTTPFixture(t, nil)
+			rid := uuid.New()
+			if tc.setup != nil {
+				tc.setup(t, h, rid)
+			}
+			if tc.hidden {
+				rid = h.hiddenID
+			}
+			if rec := h.do(http.MethodGet, imagePath(rid)+tc.query, nil, "", nil); rec.Code != tc.want {
+				t.Errorf("status = %d, want %d", rec.Code, tc.want)
+			}
+		})
 	}
 }
 
