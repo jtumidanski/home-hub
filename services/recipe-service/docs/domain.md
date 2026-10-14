@@ -472,3 +472,52 @@ Records audit events for compliance and debugging across all domains.
 | action | string | Action name (e.g., recipe.created, plan.locked, normalization.corrected) |
 | actorId | UUID | User who performed the action |
 | metadata | map[string]interface{} | Optional JSON metadata |
+
+## Recipe Image (`recipeimage`)
+
+### Responsibility
+
+Owns the optional photo of a recipe: validating and converting uploads, storing two renditions in object storage, serving them, and removing them. It never imports the `recipe` package; recipe visibility is injected as a `RecipeVisibility` function, and the `recipe` package reads images through the `recipeimage` processor to fill the `image` attribute.
+
+### Core Models
+
+| Model | Fields |
+|-------|--------|
+| `Model` | id, tenantID, householdID, recipeID, fullKey, thumbKey, contentType, width, height, fullBytes, thumbBytes, createdAt, updatedAt |
+
+### Invariants
+
+- A recipe has at most one image (unique `recipe_id`).
+- Accepted formats: JPEG, PNG, WebP, detected from the bytes, never from the declared content type. Anything else is 415.
+- Decoded images over 40 megapixels, or with an edge under 16 px, are rejected (422). Dimensions are checked from the header before the full decode.
+- EXIF orientation is applied, so the renditions are upright.
+- Two JPEG renditions at quality 82 are produced: `full` (longest edge at most 1600 px) and `thumb` (longest edge at most 480 px). Images are not upscaled.
+- Transparency is composited onto white.
+- All metadata (EXIF, ICC, etc.) is stripped because the renditions are re-encoded.
+- Concurrent decodes are limited to 2.
+
+### Lifecycle
+
+- Upload on a recipe without an image inserts a row; upload on a recipe with one replaces it (new image id) and enqueues the old objects for deletion through the outbox.
+- Delete removes the row and enqueues its objects; it is idempotent.
+- Soft-deleting a recipe keeps its image. Restoring the recipe brings the image back.
+- The retention purge that hard-deletes a recipe deletes its image row and enqueues its objects in the same transaction.
+- Object deletions never happen inline with the transaction: the outbox is drained right after commit and by a 5-minute background loop (see storage.md).
+
+### Visibility
+
+Every query runs under the tenant callback and adds an explicit household filter. A recipe that is not found, is soft-deleted, or belongs to another household yields 404 for upload, serve and delete.
+
+### Storage-down behaviour
+
+If object storage is unreachable (or `S3_ENDPOINT` is empty), upload and serve return 503. Delete only touches the database and outbox, so it still succeeds and the object deletions are retried later. Recipe list, detail and CRUD are unaffected because the `image` attribute is built from database rows only; the frontend falls back to placeholders when image requests fail.
+
+### Processors
+
+| Method | Description |
+|--------|-------------|
+| `Upload` | Validates and converts the bytes, stores both renditions, swaps the row in one transaction, and returns the outbox ids of replaced objects |
+| `Delete` | Removes the row and enqueues its objects; returns outbox ids |
+| `GetByRecipeID` | Image for one recipe (`ErrImageNotFound` when absent) |
+| `GetByRecipeIDs` | Batched lookup used by the recipe list |
+| `Open` | Opens a rendition from object storage |

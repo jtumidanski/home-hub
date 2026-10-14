@@ -57,6 +57,7 @@ List recipes with pagination, search, and tag filtering.
 | prepTimeMinutes | *int | Optional prep time in minutes |
 | cookTimeMinutes | *int | Optional cook time in minutes |
 | tags | []string | Tags |
+| image | *Image | Nullable. `{thumbUrl, fullUrl, width, height}`; `null` when the recipe has no image. See [Recipe images](#recipe-images) |
 | createdAt | timestamp | Creation time |
 | updatedAt | timestamp | Last update time |
 
@@ -93,7 +94,7 @@ Create a new recipe.
 | sourceUrl | string | no | Source URL |
 | tags | []string | no | Tags |
 
-**Response model** (`recipes` detail): see GET `/recipes/{id}` response.
+**Response model** (`recipes` detail): see GET `/recipes/{id}` response, including the nullable `image` attribute. An `image` attribute in the request body is ignored; images are managed only through `/recipes/{id}/image`.
 
 **Error conditions:**
 
@@ -131,6 +132,7 @@ Get a single recipe with parsed Cooklang data.
 | source | string | Raw Cooklang source |
 | ingredients | []Ingredient | Parsed ingredients |
 | steps | []Step | Parsed steps |
+| image | *Image | Nullable. `{thumbUrl, fullUrl, width, height}`; `null` when the recipe has no image. See [Recipe images](#recipe-images) |
 | createdAt | timestamp | Creation time |
 | updatedAt | timestamp | Last update time |
 
@@ -165,7 +167,7 @@ Partially update a recipe.
 | sourceUrl | string | no | Source URL |
 | tags | []string | no | Tags |
 
-**Response model** (`recipes` detail): see GET `/recipes/{id}` response.
+**Response model** (`recipes` detail): see GET `/recipes/{id}` response, including the nullable `image` attribute. An `image` attribute in the request body is ignored.
 
 **Error conditions:**
 
@@ -207,7 +209,7 @@ Restore a soft-deleted recipe within the 3-day restore window.
 |-------|------|----------|-------------|
 | recipeId | string (UUID) | yes | ID of the recipe to restore |
 
-**Response model** (`recipes` detail): see GET `/recipes/{id}` response.
+**Response model** (`recipes` detail): see GET `/recipes/{id}` response. A restored recipe brings its image back with it.
 
 **Error conditions:**
 
@@ -237,6 +239,94 @@ List all tags in use across non-deleted recipes with usage counts.
 | Status | Condition |
 |--------|-----------|
 | 500 | Internal error |
+
+---
+
+### Recipe images
+
+A recipe has at most one image. The service stores two JPEG renditions (`thumb`, `full`) in the S3-compatible object store (RustFS) and serves them through the endpoints below. When `S3_ENDPOINT` is empty, all three endpoints return 503.
+
+#### PUT `/recipes/{id}/image`
+
+Upload or replace the recipe image.
+
+**Request:** `multipart/form-data` with a single part named `file`. This is an intentional deviation from JSON:API request bodies, because JSON:API has no binary upload convention. The response is still JSON:API.
+
+**Response model** (`recipe-images`), `200 OK`, `Content-Type: application/vnd.api+json`:
+
+```json
+{
+  "data": {
+    "type": "recipe-images",
+    "id": "4b1e…",
+    "attributes": {
+      "width": 1600,
+      "height": 1067,
+      "thumbUrl": "/api/v1/recipes/9a0c…/image?size=thumb&v=4b1e…",
+      "fullUrl": "/api/v1/recipes/9a0c…/image?size=full&v=4b1e…",
+      "updatedAt": "2026-10-14T18:03:11Z"
+    }
+  }
+}
+```
+
+**Error conditions:**
+
+| Status | Condition |
+|--------|-----------|
+| 400 | Not multipart, or no `file` part |
+| 404 | Recipe not found, soft-deleted, or not in the caller's household |
+| 413 | File > 10 MiB, or request body > 10.5 MiB |
+| 415 | Bytes are not decodable JPEG/PNG/WebP |
+| 422 | Decoded image > 40 MP, or an edge < 16 px |
+| 503 | Object storage unavailable |
+
+---
+
+#### GET `/recipes/{id}/image`
+
+Stream one rendition.
+
+**Parameters:**
+
+| Parameter | Type | Default | Description |
+|-----------|------|---------|-------------|
+| id | UUID | — | Recipe ID (path) |
+| size | string | `full` | `thumb` or `full`. Any other value is 400 |
+| v | string | — | Cache-busting image id embedded in the advertised URLs. Ignored server-side |
+
+**Response headers (200):**
+
+| Header | Value |
+|--------|-------|
+| Content-Type | `image/jpeg` |
+| X-Content-Type-Options | `nosniff` |
+| Cache-Control | `private, max-age=31536000, immutable` |
+| ETag | `"<imageId>-<size>"` |
+
+A request whose `If-None-Match` matches the ETag returns 304 without touching object storage. The `v` parameter changes on every replace, which busts browser caches.
+
+**Error conditions:**
+
+| Status | Condition |
+|--------|-----------|
+| 400 | `size` is not `thumb` or `full` |
+| 404 | Recipe has no image, recipe is not visible to the caller, or the stored object is missing |
+| 503 | Object storage unavailable |
+
+---
+
+#### DELETE `/recipes/{id}/image`
+
+Remove the recipe image. Idempotent: deleting a recipe with no image also returns 204.
+
+**Response:** 204 No Content
+
+**Error conditions:**
+
+| Status | Condition |
+|--------|-----------|
+| 404 | Recipe not found, soft-deleted, or not in the caller's household |
 
 ---
 
@@ -1005,6 +1095,7 @@ Get consolidated ingredients for a meal plan.
 | `recipe-tags` | Tag with usage count |
 | `recipe-parse` | Parse result (ingredients, steps, metadata, errors) |
 | `recipe-restorations` | Restoration request |
+| `recipe-images` | Recipe image metadata and rendition URLs |
 | `recipe-ingredients` | Recipe ingredient with normalization status |
 | `ingredient-resolutions` | Ingredient resolution request |
 | `recipe-renormalize` | Renormalization request |
