@@ -180,3 +180,59 @@ The remaining untabled tests (processor upload, replace, failure and retry paths
 ### Blocking (must fix)
 
 None.
+
+---
+
+# Frontend Audit — image tenant-header fix (2026-10-15)
+
+- **Audit Scope:** `git diff --stat 10145f2..3b42157` (10 frontend files, branch `task-056-image-tenant-fix`)
+- **Requirement:** `docs/tasks/task-056-recipe-images/bug-image-get-zero-tenant.md`
+- **Build:** PASS (`npm run build`)
+- **Tests:** 746 passed, 0 failed (`npx vitest run`, 113 files). `npm test -- --watchAll=false` errors because vitest has no `--watchAll` flag, so the run used `npx vitest run`.
+- **Lint:** 0 errors. The 5 warnings are pre-existing and none are in the changed files.
+- **Overall:** PASS (0 blocking, 4 non-blocking)
+
+## File inventory
+
+- Hook: `lib/hooks/use-recipe-image-src.ts` (new), `lib/hooks/use-recipe-image-draft.ts`
+- Component: `components/features/recipes/recipe-image.tsx`
+- Page: `pages/RecipeDetailPage.tsx`
+- Tests: `use-recipe-image-src.test.tsx` (new), `use-recipe-image-draft.test.ts`, `recipe-image.test.tsx`, `recipe-card.test.tsx`, `RecipeDetailPage.test.tsx`, `RecipeFormPage.test.tsx`
+
+## Checklist
+
+| ID | Status | Evidence |
+|----|--------|----------|
+| FE-01 | PASS | No `any` in the changed sources. `url!` at `use-recipe-image-src.ts:21` is a non-null assertion guarded by `enabled: !!url` (`:22`). |
+| FE-02 | PASS | `recipe-image.tsx` uses `cn("object-cover", className)`. |
+| FE-03 | WARN | The component and page do not import the client. The hook imports `api` directly (`use-recipe-image-src.ts:3`) rather than going through `services/api`. The requirement doc prescribes `api.download`, and no service method exists for binary fetches. |
+| FE-04 | PASS | No Zod in the changed files. |
+| FE-05 | PASS | No `animate-spin` in the diff. Loading shows the placeholder (card) or nothing (hero), per the requirement. |
+| FE-06 | PASS | No color classes added. |
+| FE-07 | PASS | No mutation. |
+| FE-08 | PASS | Named exports only. |
+| FE-09 | PASS | The hook uses `useTenant()` and has `enabled: !!url && !!tenant?.id && !!household?.id` (`:22`). |
+| FE-10 | PASS | The key is `[...recipeKeys.all(tenant, household), "image", url] as const` (`:20`). `recipeKeys.all` expands to `["recipes", tenant?.id ?? "no-tenant", household?.id ?? "no-household"]` (`use-recipes.ts:13-14`). The test asserts the concrete key (`use-recipe-image-src.test.tsx:44`). |
+| FE-11 | PASS (n/a) | No `.catch`. A query failure surfaces as `isError`, which the component maps to hero `null` or card placeholder (`recipe-image.tsx:34`). |
+| FE-14 | PASS | `as const` at `use-recipe-image-src.ts:20`. |
+| FE-19 | PASS | The lightbox `<img>` is not interactive. The hero trigger is a native `<button>` (`RecipeDetailPage.tsx:~91`). |
+| FE-17 | PASS | New hook test covers: fetch via `api.download` with the `/api/v1` prefix stripped, tenant-aware key, object URL returned, revoke on unmount, no fetch when `url` is null, error state. Component, page and draft tests were updated. |
+| FE-18 | PASS (n/a) | No `__mocks__` directory. Tests mock inline. |
+
+## Correctness review
+
+- **Shared key, hero and lightbox: PASS.** Both call `useRecipeImageSrc(image.fullUrl)` and share one cached `Blob`, but each hook instance creates its own object URL in its own effect (`use-recipe-image-src.ts:32-37`) and revokes only that one (`:36`). A revoke by one consumer cannot invalidate the other's `src`. The hero is unmounted only with the page. The lightbox hook is always mounted in the page (`RecipeDetailPage.tsx:~31`).
+- **Leaks: PASS.** Create and revoke are paired in one effect keyed on `blob`. Unmount and blob change both revoke. `resolved.blob === blob` (`:39`) means a revoked URL is never returned for a new blob. Under StrictMode the effect runs, cleans up and re-runs, so the first URL is revoked and no URL leaks.
+- **Tenant and household in key: PASS** (FE-10). A tenant switch changes the key, so cached images do not leak across tenants. The `enabled` guard prevents the nil-tenant fetch.
+- **The bug is fixed.** Image bytes now go through `api.download`, which sends `X-Tenant-ID` and `X-Household-ID` (`client.ts:426`). The draft hook resolves only the `unchanged` existing image and passes a staged preview through unchanged (`use-recipe-image-draft.ts:47-49`).
+
+## Non-blocking
+
+1. **Lazy loading is defeated.** `loading="lazy"` on card thumbnails (`recipe-image.tsx:~44`) no longer defers anything. The blob fetch fires on mount for every card, off-screen or not, so a large recipe list issues one request per card at once. Consider an IntersectionObserver gate on `enabled`, or accept this for list sizes in use.
+2. **Refetch flicker.** `useInvalidateRecipes().invalidateAll` (`use-recipes.ts:179`) matches the image keys, which sit under `recipeKeys.all`. Active image queries refetch and return a new `Blob`, which gives a new object URL. `src` is `null` for one render in between (`:39`), so the hero briefly vanishes and the card shows the placeholder. Placing the image key outside `recipeKeys.all`, or setting `refetchOnMount`/`structuralSharing` options, would avoid this. Replacement images already get a new `?v=` key, so they do not need the invalidation.
+3. **Hero button during load.** While loading, the hero `RecipeImage` renders `null` but the `View photo full size` button (`RecipeDetailPage.tsx:~91`) is still present and focusable. If the lightbox is opened before the blob resolves, the `<img>` has `src={undefined}` (`:204`). The window is small but real.
+4. **FE-03 (WARN above).** If binary fetches become common, add a service method rather than calling `api` from a hook.
+
+### Blocking (must fix)
+
+None.
