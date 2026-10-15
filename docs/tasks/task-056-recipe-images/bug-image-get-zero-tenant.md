@@ -117,4 +117,31 @@ on round 1 (`3b42157`). The user approved fixing all of them on this branch.
 
 ## Outcome
 
-_Pending._
+Branch `task-056-image-tenant-fix` (from `main` at `9911c58`; the original task
+branch had already merged in PR #13).
+
+| Step | Agent / tool | Result |
+|---|---|---|
+| Round 1 fix | task-implementer (sonnet) | DONE, `3b42157`: `useRecipeImageSrc` fetches via the api client and renders an object URL; card, hero, lightbox and form preview wired |
+| Round 1 review | frontend-guidelines-reviewer (sonnet) | PASS, `82357d6`: 4 non-blocking findings (lost lazy loading, flicker on invalidate, early lightbox open, FE-03) |
+| Round 2 fix | task-implementer (sonnet) | DONE, `05a801e`: all 4 findings fixed (`use-in-view.ts`, image key outside `recipeKeys`, lightbox gated on src, `recipeService.downloadImage`) |
+| Round 2 review | frontend-guidelines-reviewer (sonnet) | PASS, `ce0f35e`: 1 non-blocking finding (no `typeof IntersectionObserver` guard in `use-in-view.ts:13`; test-only exposure) |
+| Gate | flagless `tools/verify.sh --base 9911c58` at `05a801e` | **PASSED**, all legs (pins, build, vet, test, lint, frontend-build, eslint, docker) |
+
+An earlier flagless run reported 14 failures in `recipe-card` /
+`recipe-image` tests. It was discarded because it overlapped round 2's
+uncommitted edits (750 tests counted vs 746 at `3b42157`). The re-run on the
+committed `05a801e` passed.
+
+Not done here: the hook test was written before the hook existed, so it was
+never shown to fail against the old components.
+
+**Live re-test:** pending. Deploy, then attach a photo to a recipe. Confirm
+`GET /api/v1/recipes/<id>/image` returns 200 in the recipe-service logs, with no
+`tenant_id = '00000000-...'` visibility query, and that the photo shows on the
+card, the detail page and the lightbox.
+
+**Design erratum:** design.md:22 is wrong. auth-service issues JWTs with nil
+tenant/household, so tenant scoping always rides on the `X-Tenant-ID` /
+`X-Household-ID` headers. Any browser-native fetch (`<img>`, `<a download>`,
+`EventSource`) will not carry them.
