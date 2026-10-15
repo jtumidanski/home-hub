@@ -85,6 +85,36 @@ keep their current shape (`/api/v1/recipes/{id}/image?size=...&v=...`, built in
 - Do not change `design.md`. A one-line erratum under its line 22 can be added
   in the outcome section below by the controller.
 
+## Fix round 2 (review follow-ups)
+
+Source: the frontend audit dated 2026-10-15 in `audit.md` (commit `82357d6`)
+on round 1 (`3b42157`). The user approved fixing all of them on this branch.
+
+1. **Restore lazy loading for cards.** `frontend/src/components/features/recipes/recipe-image.tsx`:
+   for `variant="card"`, enable the query only once the placeholder element
+   is near the viewport. Use an `IntersectionObserver` with a `rootMargin` of
+   about `200px`, and stop observing once it is visible. Check
+   `frontend/src/lib/hooks/` for an existing in-view hook before writing one.
+   `variant="hero"` stays eager. Add `enabled` (default `true`) as an option on
+   `useRecipeImageSrc` (`frontend/src/lib/hooks/use-recipe-image-src.ts`).
+   jsdom has no `IntersectionObserver`, so stub it in the tests. Add a test
+   that an off-screen card makes no download call until it intersects.
+2. **No flicker on recipe invalidation.** Move the image query key out of
+   `recipeKeys.all(...)`, so `useInvalidateRecipes().invalidateAll`
+   (`frontend/src/lib/hooks/api/use-recipes.ts:179`) no longer matches it. Use
+   something like `["recipe-images", tenantId, householdId, url]` and keep
+   tenant and household in the key. Versioned URLs are immutable, so a replaced
+   image arrives as a new `?v=` key. Add a test that `invalidateAll` does not
+   refetch the image query.
+3. **Lightbox before the image loads.** `frontend/src/pages/RecipeDetailPage.tsx`:
+   the hero/lightbox trigger must not open, or must not render, until the
+   resolved `src` exists, and the lightbox `<img>` must never get
+   `src={undefined}`. Test it.
+4. **FE-03.** Move the `api.download` call behind the recipe service in
+   `frontend/src/services/api/recipe.ts` (e.g. `getImage(url)` / `downloadImage`,
+   which strips the `/api/v1` prefix there). The hook calls the service, not
+   `api` directly. Update the hook test's mock to match.
+
 ## Outcome
 
 _Pending._
