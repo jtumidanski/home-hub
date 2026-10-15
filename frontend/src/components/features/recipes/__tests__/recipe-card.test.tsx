@@ -8,6 +8,21 @@ vi.mock("@/lib/hooks/use-recipe-image-src", () => ({
   useRecipeImageSrc: (url: string | null) => ({ src: url ? `blob:${url}` : null, isError: false }),
 }));
 
+// jsdom has no IntersectionObserver; report every card as in view.
+vi.stubGlobal(
+  "IntersectionObserver",
+  class {
+    cb: (e: { isIntersecting: boolean }[]) => void;
+    constructor(cb: (e: { isIntersecting: boolean }[]) => void) {
+      this.cb = cb;
+    }
+    observe() {
+      this.cb([{ isIntersecting: true }]);
+    }
+    disconnect() {}
+  },
+);
+
 const mockNavigate = vi.fn();
 vi.mock("react-router-dom", () => ({
   useNavigate: () => mockNavigate,

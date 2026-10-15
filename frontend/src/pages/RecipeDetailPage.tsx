@@ -86,7 +86,7 @@ export function RecipeDetailPage() {
           <ArrowLeft className="mr-1 h-4 w-4" /> Recipes
         </Button>
 
-        {attrs.image && (
+        {attrs.image && lightboxSrc && (
           <button
             type="button"
             aria-label="View photo full size"
@@ -196,12 +196,12 @@ export function RecipeDetailPage() {
         </div>
       </div>
 
-      {attrs.image && (
+      {attrs.image && lightboxSrc && (
         <Dialog open={lightboxOpen} onOpenChange={setLightboxOpen}>
           <DialogContent className="max-w-[95vw] p-2 sm:max-w-[95vw]">
             <DialogTitle className="sr-only">{attrs.title}</DialogTitle>
             <img
-              src={lightboxSrc ?? undefined}
+              src={lightboxSrc}
               alt={attrs.title}
               className="max-h-[85vh] w-full object-contain"
             />

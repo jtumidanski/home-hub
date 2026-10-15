@@ -1,10 +1,7 @@
 import { useEffect, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { api } from "@/lib/api/client";
+import { recipeService } from "@/services/api/recipe";
 import { useTenant } from "@/context/tenant-context";
-import { recipeKeys } from "@/lib/hooks/api/use-recipes";
-
-const API_PREFIX = "/api/v1";
 
 /**
  * Resolves a server image URL (`/api/v1/recipes/{id}/image?size=..&v=..`) to a
@@ -12,14 +9,16 @@ const API_PREFIX = "/api/v1";
  * headers, so the image is fetched through the api client instead.
  *
  * The URL carries `?v=`, so it is immutable and a replaced image gets a new
- * query key. The object URL is revoked on change and on unmount.
+ * query key. The key is deliberately outside `recipeKeys` so recipe
+ * invalidation does not refetch (and flicker) immutable image bytes. The object URL is revoked on change and on unmount.
  */
-export function useRecipeImageSrc(url: string | null) {
+export function useRecipeImageSrc(url: string | null, options: { enabled?: boolean } = {}) {
+  const { enabled = true } = options;
   const { tenant, household } = useTenant();
   const query = useQuery({
-    queryKey: [...recipeKeys.all(tenant, household), "image", url] as const,
-    queryFn: () => api.download(url!.startsWith(API_PREFIX) ? url!.slice(API_PREFIX.length) : url!),
-    enabled: !!url && !!tenant?.id && !!household?.id,
+    queryKey: ["recipe-images", tenant?.id, household?.id, url] as const,
+    queryFn: () => recipeService.downloadImage(url!),
+    enabled: enabled && !!url && !!tenant?.id && !!household?.id,
     staleTime: Infinity,
     gcTime: 30 * 60 * 1000,
     retry: false,

@@ -1,8 +1,23 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
-import { render, screen, fireEvent } from "@testing-library/react";
+import { render, screen, fireEvent, act } from "@testing-library/react";
 let state: { src: string | null; isError: boolean };
-const useSrc = vi.fn((url: string | null) => (url ? state : { src: null, isError: false }));
-vi.mock("@/lib/hooks/use-recipe-image-src", () => ({ useRecipeImageSrc: (url: string | null) => useSrc(url) }));
+const useSrc = vi.fn<(url: string | null, opts?: { enabled?: boolean }) => { src: string | null; isError: boolean }>(
+  (url) => (url ? state : { src: null, isError: false }),
+);
+vi.mock("@/lib/hooks/use-recipe-image-src", () => ({
+  useRecipeImageSrc: (url: string | null, opts?: { enabled?: boolean }) => useSrc(url, opts),
+}));
+
+let observerCallback: ((entries: { isIntersecting: boolean }[]) => void) | null = null;
+const disconnect = vi.fn();
+class FakeIntersectionObserver {
+  constructor(cb: (entries: { isIntersecting: boolean }[]) => void) {
+    observerCallback = cb;
+  }
+  observe() {}
+  disconnect = disconnect;
+}
+vi.stubGlobal("IntersectionObserver", FakeIntersectionObserver);
 
 import { RecipeImage } from "../recipe-image";
 
@@ -17,12 +32,29 @@ describe("RecipeImage", () => {
   beforeEach(() => {
     state = { src: "blob:resolved", isError: false };
     useSrc.mockClear();
+    disconnect.mockClear();
+    observerCallback = null;
+  });
+
+  it("card variant defers the fetch until near the viewport, hero is eager", () => {
+    state = { src: null, isError: false };
+    const lastEnabled = () => useSrc.mock.calls.at(-1)?.[1]?.enabled;
+    const hero = render(<RecipeImage image={image} variant="hero" alt="Soup" />);
+    expect(lastEnabled()).toBe(true);
+    hero.unmount();
+    render(<RecipeImage image={image} variant="card" alt="Soup" />);
+    expect(lastEnabled()).toBe(false);
+    act(() => observerCallback?.([{ isIntersecting: false }]));
+    expect(lastEnabled()).toBe(false);
+    act(() => observerCallback?.([{ isIntersecting: true }]));
+    expect(lastEnabled()).toBe(true);
+    expect(disconnect).toHaveBeenCalled();
   });
 
   it("card variant renders the lazy thumb rendition", () => {
     render(<RecipeImage image={image} variant="card" alt="Soup" />);
     const img = screen.getByRole("img", { name: "Soup" });
-    expect(useSrc).toHaveBeenCalledWith(image.thumbUrl);
+    expect(useSrc).toHaveBeenCalledWith(image.thumbUrl, expect.anything());
     expect(img).toHaveAttribute("src", "blob:resolved");
     expect(img).toHaveAttribute("loading", "lazy");
   });
@@ -30,7 +62,7 @@ describe("RecipeImage", () => {
   it("hero variant renders the eager full rendition", () => {
     render(<RecipeImage image={image} variant="hero" alt="Soup" />);
     const img = screen.getByRole("img", { name: "Soup" });
-    expect(useSrc).toHaveBeenCalledWith(image.fullUrl);
+    expect(useSrc).toHaveBeenCalledWith(image.fullUrl, expect.anything());
     expect(img).toHaveAttribute("src", "blob:resolved");
     expect(img).toHaveAttribute("loading", "eager");
   });

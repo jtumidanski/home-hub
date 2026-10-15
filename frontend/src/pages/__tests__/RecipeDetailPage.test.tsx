@@ -4,12 +4,13 @@ import userEvent from "@testing-library/user-event";
 import type { RecipeDetail } from "@/types/models/recipe";
 
 const useRecipeMock = vi.fn();
+let pending = false;
 vi.mock("@/lib/hooks/api/use-recipes", () => ({
   useRecipe: () => useRecipeMock(),
   useDeleteRecipe: () => ({ mutateAsync: vi.fn() }),
 }));
 vi.mock("@/lib/hooks/use-recipe-image-src", () => ({
-  useRecipeImageSrc: (url: string | null) => ({ src: url ? `blob:${url}` : null, isError: false }),
+  useRecipeImageSrc: (url: string | null) => ({ src: url && !pending ? `blob:${url}` : null, isError: false }),
 }));
 vi.mock("@/lib/hooks/api/use-ingredient-normalization", () => ({
   useRenormalize: () => ({ mutate: vi.fn(), isPending: false }),
@@ -48,7 +49,10 @@ function detail(image: RecipeDetail["attributes"]["image"]): { data: RecipeDetai
 }
 
 describe("RecipeDetailPage hero", () => {
-  beforeEach(() => vi.clearAllMocks());
+  beforeEach(() => {
+    vi.clearAllMocks();
+    pending = false;
+  });
 
   it("renders no hero when the recipe has no image", () => {
     useRecipeMock.mockReturnValue({ data: detail(null), isLoading: false });
@@ -73,5 +77,16 @@ describe("RecipeDetailPage hero", () => {
     const lightboxImg = within(dialog).getByRole("img", { name: "Soup" });
     expect(lightboxImg).toHaveAttribute("src", "blob:/f.jpg");
     expect(lightboxImg).toHaveClass("object-contain");
+  });
+
+  it("offers no lightbox trigger until the image has resolved", () => {
+    pending = true;
+    useRecipeMock.mockReturnValue({
+      data: detail({ thumbUrl: "/t.jpg", fullUrl: "/f.jpg", width: 1600, height: 900 }),
+      isLoading: false,
+    });
+    render(<RecipeDetailPage />);
+    expect(screen.queryByRole("button", { name: /view photo full size/i })).not.toBeInTheDocument();
+    expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
   });
 });
