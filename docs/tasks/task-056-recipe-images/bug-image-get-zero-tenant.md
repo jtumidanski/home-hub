@@ -118,7 +118,7 @@ on round 1 (`3b42157`). The user approved fixing all of them on this branch.
 ## Outcome
 
 Branch `task-056-image-tenant-fix` (from `main` at `9911c58`; the original task
-branch had already merged in PR #13).
+branch had already merged in PR #13). Fix PR: #14.
 
 | Step | Agent / tool | Result |
 |---|---|---|
