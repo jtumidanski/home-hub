@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { ChefHat } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { useRecipeImageSrc } from "@/lib/hooks/use-recipe-image-src";
 import type { RecipeImage as RecipeImageData } from "@/types/models/recipe";
 
 interface RecipeImageProps {
@@ -26,9 +27,11 @@ export function RecipeImage({ image, variant, alt, className }: RecipeImageProps
   // Keyed by src so a replaced image (new ?v=) gets a fresh attempt.
   const [failedSrc, setFailedSrc] = useState<string | null>(null);
   const isHero = variant === "hero";
-  const src = image ? (isHero ? image.fullUrl : image.thumbUrl) : null;
+  const url = image ? (isHero ? image.fullUrl : image.thumbUrl) : null;
+  const { src, isError } = useRecipeImageSrc(url);
 
-  if (!src || failedSrc === src) {
+  // While loading (no src yet) or on error: hero renders nothing, card keeps its footprint.
+  if (!src || isError || failedSrc === src) {
     // The detail page has no placeholder (FR-12); cards keep their footprint (FR-16/17).
     return isHero ? null : <RecipeImagePlaceholder className={className} />;
   }

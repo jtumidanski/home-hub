@@ -4,6 +4,10 @@ import userEvent from "@testing-library/user-event";
 import { RecipeCard } from "../recipe-card";
 import type { RecipeListItem } from "@/types/models/recipe";
 
+vi.mock("@/lib/hooks/use-recipe-image-src", () => ({
+  useRecipeImageSrc: (url: string | null) => ({ src: url ? `blob:${url}` : null, isError: false }),
+}));
+
 const mockNavigate = vi.fn();
 vi.mock("react-router-dom", () => ({
   useNavigate: () => mockNavigate,
@@ -123,7 +127,7 @@ describe("RecipeCard", () => {
         onDelete={vi.fn()}
       />,
     );
-    expect(screen.getByRole("img", { name: "Pasta Carbonara" })).toHaveAttribute("src", "/t.jpg");
+    expect(screen.getByRole("img", { name: "Pasta Carbonara" })).toHaveAttribute("src", "blob:/t.jpg");
   });
 
   it("renders the placeholder when the recipe has no image", () => {

@@ -8,6 +8,9 @@ vi.mock("@/lib/hooks/api/use-recipes", () => ({
   useRecipe: () => useRecipeMock(),
   useDeleteRecipe: () => ({ mutateAsync: vi.fn() }),
 }));
+vi.mock("@/lib/hooks/use-recipe-image-src", () => ({
+  useRecipeImageSrc: (url: string | null) => ({ src: url ? `blob:${url}` : null, isError: false }),
+}));
 vi.mock("@/lib/hooks/api/use-ingredient-normalization", () => ({
   useRenormalize: () => ({ mutate: vi.fn(), isPending: false }),
 }));
@@ -62,13 +65,13 @@ describe("RecipeDetailPage hero", () => {
     });
     render(<RecipeDetailPage />);
     const hero = screen.getByRole("img", { name: "Soup" });
-    expect(hero).toHaveAttribute("src", "/f.jpg");
+    expect(hero).toHaveAttribute("src", "blob:/f.jpg");
 
     await user.click(screen.getByRole("button", { name: /view photo full size/i }));
     // The modal aria-hides the hero, so scope to the dialog.
     const dialog = await screen.findByRole("dialog");
     const lightboxImg = within(dialog).getByRole("img", { name: "Soup" });
-    expect(lightboxImg).toHaveAttribute("src", "/f.jpg");
+    expect(lightboxImg).toHaveAttribute("src", "blob:/f.jpg");
     expect(lightboxImg).toHaveClass("object-contain");
   });
 });

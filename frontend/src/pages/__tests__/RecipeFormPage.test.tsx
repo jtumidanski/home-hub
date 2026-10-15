@@ -26,6 +26,9 @@ vi.mock("@/lib/hooks/api/use-recipes", () => ({
   useUploadRecipeImage: () => ({ mutateAsync: uploadMutateAsync, isPending: uploadPending }),
   useDeleteRecipeImage: () => ({ mutateAsync: deleteImageMutateAsync, isPending: false }),
 }));
+vi.mock("@/lib/hooks/use-recipe-image-src", () => ({
+  useRecipeImageSrc: (url: string | null) => ({ src: url ? `blob:${url}` : null, isError: false }),
+}));
 vi.mock("@/lib/hooks/use-cooklang-preview", () => ({
   useCooklangPreview: () => ({
     metadata: { title: "Soup" },
