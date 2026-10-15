@@ -3,6 +3,7 @@ import { useParams, useNavigate } from "react-router-dom";
 import { ArrowLeft, Pencil, Trash2, Clock, Users, ExternalLink, CheckCircle2, AlertCircle, Maximize2 } from "lucide-react";
 import { toast } from "sonner";
 import { useRecipe, useDeleteRecipe } from "@/lib/hooks/api/use-recipes";
+import { useRecipeImageSrc } from "@/lib/hooks/use-recipe-image-src";
 import { useRenormalize } from "@/lib/hooks/api/use-ingredient-normalization";
 import { RecipeIngredients } from "@/components/features/recipes/recipe-ingredients";
 import { RecipeSteps } from "@/components/features/recipes/recipe-steps";
@@ -26,6 +27,8 @@ export function RecipeDetailPage() {
   const [lightboxOpen, setLightboxOpen] = useState(false);
 
   const recipe = data?.data;
+  // Same query key as the hero, so this shares its cached bytes.
+  const { src: lightboxSrc } = useRecipeImageSrc(recipe?.attributes.image?.fullUrl ?? null);
 
   const handleDelete = async () => {
     if (!id) return;
@@ -83,7 +86,7 @@ export function RecipeDetailPage() {
           <ArrowLeft className="mr-1 h-4 w-4" /> Recipes
         </Button>
 
-        {attrs.image && (
+        {attrs.image && lightboxSrc && (
           <button
             type="button"
             aria-label="View photo full size"
@@ -193,12 +196,12 @@ export function RecipeDetailPage() {
         </div>
       </div>
 
-      {attrs.image && (
+      {attrs.image && lightboxSrc && (
         <Dialog open={lightboxOpen} onOpenChange={setLightboxOpen}>
           <DialogContent className="max-w-[95vw] p-2 sm:max-w-[95vw]">
             <DialogTitle className="sr-only">{attrs.title}</DialogTitle>
             <img
-              src={attrs.image.fullUrl}
+              src={lightboxSrc}
               alt={attrs.title}
               className="max-h-[85vh] w-full object-contain"
             />

@@ -2,6 +2,10 @@ import { describe, it, expect, vi, beforeEach } from "vitest";
 import { renderHook, act } from "@testing-library/react";
 import { useRecipeImageDraft } from "../use-recipe-image-draft";
 
+vi.mock("@/lib/hooks/use-recipe-image-src", () => ({
+  useRecipeImageSrc: (url: string | null) => ({ src: url ? `blob:${url}` : null, isError: false }),
+}));
+
 const existing = { thumbUrl: "/t.jpg", fullUrl: "/f.jpg", width: 10, height: 10 };
 const file = () => new File(["x"], "a.jpg", { type: "image/jpeg" });
 
@@ -16,7 +20,7 @@ describe("useRecipeImageDraft", () => {
   it("starts unchanged and previews the existing image", () => {
     const { result } = renderHook(() => useRecipeImageDraft(existing));
     expect(result.current.draft.kind).toBe("unchanged");
-    expect(result.current.previewSrc).toBe("/f.jpg");
+    expect(result.current.previewSrc).toBe("blob:/f.jpg");
   });
 
   it("stage creates an object URL; replacing revokes the previous one", () => {
@@ -35,7 +39,7 @@ describe("useRecipeImageDraft", () => {
     expect(result.current.previewSrc).toBeNull();
     act(() => result.current.undo());
     expect(result.current.draft.kind).toBe("unchanged");
-    expect(result.current.previewSrc).toBe("/f.jpg");
+    expect(result.current.previewSrc).toBe("blob:/f.jpg");
   });
 
   it("remove of a staged file without an existing image returns to unchanged", () => {

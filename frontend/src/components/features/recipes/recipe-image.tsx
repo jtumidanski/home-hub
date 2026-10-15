@@ -1,6 +1,8 @@
-import { useState } from "react";
+import { useState, type RefCallback } from "react";
 import { ChefHat } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { useInView } from "@/lib/hooks/use-in-view";
+import { useRecipeImageSrc } from "@/lib/hooks/use-recipe-image-src";
 import type { RecipeImage as RecipeImageData } from "@/types/models/recipe";
 
 interface RecipeImageProps {
@@ -10,9 +12,16 @@ interface RecipeImageProps {
   className?: string;
 }
 
-function RecipeImagePlaceholder({ className }: { className?: string | undefined }) {
+function RecipeImagePlaceholder({
+  className,
+  innerRef,
+}: {
+  className?: string | undefined;
+  innerRef?: RefCallback<Element>;
+}) {
   return (
     <div
+      ref={innerRef}
       data-testid="recipe-image-placeholder"
       aria-hidden="true"
       className={cn("flex items-center justify-center bg-muted", className)}
@@ -26,11 +35,15 @@ export function RecipeImage({ image, variant, alt, className }: RecipeImageProps
   // Keyed by src so a replaced image (new ?v=) gets a fresh attempt.
   const [failedSrc, setFailedSrc] = useState<string | null>(null);
   const isHero = variant === "hero";
-  const src = image ? (isHero ? image.fullUrl : image.thumbUrl) : null;
+  const url = image ? (isHero ? image.fullUrl : image.thumbUrl) : null;
+  // Cards fetch only once near the viewport (replaces native lazy loading, which a blob URL can't defer).
+  const { ref, inView } = useInView("200px");
+  const { src, isError } = useRecipeImageSrc(url, { enabled: isHero || inView });
 
-  if (!src || failedSrc === src) {
+  // While loading (no src yet) or on error: hero renders nothing, card keeps its footprint.
+  if (!src || isError || failedSrc === src) {
     // The detail page has no placeholder (FR-12); cards keep their footprint (FR-16/17).
-    return isHero ? null : <RecipeImagePlaceholder className={className} />;
+    return isHero ? null : <RecipeImagePlaceholder className={className} innerRef={ref} />;
   }
 
   return (

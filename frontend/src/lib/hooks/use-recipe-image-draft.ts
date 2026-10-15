@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from "react";
+import { useRecipeImageSrc } from "@/lib/hooks/use-recipe-image-src";
 import type { RecipeImage } from "@/types/models/recipe";
 
 export type ImageDraft =
@@ -43,8 +44,9 @@ export function useRecipeImageDraft(existing: RecipeImage | null) {
     setDraft({ kind: "unchanged" });
   }, [revoke]);
 
-  const previewSrc =
-    draft.kind === "staged" ? draft.previewUrl : draft.kind === "removed" ? null : (existing?.fullUrl ?? null);
+  // The staged preview is already a local object URL; only the existing server image needs resolving.
+  const { src: existingSrc } = useRecipeImageSrc(draft.kind === "unchanged" ? (existing?.fullUrl ?? null) : null);
+  const previewSrc = draft.kind === "staged" ? draft.previewUrl : draft.kind === "removed" ? null : existingSrc;
 
   return { draft, previewSrc, stage, remove, undo };
 }

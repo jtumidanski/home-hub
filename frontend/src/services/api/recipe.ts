@@ -128,6 +128,15 @@ class RecipeService extends BaseService {
       data: { type: "recipe-renormalize", id: recipeId, attributes: {} },
     });
   }
+
+  /**
+   * Fetches a recipe image rendition (`/api/v1/recipes/{id}/image?...`) as a Blob
+   * through the api client so the tenant headers are sent.
+   */
+  downloadImage(url: string): Promise<Blob> {
+    const prefix = "/api/v1";
+    return api.download(url.startsWith(prefix) ? url.slice(prefix.length) : url);
+  }
 }
 
 export const recipeService = new RecipeService();
