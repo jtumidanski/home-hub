@@ -204,7 +204,7 @@ spec:
                             name: frontend
                             port:
                                 number: 80
-        - host: homehub.tumidanski.com
+        - host: home-hub.tumidanski.com
           http:
               paths:
                   - path: /api/v1/auth
