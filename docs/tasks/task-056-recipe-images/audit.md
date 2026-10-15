@@ -236,3 +236,39 @@ None.
 ### Blocking (must fix)
 
 None.
+
+---
+
+# Frontend Audit — Fix round 2 (2026-10-15)
+
+- **Scope:** commit range `8cdb39a..05a801e` (9 files), against `## Fix round 2` items 1-4 in `bug-image-get-zero-tenant.md`.
+- **Verdict:** PASS. All four items are resolved. No blocking findings.
+- **Tests:** targeted only (the full gate runs separately). `recipe-image`, `recipe-card`, `use-recipe-image-src`, `RecipeDetailPage` and `RecipesPage` suites: 34 passed, 0 failed.
+
+## Items
+
+| # | Item | Status | Evidence |
+|---|------|--------|----------|
+| 1 | Lazy loading for cards | PASS | `recipe-image.tsx:40-41` calls `useInView("200px")` and passes `enabled: isHero \|\| inView`. The ref is attached to the card placeholder (`:46`). `use-in-view.ts:13-24` uses `rootMargin` and disconnects once visible (`:17`). `use-recipe-image-src.ts:15-16,21` adds `enabled` (default `true`). No in-view hook existed before (`lib/hooks` has only the new file). Test: `recipe-image.test.tsx:39-52` shows the card is disabled until `isIntersecting: true`, the hero is eager, and `disconnect` is called. The IntersectionObserver stub is at `:13-20`. |
+| 2 | No flicker on invalidation | PASS | The key is `["recipe-images", tenant?.id, household?.id, url]` (`use-recipe-image-src.ts:19`), outside `recipeKeys.all`. Test: `use-recipe-image-src.test.tsx:60-66` invalidates `["recipes", ...]` and asserts one download call. The comment at `:11-13` documents the reason. |
+| 3 | Lightbox before load | PASS | `RecipeDetailPage.tsx:89` (trigger) and `:199` (Dialog) are both gated on `attrs.image && lightboxSrc`. The `<img>` uses `src={lightboxSrc}` with no `?? undefined`. Test: `RecipeDetailPage.test.tsx:82` (no trigger until resolved) and `:64-80` (opens with the blob src). |
+| 4 | FE-03 | PASS | `recipe.ts:131-139` adds `downloadImage(url)`, which strips `/api/v1` and calls `api.download`. The hook calls `recipeService.downloadImage` (`use-recipe-image-src.ts:20`) and no longer imports the api client. The hook test mocks `recipeService.downloadImage` (`use-recipe-image-src.test.tsx:8`). |
+
+## Regression checks
+
+- **Tenant and household in the key: PASS.** Both are in the key (`use-recipe-image-src.ts:19`) and both gate `enabled` (`:21`). A tenant switch changes the key, and the nil-tenant fetch cannot fire.
+- **Observer cleanup: PASS.** The effect returns `observer.disconnect()` (`use-in-view.ts:23`). It also disconnects on the first intersection (`:17`). It is a no-op once `inView` is latched (`:12`). The ref is a state setter, so a node that unmounts when the placeholder is replaced by the `<img>` only re-runs a no-op effect.
+- **Card that never loads if the observer never fires: acceptable.** The card stays on the placeholder, which is its designed loading and error footprint. It cannot be stuck on a spinner or blank. Hero is unaffected because it is eager.
+- **Missing IntersectionObserver: WARN (non-blocking).** `use-in-view.ts:13` constructs `IntersectionObserver` with no `typeof` guard. In a runtime without it (jsdom, or a very old browser), a card render throws and unmounts the tree. All current browsers support it, and the card and image tests stub it (`recipe-card.test.tsx:11-13`, `recipe-image.test.tsx:20`). `RecipesPage.test.tsx` only renders an empty list, so it does not hit this. Any future test that renders a populated list without the stub will throw. Suggested fix: `if (typeof IntersectionObserver === "undefined") { setInView(true); return; }` in the effect, which also gives a safe fallback of loading eagerly. There is no SSR in this Vite SPA, and the constructor runs in an effect, so there is no SSR hazard.
+
+## Checklist (changed files)
+
+FE-01 PASS (no `any` in the diff). FE-02 PASS (`cn()` used, `recipe-image.tsx:27,54`). FE-03 PASS (item 4). FE-05 PASS (no `animate-spin`). FE-06 PASS (no color classes added). FE-08 PASS (named exports). FE-09 PASS (`useTenant()` plus `enabled` guard, `use-recipe-image-src.ts:17,21`). FE-10 PASS (tenant and household in the key). FE-14 PASS (`as const`, `:19`). FE-17 PASS (tests added or updated for the hook, component, card and page). FE-18 PASS (n/a; inline mocks updated for `downloadImage`). FE-19 PASS (the observer ref sits on a non-interactive placeholder; the hero trigger is a native `<button>`).
+
+### Blocking (must fix)
+
+None.
+
+### Non-Blocking (should fix)
+
+- Guard `typeof IntersectionObserver === "undefined"` in `use-in-view.ts:13` (see above).
