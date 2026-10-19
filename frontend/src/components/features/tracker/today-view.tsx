@@ -50,7 +50,7 @@ export function TodayView() {
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between">
-        <h2 className="text-lg font-semibold">Today — {new Date(todayDate + "T12:00:00").toLocaleDateString("en-US", { weekday: "long", month: "short", day: "numeric" })}</h2>
+        <h2 className="text-lg font-heading tracking-[-0.01em]">Today — {new Date(todayDate + "T12:00:00").toLocaleDateString("en-US", { weekday: "long", month: "short", day: "numeric" })}</h2>
       </div>
 
       {items.length > 0 && (
@@ -74,8 +74,6 @@ export function TodayView() {
 
         return (
           <Card key={item.id} className={cn(
-            !hasValue && !isSkipped && "border-l-[3px]",
-            !hasValue && !isSkipped && swatchClass(item.color, "borderLeft"),
             isSkipped && "opacity-60",
           )}>
             <CardContent className="py-3 px-4 space-y-2">
@@ -84,6 +82,7 @@ export function TodayView() {
                 <span className="font-medium">{item.name}</span>
                 {hasValue && <Badge className="ml-auto bg-success/15 text-success border-transparent"><Check className="h-3 w-3" />logged</Badge>}
                 {isSkipped && <Badge variant="secondary" className="ml-auto">skipped</Badge>}
+                {!hasValue && !isSkipped && <Badge variant="outline" className="ml-auto">pending</Badge>}
               </div>
 
               {item.scale_type === "sentiment" && (

@@ -9,7 +9,10 @@ import { PageHeader } from "@/components/common/page-header";
 import { useTenant } from "@/context/tenant-context";
 import { Button } from "@/components/ui/button";
 import { LAYOUT_SCHEMA_VERSION } from "@/lib/dashboard/widget-types";
+import { useAuth } from "@/components/providers/auth-provider";
 import { useMobile } from "@/lib/hooks/use-mobile";
+import { useLocalDate } from "@/lib/hooks/use-local-date";
+import { useTimeOfDay } from "@/lib/hooks/use-time-of-day";
 
 export function DashboardShell() {
   const { dashboardId } = useParams<{ dashboardId: string }>();
@@ -18,16 +21,25 @@ export function DashboardShell() {
   const { household } = useTenant();
   const timezone = household?.attributes.timezone || undefined;
 
-  const dateLabel = useMemo(
-    () =>
-      new Date().toLocaleDateString("en-US", {
-        weekday: "long",
-        day: "numeric",
-        month: "long",
-        timeZone: timezone,
-      }),
-    [timezone],
-  );
+  const { user } = useAuth();
+  const givenName = user?.attributes.givenName?.trim();
+  const firstName = givenName || (user?.attributes.displayName?.trim().split(/\s+/)[0] ?? "");
+  const localDate = useLocalDate(timezone);
+  const timeOfDay = useTimeOfDay(timezone);
+
+  const greeting = useMemo(() => {
+    const salutation = `Good ${timeOfDay}`;
+    return firstName ? `${salutation}, ${firstName}` : salutation;
+  }, [firstName, timeOfDay]);
+  const dateLabel = useMemo(() => {
+    const [y = 1970, m = 1, d = 1] = localDate.split("-").map(Number);
+    return new Date(Date.UTC(y, m - 1, d, 12)).toLocaleDateString("en-US", {
+      weekday: "long",
+      day: "numeric",
+      month: "long",
+      timeZone: "UTC",
+    });
+  }, [localDate]);
 
   if (isLoading) return <DashboardSkeleton />;
   if (isError || !data?.data) return <Error404Page />;
@@ -50,8 +62,14 @@ export function DashboardShell() {
     <div className="flex flex-col">
       <div className="p-4 md:p-6">
         <PageHeader
-          title={dashboard.attributes.name}
-          description={dateLabel}
+          title={greeting}
+          description={
+            <>
+              {dateLabel}
+              <span aria-hidden="true"> · </span>
+              <span>{dashboard.attributes.name}</span>
+            </>
+          }
           actions={
             isMobile ? (
               <p

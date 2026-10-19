@@ -43,7 +43,7 @@ export function CalendarSelectionPanel({ connectionId, sources }: CalendarSelect
           {source.attributes.primary && (
             <span className="text-xs text-muted-foreground">(primary)</span>
           )}
-          {toggle.isPending && <Loader2 className="h-3 w-3 animate-spin ml-auto" />}
+          {toggle.isPending && <Loader2 className="h-3 w-3 motion-safe:animate-spin ml-auto" />}
         </label>
       ))}
     </div>

@@ -4,6 +4,7 @@ import { useTenant } from "@/context/tenant-context";
 import { useLocalDate } from "@/lib/hooks/use-local-date";
 import { Card, CardAction, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
+import { WidgetError } from "@/components/features/dashboard-widgets/widget-error";
 import { cn } from "@/lib/utils";
 import { Dumbbell, BedDouble, Check, Circle, CircleDot, SkipForward, ChevronRight } from "lucide-react";
 
@@ -27,13 +28,7 @@ export function WorkoutWidget() {
   }
 
   if (isError) {
-    return (
-      <Card className="border-destructive">
-        <CardContent className="py-3">
-          <p className="text-sm text-destructive">Failed to load workout</p>
-        </CardContent>
-      </Card>
-    );
+    return <WidgetError message="Failed to load workout" />;
   }
 
   const attrs = data?.data?.attributes;
@@ -41,8 +36,8 @@ export function WorkoutWidget() {
   const items = attrs?.items ?? [];
 
   return (
-    <Link to="/app/workouts" className="block h-full transition-opacity hover:opacity-80">
-      <Card className="h-full">
+    <Link to="/app/workouts" className="@container group/workout block h-full rounded-xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
+      <Card className="@container h-full motion-safe:transition-colors group-hover/workout:bg-accent">
         <CardHeader>
           <CardTitle className="font-heading text-lg @xl:text-2xl">Workout</CardTitle>
           <CardAction>

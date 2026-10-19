@@ -1,3 +1,4 @@
+import { cn } from "@/lib/utils";
 import { useEffect, useId, useRef, useState } from "react";
 import { ChevronDown, ChevronUp, Dumbbell } from "lucide-react";
 import { EmptyState } from "@/components/common/empty-state";
@@ -151,27 +152,29 @@ function TodayItem({ item, weekStart }: { item: WeekItem; weekStart: string }) {
 
   return (
     <li className="rounded-lg border p-3 space-y-2">
-      <div
-        className="flex items-center justify-between gap-2 cursor-pointer"
+      <button
+        type="button"
+        className="flex w-full cursor-pointer items-center justify-between gap-2 text-left"
+        aria-expanded={expanded}
         onClick={() => setExpanded(!expanded)}
       >
-        <div className="min-w-0 flex-1">
-          <p className="font-medium truncate">
+        <span className="block min-w-0 flex-1">
+          <span className="block font-medium truncate">
             {item.exerciseName}
             {item.exerciseDeleted && <span className="text-muted-foreground"> (deleted)</span>}
-          </p>
-          <p className="text-xs text-muted-foreground tabular-nums">{summarizePlanned(item)}</p>
-        </div>
-        <div className="flex items-center gap-2 shrink-0">
+          </span>
+          <span className="block text-xs text-muted-foreground tabular-nums">{summarizePlanned(item)}</span>
+        </span>
+        <span className="flex items-center gap-2 shrink-0">
           <StatusBadge status={status} />
-          {expanded ? <ChevronUp className="h-4 w-4 text-muted-foreground" /> : <ChevronDown className="h-4 w-4 text-muted-foreground" />}
-        </div>
-      </div>
+          {expanded ? <ChevronUp aria-hidden="true" className="h-4 w-4 text-muted-foreground" /> : <ChevronDown aria-hidden="true" className="h-4 w-4 text-muted-foreground" />}
+        </span>
+      </button>
 
       {expanded ? (
         <div className="space-y-3 border-t pt-3">
           {item.kind === "strength" && (
-            <div className={`grid gap-1.5 ${isBw ? "grid-cols-2" : "grid-cols-4"}`}>
+            <div className={cn("grid gap-1.5", isBw ? "grid-cols-2" : "grid-cols-4")}>
               <div>
                 <label htmlFor={`${uid}-sets`} className="text-xs text-muted-foreground block mb-0.5">Sets</label>
                 <Input ref={firstInputRef} id={`${uid}-sets`} className="h-8 tabular-nums" value={sets} onChange={(e) => setSets(e.target.value)} type="number" inputMode="numeric" />

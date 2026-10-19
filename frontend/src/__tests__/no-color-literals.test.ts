@@ -7,13 +7,7 @@ const SRC = resolve(__dirname, "..");
 const SCANNED_ROOTS = ["components/features", "pages"];
 
 /** Path prefixes (relative to frontend/src) not yet migrated; files under them are skipped. */
-const PENDING: string[] = [
-  "components/features/households/",
-  "pages/DataRetentionPage.tsx",
-  "pages/HouseholdMembersPage.tsx",
-  "pages/HouseholdsPage.tsx",
-  "pages/SettingsPage.tsx",
-];
+const PENDING: string[] = [];
 
 /** Permitted literals: exact file + exact matched text; reason mirrors DESIGN.md. */
 const ALLOWED: { file: string; match: string; reason: string }[] = [];
@@ -84,6 +78,10 @@ describe("no colour literals in migrated frontend directories", () => {
   it("has every PENDING entry present on disk", () => {
     const missing = PENDING.filter((p) => !existsSync(join(SRC, p)));
     expect(missing).toEqual([]);
+  });
+
+  it("has no PENDING entries left (migration complete)", () => {
+    expect(PENDING).toEqual([]);
   });
 
   it("has no stale ALLOWED entries", () => {

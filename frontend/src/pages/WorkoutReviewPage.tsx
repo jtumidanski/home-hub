@@ -1,3 +1,4 @@
+import { cn } from "@/lib/utils";
 import { CalendarX, ChevronLeft, ChevronRight, Check } from "lucide-react";
 import { useNavigate, useParams } from "react-router-dom";
 import { Button } from "@/components/ui/button";
@@ -200,7 +201,7 @@ function PerDayGrid({
             <Card className="min-h-[10rem]">
               <CardHeader className="p-3 pb-2">
                 <CardTitle className="flex items-center justify-between text-sm">
-                  <h2 className="font-semibold">{label}</h2>
+                  <h2 className="text-lg font-heading tracking-[-0.01em]">{label}</h2>
                   {block.isRestDay && (
                     <Badge variant="secondary" className="text-xs">Rest</Badge>
                   )}
@@ -241,7 +242,7 @@ function ReviewItemCard({ item }: { item: SummaryItem }) {
   return (
     <div className="rounded border p-2 text-xs space-y-1">
       <div className="flex items-start justify-between gap-2">
-        <span className={`font-medium truncate ${nameClass}`}>{item.exerciseName}</span>
+        <span className={cn("font-medium truncate", nameClass)}>{item.exerciseName}</span>
         <StatusBadge status={status} />
       </div>
       <p className="text-muted-foreground tabular-nums">Planned: {renderPlanned(item.kind, item.planned)}</p>

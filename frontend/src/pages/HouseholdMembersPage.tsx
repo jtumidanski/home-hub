@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useParams, useNavigate } from "react-router-dom";
+import { useParams, Link } from "react-router-dom";
 import { toast } from "sonner";
 import { useAuth } from "@/components/providers/auth-provider";
 import { useHouseholdMembers, useUpdateMemberRole, useRemoveMember, useLeaveHousehold } from "@/lib/hooks/api/use-memberships";
@@ -7,14 +7,16 @@ import { useHouseholdInvitations, useRevokeInvitation } from "@/lib/hooks/api/us
 import { useUsersByIds } from "@/lib/hooks/api/use-users";
 import { InviteMemberDialog } from "@/components/features/households/invite-member-dialog";
 import { ErrorCard } from "@/components/common/error-card";
+import { PageHeader } from "@/components/common/page-header";
+import { EmptyState } from "@/components/common/empty-state";
+import { ConfirmDialog } from "@/components/common/confirm-dialog";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { UserAvatar } from "@/components/ui/user-avatar";
-import { ArrowLeft, Plus, UserMinus, LogOut, Mail, AlertTriangle, Clock, X } from "lucide-react";
+import { ArrowLeft, Plus, MailX, UserMinus, LogOut, Mail, AlertTriangle, Clock, X } from "lucide-react";
 import { createErrorFromUnknown } from "@/lib/api/errors";
 import type { Membership } from "@/types/models/membership";
 import { membershipRoleLabelMap } from "@/types/models/membership";
@@ -24,7 +26,6 @@ import type { User } from "@/types/models/user";
 
 export function HouseholdMembersPage() {
   const { id: householdId } = useParams<{ id: string }>();
-  const navigate = useNavigate();
   const { appContext, user } = useAuth();
   const [inviteOpen, setInviteOpen] = useState(false);
   const [confirmRemove, setConfirmRemove] = useState<Membership | null>(null);
@@ -101,6 +102,10 @@ export function HouseholdMembersPage() {
   if (membersLoading) {
     return (
       <div className="p-4 md:p-6 space-y-4" role="status" aria-label="Loading">
+        <Button variant="ghost" size="sm" render={<Link to="/app/households" />}>
+          <ArrowLeft className="mr-1 h-4 w-4" /> Households
+        </Button>
+        <PageHeader title="Household Members" />
         {Array.from({ length: 3 }).map((_, i) => (
           <Skeleton key={i} className="h-16" />
         ))}
@@ -110,7 +115,11 @@ export function HouseholdMembersPage() {
 
   if (membersError) {
     return (
-      <div className="p-4 md:p-6">
+      <div className="p-4 md:p-6 space-y-4">
+        <Button variant="ghost" size="sm" render={<Link to="/app/households" />}>
+          <ArrowLeft className="mr-1 h-4 w-4" /> Households
+        </Button>
+        <PageHeader title="Household Members" />
         <ErrorCard message="Failed to load household members." />
       </div>
     );
@@ -119,10 +128,10 @@ export function HouseholdMembersPage() {
   return (
     <div className="p-4 md:p-6 space-y-6">
       <div className="space-y-3">
-        <Button variant="ghost" size="sm" onClick={() => navigate("/app/households")}>
+        <Button variant="ghost" size="sm" render={<Link to="/app/households" />}>
           <ArrowLeft className="mr-1 h-4 w-4" /> Households
         </Button>
-        <h1 className="text-xl md:text-2xl font-semibold">Household Members</h1>
+        <PageHeader title="Household Members" />
       </div>
 
       {/* Members */}
@@ -153,7 +162,7 @@ export function HouseholdMembersPage() {
             )}
           </div>
         </CardHeader>
-        <CardContent className="space-y-3">
+        <CardContent className="divide-y">
           {members.map((member) => {
             const u = getUserForMember(member);
             const isSelf = member.relationships.user.data.id === currentUserId;
@@ -161,40 +170,42 @@ export function HouseholdMembersPage() {
             const canModify = isPrivileged && !isSelf && !(resolvedRole === "admin" && isTargetOwner);
 
             return (
-              <div key={member.id} className="flex items-center justify-between gap-3 rounded-md border p-3">
-                {u && (
-                  <UserAvatar
-                    avatarUrl={u.attributes.avatarUrl}
-                    providerAvatarUrl={u.attributes.providerAvatarUrl}
-                    displayName={u.attributes.displayName}
-                    userId={u.id}
-                    size="md"
-                  />
-                )}
-                <div className="min-w-0 flex-1">
-                  <div className="flex items-center gap-2">
-                    <p className="font-medium truncate">
-                      {u?.attributes.displayName ?? "Unknown User"}
+              <div key={member.id} className="flex flex-col gap-3 py-3 first:pt-0 last:pb-0 md:flex-row md:items-center md:justify-between">
+                <div className="flex min-w-0 flex-1 items-center gap-3">
+                  {u && (
+                    <UserAvatar
+                      avatarUrl={u.attributes.avatarUrl}
+                      providerAvatarUrl={u.attributes.providerAvatarUrl}
+                      displayName={u.attributes.displayName}
+                      userId={u.id}
+                      size="md"
+                    />
+                  )}
+                  <div className="min-w-0 flex-1">
+                    <div className="flex items-center gap-2">
+                      <p className="font-medium truncate">
+                        {u?.attributes.displayName ?? "Unknown User"}
+                      </p>
+                      {isSelf && <Badge variant="outline">You</Badge>}
+                      {member.attributes.isLastOwner && (
+                        <Badge variant="warning" className="gap-1">
+                          <AlertTriangle className="h-3 w-3" />Sole Owner
+                        </Badge>
+                      )}
+                    </div>
+                    <p className="text-sm text-muted-foreground truncate">{u?.attributes.email}</p>
+                    <p className="text-sm text-muted-foreground">
+                      Joined {new Date(member.attributes.createdAt).toLocaleDateString()}
                     </p>
-                    {isSelf && <Badge variant="outline">You</Badge>}
-                    {member.attributes.isLastOwner && (
-                      <Badge variant="destructive" className="gap-1">
-                        <AlertTriangle className="h-3 w-3" />Sole Owner
-                      </Badge>
-                    )}
                   </div>
-                  <p className="text-sm text-muted-foreground truncate">{u?.attributes.email}</p>
-                  <p className="text-xs text-muted-foreground">
-                    Joined {new Date(member.attributes.createdAt).toLocaleDateString()}
-                  </p>
                 </div>
-                <div className="flex items-center gap-2">
+                <div className="flex items-center gap-2 pl-0 md:pl-3">
                   {canModify ? (
                     <Select
                       value={member.attributes.role}
                       onValueChange={(role) => { if (role) handleRoleChange(member.id, role); }}
                     >
-                      <SelectTrigger className="w-28">
+                      <SelectTrigger className="w-28" aria-label={`Role for ${u?.attributes.displayName ?? "Unknown User"}`}>
                         <SelectValue />
                       </SelectTrigger>
                       <SelectContent>
@@ -207,8 +218,13 @@ export function HouseholdMembersPage() {
                     <Badge variant="secondary">{membershipRoleLabelMap[member.attributes.role]}</Badge>
                   )}
                   {canModify && (
-                    <Button variant="ghost" size="icon" onClick={() => setConfirmRemove(member)}>
-                      <UserMinus className="h-4 w-4 text-destructive" />
+                    <Button
+                      variant="destructive"
+                      size="icon"
+                      aria-label={`Remove ${u?.attributes.displayName ?? "Unknown User"}`}
+                      onClick={() => setConfirmRemove(member)}
+                    >
+                      <UserMinus className="h-4 w-4" />
                     </Button>
                   )}
                 </div>
@@ -223,14 +239,20 @@ export function HouseholdMembersPage() {
         <CardHeader>
           <CardTitle className="text-lg">Pending Invitations</CardTitle>
         </CardHeader>
-        <CardContent className="space-y-3">
+        <CardContent className="divide-y">
           {invitationsLoading ? (
             <Skeleton className="h-12" />
           ) : invitations.length === 0 ? (
-            <p className="text-sm text-muted-foreground">No pending invitations.</p>
+            <EmptyState
+              icon={MailX}
+              title="No pending invitations"
+              description={isPrivileged ? "Invite someone to join this household." : undefined}
+              className="py-6"
+              headingLevel="h3"
+            />
           ) : (
             invitations.map((inv) => (
-              <div key={inv.id} className="flex items-center justify-between gap-3 rounded-md border p-3">
+              <div key={inv.id} className="flex items-center justify-between gap-3 py-3 first:pt-0 last:pb-0">
                 <div className="min-w-0 flex-1">
                   <div className="flex items-center gap-2">
                     <Mail className="h-4 w-4 text-muted-foreground shrink-0" />
@@ -238,15 +260,20 @@ export function HouseholdMembersPage() {
                   </div>
                   <div className="flex items-center gap-2 mt-1">
                     <Badge variant="secondary">{invitationRoleLabelMap[inv.attributes.role]}</Badge>
-                    <span className="text-xs text-muted-foreground flex items-center gap-1">
-                      <Clock className="h-3 w-3" />
+                    <span className="text-sm text-muted-foreground flex items-center gap-1">
+                      <Clock className="h-3.5 w-3.5" />
                       Expires {new Date(inv.attributes.expiresAt).toLocaleDateString()}
                     </span>
                   </div>
                 </div>
                 {isPrivileged && (
-                  <Button variant="ghost" size="icon" onClick={() => setConfirmRevoke(inv)}>
-                    <X className="h-4 w-4 text-destructive" />
+                  <Button
+                    variant="destructive"
+                    size="icon"
+                    aria-label={`Revoke invitation for ${inv.attributes.email}`}
+                    onClick={() => setConfirmRevoke(inv)}
+                  >
+                    <X className="h-4 w-4" />
                   </Button>
                 )}
               </div>
@@ -260,56 +287,35 @@ export function HouseholdMembersPage() {
         <InviteMemberDialog open={inviteOpen} onOpenChange={setInviteOpen} householdId={householdId} />
       )}
 
-      <Dialog open={!!confirmRemove} onOpenChange={() => setConfirmRemove(null)}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Remove Member</DialogTitle>
-            <DialogDescription>
-              Are you sure you want to remove this member from the household? This action cannot be undone.
-            </DialogDescription>
-          </DialogHeader>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setConfirmRemove(null)}>Cancel</Button>
-            <Button variant="destructive" onClick={handleRemove} disabled={removeMember.isPending}>
-              Remove
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+      <ConfirmDialog
+        open={!!confirmRemove}
+        onOpenChange={(open) => { if (!open) setConfirmRemove(null); }}
+        title="Remove Member"
+        description="Are you sure you want to remove this member from the household? This action cannot be undone."
+        confirmLabel="Remove"
+        onConfirm={handleRemove}
+        pending={removeMember.isPending}
+      />
 
-      <Dialog open={!!confirmLeave} onOpenChange={() => setConfirmLeave(null)}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Leave Household</DialogTitle>
-            <DialogDescription>
-              Are you sure you want to leave this household? You will lose access to all shared data.
-            </DialogDescription>
-          </DialogHeader>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setConfirmLeave(null)}>Cancel</Button>
-            <Button variant="destructive" onClick={handleLeave} disabled={leaveHousehold.isPending}>
-              Leave
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+      <ConfirmDialog
+        open={!!confirmLeave}
+        onOpenChange={(open) => { if (!open) setConfirmLeave(null); }}
+        title="Leave Household"
+        description="Are you sure you want to leave this household? You will lose access to all shared data."
+        confirmLabel="Leave"
+        onConfirm={handleLeave}
+        pending={leaveHousehold.isPending}
+      />
 
-      <Dialog open={!!confirmRevoke} onOpenChange={() => setConfirmRevoke(null)}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Revoke Invitation</DialogTitle>
-            <DialogDescription>
-              Are you sure you want to revoke this invitation? The user will no longer be able to accept it.
-            </DialogDescription>
-          </DialogHeader>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setConfirmRevoke(null)}>Cancel</Button>
-            <Button variant="destructive" onClick={handleRevoke} disabled={revokeInvitation.isPending}>
-              Revoke
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+      <ConfirmDialog
+        open={!!confirmRevoke}
+        onOpenChange={(open) => { if (!open) setConfirmRevoke(null); }}
+        title="Revoke Invitation"
+        description="Are you sure you want to revoke this invitation? The user will no longer be able to accept it."
+        confirmLabel="Revoke"
+        onConfirm={handleRevoke}
+        pending={revokeInvitation.isPending}
+      />
     </div>
   );
 }

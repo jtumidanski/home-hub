@@ -74,7 +74,7 @@ export function DashboardsNavGroup({
             )}
             {userList.length > 0 && (
               <div className="space-y-0.5">
-                <p className="px-3 pt-1 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                <p className="px-3 pt-1 text-sm font-medium text-muted-foreground">
                   My Dashboards
                 </p>
                 <SidebarMenu>{userList.map(renderLink)}</SidebarMenu>

@@ -56,9 +56,7 @@ export function CalendarTomorrowAdapter({ config }: { config: CalendarTomorrowCo
   }
 
   if (isError) {
-    return (
-      <WidgetError message="Failed to load calendar" />
-    );
+    return <WidgetError message="Failed to load calendar" />;
   }
 
   const all = (data?.data ?? []) as CalendarEvent[];

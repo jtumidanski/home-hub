@@ -80,10 +80,11 @@ export function getLocalDateStrOffset(tz: string | undefined, offsetDays: number
   const day = Number(parts.find((p) => p.type === "day")!.value);
 
   // Construct a Date at noon UTC on the resolved local date so adding days
-  // never crosses a DST cliff in the source timezone, then re-format in tz.
+  // never crosses a DST cliff in the source timezone, then format in UTC (the
+  // anchor already encodes the target calendar date).
   const anchor = new Date(Date.UTC(year, month - 1, day + offsetDays, 12, 0, 0));
   const out = new Intl.DateTimeFormat("en-CA", {
-    timeZone: resolved,
+    timeZone: "UTC",
     year: "numeric",
     month: "2-digit",
     day: "2-digit",
@@ -92,4 +93,15 @@ export function getLocalDateStrOffset(tz: string | undefined, offsetDays: number
   const m = out.find((p) => p.type === "month")!.value;
   const d = out.find((p) => p.type === "day")!.value;
   return `${y}-${m}-${d}`;
+}
+
+/**
+ * Formats a YYYY-MM-DD household-local date string as a short weekday ("Tue").
+ * The string is already a calendar date in the household timezone, so it is
+ * anchored at noon UTC and formatted in UTC to avoid any day shift.
+ */
+export function formatShortWeekday(dateStr: string): string {
+  const [y, m, d] = dateStr.split("-").map(Number);
+  const anchor = new Date(Date.UTC(y ?? 1970, (m ?? 1) - 1, d ?? 1, 12, 0, 0));
+  return new Intl.DateTimeFormat("en-US", { weekday: "short", timeZone: "UTC" }).format(anchor);
 }

@@ -1,5 +1,6 @@
 import { AlertTriangle, RefreshCw, Unlink, WifiOff } from "lucide-react";
 import { useState } from "react";
+import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import type { CalendarConnection } from "@/types/models/calendar";
@@ -79,7 +80,7 @@ export function ConnectionStatus({ connection }: ConnectionStatusProps) {
             aria-label="Sync now"
           >
             <RefreshCw
-              className={`h-4 w-4 ${triggerSync.isPending ? "animate-spin" : ""}`}
+              className={cn("h-4 w-4", triggerSync.isPending && "motion-safe:animate-spin")}
             />
           </Button>
           <Button

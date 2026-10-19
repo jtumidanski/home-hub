@@ -898,3 +898,101 @@ Rows with a DA ID in the commit message are marked (msg); others are mapped by d
 | Task 28B: no test pins `coarse:min-h-11` on `DropdownMenuItem` | Non-blocking | matches Non-Blocking 4 |
 
 None of the deferred items should block the PR.
+
+## Stage 7 — plan-adherence-reviewer
+
+**Verdict: PASS (plan adherence FULL for Tasks 29-33; no task or step unimplemented).** Range `a178868..HEAD`.
+
+| Task | Status | Evidence |
+|---|---|---|
+| 29 Households/settings/retention + guard | DONE | `73d44d7`, `b5c89cc`, `2705c1a`, `4eab0f7`; `frontend/src/__tests__/no-color-literals.test.ts:10` `PENDING = []`, `:83-84` case (e) `expect(PENDING).toEqual([])`; `ALLOWED = []` (:13). HouseholdsPage, HouseholdMembersPage, SettingsPage, DataRetentionPage and household components all in the diff with tests. |
+| 30 Remaining findings and sweep | DONE | Fix commits `fix(frontend): ... (DA-NNN)` (e.g. `a90decb` taxonomy icon buttons, `3eb503e`, `6f62067`). Spot check of `size="icon*"` hits (category-manager, recipe-selector, package-card) shows `aria-label` on each. `design-audit.md` has 155 rows, DA-121..155 tagged Stage 7. The `Resolved` SHA column is blank, which the plan defers to close-out; not a skip. |
+| 31 Finish review | DONE | Rounds 1-5 in `.superpowers/sdd/plan/progress.md`; rows DA-142..155 prefixed finish-review (`d394a82`, `a529e66`, `dcb77b0`, `f881937`); fixes `1b54bac`..`c4fdb7f`; round 5 "no material fixes (source)". Tests added for jsdom-observable fixes (weather, habits, package-summary, DashboardShell). Source mode and owed captures are a recorded ruling. |
+| 32 DESIGN.md | DONE | `1414685`: `frontend/DESIGN.md`, `frontend/.impeccable/design.json`. Contains `--warning-text` (:121,145), Fraunces >=18px rule (:182), `tnum` outcome (:185), `coarse:` rule (:192), reduced motion (:243), Exceptions (:257-261: empty ALLOWED, brand-mark/favicon, calendar user colours). The commit body states the ALLOWED cross-check as empty, so no pairs. |
+| 33 Final budgets | DONE | `5f13fd0`, `design-audit.md` Baselines: JS gzip 380966 vs 371767 (1.025x, limit 1.10x); latin fonts 56776 B vs 153600 B limit. Both within budget. |
+
+Independent check: `npx vitest run` in `frontend/` gives 166 files and 1023 tests passing. `npx tsc -b` reports only `vite.config.ts` TS2307 missing-module errors (vite, @vitejs/plugin-react, @tailwindcss/vite). That looks like an environment/node_modules issue, not a code defect, but `tools/verify.sh` should confirm.
+
+Non-blocking notes:
+- The 3 owed rendered captures (desktop 1280 light, mobile 390 dark, kiosk 1280x720 dark) must appear in the PR body per the ruling.
+- The `Resolved` SHAs in `design-audit.md` must be filled at close-out.
+
+## Stage 7 — frontend-guidelines-reviewer
+
+- **Audit Scope:** TS/TSX files changed in `a178868..HEAD -- frontend` (46 source files, 21 test files)
+- **Guidelines Source:** frontend-dev-guidelines skill
+- **Date:** 2026-10-19
+- **Build:** PASS (`npm run build`, exit 0; chunk-size warning only)
+- **Tests:** 1023 passed, 0 failed (166 files; `vitest run` — the `--watchAll=false` flag in the agent template is Jest-only and is rejected by vitest)
+- **Overall:** NEEDS-WORK
+
+### File Inventory
+
+- Pages: CalendarPage, DashboardShell, DataRetentionPage, HouseholdMembersPage, HouseholdsPage, RecipeDetailPage, RecipeFormPage, SettingsPage, WorkoutExercisesPage, WorkoutReviewPage, WorkoutTaxonomyPage, WorkoutTodayPage
+- Components: common/confirm-dialog (new); calendar/{calendar-grid, calendar-selection-panel, calendar-widget, connection-status, event-form-dialog, month-grid}; dashboard-widgets/calendar-tomorrow-adapter; households/{household-card, household-switcher, mobile-household-selector}; meals/{ingredient-preview, meal-plan-today-detail, meal-plan-widget}; navigation/{dashboards-nav-group, nav-group}; packages/{package-detail, package-summary-widget}; recipes/{cook-mode, ingredient-resolver, recipe-steps}; tracker/{calendar-grid, month-report, today-view, tracker-setup}; trackers/habits-widget; weather/{location-search, weather-widget}; workouts/workout-widget; ui/{dropdown-menu, sidebar}
+- Hook (non-API): lib/hooks/use-time-of-day.ts (new)
+- Other: lib/date-utils.ts, lib/constants/swatches.ts
+- No Service, Schema, Type-model, or `__mocks__` files changed.
+
+### Anti-Pattern Checklist
+
+| ID | Check | Status | Evidence |
+|----|-------|--------|----------|
+| FE-01 | No `any` | PASS | grep `: any` / `as any` / `<any>` over all 46 source files: 0 matches |
+| FE-02 | No manual class concatenation | WARN (pre-existing) | No added line concatenates. Unchanged template-literal classNames remain in touched files: frontend/src/components/features/packages/package-detail.tsx:62, frontend/src/pages/WorkoutExercisesPage.tsx:177, frontend/src/pages/WorkoutReviewPage.tsx:244, frontend/src/pages/WorkoutTodayPage.tsx:176 |
+| FE-03 | No direct API client in components | PASS | grep `lib/api/client`: 0 matches. Note (pre-existing): frontend/src/pages/DataRetentionPage.tsx:175 calls `retentionService.purge` directly rather than through a hook |
+| FE-04 | No inline Zod schemas | WARN (pre-existing) | frontend/src/pages/DataRetentionPage.tsx:33-34 `retentionDaysSchema(max)` factory lives in the page, not `lib/schemas/`; not touched by this branch |
+| FE-05 | No content spinners | PASS | Added spinners are action-pending only: frontend/src/components/features/calendar/calendar-selection-panel.tsx:46 (toggle.isPending), frontend/src/components/features/calendar/connection-status.tsx:83 (triggerSync.isPending). Content loading uses Skeleton (e.g. frontend/src/pages/DataRetentionPage.tsx:221-227, frontend/src/pages/HouseholdMembersPage.tsx:103-112) |
+| FE-06 | No hardcoded colors | PASS | grep palette classes / hex over source files: 0 matches; frontend/src/__tests__/no-color-literals.test.ts passes |
+| FE-07 | No state mutation | PASS | All `.sort`/`.push` hits operate on freshly derived locals: calendar-tomorrow-adapter.tsx:64-65 (spread then sort), meal-plan-widget.tsx:73-74 and meal-plan-today-detail.tsx:62-63 (filter then sort), meal-plan-today-detail.tsx:66-69 (local `followUps`) |
+| FE-08 | Named exports | PASS | grep `export default`: 0 matches; frontend/src/components/common/confirm-dialog.tsx:26, frontend/src/lib/hooks/use-time-of-day.ts:13 |
+| FE-09 | Tenant guard in API hooks | N/A | No `lib/hooks/api/` file changed |
+| FE-10 | Tenant id in query keys | N/A | No query key factory changed |
+| FE-11 | Error handling | PASS (new code) / WARN | New catches use `createErrorFromUnknown` + toast: frontend/src/pages/HouseholdMembersPage.tsx:64-98, frontend/src/pages/HouseholdsPage.tsx:40-50, frontend/src/components/features/households/mobile-household-selector.tsx:44-45. WARN (pre-existing pattern): frontend/src/pages/DataRetentionPage.tsx:342-346 shrink-confirm `onConfirm` awaits `applyPatch` without try/catch; the hook toasts (frontend/src/lib/hooks/api/use-retention.ts:44,58) but the rejection is unhandled |
+
+### Architecture Checklist
+
+| ID | Check | Status | Evidence |
+|----|-------|--------|----------|
+| FE-12 | JSON:API model shape | N/A | No `types/models/` change; `unitsLabelMap` consumed from frontend/src/types/models/household.ts:38 |
+| FE-13 | Service extends BaseService | N/A | No service changed |
+| FE-14 | Query keys `as const` | N/A | No key factory changed |
+| FE-15 | react-hook-form + zodResolver | PASS | frontend/src/pages/DataRetentionPage.tsx:72-73; frontend/src/components/features/calendar/event-form-dialog.tsx:89-90 |
+| FE-16 | Schema + inferred type | N/A | No `lib/schemas/` change |
+
+### Styling Checklist
+
+| ID | Check | Status | Evidence |
+|----|-------|--------|----------|
+| FE-19 | `cursor-pointer` on interactive elements | FAIL | frontend/src/components/features/households/mobile-household-selector.tsx:52-58 `DialogTrigger` (rewritten in this branch from a plain button to a primitive trigger, the exact case the guideline's task-048 precedent covers) has no `cursor-pointer`; frontend/src/components/features/households/mobile-household-selector.tsx:82-91 household row `<button>` className has none either, and no global `button { cursor: pointer }` rule exists in frontend/src/*.css (Tailwind v4 preflight leaves buttons at `cursor: default`). Passing elsewhere: weather-widget.tsx:108, nav-group.tsx trigger class, dropdown-menu.tsx item class, location-search.tsx option, WorkoutTodayPage.tsx:156, calendar/calendar-grid.tsx (`hasWriteAccess && "cursor-pointer"`), stretched-`<Link>` widget cards |
+
+### Testing Checklist
+
+| ID | Check | Status | Evidence |
+|----|-------|--------|----------|
+| FE-17 | Tests for changed components | FAIL | frontend/src/components/features/workouts/workout-widget.tsx (error state swapped to `WidgetError`, card hover/focus rewritten) has no test file; its siblings gained tests this stage (habits-widget, package-summary-widget, weather-widget). Covered indirectly: household-card via frontend/src/pages/__tests__/HouseholdsPage.test.tsx (unmocked render), use-time-of-day via frontend/src/pages/__tests__/DashboardShell.test.tsx:85-140. Trivial (≤5-line class tweaks), no test needed: calendar-selection-panel, connection-status, ingredient-preview, package-detail, cook-mode, ingredient-resolver, today-view, WorkoutExercisesPage. CalendarPage empty-state swap (14 lines) is untested (WARN) |
+| FE-18 | Mocks updated | N/A | No service changed |
+
+### Summary
+
+**Blocking (must fix)**
+- FE-19: frontend/src/components/features/households/mobile-household-selector.tsx:55 and :88, add `cursor-pointer` to the `DialogTrigger` and to the household row button className.
+- FE-17: add a frontend/src/components/features/workouts/__tests__/workout-widget.test.tsx that covers the `WidgetError` error state and the link-card render, matching the sibling widget tests.
+
+**Non-Blocking (should fix)**
+- FE-02 (pre-existing): 4 template-literal classNames listed above should use `cn()`.
+- FE-04 (pre-existing): move `retentionDaysSchema` to `lib/schemas/`.
+- FE-11 (pre-existing): wrap the DataRetentionPage shrink-confirm `onConfirm` in try/catch.
+- FE-17: CalendarPage has no test file.
+
+**Deferred minors triage (progress.md Tasks 29-33, plus the Task 5/7 DESIGN.md items)**
+- Task 5 `--calendar-busy` dark nudge: resolved, recorded at frontend/DESIGN.md:135,142. Leave.
+- Task 7 `--ease-out` overriding Tailwind's `ease-out`: not recorded in frontend/DESIGN.md (only :219,:243 mention the token). Leave (doc-only), or add one sentence.
+- 29A members loading back link / ConfirmDialog visible pending text: resolved (HouseholdMembersPage.tsx:105; confirm-dialog.tsx:23,35,54). Leave.
+- 29A warning Badge filled contrast unmeasured: leave.
+- 29B Purge as overflow + DA-138 test: resolved (DataRetentionPage.tsx DropdownMenu purge item; DataRetentionPage.test.tsx:100-116). Leave.
+- Task 30 WorkoutTodayPage button wrapping block div/p, chevron aria-hidden, weather cursor: resolved (WorkoutTodayPage.tsx:154-171 uses spans + aria-hidden; weather-widget.tsx:108). Leave.
+- Task 31 DashboardShell eslint-disable: resolved (DashboardShell.tsx:34-42 derives from localDate, no disable). Remaining items (DA-151/152 only on package widget, no own useTimeOfDay unit test, weather JSX formatting, calendar-tomorrow "Failed to load" string): leave.
+- Task 31 duplicate week-start derivation (meal-plan-widget.tsx:35-40 = meal-plan-today-detail.tsx:30-35), h4 @xl step, midnight test only on calendar: leave (duplication is a should-fix, not a guideline violation).
+- Task 31 meal-plan-widget label ramp untested / today-detail h3 step unasserted: leave.
+- Task 32 DESIGN.md "base layer" wording (frontend/DESIGN.md:243), per-swatch chroma, light-only frontmatter: leave.

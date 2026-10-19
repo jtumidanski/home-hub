@@ -15,16 +15,18 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { ErrorCard } from "@/components/common/error-card";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
+import { PageHeader } from "@/components/common/page-header";
+import { EmptyState } from "@/components/common/empty-state";
+import { ConfirmDialog } from "@/components/common/confirm-dialog";
 import { retentionService, type RetentionCategoryView } from "@/services/api/retention";
 import { useTenant } from "@/context/tenant-context";
+import { History, MoreHorizontal, Trash2 } from "lucide-react";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { toast } from "sonner";
 
 function retentionDaysSchema(max: number) {
@@ -60,7 +62,7 @@ interface RowProps {
   current: RetentionCategoryView;
   scope: "household" | "user";
   onSave: (category: string, days: number, currentValue: number) => Promise<void>;
-  onPurge: (category: string, scope: "household" | "user") => Promise<void>;
+  onPurge: (category: string, scope: "household" | "user") => void;
   saving: boolean;
 }
 
@@ -71,37 +73,61 @@ function CategoryRow({ category, current, scope, onSave, onPurge, saving }: RowP
     resolver: zodResolver(schema),
     defaultValues: { days: current.days },
   });
+  const label = CATEGORY_LABELS[category] ?? category;
+  const errorId = `${category}-days-error`;
 
   return (
-    <div className="flex flex-wrap items-center gap-3 py-3 border-b last:border-b-0">
-      <div className="flex-1 min-w-[180px]">
-        <div className="font-medium text-sm">{CATEGORY_LABELS[category] ?? category}</div>
-        <div className="text-xs text-muted-foreground">{category}</div>
+    <div className="flex flex-col gap-3 border-b py-3 last:border-b-0 sm:flex-row sm:items-center">
+      <div className="flex min-w-0 flex-1 items-center gap-2" title={category}>
+        <span className="text-sm font-medium">{label}</span>
+        <Badge variant={current.source === "default" ? "secondary" : "default"}>
+          {current.source === "default" ? "Default" : "Custom"}
+        </Badge>
       </div>
-      <Badge variant={current.source === "default" ? "secondary" : "default"}>
-        {current.source}
-      </Badge>
-      <div className="flex items-center gap-2">
+      <div className="flex items-start gap-2">
         <div>
           <Input
             type="number"
             {...register("days", { valueAsNumber: true })}
+            aria-label={`${label} retention days`}
+            aria-invalid={errors.days ? true : undefined}
+            aria-describedby={errors.days ? errorId : undefined}
             className="w-24"
           />
-          {errors.days && <p className="text-xs text-destructive mt-1">{errors.days.message}</p>}
+          {errors.days && (
+            <p id={errorId} className="mt-1 text-xs text-destructive">
+              {errors.days.message}
+            </p>
+          )}
         </div>
-        <span className="text-xs text-muted-foreground">days</span>
+        <span className="pt-2 text-xs text-muted-foreground">days</span>
+        <Button
+          size="sm"
+          disabled={!isDirty || saving || !!errors.days}
+          onClick={handleSubmit((data) => onSave(category, data.days, current.days))}
+        >
+          Save
+        </Button>
       </div>
-      <Button
-        size="sm"
-        disabled={!isDirty || saving || !!errors.days}
-        onClick={handleSubmit((data) => onSave(category, data.days, current.days))}
-      >
-        Save
-      </Button>
-      <Button size="sm" variant="outline" onClick={() => onPurge(category, scope)}>
-        Purge now
-      </Button>
+      <DropdownMenu>
+        <DropdownMenuTrigger
+          render={
+            <Button
+              variant="ghost"
+              size="icon"
+              className="sm:ml-2"
+              aria-label={`More actions for ${label}`}
+            />
+          }
+        >
+          <MoreHorizontal aria-hidden="true" className="h-4 w-4" />
+        </DropdownMenuTrigger>
+        <DropdownMenuContent>
+          <DropdownMenuItem variant="destructive" onClick={() => onPurge(category, scope)}>
+            <Trash2 aria-hidden="true" /> Purge now
+          </DropdownMenuItem>
+        </DropdownMenuContent>
+      </DropdownMenu>
     </div>
   );
 }
@@ -119,6 +145,11 @@ export function DataRetentionPage() {
     scope: "household" | "user";
     days: number;
     estimate: number | null;
+  } | null>(null);
+
+  const [purgeTarget, setPurgeTarget] = useState<{
+    category: string;
+    scope: "household" | "user";
   } | null>(null);
 
   const policies = data?.data?.attributes;
@@ -171,19 +202,27 @@ export function DataRetentionPage() {
     }
   }
 
-  async function handlePurge(category: string, scope: "household" | "user") {
+  function handlePurge(category: string, scope: "household" | "user") {
+    setPurgeTarget({ category, scope });
+  }
+
+  async function confirmPurge() {
+    if (!purgeTarget) return;
+    const { category, scope } = purgeTarget;
     try {
       const result = await purge.mutateAsync({ category, scope });
       toast.success(`Purged ${result.data?.attributes?.deleted ?? 0} rows`);
     } catch {
       // toast handled in hook
+    } finally {
+      setPurgeTarget(null);
     }
   }
 
   if (isLoading) {
     return (
-      <div className="p-4 md:p-6 space-y-6">
-        <Skeleton className="h-8 w-48" />
+      <div className="p-4 md:p-6 space-y-6" role="status" aria-label="Loading">
+        <PageHeader title="Data Retention" />
         <Skeleton className="h-64 w-full" />
       </div>
     );
@@ -199,12 +238,10 @@ export function DataRetentionPage() {
 
   return (
     <div className="p-4 md:p-6 space-y-6">
-      <div>
-        <h1 className="text-xl md:text-2xl font-semibold">Data Retention</h1>
-        <p className="text-sm text-muted-foreground mt-1">
-          Configure how long Home Hub keeps each kind of data. Lower windows shrink your footprint at the cost of less history.
-        </p>
-      </div>
+      <PageHeader
+        title="Data Retention"
+        description="Configure how long Home Hub keeps each kind of data. Lower windows shrink your footprint at the cost of less history."
+      />
 
       {policies.household && (
         <Card>
@@ -259,7 +296,12 @@ export function DataRetentionPage() {
           {runsQuery.isLoading ? (
             <Skeleton className="h-40 w-full" />
           ) : !runsQuery.data?.data?.length ? (
-            <p className="text-sm text-muted-foreground">No reaper runs yet.</p>
+            <EmptyState
+              icon={History}
+              title="No reaper runs yet"
+              description="Purges will be listed here once the retention reaper has run."
+              headingLevel="h3"
+            />
           ) : (
             <div className="space-y-1 text-sm">
               {runsQuery.data.data.map((run) => (
@@ -280,36 +322,53 @@ export function DataRetentionPage() {
         </CardContent>
       </Card>
 
-      <Dialog open={!!shrinkWarning} onOpenChange={(o) => !o && setShrinkWarning(null)}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Shrink retention window?</DialogTitle>
-            <DialogDescription>
-              {shrinkWarning && (
-                <>
-                  Lowering <strong>{CATEGORY_LABELS[shrinkWarning.category] ?? shrinkWarning.category}</strong> to{" "}
-                  <strong>{shrinkWarning.days} days</strong> will permanently delete approximately{" "}
-                  <strong>{shrinkWarning.estimate ?? "?"}</strong> rows on the next reaper run.
-                </>
-              )}
-            </DialogDescription>
-          </DialogHeader>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setShrinkWarning(null)}>
-              Cancel
-            </Button>
-            <Button
-              onClick={async () => {
-                if (!shrinkWarning) return;
-                await applyPatch(shrinkWarning.scope, shrinkWarning.category, shrinkWarning.days);
-                setShrinkWarning(null);
-              }}
-            >
-              Confirm
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+      <ConfirmDialog
+        open={!!shrinkWarning}
+        onOpenChange={(o) => {
+          if (!o) setShrinkWarning(null);
+        }}
+        title="Shrink retention window?"
+        description={
+          shrinkWarning && (
+            <>
+              Lowering <strong>{CATEGORY_LABELS[shrinkWarning.category] ?? shrinkWarning.category}</strong> to{" "}
+              <strong>{shrinkWarning.days} days</strong> will permanently delete approximately{" "}
+              <strong>{shrinkWarning.estimate ?? "?"}</strong> rows on the next reaper run.
+            </>
+          )
+        }
+        confirmLabel="Confirm"
+        pending={patchHousehold.isPending || patchUser.isPending}
+        onConfirm={async () => {
+          if (!shrinkWarning) return;
+          try {
+            await applyPatch(shrinkWarning.scope, shrinkWarning.category, shrinkWarning.days);
+          } catch {
+            // The mutation hook already surfaces the error toast; keep the dialog open.
+            return;
+          }
+          setShrinkWarning(null);
+        }}
+      />
+
+      <ConfirmDialog
+        open={!!purgeTarget}
+        onOpenChange={(o) => {
+          if (!o) setPurgeTarget(null);
+        }}
+        title="Purge now?"
+        description={
+          purgeTarget && (
+            <>
+              This will permanently delete expired{" "}
+              <strong>{CATEGORY_LABELS[purgeTarget.category] ?? purgeTarget.category}</strong> data immediately. This cannot be undone.
+            </>
+          )
+        }
+        confirmLabel="Purge now"
+        pending={purge.isPending}
+        onConfirm={confirmPurge}
+      />
     </div>
   );
 }

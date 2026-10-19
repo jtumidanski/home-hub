@@ -1,4 +1,5 @@
 import { useRef, useEffect } from "react";
+import { cn } from "@/lib/utils";
 import type { CalendarEvent } from "@/types/models/calendar";
 import { useTenant } from "@/context/tenant-context";
 import { EventBlock } from "./event-block";
@@ -77,14 +78,15 @@ export function CalendarGrid({
         {days.map((day, i) => (
           <div
             key={i}
-            className={`flex-1 text-center py-2 border-r last:border-r-0 ${
-              isToday(day, timezone) ? "bg-primary/10" : ""
-            }`}
+            className={cn(
+              "flex-1 text-center py-2 border-r last:border-r-0",
+              isToday(day, timezone) && "bg-primary/10",
+            )}
           >
-            <div className="text-xs text-muted-foreground uppercase">
+            <div className="text-xs text-muted-foreground">
               {day.toLocaleDateString("en-US", { weekday: "short" })}
             </div>
-            <div className={`text-lg font-semibold ${isToday(day, timezone) ? "text-primary" : ""}`}>
+            <div className={cn("text-lg font-semibold", isToday(day, timezone) && "text-primary")}>
               {day.getDate()}
             </div>
           </div>
@@ -135,7 +137,11 @@ export function CalendarGrid({
             return (
               <div
                 key={dayIdx}
-                className={`flex-1 border-r last:border-r-0 relative ${today ? "bg-primary/5" : ""} ${hasWriteAccess ? "cursor-pointer" : ""}`}
+                className={cn(
+                  "flex-1 border-r last:border-r-0 relative",
+                  today && "bg-primary/5",
+                  hasWriteAccess && "cursor-pointer",
+                )}
                 onClick={(e) => handleColumnClick(day, e)}
               >
                 {/* Hour grid lines */}

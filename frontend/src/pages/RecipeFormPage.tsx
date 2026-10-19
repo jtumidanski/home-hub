@@ -209,7 +209,7 @@ export function RecipeFormPage() {
                 {(derivedTitle || derivedDescription) && (
                   <div className="space-y-1 border-b pb-3">
                     {derivedTitle ? (
-                      <h2 className="text-lg font-semibold leading-tight">{derivedTitle}</h2>
+                      <h2 className="text-lg font-heading tracking-[-0.01em] leading-tight">{derivedTitle}</h2>
                     ) : (
                       <p className="text-sm italic text-muted-foreground">Missing title — add `title:` to frontmatter</p>
                     )}

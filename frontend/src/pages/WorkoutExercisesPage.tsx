@@ -1,3 +1,4 @@
+import { cn } from "@/lib/utils";
 import { useState } from "react";
 import { Dumbbell, Plus, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -39,7 +40,7 @@ export function WorkoutExercisesPage() {
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between">
-        <h2 className="text-lg font-semibold">Exercises</h2>
+        <h2 className="text-lg font-heading tracking-[-0.01em]">Exercises</h2>
         <Button onClick={() => setOpen(true)}>
           <Plus className="h-4 w-4 mr-1" /> New
         </Button>
@@ -174,7 +175,7 @@ function ExerciseCreateDialog({
             <Label htmlFor="ex-name">Name</Label>
             <Input id="ex-name" value={name} onChange={(e) => setName(e.target.value)} />
           </div>
-          <div className={`grid gap-2 ${kind === "strength" ? "grid-cols-2" : "grid-cols-1"}`}>
+          <div className={cn("grid gap-2", kind === "strength" ? "grid-cols-2" : "grid-cols-1")}>
             <div>
               <Label>Kind</Label>
               <Select value={kind} onValueChange={(v) => setKind(v as WorkoutKind)}>

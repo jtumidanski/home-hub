@@ -1,10 +1,11 @@
-import { useNavigate } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { useCurrentWeather, useWeatherForecast } from "@/lib/hooks/api/use-weather";
 import { useTenant } from "@/context/tenant-context";
 import { hasLocation } from "@/types/models/household";
 import { WeatherIcon } from "@/components/common/weather-icon";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
+import { WidgetError } from "@/components/features/dashboard-widgets/widget-error";
 import { AlertTriangle, MapPin } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
@@ -32,30 +33,6 @@ function ForecastDayColumn({ label, icon, high, low, summary }: {
       <span title={summary}>
         <WeatherIcon icon={icon} className="size-6 @xl:size-10 shrink-0 text-foreground" />
       </span>
-      <div className="text-xs @xl:text-xl tabular-nums">
-        <span className="font-medium">{Math.round(high)}°</span>
-        <span className="text-muted-foreground ml-0.5">{Math.round(low)}°</span>
-      </div>
-    </div>
-  );
-}
-
-function CurrentDayColumn({ icon, summary, temp, tempUnit, high, low }: {
-  icon: string;
-  summary: string;
-  temp: number;
-  tempUnit: string;
-  high: number;
-  low: number;
-}) {
-  return (
-    <div className="flex flex-col items-center text-center gap-0.5">
-      <div className="flex items-center gap-1">
-        <span title={summary}>
-          <WeatherIcon icon={icon} className="size-6 @xl:size-10 shrink-0 text-foreground" />
-        </span>
-        <span className="tabular-nums text-3xl @md:text-display font-bold">{Math.round(temp)}{tempUnit}</span>
-      </div>
       <div className="text-xs @xl:text-xl tabular-nums">
         <span className="font-medium">{Math.round(high)}°</span>
         <span className="text-muted-foreground ml-0.5">{Math.round(low)}°</span>
@@ -124,64 +101,37 @@ export function WeatherWidget(_props: WeatherWidgetProps = {}) {
   const weather = data?.data?.attributes;
 
   if (isError || !weather) {
-    return (
-      <Card className="@container h-full">
-        <CardContent className="flex items-center gap-2 py-6 text-muted-foreground">
-          <AlertTriangle className="size-4 @xl:size-6 shrink-0" />
-          <span className="text-sm @xl:text-xl">Weather data unavailable</span>
-        </CardContent>
-      </Card>
-    );
+    return <WidgetError message="Weather data unavailable" />;
   }
 
   return (
-    <Card
-      className="@container h-full cursor-pointer hover:bg-accent/50 transition-colors"
-      onClick={() => navigate("/app/weather")}
-    >
+    <Card className="@container relative h-full cursor-pointer hover:bg-accent/50 transition-colors">
       <CardHeader className="pb-2">
-        <CardTitle className="font-heading text-lg @xl:text-2xl">Weather</CardTitle>
+        <CardTitle className="font-heading text-lg @xl:text-2xl">
+          <Link
+            to="/app/weather"
+            className="rounded-sm outline-none after:absolute after:inset-0 after:content-[''] focus-visible:after:outline-2 focus-visible:after:outline-offset-2 focus-visible:after:outline-ring"
+          >
+            Weather
+          </Link>
+        </CardTitle>
       </CardHeader>
       <CardContent>
-        {/* Mobile: centered current conditions + 3-col preview */}
-        <div className="md:hidden">
-          <div className="flex items-center justify-center gap-2">
-            <span title={weather.summary}>
-              <WeatherIcon icon={weather.icon} className="size-8 @xl:size-12 shrink-0 text-foreground" />
-            </span>
-            <span className="tabular-nums text-3xl @md:text-display font-bold">
-              {Math.round(weather.temperature)}{weather.temperatureUnit}
-            </span>
-          </div>
-          <p className="text-xs @xl:text-base text-muted-foreground mt-1 text-center tabular-nums">
-            H:{Math.round(weather.highTemperature)}° L:{Math.round(weather.lowTemperature)}°
-          </p>
-          {forecastData?.data && forecastData.data.length >= 4 && (
-            <div className="grid grid-cols-3 gap-1 mt-3 pt-3 border-t">
-              {forecastData.data.slice(1, 4).map((day) => (
-                <ForecastDayColumn
-                  key={day.id}
-                  label={formatDayName(day.attributes.date)}
-                  icon={day.attributes.icon}
-                  high={day.attributes.highTemperature}
-                  low={day.attributes.lowTemperature}
-                  summary={day.attributes.summary}
-                />
-              ))}
-            </div>
-          )}
+        <div className="flex items-center gap-3">
+          <span title={weather.summary}>
+            <WeatherIcon icon={weather.icon} className="size-10 @xl:size-14 shrink-0 text-foreground" />
+          </span>
+          <span className="tabular-nums text-display font-bold leading-none">
+            {Math.round(weather.temperature)}{weather.temperatureUnit}
+          </span>
         </div>
-        {/* Desktop: 4 equal columns with Today including current temp */}
+        <p className="mt-2 text-sm @xl:text-lg text-muted-foreground">{weather.summary}</p>
+        <p className="mt-1 text-sm @xl:text-lg tabular-nums">
+          <span className="font-medium">H {Math.round(weather.highTemperature)}°</span>
+          <span className="ml-3 text-muted-foreground">L {Math.round(weather.lowTemperature)}°</span>
+        </p>
         {forecastData?.data && forecastData.data.length >= 4 && (
-          <div className="hidden md:grid md:grid-cols-4 md:gap-2">
-            <CurrentDayColumn
-              icon={weather.icon}
-              summary={weather.summary}
-              temp={weather.temperature}
-              tempUnit={weather.temperatureUnit}
-              high={weather.highTemperature}
-              low={weather.lowTemperature}
-            />
+          <div className="mt-3 grid grid-cols-3 gap-2 border-t border-border pt-3">
             {forecastData.data.slice(1, 4).map((day) => (
               <ForecastDayColumn
                 key={day.id}

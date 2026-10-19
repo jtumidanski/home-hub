@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
-import { render, screen } from "@testing-library/react";
+import { render, screen, act } from "@testing-library/react";
 import { MemoryRouter, Routes, Route } from "react-router-dom";
 import type { Dashboard } from "@/types/models/dashboard";
 
@@ -10,6 +10,11 @@ vi.mock("@/lib/hooks/api/use-dashboards", () => ({
 
 vi.mock("@/context/tenant-context", () => ({
   useTenant: () => ({ household: { attributes: { timezone: "America/New_York" } } }),
+}));
+
+const authUser = { value: { attributes: { displayName: "Jordan Smith" } } as unknown };
+vi.mock("@/components/providers/auth-provider", () => ({
+  useAuth: () => ({ user: authUser.value }),
 }));
 
 const mobileFlag = { value: false };
@@ -75,15 +80,72 @@ describe("DashboardShell Edit button", () => {
 });
 
 describe("DashboardShell header", () => {
-  it("renders the dashboard name as h1 and a household-timezone date", () => {
+  function atTime(iso: string, fn: () => void) {
     vi.useFakeTimers();
-    vi.setSystemTime(new Date("2026-03-05T02:00:00Z"));
+    vi.setSystemTime(new Date(iso));
     try {
       mobileFlag.value = false;
+      fn();
+    } finally {
+      vi.useRealTimers();
+    }
+  }
+
+  it("greets by household-local time of day with first name, date and dashboard name", () => {
+    // 02:00Z on the 5th is 21:00 on the 4th in New York.
+    atTime("2026-03-05T02:00:00Z", () => {
       renderShell();
-      expect(screen.getByRole("heading", { level: 1, name: "Home" })).toBeInTheDocument();
-      // 02:00Z on the 5th is still the evening of the 4th in New York.
-      expect(screen.getByText("Wednesday, March 4")).toBeInTheDocument();
+      expect(
+        screen.getByRole("heading", { level: 1, name: "Good evening, Jordan" }),
+      ).toBeInTheDocument();
+      expect(screen.getByText(/Wednesday, March 4/)).toBeInTheDocument();
+      expect(screen.getByText("Home")).toBeInTheDocument();
+    });
+  });
+
+  it("says good morning and afternoon at the right hours", () => {
+    atTime("2026-03-05T14:00:00Z", () => {
+      renderShell();
+      expect(screen.getByRole("heading", { level: 1 })).toHaveTextContent("Good morning, Jordan");
+    });
+    atTime("2026-03-05T19:00:00Z", () => {
+      renderShell();
+      expect(screen.getAllByRole("heading", { level: 1 }).pop()).toHaveTextContent(
+        "Good afternoon, Jordan",
+      );
+    });
+  });
+
+  it("omits the name when the user has none", () => {
+    authUser.value = null;
+    atTime("2026-03-05T14:00:00Z", () => {
+      renderShell();
+      expect(screen.getByRole("heading", { level: 1 })).toHaveTextContent(/^Good morning$/);
+    });
+    authUser.value = { attributes: { displayName: "Jordan Smith" } };
+  });
+
+  it("refreshes greeting and date as time passes", () => {
+    mobileFlag.value = false;
+    vi.useFakeTimers();
+    try {
+      vi.setSystemTime(new Date("2026-03-05T16:59:30Z")); // 11:59 in New York
+      renderShell();
+      expect(screen.getByRole("heading", { level: 1 })).toHaveTextContent("Good morning, Jordan");
+      act(() => {
+        vi.advanceTimersByTime(120_000);
+      });
+      expect(screen.getByRole("heading", { level: 1 })).toHaveTextContent("Good afternoon, Jordan");
+
+      vi.setSystemTime(new Date("2026-03-06T04:58:30Z")); // 23:58 on the 5th
+      act(() => {
+        vi.advanceTimersByTime(60_000);
+      });
+      expect(screen.getByText(/Thursday, March 5/)).toBeInTheDocument();
+      act(() => {
+        vi.advanceTimersByTime(120_000);
+      });
+      expect(screen.getByText(/Friday, March 6/)).toBeInTheDocument();
     } finally {
       vi.useRealTimers();
     }

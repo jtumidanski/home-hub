@@ -3,8 +3,9 @@ import { Link } from "react-router-dom";
 import { useCalendarEvents } from "@/lib/hooks/api/use-calendar";
 import { Card, CardAction, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
+import { WidgetError } from "@/components/features/dashboard-widgets/widget-error";
 import { CalendarDays, ChevronRight } from "lucide-react";
-import { getLocalTodayRange, getLocalTodayStr } from "@/lib/date-utils";
+import { useLocalDate } from "@/lib/hooks/use-local-date";
 import { useTenant } from "@/context/tenant-context";
 import type { CalendarEvent } from "@/types/models/calendar";
 
@@ -39,8 +40,14 @@ export interface CalendarWidgetProps {
 export function CalendarWidget(_props: CalendarWidgetProps = {}) {
   const { household } = useTenant();
   const timezone = household?.attributes.timezone;
-  const { start, end } = useMemo(() => getLocalTodayRange(timezone), [timezone]);
-  const todayStr = useMemo(() => getLocalTodayStr(timezone), [timezone]);
+  const todayStr = useLocalDate(timezone);
+  const { start, end } = useMemo(() => {
+    const [y = 1970, m = 1, d = 1] = todayStr.split("-").map(Number);
+    return {
+      start: new Date(y, m - 1, d, 0, 0, 0, 0).toISOString(),
+      end: new Date(y, m - 1, d, 23, 59, 59, 999).toISOString(),
+    };
+  }, [todayStr]);
   const { data, isLoading, isError } = useCalendarEvents(start, end);
 
   if (isLoading) {
@@ -59,13 +66,7 @@ export function CalendarWidget(_props: CalendarWidgetProps = {}) {
   }
 
   if (isError) {
-    return (
-      <Card className="border-destructive">
-        <CardContent className="py-3">
-          <p className="text-sm text-destructive">Failed to load calendar events</p>
-        </CardContent>
-      </Card>
-    );
+    return <WidgetError message="Failed to load calendar events" />;
   }
 
   const events = sortEvents(
@@ -78,8 +79,8 @@ export function CalendarWidget(_props: CalendarWidgetProps = {}) {
   );
 
   return (
-    <Link to="/app/calendar" className="block h-full transition-opacity hover:opacity-80">
-      <Card className="h-full">
+    <Link to="/app/calendar" className="@container group/calendar block h-full rounded-xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
+      <Card className="@container h-full motion-safe:transition-colors group-hover/calendar:bg-accent">
         <CardHeader>
           <CardTitle className="font-heading text-lg @xl:text-2xl">Calendar</CardTitle>
           <CardAction>
@@ -89,8 +90,8 @@ export function CalendarWidget(_props: CalendarWidgetProps = {}) {
         <CardContent>
           {events.length === 0 ? (
             <div className="flex items-center gap-2 text-muted-foreground">
-              <CalendarDays className="size-5 @xl:size-6 shrink-0" />
-              <p className="text-sm">No events today</p>
+              <CalendarDays className="size-5 @xl:size-6 shrink-0" aria-hidden="true" />
+              <p className="text-sm @xl:text-xl">No events today</p>
             </div>
           ) : (
             <div className="space-y-2">
