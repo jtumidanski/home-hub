@@ -5,9 +5,16 @@ import { TrackerSetup } from "@/components/features/tracker/tracker-setup";
 import { TodayView } from "@/components/features/tracker/today-view";
 import { CalendarGrid } from "@/components/features/tracker/calendar-grid";
 import { MonthReport } from "@/components/features/tracker/month-report";
+import { PageHeader } from "@/components/common/page-header";
 import { getLocalMonth } from "@/lib/date-utils";
 
 type View = "today" | "calendar" | "setup" | "report";
+
+const VIEWS = [
+  { id: "today", label: "Today", icon: ListChecks },
+  { id: "calendar", label: "Calendar", icon: CalendarDays },
+  { id: "setup", label: "Setup", icon: Settings },
+] as const;
 
 export function TrackerPage() {
   const [view, setView] = useState<View>("today");
@@ -20,27 +27,31 @@ export function TrackerPage() {
 
   return (
     <div className="p-4 md:p-6 space-y-4">
-      <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold">Habits</h1>
-        <div className="flex gap-1">
-          <Button variant={view === "today" ? "default" : "ghost"} size="sm" onClick={() => setView("today")}>
-            <ListChecks className="h-4 w-4 mr-1" /> Today
-          </Button>
-          <Button variant={view === "calendar" ? "default" : "ghost"} size="sm" onClick={() => setView("calendar")}>
-            <CalendarDays className="h-4 w-4 mr-1" /> Calendar
-          </Button>
-          <Button variant={view === "setup" ? "default" : "ghost"} size="sm" onClick={() => setView("setup")}>
-            <Settings className="h-4 w-4 mr-1" /> Setup
-          </Button>
-        </div>
-      </div>
+      <PageHeader
+        title="Habits"
+        actions={
+          <div role="group" aria-label="Habits view" className="flex gap-1">
+            {VIEWS.map(({ id, label, icon: Icon }) => (
+              <Button
+                key={id}
+                variant={view === id ? "default" : "ghost"}
+                size="sm"
+                aria-pressed={view === id}
+                onClick={() => setView(id)}
+              >
+                <Icon className="h-4 w-4 mr-1" aria-hidden="true" /> {label}
+              </Button>
+            ))}
+          </div>
+        }
+      />
 
       <div className={`mx-auto ${widthClass}`}>
         {view === "today" && (
           <TodayView />
         )}
         {view === "calendar" && (
-          <CalendarGrid month={month} onMonthChange={setMonth} onViewReport={() => setView("report")} />
+          <CalendarGrid month={month} onMonthChange={setMonth} onViewReport={() => setView("report")} onOpenSetup={() => setView("setup")} />
         )}
         {view === "setup" && <TrackerSetup />}
         {view === "report" && (
