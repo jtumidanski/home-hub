@@ -57,8 +57,8 @@ export function TrackerSetup() {
                 </div>
               </div>
               <div className="flex gap-1">
-                <Button variant="ghost" size="icon" onClick={() => setEditTracker(t)}><Pencil className="h-4 w-4" /></Button>
-                <Button variant="ghost" size="icon" onClick={() => setDeleteTarget(t)}><Trash2 className="h-4 w-4" /></Button>
+                <Button variant="ghost" size="icon" aria-label={`Edit ${t.attributes.name}`} onClick={() => setEditTracker(t)}><Pencil aria-hidden="true" className="h-4 w-4" /></Button>
+                <Button variant="ghost" size="icon" aria-label={`Delete ${t.attributes.name}`} onClick={() => setDeleteTarget(t)}><Trash2 aria-hidden="true" className="h-4 w-4" /></Button>
               </div>
             </CardContent>
           </Card>

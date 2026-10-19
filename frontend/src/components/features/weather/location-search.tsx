@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { X, MapPin, Loader2 } from "lucide-react";
 import type { GeocodingResult } from "@/types/models/weather";
+import { cn } from "@/lib/utils";
 
 interface LocationSearchProps {
   value: string | null | undefined;
@@ -151,9 +152,7 @@ export function LocationSearch({ value, onSelect, onClear, isPending }: Location
               id={optionId(index)}
               role="option"
               aria-selected={index === selectedIndex}
-              className={`w-full cursor-pointer px-3 py-2 text-left text-sm hover:bg-accent ${
-                index === selectedIndex ? "bg-accent" : ""
-              }`}
+              className={cn("w-full cursor-pointer px-3 py-2 text-left text-sm hover:bg-accent", index === selectedIndex && "bg-accent")}
               onClick={() => handleSelect(result)}
             >
               <span className="font-medium">{result.attributes.name}</span>

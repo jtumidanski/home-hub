@@ -7,6 +7,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { AlertTriangle, MapPin } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { cn } from "@/lib/utils";
 
 function formatTime(isoString: string): string {
   const date = new Date(isoString);
@@ -197,7 +198,7 @@ export function WeatherWidget(_props: WeatherWidgetProps = {}) {
           {household?.attributes.locationName && (
             <span>{household.attributes.locationName}</span>
           )}
-          <span className={`ml-auto flex items-center gap-1 tabular-nums ${isStale ? "text-warning-text" : ""}`}>
+          <span className={cn("ml-auto flex items-center gap-1 tabular-nums", isStale && "text-warning-text")}>
             {isStale && <AlertTriangle aria-hidden="true" className="size-4 @xl:size-6" />}
             {isStale && <span>Stale</span>}
             {formatTime(weather.fetchedAt)}

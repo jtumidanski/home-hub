@@ -3,6 +3,7 @@ import { ChevronDown, ChevronUp, RefreshCw, Archive, ArchiveRestore, Trash2, Loc
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { cn } from "@/lib/utils";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -106,7 +107,7 @@ export function PackageCard({ pkg }: PackageCardProps) {
                       title="Refresh tracking"
                       aria-label="Refresh tracking"
                     >
-                      <RefreshCw className={`h-3.5 w-3.5 ${refreshMutation.isPending ? "animate-spin" : ""}`} />
+                      <RefreshCw className={cn("h-3.5 w-3.5", refreshMutation.isPending && "animate-spin")} />
                     </Button>
                     <Button
                       variant="ghost"
