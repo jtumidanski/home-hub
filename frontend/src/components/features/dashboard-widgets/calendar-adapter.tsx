@@ -12,9 +12,11 @@ export interface CalendarAdapterConfig {
  */
 export function CalendarAdapter({ config }: { config: CalendarAdapterConfig }) {
   return (
-    <CalendarWidget
-      horizonDays={config.horizonDays}
-      includeAllDay={config.includeAllDay}
-    />
+    <div className="@container h-full">
+      <CalendarWidget
+        horizonDays={config.horizonDays}
+        includeAllDay={config.includeAllDay}
+      />
+    </div>
   );
 }

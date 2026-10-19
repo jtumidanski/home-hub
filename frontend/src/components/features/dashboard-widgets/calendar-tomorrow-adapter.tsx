@@ -44,7 +44,7 @@ export function CalendarTomorrowAdapter({ config }: { config: CalendarTomorrowCo
 
   if (isLoading) {
     return (
-      <Card className="h-full">
+      <Card className="@container h-full">
         <CardHeader><Skeleton className="h-5 w-32" data-slot="skeleton" /></CardHeader>
         <CardContent className="space-y-2">
           <Skeleton className="h-4 w-full" data-slot="skeleton" />
@@ -56,7 +56,7 @@ export function CalendarTomorrowAdapter({ config }: { config: CalendarTomorrowCo
 
   if (isError) {
     return (
-      <Card className="h-full border-destructive">
+      <Card className="@container h-full border-destructive">
         <CardContent className="py-3"><p className="text-sm text-destructive">Failed to load calendar</p></CardContent>
       </Card>
     );
@@ -74,24 +74,24 @@ export function CalendarTomorrowAdapter({ config }: { config: CalendarTomorrowCo
   const remainder = sorted.length - visible.length;
 
   return (
-    <Card className="h-full">
+    <Card className="@container h-full">
       <CardHeader>
-        <CardTitle className="text-sm font-medium">
+        <CardTitle className="font-heading text-lg @xl:text-2xl">
           <Link to="/app/calendar" className="hover:underline">Tomorrow</Link>
         </CardTitle>
-        <CardAction><Link to="/app/calendar"><ChevronRight className="h-4 w-4 text-muted-foreground" /></Link></CardAction>
+        <CardAction><Link to="/app/calendar"><ChevronRight className="size-4 @xl:size-6 text-muted-foreground" /></Link></CardAction>
       </CardHeader>
       <CardContent>
         {visible.length === 0 ? (
           <div className="flex items-center gap-2 text-muted-foreground">
-            <CalendarDays className="h-5 w-5" />
-            <p className="text-sm">No events tomorrow</p>
+            <CalendarDays className="size-5 @xl:size-6" />
+            <p className="text-sm @xl:text-xl">No events tomorrow</p>
           </div>
         ) : (
           <ul className="space-y-2">
             {visible.map((e) => (
-              <li key={e.id} className="flex items-start gap-2 text-sm">
-                <span className="text-xs font-medium text-muted-foreground w-16 shrink-0 pt-0.5">
+              <li key={e.id} className="flex items-start gap-2 text-sm @xl:text-xl">
+                <span className="text-xs @xl:text-base font-medium text-muted-foreground w-16 shrink-0 pt-0.5">
                   {e.attributes.allDay ? "All Day" : formatTime(e.attributes.startTime)}
                 </span>
                 <span className="flex items-center gap-1.5 min-w-0">
@@ -101,7 +101,7 @@ export function CalendarTomorrowAdapter({ config }: { config: CalendarTomorrowCo
               </li>
             ))}
             {remainder > 0 && (
-              <li className="text-xs text-muted-foreground">+{remainder} more</li>
+              <li className="text-xs @xl:text-base text-muted-foreground">+{remainder} more</li>
             )}
           </ul>
         )}

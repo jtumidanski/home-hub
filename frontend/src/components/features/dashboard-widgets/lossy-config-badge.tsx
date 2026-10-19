@@ -12,7 +12,7 @@ export function LossyConfigBadge() {
       className="absolute right-2 top-2 gap-1 bg-background/90 backdrop-blur"
       title="Saved configuration was invalid and reduced to defaults. Edit this widget to reconfigure."
     >
-      <AlertTriangle className="h-3 w-3" />
+      <AlertTriangle className="size-3" />
       reduced to defaults
     </Badge>
   );

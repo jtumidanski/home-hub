@@ -8,5 +8,9 @@ export interface PackagesSummaryAdapterConfig {
 export function PackagesSummaryAdapter({ config: _config }: { config: PackagesSummaryAdapterConfig }) {
   // PackageSummaryWidget manages its own title; the registry config
   // accepts an optional override for future use.
-  return <PackageSummaryWidget />;
+  return (
+    <div className="@container h-full">
+      <PackageSummaryWidget />
+    </div>
+  );
 }

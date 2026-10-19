@@ -22,7 +22,7 @@ export function TasksTodayAdapter({ config }: { config: TasksTodayConfig }) {
 
   if (isLoading) {
     return (
-      <Card className="h-full">
+      <Card className="@container h-full">
         <CardHeader><Skeleton className="h-5 w-28" data-slot="skeleton" /></CardHeader>
         <CardContent className="space-y-2">
           <Skeleton className="h-4 w-full" data-slot="skeleton" />
@@ -34,7 +34,7 @@ export function TasksTodayAdapter({ config }: { config: TasksTodayConfig }) {
 
   if (isError) {
     return (
-      <Card className="h-full border-destructive">
+      <Card className="@container h-full border-destructive">
         <CardContent className="py-3"><p className="text-sm text-destructive">Failed to load tasks</p></CardContent>
       </Card>
     );
@@ -56,23 +56,23 @@ export function TasksTodayAdapter({ config }: { config: TasksTodayConfig }) {
     completedToday.length > 0;
 
   return (
-    <Card className="h-full">
+    <Card className="@container h-full">
       <CardHeader>
-        <CardTitle className="text-sm font-medium">
+        <CardTitle className="font-heading text-lg @xl:text-2xl">
           <Link to="/app/tasks" className="hover:underline">{title}</Link>
         </CardTitle>
-        <CardAction><Link to="/app/tasks"><ChevronRight className="h-4 w-4 text-muted-foreground" /></Link></CardAction>
+        <CardAction><Link to="/app/tasks"><ChevronRight className="size-4 @xl:size-6 text-muted-foreground" /></Link></CardAction>
       </CardHeader>
       <CardContent className="space-y-3">
         {overdue.length > 0 && (
           <section>
-            <h4 className="text-xs font-medium text-destructive flex items-center gap-1">
-              <AlertTriangle className="h-3 w-3" />
+            <h4 className="text-xs @xl:text-base font-medium text-destructive flex items-center gap-1">
+              <AlertTriangle className="size-3 @xl:size-5" />
               Overdue ({overdue.length})
             </h4>
             <ul className="mt-1 space-y-1">
               {overdue.map((t) => (
-                <li key={t.id} className="text-sm">
+                <li key={t.id} className="text-sm @xl:text-xl">
                   <Link to="/app/tasks" className="hover:underline">{t.attributes.title}</Link>
                 </li>
               ))}
@@ -81,17 +81,17 @@ export function TasksTodayAdapter({ config }: { config: TasksTodayConfig }) {
         )}
         {todayTasks.length > 0 ? (
           <section>
-            <h4 className="text-xs font-medium text-muted-foreground">Today</h4>
+            <h4 className="text-xs @xl:text-base @xl:text-base font-medium text-muted-foreground">Today</h4>
             <ul className="mt-1 space-y-1">
               {todayTasks.map((t) => (
-                <li key={t.id} className="text-sm">
+                <li key={t.id} className="text-sm @xl:text-xl">
                   <Link to="/app/tasks" className="hover:underline">{t.attributes.title}</Link>
                 </li>
               ))}
             </ul>
           </section>
         ) : showAllCompleted ? (
-          <section className="text-sm text-muted-foreground">
+          <section className="text-sm @xl:text-xl text-muted-foreground">
             <p className="font-medium text-foreground">All tasks completed!</p>
             <ul className="mt-1 space-y-1 opacity-70">
               {completedToday.map((t) => (
@@ -101,8 +101,8 @@ export function TasksTodayAdapter({ config }: { config: TasksTodayConfig }) {
           </section>
         ) : overdue.length === 0 ? (
           <div className="flex items-center gap-2 text-muted-foreground">
-            <CheckSquare className="h-5 w-5" />
-            <p className="text-sm">No tasks for today</p>
+            <CheckSquare className="size-5 @xl:size-6" />
+            <p className="text-sm @xl:text-xl">No tasks for today</p>
           </div>
         ) : null}
       </CardContent>

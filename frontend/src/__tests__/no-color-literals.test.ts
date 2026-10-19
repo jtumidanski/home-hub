@@ -9,7 +9,6 @@ const SCANNED_ROOTS = ["components/features", "pages"];
 /** Path prefixes (relative to frontend/src) not yet migrated; files under them are skipped. */
 const PENDING: string[] = [
   "components/features/calendar/",
-  "components/features/dashboard-widgets/",
   "components/features/dashboards/",
   "components/features/households/",
   "components/features/ingredients/",

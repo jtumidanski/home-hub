@@ -28,7 +28,7 @@ export function RemindersTodayAdapter({ config }: { config: RemindersTodayConfig
 
   if (isLoading) {
     return (
-      <Card className="h-full">
+      <Card className="@container h-full">
         <CardHeader><Skeleton className="h-5 w-32" data-slot="skeleton" /></CardHeader>
         <CardContent className="space-y-2">
           <Skeleton className="h-4 w-full" data-slot="skeleton" />
@@ -40,7 +40,7 @@ export function RemindersTodayAdapter({ config }: { config: RemindersTodayConfig
 
   if (isError) {
     return (
-      <Card className="h-full border-destructive">
+      <Card className="@container h-full border-destructive">
         <CardContent className="py-3"><p className="text-sm text-destructive">Failed to load reminders</p></CardContent>
       </Card>
     );
@@ -52,25 +52,25 @@ export function RemindersTodayAdapter({ config }: { config: RemindersTodayConfig
     .slice(0, config.limit);
 
   return (
-    <Card className="h-full">
+    <Card className="@container h-full">
       <CardHeader>
-        <CardTitle className="text-sm font-medium">
+        <CardTitle className="font-heading text-lg @xl:text-2xl">
           <Link to="/app/reminders" className="hover:underline">{title}</Link>
         </CardTitle>
-        <CardAction><Link to="/app/reminders"><ChevronRight className="h-4 w-4 text-muted-foreground" /></Link></CardAction>
+        <CardAction><Link to="/app/reminders"><ChevronRight className="size-4 @xl:size-6 text-muted-foreground" /></Link></CardAction>
       </CardHeader>
       <CardContent>
         {reminders.length === 0 ? (
           <div className="flex items-center gap-2 text-muted-foreground">
-            <Bell className="h-5 w-5" />
-            <p className="text-sm">No active reminders</p>
+            <Bell className="size-5 @xl:size-6" />
+            <p className="text-sm @xl:text-xl">No active reminders</p>
           </div>
         ) : (
           <ul className="space-y-2">
             {reminders.map((r) => (
-              <li key={r.id} className="flex items-baseline justify-between gap-2 text-sm">
+              <li key={r.id} className="flex items-baseline justify-between gap-2 text-sm @xl:text-xl">
                 <span className="truncate">{r.attributes.title}</span>
-                <span className="text-xs text-muted-foreground shrink-0">{formatRelative(r.attributes.scheduledFor)}</span>
+                <span className="text-xs @xl:text-base text-muted-foreground shrink-0">{formatRelative(r.attributes.scheduledFor)}</span>
               </li>
             ))}
           </ul>
