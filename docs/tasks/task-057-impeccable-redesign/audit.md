@@ -669,3 +669,104 @@ Global Constraints spot-checks: Fraunces and `font-heading` are not on controls 
 | 20b | keyboard test uses `.focus()`+Enter, not Tab | Leave |
 | 20b | Ingredients uncategorized badge inside `h1` | Leave (disclosed) |
 | 20b | archived-list Delete and `IngredientDetailPage` delete unconfirmed | Stage 7 candidate, as noted |
+
+## Frontend Guidelines — task-057 Stage 5 (Time)
+
+- **Scope:** `git diff origin/main...HEAD -- frontend/` (26 files; calendar feature, packages overlay, tasks/reminders cards, CalendarPage/TasksPage/RemindersPage, `lib/calendar/event-colors.ts`)
+- **Build:** PASS (`npm run build`; only the pre-existing >500 kB chunk warning)
+- **Tests:** 946 passed, 0 failed (146 files, `npx vitest run`; the `--watchAll=false` flag is not valid under vitest)
+- **Lint:** 0 errors; 4 warnings (unused eslint-disable directives at `components/features/calendar/event-form-dialog.tsx:108,110,112,114`, file not changed in this stage)
+- **Overall:** PASS (no blocking findings)
+
+### Checklist
+
+| ID | Status | Evidence |
+|----|--------|----------|
+| FE-01 no `any` | PASS | grep of changed files: no `: any` / `as any` |
+| FE-02 no class concatenation | WARN | Template-string classNames remain in touched files, none added by this stage: `calendar-grid.tsx:80,87,138`, `connection-status.tsx:82` (pre-existing; stage only added `aria-label` at :79/:90) |
+| FE-03 no direct API client in components | PASS | no `api/client` imports in changed files |
+| FE-04 no inline Zod | PASS | no `z.` in changed files |
+| FE-05 no content spinners | WARN | `calendar-selection-panel.tsx:46` inline `Loader2 animate-spin` on toggle pending; `connection-status.tsx:82` sync icon spin. Both pre-existing, small in-control pending indicators, not content loading |
+| FE-06 no hardcoded colours | PASS | no palette classes/hex/rgb in changed non-test files; `calendar-grid.tsx:153,156` red-500 replaced by `border-primary`/`bg-primary`; `event-colors.ts` uses tokens; `no-color-literals.test.ts` now enforces calendar/reminders/tasks/pages (6 pending entries removed), and passes |
+| FE-07 no state mutation | PASS | `.push/.sort` hits are on local arrays or copies (`calendar-utils.ts:186,363`, `calendar-widget.tsx:17` use `[...x].sort`), none unchanged-by-stage setState |
+| FE-08 no default exports | PASS | none |
+| FE-09/10 tenant guard / query keys | PASS (N/A) | no hooks changed |
+| FE-11 error handling | PASS (N/A) | no `.catch(` added |
+| FE-12/13/14/15/16 models, services, keys, forms, schemas | PASS (N/A) | no types, services, hooks, forms, or schemas changed |
+| FE-19 cursor-pointer | PASS | `event-block.tsx:~30` chip, `all-day-event-row.tsx`, `month-day-cell.tsx:~68` (all `cursor-pointer`); `event-block.tsx:44` `span.contents` onClick is only a propagation guard, not an affordance; `calendar-grid.tsx:138` conditional `cursor-pointer` when write access; ui `Button` handles the rest |
+| FE-17 tests | PASS | new `lib/calendar/__tests__/event-colors.test.ts`, `calendar-widget.test.tsx`, `event-popover.test.tsx`; Tasks/Reminders page and task-card tests updated; `eventChipColors` tests moved from calendar-utils test to its new module (not deleted) |
+| FE-18 mocks | PASS (N/A) | no service interface changes |
+
+### Global Constraints spot-check (design)
+
+- Pointer targets: ui `Button` `sm`/`icon` variants carry `coarse:min-h-11`/`coarse:size-11` (`components/ui/button.tsx:26-35`); chips use `coarse:min-h-11` (`all-day-event-row.tsx`); reminder/task row buttons add `coarse:min-h-11 coarse:min-w-11` (`RemindersPage.tsx:156,159,164`, `TasksPage.tsx`).
+- Icon-only buttons named (DA-091): `CalendarPage.tsx:298,315`, `RemindersPage.tsx:156-164`, `TasksPage.tsx` delete, `connection-status.tsx:79,90`.
+- DA-089 popover is now a `Dialog` with `DialogTitle` (`event-popover.tsx`).
+- Status not colour-only: package/busy chips carry text title; due dates carry "Due" label.
+- Tailwind classes are literals; `eventChipColors` returns CSS-var strings via inline style, not assembled class names.
+
+### Blocking (must fix)
+- None.
+
+### Non-Blocking (should fix)
+1. FE-02: template-string classNames in `calendar-grid.tsx:80,87,138` and `connection-status.tsx:82` should use `cn()` (pre-existing).
+2. FE-05: `animate-spin` at `calendar-selection-panel.tsx:46` and `connection-status.tsx:82` (pre-existing, inline control state; acceptable but not on a submit button).
+3. Lint: 4 unused eslint-disable directives in `event-form-dialog.tsx:108-114` (out of stage scope).
+4. Tests: no direct tests for `event-block.tsx` popover-click propagation guard (`:44`) or `month-day-cell.tsx` colour change; covered only indirectly.
+
+
+## Plan Adherence — task-057 Stage 5 (Time)
+
+**Range:** origin/main (fdabafa)..HEAD (776153b), branch task-057-impeccable-redesign-stage-5
+**Verdict:** MOSTLY_COMPLETE, READY_TO_MERGE after the flagless gate passes. No blocking gaps. Two minor DA-088 sub-items (below) and two process notes.
+
+### Task completion
+
+| Task | Status | Evidence |
+|---|---|---|
+| 22 Calendar event colours | DONE (ruling: helper moved, not created) | `frontend/src/lib/calendar/event-colors.ts` (PACKAGE_EVENT_COLOR, ChipColors, eventChipColors with the planned busy/package/readableForeground order); `calendar-utils.ts` copy removed (-16 lines, no alias); tests in `lib/calendar/__tests__/event-colors.test.ts` cover every Step 2 case (busy non-owner/owner, package, #ffff00 to ink, #000000 to paper, "" and "teal" no throw) plus busy-over-package; `package-calendar-overlay.tsx` uses the sentinel and its test expects `PACKAGE_EVENT_COLOR`; all `#9ca3af` ternaries replaced (month-day-cell, event-block, all-day-event-row, month-event-chip). Commit 7a6cb14. Busy rule identical across files, so no behaviour change to note. |
+| 23a Calendar (+CalendarPage) | DONE | Guard: calendar/, CalendarPage.tsx removed from PENDING (`no-color-literals.test.ts`); `#888` becomes `var(--calendar-busy)` (calendar-selection-panel.tsx:40); now-line `border-primary`/`bg-primary` (calendar-grid.tsx:153); PageHeader, `aria-label` Previous/Next period, "Today" trigger replaced by `Button` "Pick date" (behaviour/label change: name it in the PR body); aria-labels on Sync/Disconnect (connection-status.tsx:79,90); event-popover rebuilt on `Dialog` (DA-089); focus-visible ring and `transition-[filter]` on chips (DA-090); chip text-xs (DA-092). Commit fb9a87d. |
+| 23b Tasks + reminders | DONE | Guard: tasks/, reminders/, TasksPage, RemindersPage removed from PENDING; PageHeader and EmptyState in both pages; `coarse:min-h-11` on row action buttons; `tabular-nums` and text-sm on due/time lines; aria-labels Snooze/Dismiss/Delete reminder and Delete task (DA-091); task-card test updated. Commit fba0231. Plan said "task/reminder rows coarse:min-h-11": applied to row buttons rather than rows, equivalent in effect. |
+| 24 Remaining Stage 5 findings | DONE with caveats | Review-fix commits aaae07e (widget owner name visible, all-day chip target), f05d7b0, 162ad50 (Due copy unified), 776153b (busy-over-package test). Detector run on Stage 5 files: 0 findings (regex rules only; element rules not run, per progress.md). Caveats: (1) Step 4 convention "name the row ID in commit message" not followed; none of the 7 commits carry a DA-NNN, so the SHA table below is by file/diff mapping; (2) close-out step 1 was "not rendered" (no browser), so contrast for DA-088/093/097/099/100 is a manual check owed in the PR body. |
+
+Tasks: 4/4 units done (22, 23a, 23b, 24). Skipped without approval: 0.
+
+### Row findings DA-088..DA-100
+
+All 13 rows resolved, with this exception:
+- DA-088 (PARTIAL, minor, audit-permitted alternative): owner name is beside each swatch (user-legend.tsx:15-18, popover, widget after aaae07e), which satisfies the colour-only rule. Not done: the 1px `--border-strong` ring on legend/selection/CalendarPage swatches (user-legend.tsx and CalendarPage.tsx:~355 unchanged; the widget dot has `ring-1 ring-border`), and the month-cell `aria-label` (month-day-cell.tsx:65) still lists only date and count, not owners. Contrast of user-chosen hex against card therefore remains unverified for legend dots.
+- DA-091, DA-095: DA-095's "44px targets when stacked at 390px" is only partly addressed (coarse:min-h-11 on Tasks/Reminders actions; no coarse sizing on CalendarPage toolbar buttons, `grep coarse CalendarPage.tsx` empty). Minor.
+
+### Build and test
+
+| Scope | Result |
+|---|---|
+| `npx vitest run` (lib/calendar, features/calendar, packages, tasks, reminders, pages, src/__tests__ incl. no-color-literals guard) | PASS, 47 files / 318 tests on re-run. A first run had 1 failing test, not reproducible on the second run while verify.sh was running concurrently (node_modules was transiently incomplete); treated as environmental. |
+| `npx tsc -b` | PASS |
+| `npx eslint` (calendar, lib/calendar, pages) | 0 errors, 4 pre-existing warnings (event-form-dialog unused disables) |
+| Flagless `tools/verify.sh` | Not run here (in flight separately); required before merge |
+
+### Action items
+1. Merge only after flagless `tools/verify.sh` exits 0.
+2. PR body: note "Today" to "Pick date" label change (DA-096) and the manual contrast check owed for DA-088/093/097/099/100.
+3. Optional: add swatch ring and owner names to month-cell aria-label (DA-088), and coarse sizing on CalendarPage toolbar (DA-095).
+
+### Row to SHA (DA-088..DA-100)
+
+Commits do not cite DA IDs; mapping is by diff.
+
+| Row | SHA | Note |
+|---|---|---|
+| DA-088 | aaae07e | Partial: owner names visible; ring and cell aria-label owners not done |
+| DA-089 | fb9a87d | event-popover on Dialog |
+| DA-090 | fb9a87d | focus ring on chips and cells (all-day chip target in aaae07e) |
+| DA-091 | fb9a87d, fba0231 | CalendarPage/connection-status; Tasks/Reminders pages |
+| DA-092 | fb9a87d | month-event-chip text-xs |
+| DA-093 | 7a6cb14, fb9a87d | helper and package overlay; `#888` fallback |
+| DA-094 | fb9a87d | now-line to primary |
+| DA-095 | fb9a87d, fba0231 | PageHeader on all three pages (mobile 44px partial) |
+| DA-096 | fb9a87d | Pick date Button |
+| DA-097 | fba0231, 162ad50 | text-sm, "Due" prefix |
+| DA-098 | fb9a87d, aaae07e | kiosk-scale time column; owner name |
+| DA-099 | fba0231 | table secondary lines text-sm |
+| DA-100 | fb9a87d | weekday/hour labels (hour label leading-tight) |
