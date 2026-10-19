@@ -16,4 +16,4 @@
 # Node tooling (eslint, vite, vitest) is pinned by frontend/package.json and
 # its lockfile.
 GO_VERSION=1.27.0
-GOLANGCI_LINT_VERSION=v2.13.1
+GOLANGCI_LINT_VERSION=v2.14.0
