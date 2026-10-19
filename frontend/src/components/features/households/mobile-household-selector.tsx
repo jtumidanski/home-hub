@@ -52,7 +52,7 @@ export function MobileHouseholdSelector({ onNavigate }: MobileHouseholdSelectorP
       <DialogTrigger
         aria-haspopup="dialog"
         aria-expanded={selectorOpen}
-        className="flex w-full items-center justify-between rounded-md border px-3 py-3 text-sm font-medium transition-colors hover:bg-sidebar-accent/50 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring coarse:min-h-11"
+        className="flex cursor-pointer w-full items-center justify-between rounded-md border px-3 py-3 text-sm font-medium transition-colors hover:bg-sidebar-accent/50 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring coarse:min-h-11"
       >
         <span className="truncate">{activeHousehold?.attributes.name ?? "Select household"}</span>
         <ChevronRight className="h-4 w-4 text-muted-foreground" />
@@ -85,7 +85,7 @@ export function MobileHouseholdSelector({ onNavigate }: MobileHouseholdSelectorP
                   onClick={() => handleSelect(household.id)}
                   aria-current={isActive ? "true" : undefined}
                   className={cn(
-                    "flex w-full items-center justify-between rounded-md px-4 py-4 text-left text-sm font-medium transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring",
+                    "flex cursor-pointer w-full items-center justify-between rounded-md px-4 py-4 text-left text-sm font-medium transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring",
                     isActive ? "bg-accent text-accent-foreground" : "hover:bg-muted",
                   )}
                 >
