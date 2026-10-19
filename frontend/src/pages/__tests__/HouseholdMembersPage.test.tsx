@@ -186,7 +186,7 @@ describe("HouseholdMembersPage", () => {
 
   it("renders empty invitations message", () => {
     renderPage();
-    expect(screen.getByText("No pending invitations.")).toBeInTheDocument();
+    expect(screen.getByText("No pending invitations")).toBeInTheDocument();
   });
 
   it("opens invite dialog on button click", async () => {
@@ -196,19 +196,41 @@ describe("HouseholdMembersPage", () => {
     expect(screen.getByRole("dialog")).toBeInTheDocument();
   });
 
-  it("opens remove confirmation dialog", async () => {
+  it("opens remove confirmation dialog from the named remove button", async () => {
     const user = userEvent.setup();
     renderPage();
-    // Find remove buttons (UserMinus icon buttons) — there should be one for the non-self member
-    const removeButtons = screen.getAllByRole("button").filter(
-      (btn) => btn.querySelector(".text-destructive") !== null,
-    );
-    // Click the first remove icon button
-    if (removeButtons.length > 0) {
-      await user.click(removeButtons[0]!);
-      await waitFor(() => {
-        expect(screen.getByText("Remove Member")).toBeInTheDocument();
-      });
-    }
+    await user.click(screen.getByRole("button", { name: "Remove Other User" }));
+    expect(await screen.findByRole("dialog", { name: "Remove Member" })).toBeInTheDocument();
+  });
+
+  it("closes the remove confirmation on cancel", async () => {
+    const user = userEvent.setup();
+    renderPage();
+    await user.click(screen.getByRole("button", { name: "Remove Other User" }));
+    await user.click(await screen.findByRole("button", { name: "Cancel" }));
+    await waitFor(() => {
+      expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
+    });
+  });
+
+  it("labels the role select for each modifiable member", () => {
+    renderPage();
+    expect(screen.getByRole("combobox", { name: "Role for Other User" })).toBeInTheDocument();
+  });
+
+  it("names the revoke invitation button", async () => {
+    mockUseHouseholdInvitations.mockReturnValue({
+      data: { data: [makeInvitation("inv-1", "invited@example.com", "viewer")] },
+      isLoading: false,
+    });
+    const user = userEvent.setup();
+    renderPage();
+    await user.click(screen.getByRole("button", { name: "Revoke invitation for invited@example.com" }));
+    expect(await screen.findByRole("dialog", { name: "Revoke Invitation" })).toBeInTheDocument();
+  });
+
+  it("renders the back link as a single link to households", () => {
+    renderPage();
+    expect(screen.getByRole("link", { name: /households/i })).toHaveAttribute("href", "/app/households");
   });
 });

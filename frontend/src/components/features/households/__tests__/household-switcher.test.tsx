@@ -58,8 +58,8 @@ vi.mock("@/components/ui/select", () => {
       capturedOnValueChange = onValueChange;
       return <div data-slot="select">{children}</div>;
     },
-    SelectTrigger: ({ children }: { children: React.ReactNode; className?: string }) => (
-      <button role="combobox">{children}</button>
+    SelectTrigger: ({ children, "aria-label": ariaLabel }: { children: React.ReactNode; className?: string; "aria-label"?: string }) => (
+      <button role="combobox" aria-label={ariaLabel}>{children}</button>
     ),
     SelectValue: ({ placeholder }: { placeholder?: string }) => (
       <span>{placeholder}</span>
@@ -120,7 +120,7 @@ describe("HouseholdSwitcher", () => {
 
     render(<HouseholdSwitcher />);
 
-    expect(screen.getByRole("combobox")).toBeInTheDocument();
+    expect(screen.getByRole("combobox", { name: "Active household" })).toBeInTheDocument();
     expect(screen.getByRole("option", { name: "Main House" })).toBeInTheDocument();
     expect(screen.getByRole("option", { name: "Beach House" })).toBeInTheDocument();
   });

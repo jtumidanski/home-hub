@@ -39,7 +39,7 @@ export function HouseholdSwitcher() {
 
   return (
     <Select value={activeId} onValueChange={handleChange}>
-      <SelectTrigger className="w-full">
+      <SelectTrigger className="w-full" aria-label="Active household">
         <SelectValue placeholder="Select household" />
       </SelectTrigger>
       <SelectContent>

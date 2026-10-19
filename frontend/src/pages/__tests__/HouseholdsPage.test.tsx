@@ -63,7 +63,7 @@ describe("HouseholdsPage", () => {
   it("renders loading skeleton when isLoading is true", () => {
     mockUseHouseholds.mockReturnValue({ data: null, isLoading: true, isError: false });
     renderPage();
-    expect(screen.queryByText("Households")).not.toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: "Households" })).toBeInTheDocument();
     expect(screen.getByRole("status", { name: "Loading" })).toBeInTheDocument();
   });
 

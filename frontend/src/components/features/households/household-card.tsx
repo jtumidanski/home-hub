@@ -1,6 +1,6 @@
 import { Link } from "react-router-dom";
 import { Home, MapPin, Users } from "lucide-react";
-import { type Household } from "@/types/models/household";
+import { type Household, unitsLabelMap } from "@/types/models/household";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -51,21 +51,24 @@ export function HouseholdCard({ household, isActive }: HouseholdCardProps) {
           <Home className="h-5 w-5 shrink-0 text-muted-foreground" />
           <div className="min-w-0 flex-1">
             <p className="font-medium">{attributes.name}</p>
-            <p className="text-xs text-muted-foreground">
-              {attributes.timezone} &middot; {attributes.units}
+            <p className="text-sm text-muted-foreground">
+              {attributes.timezone} &middot; {unitsLabelMap[attributes.units]}
             </p>
           </div>
-          <Link to={`/app/households/${household.id}/members`}>
-            <Button variant="ghost" size="sm" className="gap-1">
-              <Users className="h-3.5 w-3.5" />Members
-            </Button>
-          </Link>
-          {isActive && <Badge>Active</Badge>}
+          <Button
+            variant="ghost"
+            size="sm"
+            className="gap-1"
+            render={<Link to={`/app/households/${household.id}/members`} />}
+          >
+            <Users className="h-4 w-4" />Members
+          </Button>
+          {isActive && <Badge variant="success">Active</Badge>}
         </div>
         <div>
           <div className="flex items-center gap-1 mb-1">
             <MapPin className="h-3 w-3 text-muted-foreground" />
-            <span className="text-xs text-muted-foreground">Location</span>
+            <span className="text-sm text-muted-foreground">Location</span>
           </div>
           <LocationSearch
             value={attributes.locationName}
