@@ -79,7 +79,7 @@ export function MealPlanWidget(_props: MealPlanWidgetProps = {}) {
     <Link to="/app/meals" className="block h-full transition-opacity hover:opacity-80">
       <Card className="h-full">
         <CardHeader>
-          <CardTitle className="text-sm font-medium">Meals</CardTitle>
+          <CardTitle className="font-heading text-lg @xl:text-2xl">Meals</CardTitle>
           <CardAction>
             <ChevronRight className="h-4 w-4 text-muted-foreground" />
           </CardAction>
@@ -99,7 +99,7 @@ export function MealPlanWidget(_props: MealPlanWidgetProps = {}) {
                   </span>
                   <Link
                     to={`/app/recipes/${item.recipe_id}`}
-                    className="text-sm text-primary hover:underline truncate"
+                    className="text-sm @xl:text-xl text-primary hover:underline truncate"
                     onClick={(e) => e.stopPropagation()}
                   >
                     {item.recipe_title}

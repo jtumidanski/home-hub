@@ -43,7 +43,7 @@ export function WorkoutWidget() {
     <Link to="/app/workouts" className="block h-full transition-opacity hover:opacity-80">
       <Card className="h-full">
         <CardHeader>
-          <CardTitle className="text-sm font-medium">Workout</CardTitle>
+          <CardTitle className="font-heading text-lg @xl:text-2xl">Workout</CardTitle>
           <CardAction>
             <ChevronRight className="h-4 w-4 text-muted-foreground" />
           </CardAction>
@@ -67,15 +67,15 @@ export function WorkoutWidget() {
                 return (
                   <div key={item.id} className="flex items-center gap-2">
                     {status === "done" ? (
-                      <Check className="h-4 w-4 text-green-600 shrink-0" aria-label="Completed" />
+                      <Check className="size-4 @xl:size-6 text-green-600 shrink-0" aria-label="Completed" />
                     ) : status === "skipped" ? (
                       <SkipForward className="h-4 w-4 text-muted-foreground shrink-0" aria-label="Skipped" />
                     ) : status === "partial" ? (
-                      <CircleDot className="h-4 w-4 text-yellow-600 shrink-0" aria-label="Partially completed" />
+                      <CircleDot className="size-4 @xl:size-6 text-yellow-600 shrink-0" aria-label="Partially completed" />
                     ) : (
                       <Circle className="h-4 w-4 text-muted-foreground shrink-0" aria-label="Pending" />
                     )}
-                    <span className={`text-sm truncate ${resolved ? "text-muted-foreground line-through" : ""}`}>
+                    <span className={`text-sm @xl:text-xl truncate ${resolved ? "text-muted-foreground line-through" : ""}`}>
                       {item.exerciseName}
                     </span>
                   </div>

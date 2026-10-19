@@ -38,7 +38,7 @@ export function PackageSummaryWidget() {
       <Link to="/app/packages" className="transition-opacity hover:opacity-80">
         <Card>
           <CardHeader>
-            <CardTitle className="text-sm font-medium">Packages</CardTitle>
+            <CardTitle className="font-heading text-lg @xl:text-2xl">Packages</CardTitle>
             <CardAction>
               <ChevronRight className="h-4 w-4 text-muted-foreground" />
             </CardAction>
@@ -58,7 +58,7 @@ export function PackageSummaryWidget() {
     <Link to="/app/packages" className="block h-full transition-opacity hover:opacity-80">
       <Card className="h-full">
         <CardHeader>
-          <CardTitle className="text-sm font-medium">Packages</CardTitle>
+          <CardTitle className="font-heading text-lg @xl:text-2xl">Packages</CardTitle>
           <CardAction>
             <ChevronRight className="h-4 w-4 text-muted-foreground" />
           </CardAction>
@@ -67,16 +67,16 @@ export function PackageSummaryWidget() {
           <div className="flex flex-wrap gap-4">
             <div className="flex items-center gap-2">
               <Truck className="h-4 w-4 text-muted-foreground" />
-              <span className="text-sm">{summary.arrivingTodayCount} arriving today</span>
+              <span className="text-sm @xl:text-xl">{summary.arrivingTodayCount} arriving today</span>
             </div>
             <div className="flex items-center gap-2">
               <Package className="h-4 w-4 text-muted-foreground" />
-              <span className="text-sm">{summary.inTransitCount} in transit</span>
+              <span className="text-sm @xl:text-xl">{summary.inTransitCount} in transit</span>
             </div>
             {summary.exceptionCount > 0 && (
               <div className="flex items-center gap-2">
                 <AlertTriangle className="h-4 w-4 text-destructive" />
-                <span className="text-sm text-destructive">{summary.exceptionCount} exception{summary.exceptionCount !== 1 ? "s" : ""}</span>
+                <span className="text-sm @xl:text-xl text-destructive">{summary.exceptionCount} exception{summary.exceptionCount !== 1 ? "s" : ""}</span>
               </div>
             )}
           </div>

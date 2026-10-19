@@ -81,7 +81,7 @@ export function CalendarWidget(_props: CalendarWidgetProps = {}) {
     <Link to="/app/calendar" className="block h-full transition-opacity hover:opacity-80">
       <Card className="h-full">
         <CardHeader>
-          <CardTitle className="text-sm font-medium">Calendar</CardTitle>
+          <CardTitle className="font-heading text-lg @xl:text-2xl">Calendar</CardTitle>
           <CardAction>
             <ChevronRight className="h-4 w-4 text-muted-foreground" />
           </CardAction>
@@ -105,7 +105,7 @@ export function CalendarWidget(_props: CalendarWidgetProps = {}) {
                       style={{ backgroundColor: event.attributes.userColor }}
                       title={event.attributes.userDisplayName}
                     />
-                    <span className="text-sm truncate">{event.attributes.title}</span>
+                    <span className="text-sm @xl:text-xl truncate">{event.attributes.title}</span>
                   </div>
                 </div>
               ))}

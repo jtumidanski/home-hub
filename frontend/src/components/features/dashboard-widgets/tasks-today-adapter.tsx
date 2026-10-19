@@ -81,7 +81,7 @@ export function TasksTodayAdapter({ config }: { config: TasksTodayConfig }) {
         )}
         {todayTasks.length > 0 ? (
           <section>
-            <h4 className="text-xs @xl:text-base @xl:text-base font-medium text-muted-foreground">Today</h4>
+            <h4 className="text-xs @xl:text-base font-medium text-muted-foreground">Today</h4>
             <ul className="mt-1 space-y-1">
               {todayTasks.map((t) => (
                 <li key={t.id} className="text-sm @xl:text-xl">
