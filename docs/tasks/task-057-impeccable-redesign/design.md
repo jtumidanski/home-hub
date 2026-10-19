@@ -119,7 +119,7 @@ short gets its L nudged, not its role changed.
 | `--muted-foreground` | `oklch(0.74 0.02 75)` | ≥4.5:1 on background, card, and muted |
 | `--accent` | `oklch(0.32 0.035 145)` | |
 | `--accent-foreground` | `oklch(0.90 0.04 145)` | |
-| `--destructive` | `oklch(0.68 0.17 25)` | |
+| `--destructive` | `oklch(0.71 0.16 25)` | raised from 0.68: the danger badge read 4.46:1 in the rendered mockup |
 | `--success` / `--warning` / `--info` | `0.72 0.11 150` / `0.80 0.12 80` / `0.72 0.08 235`, ink foregrounds | |
 | `--border` | `oklch(0.32 0.015 55)` | |
 | `--input` | `oklch(0.52 0.02 60)` | ≥3:1 |
@@ -216,11 +216,15 @@ rather than from design:
   `tw-animate-css` keyframes (FR-22).
 - **Icons:** keep `lucide-react`. Stroke 1.75, sizes 16/20/24 from a shared
   convention, and they're always paired with text or an `aria-label`.
-- **Brand mark & favicon:** these **change**. The indigo tile in
-  `components/common/brand-mark.tsx` and `public/favicon.svg` becomes a clay
-  tile with a paper house and the same ochre lit doorway. The concept stays
-  and only the colour world changes. The SVG keeps literal fills (an image
-  asset is a documented exception), and the two files stay in sync.
+- **Brand mark & favicon:** these **change** to **"Window light"** (user's
+  pick out of four options; see `comps/brand-mark-options.html`, option B).
+  It's a clay tile with a warm-ink house silhouette and one ochre four-pane
+  window: someone's home. The indigo tile and lit door in
+  `components/common/brand-mark.tsx` and `public/favicon.svg` are replaced
+  by the 32×32 geometry in `comps/brand-mark-options.html` (`#mB`).
+  The window panes are expected to disappear at 16 px; the yellow window
+  alone carries the mark there. The SVG keeps literal fills (an image asset
+  is a documented exception), and the two files stay in sync.
 
 ### 3.5 Kiosk legibility
 
@@ -240,10 +244,13 @@ the same widget in a small cell stays compact.
 
 ### 3.6 Comp — dashboard
 
-These are low-fidelity structure comps that pin hierarchy and placement. A
-rendered comp (code-first, built as a throwaway on a scratch route) is
-produced at the start of Stage 1 and shown to the user before Stage 1's tokens
-are committed (§6, Stage 1 gate).
+**The rendered comp is `comps/dashboard.html`.** Open it directly in a
+browser; the fonts are next to it. It uses the exact §3.1 tokens, the real
+Fraunces/Figtree files, and the Window light mark, and shows desktop light,
+mobile light and dark, kiosk dark, and the palette/type sheet. The user
+reviewed it during this phase. This is the approved comp that
+`impeccable-finish-reviewer` checks against (FR-17). The ASCII sketches
+below pin hierarchy and placement only.
 
 Desktop ≥1280 px, light:
 
@@ -389,7 +396,7 @@ that stage.
 | Stage | Scope | Exit |
 |---|---|---|
 | **0. Onboard & audit** (docs only) | Impeccable `init` → `frontend/PRODUCT.md` (confirmed against §2). Record baselines: production JS gzip size and current font payload from `main` at task start. Run the Impeccable `audit` over every `App.tsx` route + shell + `components/ui|common` + dialogs/toasts/states, on desktop/mobile/kiosk × light/dark, against the task-start codebase (FR-12). Write `design-audit.md`: ID, severity, surface, theme, location, fix, **owning stage** (assigned by surface → table below). The audit can be sharded by area across fresh agents, each given the artifact path plus its own scope. | `design-audit.md` committed. Every finding has an owning stage. |
-| **1. Foundation** | Rendered dashboard comp shown and approved **first** (gate). Then: tokens (§3.1–3.4), fonts, base layer (focus, reduced motion, metric fallbacks), `components/ui/*` variants + `coarse:` targets, `components/common/*` incl. new `page-header` / `empty-state`, swatch module, contrast helper, both §5.3 tests (no-literal pending list = all feature dirs), dependency changes, brand mark + favicon. | Token test green. Primitive-level findings resolved. Font budget measured. |
+| **1. Foundation** | Tokens (§3.1–3.4), fonts, base layer (focus, reduced motion, metric fallbacks), `components/ui/*` variants + `coarse:` targets, `components/common/*` incl. new `page-header` / `empty-state`, swatch module, contrast helper, both §5.3 tests (no-literal pending list = all feature dirs), dependency changes, brand mark + favicon. | Token test green. Primitive-level findings resolved. Font budget measured. |
 | **2. Shell** | App shell, sidebar, mobile header/drawer, Login, Onboarding, Error404/error pages, toasts (sonner theming via tokens). | Shell findings resolved. |
 | **3. Dashboards & kiosk** | Dashboard renderer/shell/management/designer, all `dashboard-widgets/*`, container-query internals. | `lib/dashboard` tests unmodified and green; kiosk audited in both themes. |
 | **4. Food** | Meals, recipes (list/detail/form), ingredients, shopping lists/detail, wish list. | Dirs removed from pending list. |
@@ -438,18 +445,40 @@ succession.
 2. North star "The Kitchen Table": clay primary, sage accent, ochre warning,
    warm-charcoal dark.
 3. Fraunces + Figtree replaces Geist.
-4. Brand mark and favicon change colour (concept kept).
+4. ~~Brand mark recoloured~~. Superseded: the user picked "Window light" (§3.4).
 5. Kiosk legibility through container queries, not a kiosk mode.
 6. New `page-header` and `empty-state` common components.
 7. Two vitest guard tests as the mechanical enforcement of contrast and
    no-literals.
 8. Calendar user-picked colours stay as data, with computed foregrounds, as
    a documented exception.
-9. Comp here is structural ASCII. The rendered comp is gated at the start of
-   Stage 1, before tokens commit.
+9. ~~Rendered comp deferred to Stage 1~~. Superseded: rendered during
+   this phase (`comps/`).
 10. Audit runs as Stage 0 inside execution, against the task-start codebase,
     rather than as an extra pre-plan phase. Stage grouping is fixed here, so
     findings slot into stages by surface.
+
+## Decisions confirmed during design review
+
+- **Rendered comp reviewed** (`comps/dashboard.html`).
+- **Fraunces and the warm paper background are kept.** Impeccable's
+  detector flags both as AI-default choices (`overused-font`,
+  `cream-palette`). The user was told this and replied "i'm good with
+  that". The Fraunces suppression is recorded in `.impeccable/config.json`.
+  Stage 1 should carry the same decision for `cream-palette` if the detector
+  raises it on `index.css`.
+- **Brand mark: "Window light"** (option B of four), chosen by the user.
+- **Dark `--destructive` raised to L 0.71.** The rendered mockup measured
+  the danger badge at 4.46:1.
+- The mockup also showed that mid-L chart colours can't carry text in either
+  ink or paper. Charts and swatches never hold text labels; labels sit beside
+  or below the colour.
+
+Builder note: `impeccable hooks` resolved its config at the **repository
+root** (`.impeccable/config.json`), not `frontend/`. Stage 0 must settle
+whether `frontend/` or the root is the Impeccable project root (§5.1 assumes
+`frontend/`), and move that file plus PRODUCT.md/DESIGN.md to match. Drop
+the scratch-file `nested-cards` ignore; it points at an untracked mockup.
 
 ## Approval
 
