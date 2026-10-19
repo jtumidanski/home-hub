@@ -8,10 +8,13 @@ import { Skeleton } from "@/components/ui/skeleton";
 import {
   Dialog,
   DialogContent,
+  DialogDescription,
   DialogHeader,
   DialogTitle,
   DialogFooter,
 } from "@/components/ui/dialog";
+import { PageHeader } from "@/components/common/page-header";
+import { EmptyState } from "@/components/common/empty-state";
 import { cn } from "@/lib/utils";
 import {
   useShoppingLists,
@@ -32,6 +35,7 @@ export function ShoppingListsPage() {
   const [editList, setEditList] = useState<ShoppingList | null>(null);
   const [editName, setEditName] = useState("");
   const [editError, setEditError] = useState<string | null>(null);
+  const [deleteTarget, setDeleteTarget] = useState<ShoppingList | null>(null);
 
   const { data: activeData, isLoading: activeLoading } = useShoppingLists("active");
   const { data: archivedData, isLoading: archivedLoading } = useShoppingLists("archived");
@@ -84,12 +88,14 @@ export function ShoppingListsPage() {
 
   return (
     <div className="p-4 md:p-6 space-y-4">
-      <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold">Shopping Lists</h1>
-        <Button onClick={() => setShowCreate(true)}>
-          <Plus className="h-4 w-4 mr-1" /> New List
-        </Button>
-      </div>
+      <PageHeader
+        title="Shopping Lists"
+        actions={
+          <Button onClick={() => setShowCreate(true)}>
+            <Plus className="h-4 w-4 mr-1" /> New List
+          </Button>
+        }
+      />
 
       {/* Tab buttons */}
       <div className="flex gap-1 border-b">
@@ -122,22 +128,15 @@ export function ShoppingListsPage() {
         {isLoading ? (
           Array.from({ length: 3 }).map((_, i) => <Skeleton key={i} className="h-[4.5rem] w-full" />)
         ) : lists.length === 0 ? (
-          <Card>
-            <CardContent className="py-8 text-center text-muted-foreground">
-              {tab === "active" ? (
-                <>
-                  <ShoppingCart className="h-12 w-12 mx-auto mb-3 opacity-50" />
-                  <p>No active shopping lists</p>
-                  <p className="text-sm">Create one to get started</p>
-                </>
-              ) : (
-                <>
-                  <Archive className="h-12 w-12 mx-auto mb-3 opacity-50" />
-                  <p>No archived lists</p>
-                </>
-              )}
-            </CardContent>
-          </Card>
+          tab === "active" ? (
+            <EmptyState
+              icon={ShoppingCart}
+              title="No active shopping lists"
+              description="Create one to get started"
+            />
+          ) : (
+            <EmptyState icon={Archive} title="No archived lists" />
+          )
         ) : (
           lists.map((list) => (
             <Card
@@ -176,6 +175,7 @@ export function ShoppingListsPage() {
                       <Button
                         variant="ghost"
                         size="icon"
+                        aria-label={`Rename ${list.attributes.name}`}
                         onClick={() => {
                           setEditList(list);
                           setEditName(list.attributes.name);
@@ -186,7 +186,8 @@ export function ShoppingListsPage() {
                       <Button
                         variant="ghost"
                         size="icon"
-                        onClick={() => deleteList.mutate(list.id)}
+                        aria-label={`Delete ${list.attributes.name}`}
+                        onClick={() => setDeleteTarget(list)}
                       >
                         <Trash2 className="h-4 w-4" />
                       </Button>
@@ -203,7 +204,8 @@ export function ShoppingListsPage() {
                       <Button
                         variant="ghost"
                         size="icon"
-                        onClick={() => deleteList.mutate(list.id)}
+                        aria-label={`Delete ${list.attributes.name}`}
+                        onClick={() => setDeleteTarget(list)}
                       >
                         <Trash2 className="h-4 w-4" />
                       </Button>
@@ -238,6 +240,35 @@ export function ShoppingListsPage() {
             </Button>
             <Button onClick={handleCreate} disabled={createList.isPending}>
               {createList.isPending ? "Creating..." : "Create"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Delete Confirmation */}
+      <Dialog open={!!deleteTarget} onOpenChange={(o) => { if (!o) setDeleteTarget(null); }}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Delete shopping list?</DialogTitle>
+            <DialogDescription>
+              Delete &ldquo;{deleteTarget?.attributes.name}&rdquo;? This cannot be undone.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button type="button" variant="outline" onClick={() => setDeleteTarget(null)}>
+              Cancel
+            </Button>
+            <Button
+              type="button"
+              variant="destructive"
+              disabled={deleteList.isPending}
+              onClick={() => {
+                if (!deleteTarget) return;
+                deleteList.mutate(deleteTarget.id, { onSuccess: () => setDeleteTarget(null) });
+              }}
+            >
+              <Trash2 className="h-4 w-4" />
+              {deleteList.isPending ? "Deleting..." : "Delete"}
             </Button>
           </DialogFooter>
         </DialogContent>

@@ -12,6 +12,7 @@ import {
   useIngredientRecipes,
 } from "@/lib/hooks/api/use-ingredients";
 import { useIngredients } from "@/lib/hooks/api/use-ingredients";
+import { PageHeader } from "@/components/common/page-header";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
@@ -148,17 +149,15 @@ export function IngredientDetailPage() {
           <ArrowLeft className="mr-1 h-4 w-4" /> Ingredients
         </Button>
 
-        <div className="flex items-start justify-between gap-4">
-          <div>
-            <h1 className="text-2xl font-bold">{attrs.name}</h1>
-            {attrs.displayName && (
-              <p className="mt-1 text-muted-foreground">{attrs.displayName}</p>
-            )}
-          </div>
-          <Button variant="outline" size="sm" className="text-destructive shrink-0" onClick={handleDelete}>
-            <Trash2 className="mr-1 h-4 w-4" /> Delete
-          </Button>
-        </div>
+        <PageHeader
+          title={attrs.name}
+          description={attrs.displayName || undefined}
+          actions={
+            <Button variant="outline" size="sm" className="text-destructive shrink-0" onClick={handleDelete}>
+              <Trash2 className="mr-1 h-4 w-4" /> Delete
+            </Button>
+          }
+        />
       </div>
 
       {/* Unit family */}
@@ -212,6 +211,7 @@ export function IngredientDetailPage() {
                   {alias.name}
                   <button
                     type="button"
+                    aria-label={`Remove alias ${alias.name}`}
                     className="ml-1 hover:text-destructive"
                     onClick={() => handleRemoveAlias(alias.id)}
                   >
@@ -262,7 +262,7 @@ export function IngredientDetailPage() {
 
       {/* Reassign dialog */}
       {showReassign && (
-        <div className="border rounded-md p-4 space-y-3">
+        <div className="rounded-lg bg-muted/40 p-4 space-y-3">
           <h3 className="text-sm font-medium">Reassign references before deleting</h3>
           <p className="text-xs text-muted-foreground">
             This ingredient is referenced by recipe ingredients. Choose another ingredient to reassign all references to.
@@ -277,7 +277,7 @@ export function IngredientDetailPage() {
               <button
                 key={c.id}
                 type="button"
-                className="w-full text-left px-2 py-1 text-sm hover:bg-muted rounded"
+                className="w-full text-left px-2 py-1 text-sm hover:bg-muted rounded coarse:min-h-11"
                 onClick={() => handleReassign(c.id)}
               >
                 {c.attributes.name}
