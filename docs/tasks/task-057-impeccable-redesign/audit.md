@@ -539,3 +539,133 @@ None.
 ### Verdict
 
 NEEDS-WORK. Build and tests pass (921/921). Two blocking constraint violations: template-string class concatenation (`habits-widget.tsx:92`, `workout-widget.tsx:78`) and the missing coarse target on the meal-plan recipe link (`meal-plan-widget.tsx:105`). Eight new non-blocking findings are listed above, four of them pre-existing. Deferred items (b) to (e) are leave, and (a) is fix-before-PR.
+
+## Plan Adherence — task-057 Stage 4 (Food)
+
+**Range:** cd06366..a68b611 (07b8da2 Task 20a, 67e1f3f Task 20b, a68b611 Task 21). **Branch:** task-057-impeccable-redesign-stage-4.
+
+**Verdict: MOSTLY_COMPLETE, READY_TO_MERGE (no blocking findings).** Tasks 20 and 21 were executed; DA-073..087 are all addressed in code. Vitest over touched areas (recipes, meals, ingredients, pages, `__tests__` incl. the colour-literal guard) passes: 44 files, 235 tests. Full-suite and tsc/eslint results are from the Task 21 report (142 files / 933 tests, tsc clean, eslint 0 errors), not rerun here. The flagless `verify.sh` is the controller's gate. The plan's Task 20/21 checkboxes in plan.md and the Resolved column in design-audit.md are not yet ticked (step 4 of close-out, as in Stage 3).
+
+### Task completion
+
+| # | Task | Status | Evidence |
+|---|---|---|---|
+| 20 S1 | Cut stage branch | DONE | progress.md: branch cut from cd06366 after ancestor check |
+| 20 S2 | Remove PENDING entries; guard | DONE (ruling) | `no-color-literals.test.ts` diff removes `features/ingredients/`, `features/meals/`, `features/recipes/` and `pages/{Meals,Recipes,ShoppingListDetail,WishList}Page.tsx`. Ruling: the "guard fails" step became "guard passes", because every known literal was already fixed in Stage 1 (DA-011..013). Recorded, not a deviation. |
+| 20 S3 | `recipe-status.test.tsx` | DONE | `recipes/__tests__/recipe-status.test.tsx` (71 lines) pins `text-success` and `text-warning-text` on RecipeCard. Passes before and after the change, as the ruling anticipated. |
+| 20 S4 | Implement mapping; PageHeader/EmptyState; `coarse:min-h-11` on shopping rows | DONE with note | All nine pages use PageHeader or EmptyState (grep). Shopping-mode rows: 20b added `coarse:min-h-11`, and Task 21 changed it to a plain `min-h-16` (`ShoppingListDetailPage.tsx:291`), so touch rows stay 64px (at or above 44px). This differs from the plan text, but it meets the intent (the 44px minimum) and has a test. Minor, see below. |
+| 20 S5 | Guard, area tests, tsc, eslint | DONE | Tests rerun here; tsc/eslint per implementer reports |
+| 20 S6 | Two commits `feat(frontend): restyle <area>` | DONE | 07b8da2 "restyle recipes and meals"; 67e1f3f "restyle ingredients, shopping and wish list" |
+| 21 | Resolve remaining Stage 4 findings (Task 14 steps) | DONE | a68b611 fixes the 20b minors. Detector: 0 findings (regex rules only), run by the controller. The rendered check is "not rendered", disclosed. |
+
+**Completion rate:** 7/7 (100%). **Skipped without approval:** 0. **Partial:** 0.
+
+### DA rows
+
+| Row | Status | Evidence |
+|---|---|---|
+| DA-073 | DONE | `ShoppingListDetailPage.tsx:329-330` `role="checkbox"` and `aria-checked` on a button; row `min-h-16` (:291) |
+| DA-074 | DONE | `aria-label="Back to lists"` (:155); `Remove ${item.name}` (:347) |
+| DA-075 | DONE (behaviour change) | `ShoppingListsPage.tsx` Rename/Delete `aria-label`s (:178, :189, :207); confirm Dialog (:249). Ruling. Name it in the PR body. |
+| DA-076 | DONE | `week-selector.tsx`, test added in `week-selector.test.tsx` |
+| DA-077 | DONE | `week-grid.tsx:111` sr-only "Recipe deleted"; remove button changed |
+| DA-078 | DONE | `category-manager.tsx` labels |
+| DA-079 | DONE | `ingredient-resolver.tsx`, `recipe-ingredients.tsx` |
+| DA-080 | DONE | `recipe-selector.tsx` |
+| DA-081 | DONE (ruling) | `plan-item-popover.tsx:233` `aria-pressed` on Button chips (no toggle primitive) |
+| DA-082 | DONE | `RecipesPage.tsx:116,125,143` `aria-pressed` toggles |
+| DA-083 | DONE | PageHeader on all 9 pages (grep count per file) |
+| DA-084 | DONE | EmptyState on the page-level empties and `recipe-selector.tsx:81`; inline panel empties kept per the audit |
+| DA-085 | DONE | `cook-mode.tsx:117` sr-only wake-lock text; `text-cook-*`/`size-cook-badge` utilities added in `index.css` |
+| DA-086 | DONE | Nested cards flattened (RecipeFormPage keeps one inner divider, accepted by the 20a review) |
+| DA-087 | DONE (ruling) | `recipe-image-field.tsx:93` uses `border-input`, because no `border-strong` token exists |
+
+### Non-blocking findings (carry to Stage 7 or note in PR)
+
+1. Plan text said `coarse:min-h-11`; the shipped code is `min-h-16` for shopping mode. The intent is met and tested, but the plan text and the code differ.
+2. DA-075 adds a confirm dialog (behaviour change). The archived-list Delete on `ShoppingListDetailPage` and the delete on `IngredientDetailPage` remain unconfirmed (Stage 7 candidate).
+3. Ingredients "uncategorized" badge sits inside the `h1`, so the count enters the heading's accessible name (disclosed).
+4. `recipe-selector` and `ingredient-resolver` use `focus-visible:outline-2` without an offset.
+5. The `ShoppingListsPage.test.tsx:58` delete-failure test passes before the fix and does not assert the toast. The keyboard test uses `.focus()` plus Enter, not Tab reachability.
+6. `recipe-status` assertions pass both pre- and post-change (pins state per ruling).
+7. The rendered check was not done (browser unavailable). That is the controller's disclosure.
+
+### Input for step 5 (DA row to fixing commit)
+
+| Row | Fixing commit(s) |
+|---|---|
+| DA-073 | 67e1f3f; a68b611 (keeps 64px rows on touch) |
+| DA-074 | 67e1f3f |
+| DA-075 | 67e1f3f; a68b611 (delete-failure test) |
+| DA-076 | 07b8da2 |
+| DA-077 | 07b8da2 |
+| DA-078 | 67e1f3f |
+| DA-079 | 07b8da2 |
+| DA-080 | 07b8da2 |
+| DA-081 | 07b8da2 |
+| DA-082 | 07b8da2 |
+| DA-083 | 07b8da2 (Meals, Recipes, RecipeForm, RecipeDetail); 67e1f3f (Ingredients, IngredientDetail, ShoppingLists, ShoppingListDetail, WishList) |
+| DA-084 | 07b8da2 (recipe-selector, recipes, RecipesPage); 67e1f3f (Ingredients, ShoppingLists, WishList) |
+| DA-085 | 07b8da2 |
+| DA-086 | 07b8da2 (Meals, RecipeForm); 67e1f3f (IngredientDetail) |
+| DA-087 | 07b8da2 |
+
+## Frontend Audit — task-057 Stage 4 (Food)
+
+- **Audit Scope:** `git diff cd06366..a68b611 -- frontend/` (25 files: 19 source, 5 tests, `index.css`). Recipes, meals, ingredients, shopping lists, wish list, cook mode.
+- **Guidelines Source:** frontend-dev-guidelines skill + plan.md Global Constraints
+- **Date:** 2026-10-19
+- **Build:** PASS (`npm run build`, exit 0; chunk-size warning only)
+- **Tests:** 933 passed, 0 failed (142 files). The runner is vitest, which rejects `--watchAll`, so `npx vitest run` was used. This includes `no-color-literals.test.ts` with the Stage 4 directories and pages removed from PENDING. ESLint could not be run: the local install fails loading its `stylish` formatter, so lint is unverified.
+- **Overall:** NEEDS-WORK (one blocking finding, cheap)
+
+### Blocking
+
+1. `frontend/src/pages/IngredientDetailPage.tsx:213-219` — the alias-remove button is icon-only with a `h-3 w-3` (12 px) glyph and no padding, so its pointer target is about 12×12. Stage 4 edited this exact element (added the `aria-label`, line 214) and restyled its block. It breaks the Global Constraint "pointer targets ≥ 24×24, icon-only controls ≥ 44×44 under `coarse:`". Fix: add `inline-flex size-6 items-center justify-center coarse:size-11` to its className.
+
+### Non-blocking
+
+- FE-17 — no tests exist for `IngredientsPage` (95-line restructure), `IngredientDetailPage`, `category-manager`, `MealsPage`, `WishListPage`, `cook-mode` or `plan-item-popover`. A grep of `src` for their names in test files finds none. The edits are mostly markup, but `category-manager` gained several `aria-label`s and `icon-sm` sizes that a role/name test would pin. Stage 4 does add tests for `recipe-status`, `week-selector`, `ShoppingListsPage` and `ShoppingListDetailPage`.
+- `frontend/src/pages/IngredientDetailPage.tsx:250-256` — the recipe-reference `<button>` is `text-sm` with no `min-h` floor, so it is about 20 px tall (below 24) and has no `coarse:min-h-11`. It is a list-row pointer target. Not touched by Stage 4, but sits in the restyled page.
+- `frontend/src/components/features/meals/plan-item-popover.tsx:297-298,368-369` — `form: any` with an eslint-disable (FE-01). Pre-existing; the diff adds none. Leave.
+- `frontend/src/components/features/meals/week-grid.tsx:79,95` — a `<td>` and a `<div>` carry `onClick` with `cursor-pointer` (FE-19 met) but are not keyboard-operable. Pre-existing; the remove `Button` inside is.
+- `frontend/src/components/features/recipes/recipe-image-field.tsx:76` — `role="button"` div with `tabIndex`, `onKeyDown` and `cursor-pointer` (line 93). Compliant; noted only because it is the one non-native control.
+- `frontend/src/components/features/recipes/recipe-ingredients.tsx:66` — `animate-spin` on the renormalize icon, gated on `isRenormalizing`. It is a button-bound spinner, so FE-05 allows it.
+
+### Checklist
+
+| ID | Status | Evidence |
+|----|--------|----------|
+| FE-01 no `any` | PASS for Stage 4 (pre-existing) | Diff adds none. Existing: `plan-item-popover.tsx:298,369` |
+| FE-02 no class concatenation | PASS | No `className={\`` or `+` concatenation in changed files; `cn()` used (`ShoppingListDetailPage.tsx:290`, `recipe-image-field.tsx:92`) |
+| FE-03 no direct client in components | PASS | No `@/lib/api/client` import in changed files |
+| FE-04 no inline Zod | PASS | No `z.` in changed files |
+| FE-05 no content spinners | PASS | Only `recipe-ingredients.tsx:66` (button-bound) |
+| FE-06 no hardcoded colors | PASS | Diff grep for palette classes, hex, `rgb(`, `hsl(`, `oklch(` is empty; `no-color-literals.test.ts` passes with Stage 4 un-PENDING'd (`no-color-literals.test.ts:10-31`). New `index.css:310-330` utilities hold sizes only |
+| FE-07 no state mutation | PASS | No `.push(`, `.splice(`, `.sort(` in added lines |
+| FE-08 named exports | PASS | No `export default` in changed files |
+| FE-09 tenant guard in hooks | PASS (n/a) | No hook files changed |
+| FE-10 tenant in query keys | PASS (n/a) | No hook files changed |
+| FE-11 `createErrorFromUnknown` | PASS | `category-manager.tsx:41,56,74`, `ingredient-resolver.tsx:41,50`, `IngredientDetailPage.tsx:62,72,83,96,107` each toast it |
+| FE-12 to FE-16 | PASS (n/a) | No types, services, schemas or form wiring changed |
+| FE-19 cursor-pointer | PASS | `week-grid.tsx:77,95`, `week-selector.tsx:56`, `IngredientsPage.tsx:198`, `ShoppingListDetailPage.tsx:292`, `recipe-image-field.tsx:93`; all other `onClick` sites are `<Button>`/`<button>` |
+| FE-17 tests | WARN | See non-blocking; new tests at `recipe-status.test.tsx`, `week-selector.test.tsx`, `ShoppingListsPage.test.tsx`, `ShoppingListDetailPage.test.tsx` |
+| FE-18 mocks | PASS (n/a) | No service changes |
+
+Global Constraints spot-checks: Fraunces and `font-heading` are not on controls in the diff; Stage 4 status is icon-plus-text (`recipe-status.test.tsx`); `coarse:` floors are present on `recipe-selector.tsx:86`, `ingredient-resolver.tsx:81`, `week-selector.tsx:56`, `IngredientsPage.tsx:198`; `theme-provider.tsx`, `lib/dashboard/**` and `services/` are untouched.
+
+### Deferred-minor triage
+
+| Source | Finding | Verdict |
+|--------|---------|---------|
+| 20b (→ 21) | `ShoppingListDetailPage` shopping-mode row `coarse:min-h-11` shrank touch rows 64→44 px | Resolved by a68b611 (`ShoppingListDetailPage.tsx:291` is now `min-h-16`; test added) |
+| 20b (→ 21) | `ShoppingListsPage` failed delete leaves dialog open, no feedback | Resolved in a68b611 as a test (`ShoppingListsPage.test.tsx:61-67`); the hook toasts the error. Fine |
+| 21 | `ShoppingListsPage.test.tsx:58` delete-failure test passes pre-commit and does not assert the toast | Leave. It pins existing behaviour |
+| 20a | `recipe-selector` / `ingredient-resolver` `focus-visible:outline-2` without `outline-offset` (`recipe-selector.tsx:86`, `ingredient-resolver.tsx:81`) | Fix before merge if convenient: add `focus-visible:outline-offset-2`, one token per line. Otherwise leave |
+| 20a | `recipe-status.test` assertions pass pre-commit | Leave |
+| 20a | `RecipeDetailPage` status icon inside `h1` | Leave (title remains the accessible name) |
+| 20a | `RecipeFormPage:200` inner `border-b` divider | Leave (DA-086 met at one surface level) |
+| 20a | DA-087 `border-input` instead of nonexistent `border-strong` | Leave (ruled) |
+| 20b | keyboard test uses `.focus()`+Enter, not Tab | Leave |
+| 20b | Ingredients uncategorized badge inside `h1` | Leave (disclosed) |
+| 20b | archived-list Delete and `IngredientDetailPage` delete unconfirmed | Stage 7 candidate, as noted |

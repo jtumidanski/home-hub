@@ -96,13 +96,14 @@ export function CategoryManager() {
                   value={editName}
                   onChange={(e) => setEditName(e.target.value)}
                   onKeyDown={(e) => e.key === "Enter" && handleRename(cat.id)}
+                  aria-label={`New name for ${cat.attributes.name}`}
                   className="h-7 text-sm flex-1"
                   autoFocus
                 />
-                <Button size="sm" variant="ghost" className="h-7 w-7 p-0" onClick={() => handleRename(cat.id)}>
+                <Button size="icon-sm" variant="ghost" aria-label="Save name" onClick={() => handleRename(cat.id)}>
                   <Check className="h-3.5 w-3.5" />
                 </Button>
-                <Button size="sm" variant="ghost" className="h-7 w-7 p-0" onClick={() => setEditingId(null)}>
+                <Button size="icon-sm" variant="ghost" aria-label="Cancel rename" onClick={() => setEditingId(null)}>
                   <X className="h-3.5 w-3.5" />
                 </Button>
               </>
@@ -113,17 +114,18 @@ export function CategoryManager() {
                   {cat.attributes.ingredient_count ?? 0} ingredient{(cat.attributes.ingredient_count ?? 0) !== 1 ? "s" : ""}
                 </span>
                 <Button
-                  size="sm"
+                  size="icon-sm"
                   variant="ghost"
-                  className="h-7 w-7 p-0"
+                  aria-label={`Rename ${cat.attributes.name}`}
                   onClick={() => { setEditingId(cat.id); setEditName(cat.attributes.name); }}
                 >
                   <Pencil className="h-3.5 w-3.5" />
                 </Button>
                 <Button
-                  size="sm"
+                  size="icon-sm"
                   variant="ghost"
-                  className="h-7 w-7 p-0 text-destructive hover:text-destructive"
+                  aria-label={`Delete ${cat.attributes.name}`}
+                  className="text-destructive hover:text-destructive"
                   onClick={() => requestDelete(cat.id, cat.attributes.name, cat.attributes.ingredient_count ?? 0)}
                 >
                   <X className="h-3.5 w-3.5" />
@@ -140,6 +142,7 @@ export function CategoryManager() {
           value={newName}
           onChange={(e) => setNewName(e.target.value)}
           onKeyDown={(e) => e.key === "Enter" && handleCreate()}
+          aria-label="New category name"
           className="h-8 text-sm"
         />
         <Button size="sm" onClick={handleCreate} disabled={!newName.trim() || createCategory.isPending}>

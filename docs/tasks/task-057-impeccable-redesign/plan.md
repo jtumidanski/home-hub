@@ -496,10 +496,10 @@ Known literals and their mapping (decided here so every implementer maps the sam
 | `step-segment` cookware `text-blue-600 dark:text-blue-400` | `text-info` |
 | `step-segment` timer `text-green-600 dark:text-green-400` | `text-success` |
 
-- [ ] **Step 1:** Cut the stage branch. **Step 2:** Remove the PENDING entries; run the guard → FAIL listing the literals above.
-- [ ] **Step 3: Write the failing test** `recipe-status.test.tsx`: the resolved icon in `RecipeCard` has `text-success` and an accessible name or adjacent text; the unresolved icon has `text-warning-text`.
-- [ ] **Step 4: Implement** the mapping; pages adopt `PageHeader`/`EmptyState` where they hand-roll them; fix every Stage 4 row in these files. Shopping mode rows get `coarse:min-h-11`.
-- [ ] **Step 5: Run** guard + area tests → PASS; tsc; eslint. **Step 6: Commit** in two commits if large (recipes+meals; ingredients+shopping+wish list), each `feat(frontend): restyle <area>`.
+- [x] **Step 1:** Cut the stage branch. **Step 2:** Remove the PENDING entries; run the guard → FAIL listing the literals above.
+- [x] **Step 3: Write the failing test** `recipe-status.test.tsx`: the resolved icon in `RecipeCard` has `text-success` and an accessible name or adjacent text; the unresolved icon has `text-warning-text`.
+- [x] **Step 4: Implement** the mapping; pages adopt `PageHeader`/`EmptyState` where they hand-roll them; fix every Stage 4 row in these files. Shopping mode rows get `coarse:min-h-11`.
+- [x] **Step 5: Run** guard + area tests → PASS; tsc; eslint. **Step 6: Commit** in two commits if large (recipes+meals; ingredients+shopping+wish list), each `feat(frontend): restyle <area>`.
 
 ### Task 21: Resolve remaining Stage 4 findings
 

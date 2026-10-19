@@ -2,6 +2,7 @@ import { useState, useCallback, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 import { Lock, Unlock, Copy, FileDown, Plus, ShoppingCart } from "lucide-react";
+import { PageHeader } from "@/components/common/page-header";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -174,17 +175,11 @@ export function MealsPage() {
   return (
     <div className="p-4 md:p-6 space-y-4">
       {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-        <div>
-          <h1 className="text-2xl font-bold">Meal Planner</h1>
-          <p className="text-sm text-muted-foreground">
-            {plan ? plan.attributes.name : "No plan for this week"}
-          </p>
-        </div>
-        <div className="flex items-center gap-2 flex-wrap">
-          <WeekSelector startsOn={startsOn} onWeekChange={setStartsOn} />
-        </div>
-      </div>
+      <PageHeader
+        title="Meal Planner"
+        description={plan ? plan.attributes.name : "No plan for this week"}
+        actions={<WeekSelector startsOn={startsOn} onWeekChange={setStartsOn} />}
+      />
 
       {/* Actions */}
       {existingPlanId && (

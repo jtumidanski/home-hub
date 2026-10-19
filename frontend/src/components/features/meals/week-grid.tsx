@@ -116,14 +116,15 @@ export function WeekGrid({ startsOn, items, locked, onCellClick, onItemClick, on
                               {!locked && (
                                 <Button
                                   variant="ghost"
-                                  size="icon"
-                                  className="h-4 w-4 opacity-0 group-hover:opacity-100 shrink-0"
+                                  size="icon-xs"
+                                  aria-label={`Remove ${item.recipe_title}`}
+                                  className="shrink-0 opacity-0 group-hover:opacity-100 group-focus-within:opacity-100 coarse:opacity-100"
                                   onClick={(e) => {
                                     e.stopPropagation();
                                     onRemoveItem(item.id);
                                   }}
                                 >
-                                  <X className="h-3 w-3" />
+                                  <X aria-hidden="true" className="h-3 w-3" />
                                 </Button>
                               )}
                             </div>

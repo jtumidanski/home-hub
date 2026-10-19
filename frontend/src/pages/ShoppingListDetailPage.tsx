@@ -12,6 +12,8 @@ import {
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { PageHeader } from "@/components/common/page-header";
+import { EmptyState } from "@/components/common/empty-state";
 import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Badge } from "@/components/ui/badge";
@@ -146,23 +148,28 @@ export function ShoppingListDetailPage() {
   return (
     <div className="p-4 md:p-6 space-y-4">
       {/* Header */}
-      <div className="flex items-center gap-3">
-        <Button variant="ghost" size="icon" onClick={() => navigate("/app/shopping/grocery")}>
+      <div className="flex items-start gap-3">
+        <Button
+          variant="ghost"
+          size="icon"
+          aria-label="Back to lists"
+          onClick={() => navigate("/app/shopping/grocery")}
+        >
           <ArrowLeft className="h-4 w-4" />
         </Button>
-        <div className="flex-1">
-          <h1 className="text-2xl font-bold">{list.attributes.name}</h1>
-          {isArchived && list.attributes.archived_at && (
-            <p className="text-sm text-muted-foreground">
-              Archived on{" "}
-              {new Date(list.attributes.archived_at).toLocaleDateString("en-US", {
-                month: "short",
-                day: "numeric",
-                year: "numeric",
-              })}
-            </p>
-          )}
-        </div>
+        <PageHeader
+          className="flex-1"
+          title={list.attributes.name}
+          description={
+            isArchived && list.attributes.archived_at
+              ? `Archived on ${new Date(list.attributes.archived_at).toLocaleDateString("en-US", {
+                  month: "short",
+                  day: "numeric",
+                  year: "numeric",
+                })}`
+              : undefined
+          }
+        />
       </div>
 
       {/* Action Bar */}
@@ -257,13 +264,11 @@ export function ShoppingListDetailPage() {
 
       {/* Items grouped by category */}
       {grouped.length === 0 ? (
-        <Card>
-          <CardContent className="py-8 text-center text-muted-foreground">
-            <ShoppingCart className="h-12 w-12 mx-auto mb-3 opacity-50" />
-            <p>No items yet</p>
-            <p className="text-sm">Add items to get started</p>
-          </CardContent>
-        </Card>
+        <EmptyState
+          icon={ShoppingCart}
+          title="No items yet"
+          description="Add items to get started"
+        />
       ) : (
         grouped.map((group) => {
           const unchecked = group.items.filter((i) => !i.checked);
@@ -278,33 +283,30 @@ export function ShoppingListDetailPage() {
                 </CardTitle>
               </CardHeader>
               <CardContent className="py-0 px-2">
-                {displayItems.map((item) => (
-                  <div
-                    key={item.id}
-                    className={cn(
-                      "flex items-center gap-3 px-2 py-2 rounded hover:bg-accent/30 transition-colors min-h-[64px] md:min-h-0",
-                      shoppingMode && "cursor-pointer",
-                      item.checked && "opacity-60",
-                    )}
-                    onClick={() => {
-                      if (shoppingMode && !isArchived) {
-                        checkItem.mutate({ itemId: item.id, checked: !item.checked });
-                      }
-                    }}
-                  >
-                    {(shoppingMode || isArchived) && (
-                      <div
-                        className={cn(
-                          "h-7 w-7 md:h-5 md:w-5 rounded border flex items-center justify-center flex-shrink-0",
-                          item.checked
-                            ? "bg-primary border-primary text-primary-foreground"
-                            : "border-muted-foreground",
-                        )}
-                      >
-                        {item.checked && <Check className="h-4 w-4 md:h-3 md:w-3" />}
-                      </div>
-                    )}
-                    <div className="flex-1 min-w-0">
+                {displayItems.map((item) => {
+                  const interactive = shoppingMode && !isArchived;
+                  const showBox = shoppingMode || isArchived;
+                  const rowClass = cn(
+                    "flex w-full items-center gap-3 px-2 py-2 rounded text-left transition-colors",
+                    shoppingMode ? "min-h-16" : "min-h-11 md:min-h-0",
+                    interactive && "cursor-pointer hover:bg-accent/30 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring",
+                    item.checked && "opacity-60",
+                  );
+                  const box = showBox && (
+                    <span
+                      aria-hidden="true"
+                      className={cn(
+                        "size-7 md:size-6 rounded border flex items-center justify-center flex-shrink-0",
+                        item.checked
+                          ? "bg-primary border-primary text-primary-foreground"
+                          : "border-input",
+                      )}
+                    >
+                      {item.checked && <Check className="size-4" />}
+                    </span>
+                  );
+                  const label = (
+                    <span className="flex-1 min-w-0">
                       <span
                         className={cn(
                           "text-[17px] md:text-sm",
@@ -318,22 +320,39 @@ export function ShoppingListDetailPage() {
                           {item.quantity}
                         </Badge>
                       )}
+                    </span>
+                  );
+                  return interactive ? (
+                    <button
+                      key={item.id}
+                      type="button"
+                      role="checkbox"
+                      aria-checked={item.checked}
+                      className={rowClass}
+                      onClick={() => checkItem.mutate({ itemId: item.id, checked: !item.checked })}
+                    >
+                      {box}
+                      {label}
+                    </button>
+                  ) : (
+                    <div key={item.id} className={cn(rowClass, "hover:bg-accent/30")}>
+                      {box}
+                      {showBox && item.checked && <span className="sr-only">Checked:</span>}
+                      {label}
+                      {!shoppingMode && !isArchived && (
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="flex-shrink-0"
+                          aria-label={`Remove ${item.name}`}
+                          onClick={() => removeItem.mutate(item.id)}
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      )}
                     </div>
-                    {!shoppingMode && !isArchived && (
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        className="h-7 w-7 flex-shrink-0"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          removeItem.mutate(item.id);
-                        }}
-                      >
-                        <Trash2 className="h-3 w-3" />
-                      </Button>
-                    )}
-                  </div>
-                ))}
+                  );
+                })}
               </CardContent>
             </Card>
           );

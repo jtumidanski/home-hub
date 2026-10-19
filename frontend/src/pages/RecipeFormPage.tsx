@@ -21,6 +21,7 @@ import { CooklangHelp } from "@/components/features/recipes/cooklang-help";
 import { PlannerConfigForm } from "@/components/features/recipes/planner-config-form";
 import { RecipeIngredients } from "@/components/features/recipes/recipe-ingredients";
 import { useMobile } from "@/lib/hooks/use-mobile";
+import { PageHeader } from "@/components/common/page-header";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
@@ -158,7 +159,7 @@ export function RecipeFormPage() {
         <ArrowLeft className="mr-1 h-4 w-4" /> {isEditing ? "Back to recipe" : "Recipes"}
       </Button>
 
-      <h1 className="text-2xl font-bold mb-6">{isEditing ? "Edit Recipe" : "New Recipe"}</h1>
+      <PageHeader className="mb-6" title={isEditing ? "Edit Recipe" : "New Recipe"} />
 
       <Form {...form}>
         <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
@@ -197,7 +198,7 @@ export function RecipeFormPage() {
 
             <div className="space-y-2">
               <label className="text-sm font-medium leading-none">Preview</label>
-              <div className="rounded-md border p-4 bg-muted/30 min-h-[400px] space-y-4">
+              <div className="rounded-lg p-4 bg-muted/30 min-h-[400px] space-y-4">
                 {imageDraft.previewSrc && (
                   <img
                     src={imageDraft.previewSrc}

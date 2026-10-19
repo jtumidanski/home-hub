@@ -4,6 +4,8 @@ import { AlertTriangle, Plus, Search, X, Settings, ListChecks, ChevronLeft, Chev
 import { toast } from "sonner";
 import { useIngredients, useCreateIngredient, useDeleteIngredient } from "@/lib/hooks/api/use-ingredients";
 import { useIngredientCategories } from "@/lib/hooks/api/use-ingredient-categories";
+import { PageHeader } from "@/components/common/page-header";
+import { EmptyState } from "@/components/common/empty-state";
 import { PullToRefresh } from "@/components/common/pull-to-refresh";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -99,38 +101,44 @@ export function IngredientsPage() {
   return (
     <PullToRefresh onRefresh={handleRefresh}>
       <div className="p-4 md:p-6 space-y-4">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <h1 className="text-2xl font-bold">Ingredients</h1>
-            {uncategorizedCount > 0 && (
-              <Badge variant="secondary" className="text-xs">
-                {uncategorizedCount} uncategorized
-              </Badge>
-            )}
-          </div>
-          <div className="flex items-center gap-1">
-            <Button
-              size="sm"
-              variant={view === "categories" ? "default" : "outline"}
-              onClick={() => setView(view === "categories" ? "list" : "categories")}
-            >
-              <Settings className="mr-1 h-4 w-4" />
-              Categories
-            </Button>
-            <Button
-              size="sm"
-              variant={view === "bulk" ? "default" : "outline"}
-              onClick={() => setView(view === "bulk" ? "list" : "bulk")}
-            >
-              <ListChecks className="mr-1 h-4 w-4" />
-              Bulk Edit
-            </Button>
-            <Button size="sm" onClick={() => { setView("list"); setShowCreate(!showCreate); }}>
-              <Plus className="mr-1 h-4 w-4" />
-              New
-            </Button>
-          </div>
-        </div>
+        <PageHeader
+          title={
+            <>
+              Ingredients
+              {uncategorizedCount > 0 && (
+                <Badge variant="secondary" className="ml-3 align-middle text-xs">
+                  {uncategorizedCount} uncategorized
+                </Badge>
+              )}
+            </>
+          }
+          actions={
+            <>
+              <Button
+                size="sm"
+                variant={view === "categories" ? "default" : "outline"}
+                aria-pressed={view === "categories"}
+                onClick={() => setView(view === "categories" ? "list" : "categories")}
+              >
+                <Settings className="mr-1 h-4 w-4" />
+                Categories
+              </Button>
+              <Button
+                size="sm"
+                variant={view === "bulk" ? "default" : "outline"}
+                aria-pressed={view === "bulk"}
+                onClick={() => setView(view === "bulk" ? "list" : "bulk")}
+              >
+                <ListChecks className="mr-1 h-4 w-4" />
+                Bulk Edit
+              </Button>
+              <Button size="sm" onClick={() => { setView("list"); setShowCreate(!showCreate); }}>
+                <Plus className="mr-1 h-4 w-4" />
+                New
+              </Button>
+            </>
+          }
+        />
 
         {showCreate && (
           <div className="flex gap-2">
@@ -186,7 +194,8 @@ export function IngredientsPage() {
             <button
               type="button"
               onClick={() => setSearch("")}
-              className="absolute right-3 top-1/2 -translate-y-1/2 cursor-pointer text-muted-foreground hover:text-foreground"
+              aria-label="Clear search"
+              className="absolute right-1 top-1/2 flex size-8 -translate-y-1/2 cursor-pointer items-center justify-center text-muted-foreground hover:text-foreground coarse:size-11"
             >
               <X className="h-4 w-4" />
             </button>
@@ -204,16 +213,16 @@ export function IngredientsPage() {
 
         {/* Empty state */}
         {!isLoading && ingredients.length === 0 && (
-          <div className="flex flex-col items-center justify-center py-12 text-center">
-            <p className="text-muted-foreground mb-2">No canonical ingredients yet.</p>
-            <p className="text-sm text-muted-foreground mb-4">
-              Ingredients are added automatically when you create recipes, or you can add them manually.
-            </p>
-            <Button onClick={() => setShowCreate(true)}>
-              <Plus className="mr-1 h-4 w-4" />
-              Add your first ingredient
-            </Button>
-          </div>
+          <EmptyState
+            title="No canonical ingredients yet"
+            description="Ingredients are added automatically when you create recipes, or you can add them manually."
+            action={
+              <Button onClick={() => setShowCreate(true)}>
+                <Plus className="mr-1 h-4 w-4" />
+                Add your first ingredient
+              </Button>
+            }
+          />
         )}
 
         {/* Ingredient list */}

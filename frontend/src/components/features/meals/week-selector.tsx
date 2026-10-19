@@ -47,12 +47,13 @@ export function WeekSelector({ startsOn, onWeekChange }: WeekSelectorProps) {
 
   return (
     <div className="flex items-center gap-2">
-      <Button variant="outline" size="icon" onClick={goToPreviousWeek}>
-        <ChevronLeft className="h-4 w-4" />
+      <Button variant="outline" size="icon" aria-label="Previous week" onClick={goToPreviousWeek}>
+        <ChevronLeft aria-hidden="true" className="h-4 w-4" />
       </Button>
       <Popover open={open} onOpenChange={setOpen}>
         <PopoverTrigger
-          className="text-sm font-medium min-w-[180px] text-center hover:underline cursor-pointer"
+          aria-label={`Choose week, ${formatDate(startsOn)} – ${formatDate(endDate)}, ${endDate.getFullYear()}`}
+          className="inline-flex min-h-8 min-w-[180px] cursor-pointer items-center justify-center rounded-md px-2 text-sm font-medium hover:underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring coarse:min-h-11"
         >
           {formatDate(startsOn)} – {formatDate(endDate)}, {endDate.getFullYear()}
         </PopoverTrigger>
@@ -65,8 +66,8 @@ export function WeekSelector({ startsOn, onWeekChange }: WeekSelectorProps) {
           />
         </PopoverContent>
       </Popover>
-      <Button variant="outline" size="icon" onClick={goToNextWeek}>
-        <ChevronRight className="h-4 w-4" />
+      <Button variant="outline" size="icon" aria-label="Next week" onClick={goToNextWeek}>
+        <ChevronRight aria-hidden="true" className="h-4 w-4" />
       </Button>
     </div>
   );

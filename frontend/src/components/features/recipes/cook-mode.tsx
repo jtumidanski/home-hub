@@ -112,9 +112,12 @@ export function CookMode({ steps, title, open, onClose }: CookModeProps) {
         </div>
         <div className="flex items-center gap-2 shrink-0">
           {wakeLockActive && (
-            <Eye className="h-4 w-4 text-muted-foreground" aria-label="Screen wake lock active" />
+            <>
+              <Eye className="h-4 w-4 text-muted-foreground" aria-hidden="true" />
+              <span className="sr-only">Screen wake lock active</span>
+            </>
           )}
-          <Button variant="ghost" size="icon" onClick={onClose} aria-label="Close cook mode">
+          <Button variant="ghost" size="icon-lg" onClick={onClose} aria-label="Close cook mode">
             <X className="h-5 w-5" />
           </Button>
         </div>
@@ -128,26 +131,19 @@ export function CookMode({ steps, title, open, onClose }: CookModeProps) {
               <div key={step.number}>
                 {showSection && (
                   <h3
-                    className="font-semibold text-muted-foreground mb-3 mt-4"
-                    style={{ fontSize: "clamp(1rem, 2.5vw, 1.75rem)" }}
+                    className="font-semibold text-muted-foreground mb-3 mt-4 text-cook-meta"
                   >
                     {step.section}
                   </h3>
                 )}
                 <div className="flex gap-4 items-start">
                   <span
-                    className="flex shrink-0 items-center justify-center rounded-full bg-primary text-primary-foreground font-bold"
-                    style={{
-                      fontSize: "clamp(0.875rem, 2vw, 1.5rem)",
-                      width: "clamp(2rem, 4vw, 3rem)",
-                      height: "clamp(2rem, 4vw, 3rem)",
-                    }}
+                    className="flex shrink-0 items-center justify-center rounded-full bg-primary text-primary-foreground font-bold text-cook-badge size-cook-badge"
                   >
                     {step.number}
                   </span>
                   <p
-                    className="leading-relaxed pt-0.5"
-                    style={{ fontSize: "clamp(1.25rem, 3.5vw, 3rem)" }}
+                    className="leading-relaxed pt-0.5 text-cook-step"
                   >
                     {step.segments.map((seg, i) => (
                       <StepSegment key={i} segment={seg} size="large" />
@@ -194,15 +190,13 @@ function SingleStepView({
         <div className="min-h-full flex flex-col items-center justify-center py-6">
           {showSection && (
             <h3
-              className="font-semibold text-muted-foreground mb-4"
-              style={{ fontSize: "clamp(1.25rem, 3vw, 2.5rem)" }}
+              className="font-semibold text-muted-foreground mb-4 text-cook-section"
             >
               {step.section}
             </h3>
           )}
           <p
-            className="leading-relaxed text-center max-w-4xl"
-            style={{ fontSize: "clamp(1.5rem, 5vw, 5rem)" }}
+            className="leading-relaxed text-center max-w-4xl text-cook-focus"
           >
             {step.segments.map((seg, i) => (
               <StepSegment key={i} segment={seg} size="large" />
@@ -224,8 +218,7 @@ function SingleStepView({
           <ChevronLeft className="h-6 w-6" />
         </Button>
         <span
-          className="font-medium text-muted-foreground"
-          style={{ fontSize: "clamp(1rem, 2.5vw, 1.75rem)" }}
+          className="font-medium text-muted-foreground text-cook-meta"
         >
           {currentStep + 1} / {steps.length}
         </span>

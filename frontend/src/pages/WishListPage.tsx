@@ -2,6 +2,8 @@ import { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Plus, Pencil, Trash2, ThumbsUp, Heart } from "lucide-react";
+import { PageHeader } from "@/components/common/page-header";
+import { EmptyState } from "@/components/common/empty-state";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -135,12 +137,14 @@ export function WishListPage() {
 
   return (
     <div className="p-4 md:p-6 space-y-4">
-      <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold">Wish List</h1>
-        <Button onClick={openCreate}>
-          <Plus className="h-4 w-4 mr-1" /> Add item
-        </Button>
-      </div>
+      <PageHeader
+        title="Wish List"
+        actions={
+          <Button onClick={openCreate}>
+            <Plus className="h-4 w-4 mr-1" /> Add item
+          </Button>
+        }
+      />
 
       <div className="space-y-3">
         {isLoading ? (
@@ -148,12 +152,11 @@ export function WishListPage() {
             <Skeleton key={i} className="h-24 w-full" />
           ))
         ) : items.length === 0 ? (
-          <Card>
-            <CardContent className="py-10 text-center text-muted-foreground">
-              <Heart className="h-12 w-12 mx-auto mb-3 opacity-50" />
-              <p>Nothing on the wish list yet. Add the first thing you've been eyeing.</p>
-            </CardContent>
-          </Card>
+          <EmptyState
+            icon={Heart}
+            title="Nothing on the wish list yet"
+            description="Add the first thing you've been eyeing."
+          />
         ) : (
           items.map((item) => {
             const a = item.attributes;

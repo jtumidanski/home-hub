@@ -1,5 +1,6 @@
 import { useState, useMemo } from "react";
-import { Search, X } from "lucide-react";
+import { Search, SearchX, X } from "lucide-react";
+import { EmptyState } from "@/components/common/empty-state";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -35,8 +36,9 @@ export function RecipeSelector({ autoClassification, onSelectRecipe }: RecipeSel
     <div className="space-y-3">
       <div className="flex gap-2">
         <div className="relative flex-1">
-          <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+          <Search aria-hidden="true" className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
           <Input
+            aria-label="Search recipes"
             placeholder="Search recipes..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
@@ -45,11 +47,12 @@ export function RecipeSelector({ autoClassification, onSelectRecipe }: RecipeSel
           {search && (
             <Button
               variant="ghost"
-              size="icon"
-              className="absolute right-1 top-1 h-6 w-6"
+              size="icon-xs"
+              aria-label="Clear search"
+              className="absolute right-1 top-1"
               onClick={() => setSearch("")}
             >
-              <X className="h-3 w-3" />
+              <X aria-hidden="true" className="h-3 w-3" />
             </Button>
           )}
         </div>
@@ -75,19 +78,19 @@ export function RecipeSelector({ autoClassification, onSelectRecipe }: RecipeSel
             <Skeleton key={i} className="h-12 w-full" />
           ))
         ) : recipes.length === 0 ? (
-          <p className="text-sm text-muted-foreground text-center py-4">No recipes found</p>
+          <EmptyState icon={SearchX} title="No recipes found" headingLevel="h3" className="py-6" />
         ) : (
           recipes.map((recipe) => (
             <button
               key={recipe.id}
-              className="w-full text-left p-2 rounded hover:bg-accent flex items-center justify-between gap-2"
+              className="w-full text-left p-2 rounded hover:bg-accent flex items-center justify-between gap-2 min-h-8 coarse:min-h-11 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring"
               onClick={() => onSelectRecipe(recipe)}
             >
               <div className="min-w-0">
                 <div className="font-medium text-sm truncate">{recipe.attributes.title}</div>
                 <div className="text-xs text-muted-foreground flex items-center gap-2">
                   {recipe.attributes.classification && (
-                    <Badge variant="secondary" className="text-[10px] px-1 py-0">
+                    <Badge variant="secondary" className="text-xs">
                       {recipe.attributes.classification}
                     </Badge>
                   )}

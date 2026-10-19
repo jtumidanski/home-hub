@@ -1,6 +1,6 @@
 import { useState, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
-import { Plus, Search, X } from "lucide-react";
+import { BookOpen, Plus, Search, X } from "lucide-react";
 import { toast } from "sonner";
 import { useRecipes, useRecipeTags, useDeleteRecipe } from "@/lib/hooks/api/use-recipes";
 import { useMobile } from "@/lib/hooks/use-mobile";
@@ -9,7 +9,8 @@ import { RecipeCard } from "@/components/features/recipes/recipe-card";
 import { RecipeSortSelect } from "@/components/features/recipes/recipe-sort-select";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Badge } from "@/components/ui/badge";
+import { PageHeader } from "@/components/common/page-header";
+import { EmptyState } from "@/components/common/empty-state";
 import { Skeleton } from "@/components/ui/skeleton";
 import { createErrorFromUnknown } from "@/lib/api/errors";
 import { CLASSIFICATIONS } from "@/lib/constants/recipe";
@@ -68,32 +69,38 @@ export function RecipesPage() {
   return (
     <PullToRefresh onRefresh={handleRefresh}>
       <div className="p-4 md:p-6 space-y-4">
-        <div className="flex items-center justify-between">
-          <h1 className="text-2xl font-bold">Recipes</h1>
-          <Button size="sm" onClick={() => navigate("/app/recipes/new")}>
-            <Plus className="mr-1 h-4 w-4" />
-            New Recipe
-          </Button>
-        </div>
+        <PageHeader
+          title="Recipes"
+          actions={
+            <Button size="sm" onClick={() => navigate("/app/recipes/new")}>
+              <Plus className="mr-1 h-4 w-4" />
+              New Recipe
+            </Button>
+          }
+        />
 
         {/* Search + sort */}
         <div className="flex gap-2">
           <div className="relative flex-1">
-            <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+            <Search aria-hidden="true" className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
             <Input
+              aria-label="Search recipes"
               placeholder="Search recipes..."
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               className="pl-9"
             />
             {search && (
-              <button
+              <Button
                 type="button"
+                variant="ghost"
+                size="icon-xs"
+                aria-label="Clear search"
                 onClick={() => setSearch("")}
-                className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                className="absolute right-1.5 top-1/2 -translate-y-1/2 text-muted-foreground"
               >
-                <X className="h-4 w-4" />
-              </button>
+                <X aria-hidden="true" className="h-4 w-4" />
+              </Button>
             )}
           </div>
           <RecipeSortSelect value={sort} onChange={setSort} />
@@ -102,20 +109,24 @@ export function RecipesPage() {
         {/* Unified filter row */}
         <div className="flex flex-wrap gap-1.5">
             {/* Planner status filters */}
-            <Badge
+            <Button
+              type="button"
+              size="sm"
               variant={plannerFilter === "ready" ? "default" : "outline"}
-              className="cursor-pointer text-xs"
+              aria-pressed={plannerFilter === "ready"}
               onClick={() => setPlannerFilter(plannerFilter === "ready" ? "" : "ready")}
             >
               Planner Ready
-            </Badge>
-            <Badge
+            </Button>
+            <Button
+              type="button"
+              size="sm"
               variant={plannerFilter === "not-ready" ? "default" : "outline"}
-              className="cursor-pointer text-xs"
+              aria-pressed={plannerFilter === "not-ready"}
               onClick={() => setPlannerFilter(plannerFilter === "not-ready" ? "" : "not-ready")}
             >
               Not Ready
-            </Badge>
+            </Button>
 
             {/* Separator */}
             {availableTags.length > 0 && (
@@ -124,24 +135,27 @@ export function RecipesPage() {
 
             {/* Tag filters (includes classification tags) */}
             {availableTags.map((t) => (
-              <Badge
+              <Button
                 key={t.attributes.tag}
+                type="button"
+                size="sm"
                 variant={selectedTags.includes(t.attributes.tag) ? "default" : "outline"}
-                className="cursor-pointer text-xs"
+                aria-pressed={selectedTags.includes(t.attributes.tag)}
                 onClick={() => toggleTag(t.attributes.tag)}
               >
                 {toTitleCase(t.attributes.tag)} ({t.attributes.count})
-              </Badge>
+              </Button>
             ))}
 
             {hasActiveFilters && (
-              <button
+              <Button
                 type="button"
-                className="inline-flex items-center rounded-md px-2 py-0.5 text-xs text-muted-foreground hover:text-foreground transition-colors"
+                variant="ghost"
+                size="sm"
                 onClick={() => { setSelectedTags([]); setPlannerFilter(""); }}
               >
                 Clear
-              </button>
+              </Button>
             )}
           </div>
 
@@ -156,13 +170,17 @@ export function RecipesPage() {
 
         {/* Empty state */}
         {!isLoading && recipes.length === 0 && (
-          <div className="flex flex-col items-center justify-center py-12 text-center">
-            <p className="text-muted-foreground mb-4">No recipes yet.</p>
-            <Button onClick={() => navigate("/app/recipes/new")}>
-              <Plus className="mr-1 h-4 w-4" />
-              Create your first recipe
-            </Button>
-          </div>
+          <EmptyState
+            icon={BookOpen}
+            title="No recipes yet"
+            description="Add a recipe to start building meal plans."
+            action={
+              <Button onClick={() => navigate("/app/recipes/new")}>
+                <Plus className="mr-1 h-4 w-4" />
+                Create your first recipe
+              </Button>
+            }
+          />
         )}
 
         {/* Recipe list */}

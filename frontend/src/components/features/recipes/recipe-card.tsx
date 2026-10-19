@@ -41,7 +41,7 @@ function RecipeStatusIcon({ attrs }: { attrs: RecipeListAttributes }) {
   if (attrs.classification || attrs.totalIngredients > 0) {
     return (
       <span className="inline-flex">
-        <AlertCircle aria-hidden="true" className="h-4 w-4 text-warning shrink-0" />
+        <AlertCircle aria-hidden="true" className="h-4 w-4 text-warning-text shrink-0" />
         <span className="sr-only">{statusText}</span>
       </span>
     );

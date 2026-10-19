@@ -90,12 +90,12 @@ export function RecipeImageField({ draft, previewSrc, onStage, onRemove, onUndo,
           onDragLeave={() => setDragging(false)}
           onDrop={onDrop}
           className={cn(
-            "flex cursor-pointer flex-col items-center justify-center gap-2 rounded-md border border-dashed p-6 text-sm text-muted-foreground",
+            "flex cursor-pointer flex-col items-center justify-center gap-2 rounded-md border border-dashed border-input p-6 text-sm text-muted-foreground",
             dragging && "border-primary bg-muted/50",
             error && "border-destructive",
           )}
         >
-          <ImagePlus className="h-6 w-6" />
+          <ImagePlus aria-hidden="true" className="h-6 w-6" />
           <span>Drop a photo here, or click to choose one</span>
           <span className="text-xs">JPEG, PNG or WebP, up to 10 MB</span>
         </div>

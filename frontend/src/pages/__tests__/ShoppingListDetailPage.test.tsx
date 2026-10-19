@@ -89,6 +89,36 @@ describe("ShoppingListDetailPage — row behavior", () => {
     expect(mockCheckMutate).toHaveBeenCalledWith({ itemId: "i1", checked: true });
   });
 
+  it("exposes shopping-mode rows as checkboxes with checked state", async () => {
+    renderPage();
+    await userEvent.click(screen.getByText("Start Shopping"));
+    expect(screen.getByRole("checkbox", { name: /Milk/ })).toHaveAttribute("aria-checked", "false");
+    expect(screen.getByRole("checkbox", { name: /Eggs/ })).toHaveAttribute("aria-checked", "true");
+  });
+
+  it("keeps shopping-mode rows at least 64px tall on touch devices", async () => {
+    renderPage();
+    await userEvent.click(screen.getByText("Start Shopping"));
+    const row = screen.getByRole("checkbox", { name: /Milk/ });
+    expect(row).toHaveClass("min-h-16");
+    expect(row.className).not.toMatch(/coarse:min-h/);
+  });
+
+  it("toggles a row from the keyboard", async () => {
+    renderPage();
+    await userEvent.click(screen.getByText("Start Shopping"));
+    await userEvent.tab();
+    screen.getByRole("checkbox", { name: /Milk/ }).focus();
+    await userEvent.keyboard("{Enter}");
+    expect(mockCheckMutate).toHaveBeenCalledWith({ itemId: "i1", checked: true });
+  });
+
+  it("gives edit-mode remove buttons an accessible name", () => {
+    renderPage();
+    expect(screen.getByRole("button", { name: "Remove Milk" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Back to lists" })).toBeInTheDocument();
+  });
+
   it("does not toggle items in the archived read-only view", async () => {
     mockUseShoppingList.mockReturnValue(mockList("archived"));
     renderPage();
