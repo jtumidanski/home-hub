@@ -136,10 +136,10 @@ describe("CalendarGrid (desktop)", () => {
         .getAllByRole("button")
         .find((b) => b.getAttribute("aria-label")?.startsWith("Run, May 10"));
       expect(trigger).toBeDefined();
-      expect(trigger!.className).toContain("border-blue-500");
+      expect(trigger!.className).toContain("border-swatch-blue");
       const flange = trigger!.querySelector('[aria-hidden="true"]');
       expect(flange).not.toBeNull();
-      expect(flange?.className).toContain("bg-blue-500");
+      expect(flange?.className).toContain("bg-swatch-blue");
       expect(flange?.getAttribute("class")).toMatch(/\[clip-path:polygon/);
     });
 
@@ -184,7 +184,7 @@ describe("CalendarGrid (desktop)", () => {
       const trigger = screen
         .getAllByRole("button")
         .find((b) => b.getAttribute("aria-label")?.startsWith("Run, May 10"))!;
-      expect(trigger.className).not.toContain("border-blue-500");
+      expect(trigger.className).not.toContain("border-swatch-blue");
       expect(trigger.querySelector('[aria-hidden="true"]')).toBeNull();
     });
 

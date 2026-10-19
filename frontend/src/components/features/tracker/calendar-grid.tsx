@@ -10,48 +10,9 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { useMonthSummary, usePutEntry, useDeleteEntry, useSkipEntry } from "@/lib/hooks/api/use-trackers";
 import { useTenant } from "@/context/tenant-context";
 import { cn } from "@/lib/utils";
+import { swatchClass } from "@/lib/constants/swatches";
 import { getLocalTodayStr, getLocalMonth } from "@/lib/date-utils";
 import type { MonthItemInfo, TrackerEntry, SentimentValue, NumericValue, RangeValue } from "@/types/models/tracker";
-
-const colorBg: Record<string, string> = {
-  red: "bg-red-100 dark:bg-red-950", orange: "bg-orange-100 dark:bg-orange-950",
-  amber: "bg-amber-100 dark:bg-amber-950", yellow: "bg-yellow-100 dark:bg-yellow-950",
-  lime: "bg-lime-100 dark:bg-lime-950", green: "bg-green-100 dark:bg-green-950",
-  emerald: "bg-emerald-100 dark:bg-emerald-950", teal: "bg-teal-100 dark:bg-teal-950",
-  cyan: "bg-cyan-100 dark:bg-cyan-950", blue: "bg-blue-100 dark:bg-blue-950",
-  indigo: "bg-indigo-100 dark:bg-indigo-950", violet: "bg-violet-100 dark:bg-violet-950",
-  purple: "bg-purple-100 dark:bg-purple-950", fuchsia: "bg-fuchsia-100 dark:bg-fuchsia-950",
-  pink: "bg-pink-100 dark:bg-pink-950", rose: "bg-rose-100 dark:bg-rose-950",
-};
-
-const colorBorderLeft: Record<string, string> = {
-  red: "border-l-red-500", orange: "border-l-orange-500", amber: "border-l-amber-500", yellow: "border-l-yellow-500",
-  lime: "border-l-lime-500", green: "border-l-green-500", emerald: "border-l-emerald-500", teal: "border-l-teal-500",
-  cyan: "border-l-cyan-500", blue: "border-l-blue-500", indigo: "border-l-indigo-500", violet: "border-l-violet-500",
-  purple: "border-l-purple-500", fuchsia: "border-l-fuchsia-500", pink: "border-l-pink-500", rose: "border-l-rose-500",
-};
-
-const colorBorderSolid: Record<string, string> = {
-  red: "border-red-500", orange: "border-orange-500",
-  amber: "border-amber-500", yellow: "border-yellow-500",
-  lime: "border-lime-500", green: "border-green-500",
-  emerald: "border-emerald-500", teal: "border-teal-500",
-  cyan: "border-cyan-500", blue: "border-blue-500",
-  indigo: "border-indigo-500", violet: "border-violet-500",
-  purple: "border-purple-500", fuchsia: "border-fuchsia-500",
-  pink: "border-pink-500", rose: "border-rose-500",
-};
-
-const colorBgSolid: Record<string, string> = {
-  red: "bg-red-500", orange: "bg-orange-500",
-  amber: "bg-amber-500", yellow: "bg-yellow-500",
-  lime: "bg-lime-500", green: "bg-green-500",
-  emerald: "bg-emerald-500", teal: "bg-teal-500",
-  cyan: "bg-cyan-500", blue: "bg-blue-500",
-  indigo: "bg-indigo-500", violet: "bg-violet-500",
-  purple: "bg-purple-500", fuchsia: "bg-fuchsia-500",
-  pink: "bg-pink-500", rose: "bg-rose-500",
-};
 
 function splitMonth(month: string): [string, string] {
   const parts = month.split("-");
@@ -184,7 +145,7 @@ export function CalendarGrid({ month, onMonthChange, onViewReport }: Props) {
             {sortedItems.map((item) => (
               <tr key={item.id}>
                 <td className="p-1 font-medium truncate max-w-[120px] sticky left-0 bg-background z-10">
-                  <span className={cn("inline-block w-2 h-2 rounded-full mr-1", colorBg[item.color]?.replace("100", "500").replace("950", "500"))} />
+                  <span className={cn("inline-block w-2 h-2 rounded-full mr-1", swatchClass(item.color, "solid"))} />
                   {item.name}
                 </td>
                 {Array.from({ length: daysInMonth }, (_, i) => i + 1).map((day) => {
@@ -290,14 +251,14 @@ function MobileDayView({ month, items, entryMap, putEntry, deleteEntry, skipEntr
         return (
           <Card key={item.id} className={cn(
             !hasValue && !isSkipped && "border-l-[3px]",
-            !hasValue && !isSkipped && colorBorderLeft[item.color],
+            !hasValue && !isSkipped && swatchClass(item.color, "borderLeft"),
             isSkipped && "opacity-60",
           )}>
             <CardContent className="py-3 px-4 space-y-2">
               <div className="flex items-center gap-2">
-                <span className={cn("w-3 h-3 rounded-full", colorBg[item.color]?.replace("100", "500").replace("950", "500"))} />
+                <span className={cn("w-3 h-3 rounded-full", swatchClass(item.color, "solid"))} />
                 <span className="font-medium text-sm">{item.name}</span>
-                {hasValue && <Badge className="ml-auto bg-green-100 text-green-700 dark:bg-green-950 dark:text-green-400 border-transparent"><Check className="h-3 w-3" />logged</Badge>}
+                {hasValue && <Badge className="ml-auto bg-success/15 text-success border-transparent"><Check className="h-3 w-3" />logged</Badge>}
                 {isSkipped && <Badge variant="secondary" className="ml-auto">skipped</Badge>}
               </div>
               {isFuture ? (
@@ -373,12 +334,12 @@ function CellContent({ itemId, date, today, scaleType, scaleConfig, scheduled, e
 
   const triggerClassName = cn(
     "relative w-6 h-6 rounded text-center leading-6 text-[10px] transition-colors cursor-pointer",
-    hasValue && colorBg[color],
+    hasValue && swatchClass(color, "soft"),
     isSkipped && "bg-muted text-muted-foreground line-through",
     !hasValue && !isSkipped && scheduled && !hasNote && "border border-dashed border-primary/40 hover:bg-primary/10",
     !hasValue && !isSkipped && !scheduled && !hasNote && "text-muted-foreground/30",
     hasNote && "border",
-    hasNote && (colorBorderSolid[color] ?? "border-foreground/30"),
+    hasNote && swatchClass(color, "border"),
   );
 
   const triggerNode = (
@@ -390,7 +351,7 @@ function CellContent({ itemId, date, today, scaleType, scaleConfig, scheduled, e
           className={cn(
             "absolute top-0 right-0 h-1.5 w-1.5",
             "[clip-path:polygon(100%_0,100%_100%,0_0)]",
-            colorBgSolid[color] ?? "bg-foreground/30",
+            swatchClass(color, "solid"),
           )}
         />
       )}

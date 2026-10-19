@@ -10,7 +10,7 @@ const COLOR_KEYS = {
 
 export const TRACKER_COLORS: readonly TrackerColor[] = Object.keys(COLOR_KEYS) as TrackerColor[];
 
-export type SwatchRole = "solid" | "soft" | "borderLeft";
+export type SwatchRole = "solid" | "soft" | "borderLeft" | "border";
 
 // Tailwind's scanner only sees whole literals, so every class is spelled out here.
 export const SWATCH_CLASSES: Record<SwatchRole, Record<TrackerColor, string>> = {
@@ -32,12 +32,19 @@ export const SWATCH_CLASSES: Record<SwatchRole, Record<TrackerColor, string>> = 
     cyan: "border-l-swatch-cyan", blue: "border-l-swatch-blue", indigo: "border-l-swatch-indigo", violet: "border-l-swatch-violet",
     purple: "border-l-swatch-purple", fuchsia: "border-l-swatch-fuchsia", pink: "border-l-swatch-pink", rose: "border-l-swatch-rose",
   },
+  border: {
+    red: "border-swatch-red", orange: "border-swatch-orange", amber: "border-swatch-amber", yellow: "border-swatch-yellow",
+    lime: "border-swatch-lime", green: "border-swatch-green", emerald: "border-swatch-emerald", teal: "border-swatch-teal",
+    cyan: "border-swatch-cyan", blue: "border-swatch-blue", indigo: "border-swatch-indigo", violet: "border-swatch-violet",
+    purple: "border-swatch-purple", fuchsia: "border-swatch-fuchsia", pink: "border-swatch-pink", rose: "border-swatch-rose",
+  },
 };
 
 const NEUTRAL_FALLBACK: Record<SwatchRole, string> = {
   solid: "bg-muted-foreground",
   soft: "bg-muted",
   borderLeft: "border-l-muted-foreground",
+  border: "border-muted-foreground",
 };
 
 // Unknown colours (including prototype keys such as "constructor") get the neutral fallback.

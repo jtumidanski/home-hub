@@ -561,10 +561,10 @@ Same steps as Task 14, for `Stage = 5`. Then the **Stage close-out procedure** (
 - Modify: `frontend/src/components/features/tracker/__tests__/calendar-grid.test.tsx` (line ~142 expects `bg-blue-500` → expect `bg-swatch-blue`)
 - Modify: `no-color-literals.test.ts` (remove `components/features/tracker/`, `components/features/trackers/`, `pages/TrackerPage.tsx`)
 
-- [ ] **Step 1:** Cut the stage branch. **Step 2:** Remove the PENDING entries; run the guard → FAIL (≈140 matches in `tracker/`).
-- [ ] **Step 3:** Update `calendar-grid.test.tsx` to expect `bg-swatch-blue`; run → FAIL.
-- [ ] **Step 4: Implement.** Delete the four duplicated `Record<TrackerColor, string>` maps (create/edit dialogs, today-view, tracker-setup) and use `SWATCH_CLASSES` / `swatchClass`. Sentiment colours in `month-report` (positive/neutral/negative bars) map to `bg-success` / `bg-muted-foreground` / `bg-destructive` with a text legend. Colour pickers keep the colour name as the accessible label.
-- [ ] **Step 5: Run** guard + `npx vitest run src/components/features/tracker src/lib` → PASS. **Step 6: Commit** `feat(frontend): migrate tracker colours to swatch tokens`.
+- [x] **Step 1:** Cut the stage branch. **Step 2:** Remove the PENDING entries; run the guard → FAIL (≈140 matches in `tracker/`).
+- [x] **Step 3:** Update `calendar-grid.test.tsx` to expect `bg-swatch-blue`; run → FAIL.
+- [x] **Step 4: Implement.** Delete the four duplicated `Record<TrackerColor, string>` maps (create/edit dialogs, today-view, tracker-setup) and use `SWATCH_CLASSES` / `swatchClass`. Sentiment colours in `month-report` (positive/neutral/negative bars) map to `bg-success` / `bg-muted-foreground` / `bg-destructive` with a text legend. Colour pickers keep the colour name as the accessible label.
+- [x] **Step 5: Run** guard + `npx vitest run src/components/features/tracker src/lib` → PASS. **Step 6: Commit** `feat(frontend): migrate tracker colours to swatch tokens`.
 
 ### Task 26: Workouts
 
