@@ -5,7 +5,7 @@ import { Card, CardAction, CardContent, CardHeader, CardTitle } from "@/componen
 import { Skeleton } from "@/components/ui/skeleton";
 import { WidgetError } from "@/components/features/dashboard-widgets/widget-error";
 import { CalendarDays, ChevronRight } from "lucide-react";
-import { getLocalTodayRange, getLocalTodayStr } from "@/lib/date-utils";
+import { useLocalDate } from "@/lib/hooks/use-local-date";
 import { useTenant } from "@/context/tenant-context";
 import type { CalendarEvent } from "@/types/models/calendar";
 
@@ -40,8 +40,14 @@ export interface CalendarWidgetProps {
 export function CalendarWidget(_props: CalendarWidgetProps = {}) {
   const { household } = useTenant();
   const timezone = household?.attributes.timezone;
-  const { start, end } = useMemo(() => getLocalTodayRange(timezone), [timezone]);
-  const todayStr = useMemo(() => getLocalTodayStr(timezone), [timezone]);
+  const todayStr = useLocalDate(timezone);
+  const { start, end } = useMemo(() => {
+    const [y = 1970, m = 1, d = 1] = todayStr.split("-").map(Number);
+    return {
+      start: new Date(y, m - 1, d, 0, 0, 0, 0).toISOString(),
+      end: new Date(y, m - 1, d, 23, 59, 59, 999).toISOString(),
+    };
+  }, [todayStr]);
   const { data, isLoading, isError } = useCalendarEvents(start, end);
 
   if (isLoading) {

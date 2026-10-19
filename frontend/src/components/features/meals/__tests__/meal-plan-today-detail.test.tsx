@@ -65,7 +65,7 @@ describe("MealPlanTodayDetail", () => {
     mockPlan([
       { id: "4", day: "2026-05-02", slot: "dinner", recipe_id: "r4", recipe_title: "Pasta" },
     ]);
-    render(<MemoryRouter><MealPlanTodayDetail horizonDays={2} /></MemoryRouter>);
+    render(<MemoryRouter><MealPlanTodayDetail horizonDays={3} /></MemoryRouter>);
     expect(screen.getByText("Sat")).toBeInTheDocument();
     expect(screen.queryByText("05-02")).not.toBeInTheDocument();
   });

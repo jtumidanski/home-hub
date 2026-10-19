@@ -1,11 +1,12 @@
+import { useMemo } from "react";
 import { Link } from "react-router-dom";
+import { useLocalDate } from "@/lib/hooks/use-local-date";
 import { usePlans, usePlan } from "@/lib/hooks/api/use-meals";
 import { useTenant } from "@/context/tenant-context";
 import { Card, CardAction, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { WidgetError } from "@/components/features/dashboard-widgets/widget-error";
 import { UtensilsCrossed, ChevronRight } from "lucide-react";
-import { getLocalWeekStart, getLocalTodayStr } from "@/lib/date-utils";
 import type { Slot } from "@/types/models/meal-plan";
 
 const SLOT_LABELS: Record<Slot, string> = {
@@ -30,9 +31,14 @@ export interface MealPlanWidgetProps {
 export function MealPlanWidget(_props: MealPlanWidgetProps = {}) {
   const { household } = useTenant();
   const timezone = household?.attributes.timezone;
-  const monday = getLocalWeekStart(timezone);
-  const weekStart = `${monday.getFullYear()}-${String(monday.getMonth() + 1).padStart(2, "0")}-${String(monday.getDate()).padStart(2, "0")}`;
-  const todayStr = getLocalTodayStr(timezone);
+  const localDate = useLocalDate(timezone);
+  const weekStart = useMemo(() => {
+    const [y = 1970, m = 1, d = 1] = localDate.split("-").map(Number);
+    const date = new Date(y, m - 1, d);
+    date.setDate(date.getDate() + (date.getDay() === 0 ? -6 : 1 - date.getDay()));
+    return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(date.getDate()).padStart(2, "0")}`;
+  }, [localDate]);
+  const todayStr = localDate;
 
   const { data: plansData, isLoading: plansLoading, isError: plansError } = usePlans({
     starts_on: weekStart,
