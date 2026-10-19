@@ -3,6 +3,7 @@ import { toast } from "sonner";
 import { useIngredients } from "@/lib/hooks/api/use-ingredients";
 import { useIngredientCategories, useBulkCategorize } from "@/lib/hooks/api/use-ingredient-categories";
 import { Button } from "@/components/ui/button";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -117,19 +118,20 @@ export function BulkCategorize() {
 
         <Input
           placeholder="Search..."
+          aria-label="Search ingredients"
+          size="sm"
           value={search}
           onChange={(e) => setSearch(e.target.value)}
-          className="h-8 w-48 text-sm"
+          className="w-48"
         />
       </div>
 
       <div className="rounded-md border">
         <div className="flex items-center gap-2 border-b px-3 py-2 text-sm font-medium">
-          <input
-            type="checkbox"
+          <Checkbox
+            aria-label="Select all"
             checked={selected.size > 0 && selected.size === filteredIngredients.length}
-            onChange={toggleAll}
-            className="rounded"
+            onCheckedChange={toggleAll}
           />
           <span>
             {selected.size > 0 ? `${selected.size} selected` : `${filteredIngredients.length} ingredients`}
@@ -141,11 +143,10 @@ export function BulkCategorize() {
               key={ing.id}
               className="flex items-center gap-2 px-3 py-1.5 text-sm hover:bg-muted cursor-pointer"
             >
-              <input
-                type="checkbox"
+              <Checkbox
+                aria-label={`Select ${ing.attributes.name}`}
                 checked={selected.has(ing.id)}
-                onChange={() => toggleSelect(ing.id)}
-                className="rounded"
+                onCheckedChange={() => toggleSelect(ing.id)}
               />
               <span className="flex-1">{ing.attributes.name}</span>
               {(() => {
@@ -155,7 +156,7 @@ export function BulkCategorize() {
                 return categoryName ? (
                   <span className="text-xs text-muted-foreground">{categoryName}</span>
                 ) : (
-                  <span className="text-xs text-yellow-600">uncategorized</span>
+                  <span className="text-xs text-warning-text">uncategorized</span>
                 );
               })()}
             </label>

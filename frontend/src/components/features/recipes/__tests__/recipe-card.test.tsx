@@ -1,6 +1,8 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
-import { render, screen } from "@testing-library/react";
+import { render as rtlRender, screen } from "@testing-library/react";
+import type { ReactElement } from "react";
 import userEvent from "@testing-library/user-event";
+import { MemoryRouter } from "react-router-dom";
 import { RecipeCard } from "../recipe-card";
 import type { RecipeListItem } from "@/types/models/recipe";
 
@@ -23,8 +25,11 @@ vi.stubGlobal(
   },
 );
 
+const render = (ui: ReactElement) => rtlRender(ui, { wrapper: MemoryRouter });
+
 const mockNavigate = vi.fn();
-vi.mock("react-router-dom", () => ({
+vi.mock("react-router-dom", async (importOriginal) => ({
+  ...(await importOriginal<typeof import("react-router-dom")>()),
   useNavigate: () => mockNavigate,
 }));
 
@@ -91,12 +96,16 @@ describe("RecipeCard", () => {
     expect(screen.getAllByText("Dinner")).toHaveLength(1);
   });
 
-  it("navigates to detail page on card click", async () => {
-    const user = userEvent.setup();
+  it("links the title to the detail page", () => {
     render(<RecipeCard recipe={makeRecipe()} onDelete={vi.fn()} />);
 
-    await user.click(screen.getByText("Pasta Carbonara"));
-    expect(mockNavigate).toHaveBeenCalledWith("/app/recipes/recipe-1");
+    expect(screen.getByRole("link", { name: "Pasta Carbonara" })).toHaveAttribute("href", "/app/recipes/recipe-1");
+  });
+
+  it("exposes planner status as text, not colour alone", () => {
+    render(<RecipeCard recipe={makeRecipe()} onDelete={vi.fn()} />);
+
+    expect(screen.getByText("Not Planner Ready")).toBeInTheDocument();
   });
 
   it("calls onDelete when Delete action is clicked", async () => {

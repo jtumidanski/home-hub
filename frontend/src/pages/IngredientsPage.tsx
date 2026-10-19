@@ -1,6 +1,6 @@
 import { useState, useCallback } from "react";
-import { useNavigate, useSearchParams } from "react-router-dom";
-import { Plus, Search, X, Settings, ListChecks, ChevronLeft, ChevronRight } from "lucide-react";
+import { Link, useNavigate, useSearchParams } from "react-router-dom";
+import { AlertTriangle, Plus, Search, X, Settings, ListChecks, ChevronLeft, ChevronRight } from "lucide-react";
 import { toast } from "sonner";
 import { useIngredients, useCreateIngredient, useDeleteIngredient } from "@/lib/hooks/api/use-ingredients";
 import { useIngredientCategories } from "@/lib/hooks/api/use-ingredient-categories";
@@ -197,7 +197,7 @@ export function IngredientsPage() {
         {isLoading && (
           <div className="space-y-3">
             {Array.from({ length: 4 }).map((_, i) => (
-              <Skeleton key={i} className="h-16 w-full" />
+              <Skeleton key={i} className="h-24 w-full" />
             ))}
           </div>
         )}
@@ -223,12 +223,18 @@ export function IngredientsPage() {
               <Card
                 key={ingredient.id}
                 size="sm"
-                className="cursor-pointer"
-                onClick={() => navigate(`/app/ingredients/${ingredient.id}`)}
+                className="relative focus-within:outline-2 focus-within:outline-offset-2 focus-within:outline-ring"
               >
                 <CardHeader>
-                  <CardTitle className="text-base">{ingredient.attributes.name}</CardTitle>
-                  <CardAction>
+                  <CardTitle className="text-base">
+                    <Link
+                      to={`/app/ingredients/${ingredient.id}`}
+                      className="outline-none after:absolute after:inset-0 after:content-['']"
+                    >
+                      {ingredient.attributes.name}
+                    </Link>
+                  </CardTitle>
+                  <CardAction className="relative z-10">
                     <CardActionMenu
                       actions={[
                         {
@@ -253,7 +259,7 @@ export function IngredientsPage() {
                       return categoryName ? (
                         <Badge variant="outline" className="text-xs">{categoryName}</Badge>
                       ) : (
-                        <Badge variant="outline" className="text-xs text-yellow-600 border-yellow-300">uncategorized</Badge>
+                        <Badge variant="warning" className="text-xs"><AlertTriangle aria-hidden="true" />uncategorized</Badge>
                       );
                     })()}
                     {ingredient.attributes.unitFamily && (

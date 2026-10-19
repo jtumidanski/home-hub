@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { Plus, Archive, Trash2, Pencil, ShoppingCart } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -120,7 +120,7 @@ export function ShoppingListsPage() {
       {/* List content */}
       <div className="space-y-3">
         {isLoading ? (
-          Array.from({ length: 3 }).map((_, i) => <Skeleton key={i} className="h-20 w-full" />)
+          Array.from({ length: 3 }).map((_, i) => <Skeleton key={i} className="h-[4.5rem] w-full" />)
         ) : lists.length === 0 ? (
           <Card>
             <CardContent className="py-8 text-center text-muted-foreground">
@@ -142,12 +142,18 @@ export function ShoppingListsPage() {
           lists.map((list) => (
             <Card
               key={list.id}
-              className="cursor-pointer hover:bg-accent/50 transition-colors"
-              onClick={() => navigate(`/app/shopping/grocery/${list.id}`)}
+              className="relative hover:bg-accent/50 transition-colors focus-within:outline-2 focus-within:outline-offset-2 focus-within:outline-ring"
             >
               <CardContent className="py-3 px-4 flex items-center justify-between">
                 <div>
-                  <p className="font-medium">{list.attributes.name}</p>
+                  <p className="font-medium">
+                    <Link
+                      to={`/app/shopping/grocery/${list.id}`}
+                      className="outline-none after:absolute after:inset-0 after:content-['']"
+                    >
+                      {list.attributes.name}
+                    </Link>
+                  </p>
                   <p className="text-sm text-muted-foreground">
                     {tab === "active" ? (
                       <>
@@ -164,7 +170,7 @@ export function ShoppingListsPage() {
                     )}
                   </p>
                 </div>
-                <div className="flex gap-1" onClick={(e) => e.stopPropagation()}>
+                <div className="relative z-10 flex gap-1">
                   {tab === "active" ? (
                     <>
                       <Button
