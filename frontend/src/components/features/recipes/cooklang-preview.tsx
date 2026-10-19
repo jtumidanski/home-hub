@@ -18,7 +18,7 @@ export function CooklangPreview({ ingredients, steps, errors, notes, isLoading }
     <div className="space-y-4">
       {isLoading && (
         <div className="flex items-center gap-2 text-sm text-muted-foreground">
-          <Loader2 className="h-4 w-4 animate-spin" /> Parsing...
+          <Loader2 className="h-4 w-4 animate-spin motion-reduce:animate-none" /> Parsing...
         </div>
       )}
 

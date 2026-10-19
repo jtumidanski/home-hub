@@ -3,6 +3,7 @@ import { Copy, Download, FileText } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Skeleton } from "@/components/ui/skeleton";
 import { useExportMarkdown } from "@/lib/hooks/api/use-meals";
 
 interface ExportModalProps {
@@ -77,7 +78,11 @@ export function ExportModal({ open, onClose, planId, planName }: ExportModalProp
 
         <div className="flex-1 overflow-y-auto border rounded p-4 bg-muted/30 text-sm">
           {exportMutation.isPending ? (
-            <p className="text-muted-foreground">Generating export...</p>
+            <div role="status" aria-label="Generating export" className="space-y-2">
+              <Skeleton className="h-4 w-3/4" />
+              <Skeleton className="h-4 w-full" />
+              <Skeleton className="h-4 w-2/3" />
+            </div>
           ) : markdown ? (
             showRaw ? (
               <pre className="whitespace-pre-wrap font-mono text-xs">{markdown}</pre>
@@ -87,7 +92,10 @@ export function ExportModal({ open, onClose, planId, planName }: ExportModalProp
               </div>
             )
           ) : (
-            <p className="text-muted-foreground">Loading...</p>
+            <div role="status" aria-label="Loading export" className="space-y-2">
+              <Skeleton className="h-4 w-3/4" />
+              <Skeleton className="h-4 w-full" />
+            </div>
           )}
         </div>
       </DialogContent>
