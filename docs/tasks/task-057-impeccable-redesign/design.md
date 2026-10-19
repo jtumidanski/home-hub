@@ -1,8 +1,6 @@
 # Task 057 — Impeccable Onboarding, Design Audit & Redesign — Design
 
-Status: **Proposed — awaiting user approval (PRD FR-5).** `/plan-task` must not
-run until the "Approval" section at the bottom is filled in. Edit any value
-in this document before you approve it; the edited value is what gets built.
+Status: **Approved by user 2026-10-19 (PRD FR-5).** See "Approval" at the bottom.
 
 PRD: `docs/tasks/task-057-impeccable-redesign/prd.md`
 
@@ -482,4 +480,7 @@ the scratch-file `nested-cards` ignore; it points at an untracked mockup.
 
 ## Approval
 
-- [ ] Direction approved by user. Date: ________  Notes / changes: ________
+- [x] Direction approved by user. Date: 2026-10-19  Notes / changes: approved
+  as written, including the "Decisions confirmed during design review"
+  section (Fraunces + paper background kept, Window light brand mark, dark
+  destructive at L 0.71).
