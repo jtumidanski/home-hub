@@ -92,7 +92,7 @@ export function CookMode({ steps, title, open, onClose }: CookModeProps) {
       {/* Header */}
       <div className="flex items-center justify-between px-4 py-3 border-b shrink-0">
         <div className="flex items-center gap-3 min-w-0">
-          <h2 className="text-lg font-semibold truncate">{title}</h2>
+          <h2 className="text-lg font-heading tracking-[-0.01em] truncate">{title}</h2>
           <div className="flex gap-1 shrink-0">
             <Button
               variant={viewMode === "all" ? "default" : "outline"}

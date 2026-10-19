@@ -32,7 +32,7 @@ export function TrackerSetup() {
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between">
-        <h2 className="text-lg font-semibold">My Habits</h2>
+        <h2 className="text-lg font-heading tracking-[-0.01em]">My Habits</h2>
         <Button size="sm" onClick={() => setCreateOpen(true)}><Plus className="h-4 w-4 mr-1" /> Add</Button>
       </div>
 

@@ -181,7 +181,7 @@ export function RecipeDetailPage() {
       {/* Ingredients and Instructions — side-by-side on desktop */}
       <div className="grid grid-cols-1 md:grid-cols-[280px_1fr] gap-6 md:gap-8">
         <div>
-          <h2 className="text-lg font-semibold mb-3">Ingredients</h2>
+          <h2 className="text-lg font-heading tracking-[-0.01em] mb-3">Ingredients</h2>
           <RecipeIngredients
             ingredients={attrs.ingredients}
             recipeId={id!}
@@ -191,7 +191,7 @@ export function RecipeDetailPage() {
         </div>
 
         <div>
-          <h2 className="text-lg font-semibold mb-3">Instructions</h2>
+          <h2 className="text-lg font-heading tracking-[-0.01em] mb-3">Instructions</h2>
           <RecipeSteps steps={attrs.steps} notes={attrs.notes} />
         </div>
       </div>

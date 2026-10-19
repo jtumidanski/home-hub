@@ -200,7 +200,7 @@ function PerDayGrid({
             <Card className="min-h-[10rem]">
               <CardHeader className="p-3 pb-2">
                 <CardTitle className="flex items-center justify-between text-sm">
-                  <h2 className="font-semibold">{label}</h2>
+                  <h2 className="text-lg font-heading tracking-[-0.01em]">{label}</h2>
                   {block.isRestDay && (
                     <Badge variant="secondary" className="text-xs">Rest</Badge>
                   )}

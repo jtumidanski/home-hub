@@ -50,7 +50,7 @@ export function TodayView() {
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between">
-        <h2 className="text-lg font-semibold">Today — {new Date(todayDate + "T12:00:00").toLocaleDateString("en-US", { weekday: "long", month: "short", day: "numeric" })}</h2>
+        <h2 className="text-lg font-heading tracking-[-0.01em]">Today — {new Date(todayDate + "T12:00:00").toLocaleDateString("en-US", { weekday: "long", month: "short", day: "numeric" })}</h2>
       </div>
 
       {items.length > 0 && (

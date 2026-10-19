@@ -39,7 +39,7 @@ export function WorkoutExercisesPage() {
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between">
-        <h2 className="text-lg font-semibold">Exercises</h2>
+        <h2 className="text-lg font-heading tracking-[-0.01em]">Exercises</h2>
         <Button onClick={() => setOpen(true)}>
           <Plus className="h-4 w-4 mr-1" /> New
         </Button>

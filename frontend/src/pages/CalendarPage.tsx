@@ -1,4 +1,5 @@
 import { useState, useEffect, useMemo, useCallback, useSyncExternalStore } from "react";
+import { EmptyState } from "@/components/common/empty-state";
 import { useSearchParams } from "react-router-dom";
 import { ChevronLeft, ChevronRight, Plus, CalendarIcon } from "lucide-react";
 import { toast } from "sonner";
@@ -393,13 +394,12 @@ export function CalendarPage() {
           )}
         </div>
       ) : (
-        <div className="flex-1 flex flex-col items-center justify-center text-center py-16">
-          <h2 className="text-lg font-medium mb-2">No calendars connected</h2>
-          <p className="text-muted-foreground mb-6 max-w-md">
-            Connect your Google Calendar to see your events on the household calendar. All household members can connect their own calendars for a merged view.
-          </p>
-          <ConnectCalendarButton />
-        </div>
+        <EmptyState
+          className="flex-1 py-16"
+          title="No calendars connected"
+          description="Connect your Google Calendar to see your events on the household calendar. All household members can connect their own calendars for a merged view."
+          action={<ConnectCalendarButton />}
+        />
       )}
 
       {/* Create event dialog */}

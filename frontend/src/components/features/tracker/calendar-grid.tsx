@@ -101,7 +101,7 @@ export function CalendarGrid({ month, onMonthChange, onViewReport, onOpenSetup }
     <div className="space-y-4">
       <div className="flex items-center justify-between">
         <Button variant="ghost" size="icon" onClick={prevMonth} aria-label="Previous month"><ChevronLeft className="h-4 w-4" aria-hidden="true" /></Button>
-        <h2 className="text-lg font-semibold">{formatMonth(month)}</h2>
+        <h2 className="text-lg font-heading tracking-[-0.01em]">{formatMonth(month)}</h2>
         <Button variant="ghost" size="icon" onClick={nextMonth} disabled={month >= currentMonth} aria-label="Next month"><ChevronRight className="h-4 w-4" aria-hidden="true" /></Button>
       </div>
 
