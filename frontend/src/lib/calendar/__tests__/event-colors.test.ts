@@ -30,6 +30,15 @@ describe("eventChipColors", () => {
     });
   });
 
+  it("lets busy win over the package sentinel", () => {
+    expect(
+      eventChipColors({ title: "Busy", isOwner: false, userColor: PACKAGE_EVENT_COLOR }),
+    ).toEqual({
+      backgroundColor: "var(--calendar-busy)",
+      color: "var(--calendar-busy-foreground)",
+    });
+  });
+
   it("picks ink on yellow and paper on black", () => {
     expect(eventChipColors({ ...base, userColor: "#ffff00" }).color).toBe("var(--on-color-ink)");
     expect(eventChipColors({ ...base, userColor: "#000000" }).color).toBe("var(--on-color-paper)");
