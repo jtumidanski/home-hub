@@ -27,20 +27,19 @@ export function DashboardShell() {
   const localDate = useLocalDate(timezone);
   const timeOfDay = useTimeOfDay(timezone);
 
-  const { dateLabel, greeting } = useMemo(() => {
+  const greeting = useMemo(() => {
     const salutation = `Good ${timeOfDay}`;
-    return {
-      greeting: firstName ? `${salutation}, ${firstName}` : salutation,
-      dateLabel: new Date().toLocaleDateString("en-US", {
-        weekday: "long",
-        day: "numeric",
-        month: "long",
-        timeZone: timezone,
-      }),
-    };
-    // localDate is a refresh trigger: the label must recompute when the day rolls over.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [timezone, firstName, timeOfDay, localDate]);
+    return firstName ? `${salutation}, ${firstName}` : salutation;
+  }, [firstName, timeOfDay]);
+  const dateLabel = useMemo(() => {
+    const [y = 1970, m = 1, d = 1] = localDate.split("-").map(Number);
+    return new Date(Date.UTC(y, m - 1, d, 12)).toLocaleDateString("en-US", {
+      weekday: "long",
+      day: "numeric",
+      month: "long",
+      timeZone: "UTC",
+    });
+  }, [localDate]);
 
   if (isLoading) return <DashboardSkeleton />;
   if (isError || !data?.data) return <Error404Page />;

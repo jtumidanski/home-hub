@@ -101,9 +101,7 @@ export function WeatherWidget(_props: WeatherWidgetProps = {}) {
   const weather = data?.data?.attributes;
 
   if (isError || !weather) {
-    return (
-      <WidgetError message="Weather data unavailable" />
-    );
+    return <WidgetError message="Weather data unavailable" />;
   }
 
   return (
