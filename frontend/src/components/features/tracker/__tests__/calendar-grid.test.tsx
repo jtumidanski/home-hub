@@ -289,3 +289,50 @@ describe("CalendarGrid (desktop)", () => {
     });
   });
 });
+
+describe("CalendarGrid accessibility (DA-102, DA-103)", () => {
+  function renderGrid(onMonthChange = () => {}) {
+    mockedUseMonthSummary.mockReturnValue({
+      data: makeSummary([makeEntry("item-1", "2026-05-10", { note: null })]),
+      isLoading: false,
+    } as ReturnType<typeof useMonthSummary>);
+    render(<CalendarGrid month="2026-05" onMonthChange={onMonthChange} onViewReport={() => {}} />);
+  }
+
+  it("names the icon-only month and day navigation buttons", () => {
+    renderGrid();
+    expect(screen.getByRole("button", { name: "Previous month" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Next month" })).toBeDisabled();
+    expect(screen.getByRole("button", { name: "Previous day" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Next day" })).toBeInTheDocument();
+  });
+
+  it("navigates to the previous month", () => {
+    const onMonthChange = vi.fn();
+    renderGrid(onMonthChange);
+    fireEvent.click(screen.getByRole("button", { name: "Previous month" }));
+    expect(onMonthChange).toHaveBeenCalledWith("2026-04");
+  });
+
+  it("gives day cells a 28px target (44px on coarse pointers) and a readable text size", () => {
+    renderGrid();
+    const cell = screen.getAllByRole("button").find((b) => b.getAttribute("aria-label")?.startsWith("Run, May 10"))!;
+    expect(cell.className).toContain("size-7");
+    expect(cell.className).toContain("coarse:size-11");
+    expect(cell.className).toContain("text-xs");
+    expect(cell.className).not.toContain("text-[10px]");
+  });
+});
+
+describe("CalendarGrid empty state (DA-118)", () => {
+  it("offers an Open Setup action when there are no habits", () => {
+    const empty = makeSummary([]);
+    (empty.data.relationships as unknown as { items: { data: unknown[] } }).items.data = [];
+    mockedUseMonthSummary.mockReturnValue({ data: empty, isLoading: false } as ReturnType<typeof useMonthSummary>);
+    const onOpenSetup = vi.fn();
+    render(<CalendarGrid month="2026-05" onMonthChange={() => {}} onViewReport={() => {}} onOpenSetup={onOpenSetup} />);
+    expect(screen.getByRole("heading", { name: "No habits yet" })).toBeInTheDocument();
+    fireEvent.click(screen.getByRole("button", { name: "Open Setup" }));
+    expect(onOpenSetup).toHaveBeenCalled();
+  });
+});
