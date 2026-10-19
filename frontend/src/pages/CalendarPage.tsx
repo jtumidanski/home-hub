@@ -352,7 +352,7 @@ export function CalendarPage() {
             .map((u) => (
               <div key={u.displayName} className="flex items-center gap-3 text-sm">
                 <div
-                  className="w-3 h-3 rounded-full flex-shrink-0"
+                  className="w-3 h-3 rounded-full flex-shrink-0 ring-1 ring-border"
                   style={{ backgroundColor: u.color }}
                 />
                 <span className="text-muted-foreground">{u.displayName}</span>

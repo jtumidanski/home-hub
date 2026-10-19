@@ -54,7 +54,16 @@ export function MonthDayCell({
 }: MonthDayCellProps) {
   const ordered = [...bucket.allDay, ...bucket.timed];
   const dayLabel = day.toLocaleDateString("en-US", { month: "long", day: "numeric" });
-  const label = `${dayLabel}, ${ordered.length} event${ordered.length === 1 ? "" : "s"}`;
+  const owners = [
+    ...new Set(
+      ordered
+        .filter((e) => !(e.attributes.title === "Busy" && !e.attributes.isOwner))
+        .map((e) => e.attributes.userDisplayName)
+        .filter(Boolean),
+    ),
+  ];
+  const count = `${ordered.length} event${ordered.length === 1 ? "" : "s"}`;
+  const label = `${dayLabel}, ${count}${owners.length > 0 ? `: ${owners.join(", ")}` : ""}`;
 
   const cellTone = isToday ? "bg-primary/10" : !inMonth ? "bg-muted/30" : "";
   const numberTone = isToday ? "text-primary" : !inMonth ? "text-muted-foreground" : "";
