@@ -110,30 +110,28 @@ export function WorkoutWeekPage() {
     );
   };
 
-  const onDrop = (e: React.DragEvent) => {
-    e.preventDefault();
-    if (!draggedItemId || !dropIndicator) return;
-    const dragged = items.find((it) => it.id === draggedItemId);
+  // Shared by the drop handler and the single-pointer "Move to day" control.
+  const moveItem = (itemId: string, targetDay: number, position: number) => {
+    const dragged = items.find((it) => it.id === itemId);
     if (!dragged) return;
 
     const sourceDay = dragged.dayOfWeek;
-    const targetDay = dropIndicator.day;
 
     const sourceItems = items
-      .filter((it) => it.dayOfWeek === sourceDay && it.id !== draggedItemId)
+      .filter((it) => it.dayOfWeek === sourceDay && it.id !== itemId)
       .sort((a, b) => a.position - b.position);
     const targetDayItems = items
-      .filter((it) => it.dayOfWeek === targetDay && it.id !== draggedItemId)
+      .filter((it) => it.dayOfWeek === targetDay && it.id !== itemId)
       .sort((a, b) => a.position - b.position);
 
     // Adjust insertion index when dragging within the same day.
-    let insertIdx = dropIndicator.position;
+    let insertIdx = position;
     if (sourceDay === targetDay) {
       const origIdx = items
         .filter((it) => it.dayOfWeek === sourceDay)
         .sort((a, b) => a.position - b.position)
-        .findIndex((it) => it.id === draggedItemId);
-      if (origIdx >= 0 && origIdx < dropIndicator.position) insertIdx--;
+        .findIndex((it) => it.id === itemId);
+      if (origIdx >= 0 && origIdx < position) insertIdx--;
     }
     targetDayItems.splice(insertIdx, 0, dragged);
 
@@ -151,6 +149,12 @@ export function WorkoutWeekPage() {
       { weekStart, items: reorderInputs },
       { onError: (err) => toast.error((err as Error).message ?? "Reorder failed") },
     );
+  };
+
+  const onDrop = (e: React.DragEvent) => {
+    e.preventDefault();
+    if (!draggedItemId || !dropIndicator) return;
+    moveItem(draggedItemId, dropIndicator.day, dropIndicator.position);
     setDraggedItemId(null);
     setDropIndicator(null);
   };
@@ -224,6 +228,10 @@ export function WorkoutWeekPage() {
                         onDragStart={onDragStart(it.id)}
                         onDragEnd={onDragEnd}
                         onDragOver={onDragOverItem(day, idx)}
+                        currentDay={day}
+                        onMoveToDay={(targetDay) =>
+                          moveItem(it.id, targetDay, items.filter((x) => x.dayOfWeek === targetDay).length)
+                        }
                         onDelete={() =>
                           remove.mutate(
                             { weekStart, itemId: it.id },
@@ -308,6 +316,8 @@ function PlannedRow({
   onDragStart,
   onDragEnd,
   onDragOver,
+  currentDay,
+  onMoveToDay,
   onDelete,
   onUpdatePlanned,
 }: {
@@ -316,6 +326,8 @@ function PlannedRow({
   onDragStart?: (e: React.DragEvent) => void;
   onDragEnd?: () => void;
   onDragOver?: (e: React.DragEvent) => void;
+  currentDay: number;
+  onMoveToDay: (day: number) => void;
   onDelete: () => void;
   onUpdatePlanned: (planned: Record<string, unknown>) => void;
 }) {
@@ -376,11 +388,10 @@ function PlannedRow({
           type="button"
           className="flex-1 min-w-0 cursor-pointer rounded text-left focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring"
           aria-expanded={editing}
-          aria-label={`Edit ${item.exerciseName}`}
           onClick={() => setEditing(!editing)}
         >
-          <p className="font-medium truncate">{item.exerciseName}</p>
-          <p className="text-muted-foreground truncate tabular-nums">{summarize(item)}</p>
+          <span className="block font-medium truncate">{item.exerciseName}</span>
+          <span className="block text-muted-foreground truncate tabular-nums">{summarize(item)}</span>
         </button>
         <Button
           size="icon-xs"
@@ -392,6 +403,22 @@ function PlannedRow({
           <Trash2 className="h-3 w-3" />
         </Button>
       </div>
+      <Select value="" onValueChange={(v) => v && onMoveToDay(Number(v))}>
+        <SelectTrigger
+          size="sm"
+          aria-label={`Move ${item.exerciseName} to day`}
+          className="mt-1 w-full text-xs coarse:min-h-11"
+        >
+          <SelectValue placeholder="Move to day…" />
+        </SelectTrigger>
+        <SelectContent>
+          {DAYS_OF_WEEK_LABELS.map((label, d) =>
+            d === currentDay ? null : (
+              <SelectItem key={label} value={String(d)}>{label}</SelectItem>
+            ),
+          )}
+        </SelectContent>
+      </Select>
       {editing && (
         <div className="mt-2 space-y-1.5 border-t pt-2">
           {item.kind === "strength" && (
