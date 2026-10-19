@@ -125,6 +125,7 @@ describe("HouseholdMembersPage", () => {
     mockUseHouseholdMembers.mockReturnValue({ data: null, isLoading: true, isError: false });
     renderPage();
     expect(screen.getByRole("status", { name: "Loading" })).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: /Households/ })).toHaveAttribute("href", "/app/households");
   });
 
   it("renders error state on load failure", () => {

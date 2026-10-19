@@ -102,6 +102,9 @@ export function HouseholdMembersPage() {
   if (membersLoading) {
     return (
       <div className="p-4 md:p-6 space-y-4" role="status" aria-label="Loading">
+        <Button variant="ghost" size="sm" render={<Link to="/app/households" />}>
+          <ArrowLeft className="mr-1 h-4 w-4" /> Households
+        </Button>
         <PageHeader title="Household Members" />
         {Array.from({ length: 3 }).map((_, i) => (
           <Skeleton key={i} className="h-16" />
@@ -169,32 +172,32 @@ export function HouseholdMembersPage() {
             return (
               <div key={member.id} className="flex flex-col gap-3 py-3 first:pt-0 last:pb-0 md:flex-row md:items-center md:justify-between">
                 <div className="flex min-w-0 flex-1 items-center gap-3">
-                {u && (
-                  <UserAvatar
-                    avatarUrl={u.attributes.avatarUrl}
-                    providerAvatarUrl={u.attributes.providerAvatarUrl}
-                    displayName={u.attributes.displayName}
-                    userId={u.id}
-                    size="md"
-                  />
-                )}
-                <div className="min-w-0 flex-1">
-                  <div className="flex items-center gap-2">
-                    <p className="font-medium truncate">
-                      {u?.attributes.displayName ?? "Unknown User"}
+                  {u && (
+                    <UserAvatar
+                      avatarUrl={u.attributes.avatarUrl}
+                      providerAvatarUrl={u.attributes.providerAvatarUrl}
+                      displayName={u.attributes.displayName}
+                      userId={u.id}
+                      size="md"
+                    />
+                  )}
+                  <div className="min-w-0 flex-1">
+                    <div className="flex items-center gap-2">
+                      <p className="font-medium truncate">
+                        {u?.attributes.displayName ?? "Unknown User"}
+                      </p>
+                      {isSelf && <Badge variant="outline">You</Badge>}
+                      {member.attributes.isLastOwner && (
+                        <Badge variant="warning" className="gap-1">
+                          <AlertTriangle className="h-3 w-3" />Sole Owner
+                        </Badge>
+                      )}
+                    </div>
+                    <p className="text-sm text-muted-foreground truncate">{u?.attributes.email}</p>
+                    <p className="text-sm text-muted-foreground">
+                      Joined {new Date(member.attributes.createdAt).toLocaleDateString()}
                     </p>
-                    {isSelf && <Badge variant="outline">You</Badge>}
-                    {member.attributes.isLastOwner && (
-                      <Badge variant="warning" className="gap-1">
-                        <AlertTriangle className="h-3 w-3" />Sole Owner
-                      </Badge>
-                    )}
                   </div>
-                  <p className="text-sm text-muted-foreground truncate">{u?.attributes.email}</p>
-                  <p className="text-sm text-muted-foreground">
-                    Joined {new Date(member.attributes.createdAt).toLocaleDateString()}
-                  </p>
-                </div>
                 </div>
                 <div className="flex items-center gap-2 pl-0 md:pl-3">
                   {canModify ? (
