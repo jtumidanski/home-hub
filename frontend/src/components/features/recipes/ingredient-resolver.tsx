@@ -60,7 +60,7 @@ export function IngredientResolver({ recipeId, ingredientId, rawName }: Ingredie
   }
 
   return (
-    <div className="mt-1 p-2 border rounded-md bg-background shadow-sm space-y-2 w-64">
+    <div className="mt-1 p-2 border rounded-md bg-popover shadow-overlay space-y-2 w-64">
       <div className="relative">
         <Search aria-hidden="true" className="absolute left-2 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
         <Input

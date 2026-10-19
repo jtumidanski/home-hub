@@ -144,7 +144,7 @@ export function LocationSearch({ value, onSelect, onClear, isPending }: Location
           id={listboxId}
           role="listbox"
           aria-label="Location results"
-          className="absolute z-50 mt-1 w-full rounded-md border bg-popover shadow-md max-h-60 overflow-auto"
+          className="absolute z-50 mt-1 w-full rounded-md border bg-popover shadow-overlay max-h-60 overflow-auto"
         >
           {results.map((result, index) => (
             <div
