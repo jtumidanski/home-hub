@@ -90,8 +90,8 @@ export function CalendarWidget(_props: CalendarWidgetProps = {}) {
         <CardContent>
           {events.length === 0 ? (
             <div className="flex items-center gap-2 text-muted-foreground">
-              <CalendarDays className="size-5 @xl:size-6 shrink-0" />
-              <p className="text-sm">No events today</p>
+              <CalendarDays className="size-5 @xl:size-6 shrink-0" aria-hidden="true" />
+              <p className="text-sm @xl:text-xl">No events today</p>
             </div>
           ) : (
             <div className="space-y-2">

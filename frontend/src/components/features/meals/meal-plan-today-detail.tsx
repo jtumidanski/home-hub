@@ -70,7 +70,7 @@ export function MealPlanTodayDetail({ horizonDays }: MealPlanTodayDetailProps) {
   }
 
   return (
-    <Link to="/app/meals" className="@container group/meals block h-full rounded-xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
+    <Link to="/app/meals" className="group/meals block h-full rounded-xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
       <Card className="@container h-full motion-safe:transition-colors group-hover/meals:bg-accent">
         <CardHeader>
           <CardTitle className="font-heading text-lg @xl:text-2xl">Meals</CardTitle>
