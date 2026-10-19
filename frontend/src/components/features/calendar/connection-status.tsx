@@ -1,4 +1,4 @@
-import { RefreshCw, Unlink } from "lucide-react";
+import { AlertTriangle, RefreshCw, Unlink, WifiOff } from "lucide-react";
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -56,18 +56,12 @@ export function ConnectionStatus({ connection }: ConnectionStatusProps) {
           style={{ backgroundColor: attrs.userColor }}
         />
         {isError && (
-          <Badge
-            variant="outline"
-            className="bg-amber-500/10 text-amber-700 border-amber-200"
-          >
+          <Badge variant="warning" icon={AlertTriangle}>
             Sync issues
           </Badge>
         )}
         {isDisconnected && (
-          <Badge
-            variant="outline"
-            className="bg-red-500/10 text-red-700 border-red-200"
-          >
+          <Badge variant="destructive" icon={WifiOff}>
             Disconnected
           </Badge>
         )}
@@ -100,13 +94,7 @@ export function ConnectionStatus({ connection }: ConnectionStatusProps) {
 
       {failureMessage && (isError || isDisconnected) && (
         <div className="ml-6 flex flex-col gap-1 sm:flex-row sm:items-center sm:gap-3">
-          <span
-            className={
-              isDisconnected ? "text-red-700" : "text-amber-700"
-            }
-          >
-            {failureMessage}
-          </span>
+          <span className="text-foreground">{failureMessage}</span>
           {showAttemptSubline && triedRel && (
             <span className="text-xs text-muted-foreground">
               Tried {triedRel}
