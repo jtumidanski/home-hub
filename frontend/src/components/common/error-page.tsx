@@ -52,6 +52,7 @@ export function ErrorPage({
     <div className="flex min-h-[50vh] items-center justify-center p-6">
       <EmptyState
         className="mx-auto max-w-md"
+        headingLevel="h1"
         icon={AlertTriangle}
         title={title ?? getDefaultTitle(statusCode)}
         description={message ?? getDefaultMessage(statusCode)}

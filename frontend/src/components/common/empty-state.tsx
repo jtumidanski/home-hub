@@ -7,9 +7,11 @@ export interface EmptyStateProps {
   description?: React.ReactNode;
   action?: React.ReactNode;
   className?: string;
+  /** Heading element for the title; defaults to h2. */
+  headingLevel?: "h1" | "h2" | "h3";
 }
 
-export function EmptyState({ icon: Icon, title, description, action, className }: EmptyStateProps) {
+export function EmptyState({ icon: Icon, title, description, action, className, headingLevel: Heading = "h2" }: EmptyStateProps) {
   return (
     <div
       className={cn(
@@ -18,7 +20,7 @@ export function EmptyState({ icon: Icon, title, description, action, className }
       )}
     >
       {Icon ? <Icon aria-hidden="true" className="size-8 text-muted-foreground" /> : null}
-      <h2 className="font-heading text-lg tracking-[-0.01em]">{title}</h2>
+      <Heading className="font-heading text-lg tracking-[-0.01em]">{title}</Heading>
       {description ? (
         <p className="max-w-prose text-sm text-muted-foreground">{description}</p>
       ) : null}

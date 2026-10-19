@@ -11,6 +11,11 @@ describe("EmptyState", () => {
     expect(h2).toHaveClass("text-lg");
   });
 
+  it("renders the title at the requested heading level", () => {
+    render(<EmptyState title="Oops" headingLevel="h1" />);
+    expect(screen.getByRole("heading", { level: 1, name: "Oops" })).toBeInTheDocument();
+  });
+
   it("hides the icon from assistive tech", () => {
     const { container } = render(<EmptyState icon={BookOpen} title="No recipes yet" />);
     expect(container.querySelector("svg")).toHaveAttribute("aria-hidden", "true");

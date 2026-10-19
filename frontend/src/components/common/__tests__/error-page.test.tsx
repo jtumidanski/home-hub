@@ -9,6 +9,11 @@ function renderWithRouter(ui: React.ReactElement) {
 }
 
 describe("ErrorPage", () => {
+  it("renders the title as the page h1", () => {
+    renderWithRouter(<ErrorPage statusCode={404} />);
+    expect(screen.getByRole("heading", { level: 1, name: "Page Not Found" })).toBeInTheDocument();
+  });
+
   it("renders default title for 404", () => {
     renderWithRouter(<ErrorPage statusCode={404} />);
     expect(screen.getByText("Page Not Found")).toBeInTheDocument();
