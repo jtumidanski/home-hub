@@ -83,7 +83,7 @@ export function CalendarGrid({
               isToday(day, timezone) && "bg-primary/10",
             )}
           >
-            <div className="text-xs text-muted-foreground uppercase">
+            <div className="text-xs text-muted-foreground">
               {day.toLocaleDateString("en-US", { weekday: "short" })}
             </div>
             <div className={cn("text-lg font-semibold", isToday(day, timezone) && "text-primary")}>

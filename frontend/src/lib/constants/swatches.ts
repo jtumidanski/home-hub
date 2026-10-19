@@ -10,7 +10,7 @@ const COLOR_KEYS = {
 
 export const TRACKER_COLORS: readonly TrackerColor[] = Object.keys(COLOR_KEYS) as TrackerColor[];
 
-export type SwatchRole = "solid" | "soft" | "borderLeft" | "border";
+export type SwatchRole = "solid" | "soft" | "border";
 
 // Tailwind's scanner only sees whole literals, so every class is spelled out here.
 export const SWATCH_CLASSES: Record<SwatchRole, Record<TrackerColor, string>> = {
@@ -26,12 +26,6 @@ export const SWATCH_CLASSES: Record<SwatchRole, Record<TrackerColor, string>> = 
     cyan: "bg-swatch-cyan-soft", blue: "bg-swatch-blue-soft", indigo: "bg-swatch-indigo-soft", violet: "bg-swatch-violet-soft",
     purple: "bg-swatch-purple-soft", fuchsia: "bg-swatch-fuchsia-soft", pink: "bg-swatch-pink-soft", rose: "bg-swatch-rose-soft",
   },
-  borderLeft: {
-    red: "border-l-swatch-red", orange: "border-l-swatch-orange", amber: "border-l-swatch-amber", yellow: "border-l-swatch-yellow",
-    lime: "border-l-swatch-lime", green: "border-l-swatch-green", emerald: "border-l-swatch-emerald", teal: "border-l-swatch-teal",
-    cyan: "border-l-swatch-cyan", blue: "border-l-swatch-blue", indigo: "border-l-swatch-indigo", violet: "border-l-swatch-violet",
-    purple: "border-l-swatch-purple", fuchsia: "border-l-swatch-fuchsia", pink: "border-l-swatch-pink", rose: "border-l-swatch-rose",
-  },
   border: {
     red: "border-swatch-red", orange: "border-swatch-orange", amber: "border-swatch-amber", yellow: "border-swatch-yellow",
     lime: "border-swatch-lime", green: "border-swatch-green", emerald: "border-swatch-emerald", teal: "border-swatch-teal",
@@ -43,7 +37,6 @@ export const SWATCH_CLASSES: Record<SwatchRole, Record<TrackerColor, string>> = 
 const NEUTRAL_FALLBACK: Record<SwatchRole, string> = {
   solid: "bg-muted-foreground",
   soft: "bg-muted",
-  borderLeft: "border-l-muted-foreground",
   border: "border-muted-foreground",
 };
 

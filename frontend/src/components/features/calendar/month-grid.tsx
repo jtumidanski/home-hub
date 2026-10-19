@@ -45,7 +45,7 @@ export function MonthGrid({ monthAnchor, events, isDesktop, onDayClick }: MonthG
       {weekdayLabels.map((label) => (
         <div
           key={label}
-          className="text-xs text-muted-foreground uppercase text-center py-1 border-b border-r last:border-r-0"
+          className="text-xs text-muted-foreground text-center py-1 border-b border-r last:border-r-0"
         >
           {label}
         </div>

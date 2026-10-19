@@ -1,7 +1,7 @@
 import { describe, it, expect } from "vitest";
 import { TRACKER_COLORS, SWATCH_CLASSES, swatchClass, type SwatchRole } from "@/lib/constants/swatches";
 
-const ROLES: SwatchRole[] = ["solid", "soft", "borderLeft", "border"];
+const ROLES: SwatchRole[] = ["solid", "soft", "border"];
 
 describe("TRACKER_COLORS", () => {
   it("has 16 unique entries in the TrackerColor order", () => {
@@ -26,7 +26,6 @@ describe("SWATCH_CLASSES", () => {
   it("uses the expected utility prefixes per role", () => {
     expect(SWATCH_CLASSES.solid.red).toBe("bg-swatch-red");
     expect(SWATCH_CLASSES.soft.red).toBe("bg-swatch-red-soft");
-    expect(SWATCH_CLASSES.borderLeft.red).toBe("border-l-swatch-red");
     expect(SWATCH_CLASSES.border.red).toBe("border-swatch-red");
   });
 });
@@ -39,7 +38,6 @@ describe("swatchClass", () => {
   it("falls back to neutral for an unknown colour", () => {
     expect(swatchClass("chartreuse", "solid")).toBe("bg-muted-foreground");
     expect(swatchClass("chartreuse", "soft")).toBe("bg-muted");
-    expect(swatchClass("chartreuse", "borderLeft")).toBe("border-l-muted-foreground");
     expect(swatchClass("chartreuse", "border")).toBe("border-muted-foreground");
   });
 
