@@ -151,8 +151,10 @@ function TodayItem({ item, weekStart }: { item: WeekItem; weekStart: string }) {
 
   return (
     <li className="rounded-lg border p-3 space-y-2">
-      <div
-        className="flex items-center justify-between gap-2 cursor-pointer"
+      <button
+        type="button"
+        className="flex w-full cursor-pointer items-center justify-between gap-2 text-left"
+        aria-expanded={expanded}
         onClick={() => setExpanded(!expanded)}
       >
         <div className="min-w-0 flex-1">
@@ -166,7 +168,7 @@ function TodayItem({ item, weekStart }: { item: WeekItem; weekStart: string }) {
           <StatusBadge status={status} />
           {expanded ? <ChevronUp className="h-4 w-4 text-muted-foreground" /> : <ChevronDown className="h-4 w-4 text-muted-foreground" />}
         </div>
-      </div>
+      </button>
 
       {expanded ? (
         <div className="space-y-3 border-t pt-3">

@@ -1,4 +1,4 @@
-import { useNavigate } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { useCurrentWeather, useWeatherForecast } from "@/lib/hooks/api/use-weather";
 import { useTenant } from "@/context/tenant-context";
 import { hasLocation } from "@/types/models/household";
@@ -135,12 +135,16 @@ export function WeatherWidget(_props: WeatherWidgetProps = {}) {
   }
 
   return (
-    <Card
-      className="@container h-full cursor-pointer hover:bg-accent/50 transition-colors"
-      onClick={() => navigate("/app/weather")}
-    >
+    <Card className="@container relative h-full hover:bg-accent/50 transition-colors">
       <CardHeader className="pb-2">
-        <CardTitle className="font-heading text-lg @xl:text-2xl">Weather</CardTitle>
+        <CardTitle className="font-heading text-lg @xl:text-2xl">
+          <Link
+            to="/app/weather"
+            className="rounded-sm outline-none after:absolute after:inset-0 after:content-[''] focus-visible:after:outline-2 focus-visible:after:outline-offset-2 focus-visible:after:outline-ring"
+          >
+            Weather
+          </Link>
+        </CardTitle>
       </CardHeader>
       <CardContent>
         {/* Mobile: centered current conditions + 3-col preview */}

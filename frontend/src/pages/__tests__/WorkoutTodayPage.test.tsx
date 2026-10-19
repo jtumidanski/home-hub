@@ -52,3 +52,54 @@ describe("WorkoutTodayPage", () => {
     expect(screen.getByLabelText("Weight")).toBeInstanceOf(HTMLInputElement);
   });
 });
+
+describe("WorkoutTodayPage keyboard access", () => {
+  it("toggles an item's log form from a real button", async () => {
+    const { default: userEvent } = await import("@testing-library/user-event");
+    mockToday.mockReturnValue({
+      data: doc([
+        {
+          id: "i1",
+          exerciseName: "Squat",
+          kind: "strength",
+          weightType: "free",
+          planned: { sets: 3, reps: 5, weight: 100, weightUnit: "lb" },
+          performance: null,
+        },
+      ]),
+      isLoading: false,
+      error: null,
+    });
+    const user = userEvent.setup();
+    render(<WorkoutTodayPage />);
+    const toggle = screen.getByRole("button", { name: /Squat/ });
+    expect(toggle).toHaveAttribute("aria-expanded", "false");
+    toggle.focus();
+    await user.keyboard("{Enter}");
+    expect(toggle).toHaveAttribute("aria-expanded", "true");
+    expect(screen.getByLabelText("Sets")).toBeInTheDocument();
+    toggle.focus();
+    await user.keyboard(" ");
+    expect(toggle).toHaveAttribute("aria-expanded", "false");
+  });
+
+  it("keeps the coarse-pointer target size on log inputs", () => {
+    mockToday.mockReturnValue({
+      data: doc([
+        {
+          id: "i1",
+          exerciseName: "Squat",
+          kind: "strength",
+          weightType: "free",
+          planned: { sets: 3, reps: 5, weight: 100, weightUnit: "lb" },
+          performance: null,
+        },
+      ]),
+      isLoading: false,
+      error: null,
+    });
+    render(<WorkoutTodayPage />);
+    fireEvent.click(screen.getByText("Squat"));
+    expect(screen.getByLabelText("Sets").className).toContain("coarse:min-h-11");
+  });
+});
