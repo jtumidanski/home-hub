@@ -1,7 +1,7 @@
 {
   "$schema": "https://docs.renovatebot.com/renovate-schema.json",
-  "extends": ["local>renovate/presets"],
-  "enabledManagers": ["gomod", "npm", "github-actions", "dockerfile"],
+  "extends": ["local>renovate/presets", "local>renovate/presets:go-toolchain"],
+  "enabledManagers": ["gomod", "npm", "github-actions", "dockerfile", "custom.regex"],
   "automerge": true,
   "automergeType": "pr",
   "platformAutomerge": false,
@@ -12,6 +12,17 @@
     "minimumReleaseAge": null,
     "labels": ["dependencies", "security"]
   },
+  "customManagers": [
+    {
+      "customType": "regex",
+      "description": "tools/toolchain.versions GO_VERSION, which verify.sh's pins leg compares against go.work; no built-in manager reads it.",
+      "managerFilePatterns": ["/^tools/toolchain\\.versions$/"],
+      "matchStrings": ["(?:^|\\n)GO_VERSION=(?<currentValue>\\d+\\.\\d+\\.\\d+)"],
+      "datasourceTemplate": "golang-version",
+      "depNameTemplate": "go",
+      "versioningTemplate": "semver"
+    }
+  ],
   "packageRules": [
     {
       "matchManagers": ["gomod"],
@@ -28,6 +39,19 @@
     {
       "matchManagers": ["dockerfile"],
       "groupName": "Docker images"
+    },
+    {
+      "description": "Go toolchain (go.mod and go.work directives, toolchain.versions, golang builder images) in one PR, never automerged. Last so it overrides the gomod and dockerfile groups above.",
+      "matchDatasources": ["golang-version", "docker"],
+      "matchPackageNames": ["go", "golang"],
+      "groupName": "Go toolchain",
+      "automerge": false
+    },
+    {
+      "description": "Hold Go versions 14 days. CI runs on the Go baked into the forgejo-runner-ubuntu image with GOTOOLCHAIN=local, so a go directive newer than that image fails every Go job. k3s opens its runner-Go PR after 3 days; the 11-day gap is for rebuilding and rolling the image. A heuristic, not a guarantee: check `go version` in a recent CI run before merging. golang builder images are not held: Docker builds bring their own Go.",
+      "matchDatasources": ["golang-version"],
+      "matchDepNames": ["go"],
+      "minimumReleaseAge": "14 days"
     }
   ]
 }
