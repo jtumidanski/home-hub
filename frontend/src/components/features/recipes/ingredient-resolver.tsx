@@ -78,7 +78,7 @@ export function IngredientResolver({ recipeId, ingredientId, rawName }: Ingredie
           <button
             key={s.id}
             type="button"
-            className="w-full min-h-8 text-left px-2 py-1 text-sm hover:bg-muted rounded transition-colors coarse:min-h-11 focus-visible:outline-2 focus-visible:outline-ring"
+            className="w-full min-h-8 text-left px-2 py-1 text-sm hover:bg-muted rounded transition-colors coarse:min-h-11 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring"
             onClick={() => handleResolve(s.id)}
           >
             {s.attributes.name}

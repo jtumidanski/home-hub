@@ -83,7 +83,7 @@ export function RecipeSelector({ autoClassification, onSelectRecipe }: RecipeSel
           recipes.map((recipe) => (
             <button
               key={recipe.id}
-              className="w-full text-left p-2 rounded hover:bg-accent flex items-center justify-between gap-2 min-h-8 coarse:min-h-11 focus-visible:outline-2 focus-visible:outline-ring"
+              className="w-full text-left p-2 rounded hover:bg-accent flex items-center justify-between gap-2 min-h-8 coarse:min-h-11 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring"
               onClick={() => onSelectRecipe(recipe)}
             >
               <div className="min-w-0">

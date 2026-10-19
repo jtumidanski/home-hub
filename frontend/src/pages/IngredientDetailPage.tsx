@@ -212,7 +212,7 @@ export function IngredientDetailPage() {
                   <button
                     type="button"
                     aria-label={`Remove alias ${alias.name}`}
-                    className="ml-1 hover:text-destructive"
+                    className="ml-1 inline-flex size-6 items-center justify-center hover:text-destructive coarse:size-11"
                     onClick={() => handleRemoveAlias(alias.id)}
                   >
                     <X className="h-3 w-3" />
@@ -247,7 +247,7 @@ export function IngredientDetailPage() {
               <li key={i}>
                 <button
                   type="button"
-                  className="text-sm text-primary hover:underline"
+                  className="min-h-6 text-sm text-primary hover:underline coarse:min-h-11"
                   onClick={() => navigate(`/app/recipes/${ref.recipeId}`)}
                 >
                   {ref.recipeName || "(unknown recipe)"}
