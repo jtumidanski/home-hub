@@ -17,6 +17,15 @@ describe("RecipeSteps", () => {
     expect(screen.getByText("Add pasta.")).toBeInTheDocument();
   });
 
+  it("renders a note as a muted inset block without a side stripe", () => {
+    const steps: Step[] = [{ number: 1, segments: [{ type: "text", value: "Boil water." }] }];
+    render(<RecipeSteps steps={steps} notes={[{ position: 1, text: "Salt generously." }]} />);
+
+    const block = screen.getByText("Salt generously.").closest("div");
+    expect(block).toHaveClass("bg-muted", "rounded-md");
+    expect(block?.className).not.toMatch(/border-l/);
+  });
+
   it("renders empty state when no steps", () => {
     render(<RecipeSteps steps={[]} />);
 

@@ -257,8 +257,6 @@ function MobileDayView({ month, items, entryMap, putEntry, deleteEntry, skipEntr
 
         return (
           <Card key={item.id} className={cn(
-            !hasValue && !isSkipped && "border-l-[3px]",
-            !hasValue && !isSkipped && swatchClass(item.color, "borderLeft"),
             isSkipped && "opacity-60",
           )}>
             <CardContent className="py-3 px-4 space-y-2">
@@ -267,6 +265,7 @@ function MobileDayView({ month, items, entryMap, putEntry, deleteEntry, skipEntr
                 <span className="font-medium text-sm">{item.name}</span>
                 {hasValue && <Badge className="ml-auto bg-success/15 text-success border-transparent"><Check className="h-3 w-3" />logged</Badge>}
                 {isSkipped && <Badge variant="secondary" className="ml-auto">skipped</Badge>}
+                {!hasValue && !isSkipped && <Badge variant="outline" className="ml-auto">pending</Badge>}
               </div>
               {isFuture ? (
                 <p className="text-xs text-muted-foreground">{scheduled ? "Scheduled — log on the day." : ""}</p>

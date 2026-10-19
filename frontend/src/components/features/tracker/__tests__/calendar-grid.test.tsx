@@ -121,6 +121,20 @@ describe("CalendarGrid (desktop)", () => {
     expect(screen.getAllByText("Run").length).toBeGreaterThan(0);
   });
 
+  it("labels an unlogged day as pending in text, without a side stripe", () => {
+    mockedUseMonthSummary.mockReturnValue({
+      data: makeSummary([]),
+      isLoading: false,
+    } as ReturnType<typeof useMonthSummary>);
+
+    const { container } = render(
+      <CalendarGrid month="2026-05" onMonthChange={() => {}} onViewReport={() => {}} />,
+    );
+
+    expect(screen.getAllByText("pending").length).toBeGreaterThan(0);
+    expect(container.querySelector('[class*="border-l-"]')).toBeNull();
+  });
+
   describe("note indicator", () => {
     it("renders the solid border and flange when the cell entry has a non-empty note", () => {
       mockedUseMonthSummary.mockReturnValue({

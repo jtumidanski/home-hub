@@ -9,7 +9,7 @@ interface RecipeStepsProps {
 
 function RecipeNote({ text }: { text: string }) {
   return (
-    <div className="flex items-start gap-2 border-l-4 border-muted-foreground/40 pl-3 py-1 text-sm italic text-muted-foreground">
+    <div className="flex items-start gap-2 rounded-md bg-muted p-3 text-sm italic text-muted-foreground">
       <MessageSquareText className="h-4 w-4 mt-0.5 shrink-0" aria-hidden="true" />
       <span><span className="sr-only">Note: </span>{text}</span>
     </div>
