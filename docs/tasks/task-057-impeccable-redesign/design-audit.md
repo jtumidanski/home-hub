@@ -204,3 +204,16 @@ Geist woff2 files in `dist/assets` (variable font, split by `unicode-range` in `
 | DA-141 | P3 | Remote avatar images | both | frontend/src/pages/SettingsPage.tsx:75 | 12 DiceBear tiles fetched on each style/shuffle with no loading state and no width/height attrs (layout shift); alt text "Adventurer avatar seed12" is meaningless to screen readers. | Add width/height and `loading="lazy"`, `alt=""` with the button carrying `aria-label="Choose avatar N"`. | 7 |  |
 
 ## Accessibility verification log
+
+| Stage | Route | Viewports | Themes | Checks | Result |
+|---|---|---|---|---|---|
+| 0+1 | /login | 1280, 390 | light, dark | keyboard walk, reduced motion, contrast spot-checks | not rendered — browser unavailable |
+| 0+1 | /onboarding | 1280, 390 | light, dark | keyboard walk, reduced motion, contrast spot-checks | not rendered — browser unavailable |
+| 0+1 | /app/dashboards | 1280, 390 | light, dark | keyboard walk (kebab menu, dialogs), reduced motion | not rendered — browser unavailable |
+| 0+1 | /app/calendar | 1280, 390 | light, dark | keyboard walk (event form, popover), user-coloured chip contrast, reduced motion | not rendered — browser unavailable |
+| 0+1 | /app/tasks | 1280, 390 | light, dark | keyboard walk, contrast spot-checks | not rendered — browser unavailable |
+| 0+1 | /app/meals | 1280, 390 | light, dark | keyboard walk, skeletons, contrast spot-checks | not rendered — browser unavailable |
+| 0+1 | /app/recipes, /app/recipes/:id, /app/recipes/new | 1280, 390 | light, dark | keyboard walk, 390 px long-title wrap, placeholders, skeletons | not rendered — browser unavailable |
+| 0+1 | /app/shopping/grocery | 1280, 390 | light, dark | keyboard walk (link-overlay cards), skeleton heights | not rendered — browser unavailable |
+| 0+1 | /app/ingredients, /app/ingredients/:id | 1280, 390 | light, dark | keyboard walk (link-overlay cards, bulk categorize), skeleton heights | not rendered — browser unavailable |
+| 0+1 | /app/workouts/today, /app/workouts/review | 1280, 390 | light, dark | keyboard walk, badge variants, contrast spot-checks | not rendered — browser unavailable |
