@@ -1,12 +1,7 @@
 import { describe, it, expect } from "vitest";
 import { contrastRatio, parseColor, INK, PAPER } from "@/lib/color-contrast";
 import { readIndexCss, tokenBlock, resolveToken } from "./css-tokens";
-
-// Task 8 replaces this literal with an import from swatches.ts.
-const TRACKER_COLORS = [
-  "red", "orange", "amber", "yellow", "lime", "green", "emerald", "teal",
-  "cyan", "blue", "indigo", "violet", "purple", "fuchsia", "pink", "rose",
-];
+import { TRACKER_COLORS } from "@/lib/constants/swatches";
 
 const THEME_INVARIANT = ["--radius", "--duration-fast", "--duration-base", "--on-color-ink", "--on-color-paper"];
 
