@@ -105,13 +105,9 @@ export function EventFormDialog({
   const previousRecurrenceRef = useRef(defaults.recurrence);
   // eslint-disable-next-line react-hooks/incompatible-library -- form.watch() returns unmemoizable values; library-level React Compiler limitation
   const allDay = form.watch("allDay");
-  // eslint-disable-next-line react-hooks/incompatible-library -- form.watch() returns unmemoizable values; library-level React Compiler limitation
   const recurrence = form.watch("recurrence");
-  // eslint-disable-next-line react-hooks/incompatible-library -- form.watch() returns unmemoizable values; library-level React Compiler limitation
   const endsMode = form.watch("endsMode");
-  // eslint-disable-next-line react-hooks/incompatible-library -- form.watch() returns unmemoizable values; library-level React Compiler limitation
   const startDate = form.watch("startDate");
-  // eslint-disable-next-line react-hooks/incompatible-library -- form.watch() returns unmemoizable values; library-level React Compiler limitation
   const endsOnDateUserEdited = form.watch("endsOnDateUserEdited");
 
   function addOneYear(yyyymmdd: string): string {
