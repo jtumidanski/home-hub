@@ -598,38 +598,38 @@ Same steps as Task 14, for `Stage = 6`. Then the **Stage close-out procedure** (
 - Modify: `frontend/src/components/features/households/*`, `frontend/src/pages/{HouseholdsPage,HouseholdMembersPage,SettingsPage,DataRetentionPage}.tsx`, `frontend/src/pages/DashboardRedirect.tsx` if still pending
 - Modify: `no-color-literals.test.ts`: remove the last entries, then add case (e) `expect(PENDING).toEqual([])`
 
-- [ ] **Step 1:** Cut the stage branch. **Step 2:** Remove the entries, add case (e); run the guard → FAIL if any literal remains, PASS otherwise.
-- [ ] **Step 3: Implement** token mapping, `PageHeader`/`EmptyState`, Stage 7 rows in these files. Settings' theme toggle keeps calling the unchanged theme provider.
-- [ ] **Step 4: Run** `npx vitest run && npx tsc -b && npx eslint .` → PASS. **Step 5: Commit** `feat(frontend): restyle households and settings; literal guard complete`.
+- [x] **Step 1:** Cut the stage branch. **Step 2:** Remove the entries, add case (e); run the guard → FAIL if any literal remains, PASS otherwise.
+- [x] **Step 3: Implement** token mapping, `PageHeader`/`EmptyState`, Stage 7 rows in these files. Settings' theme toggle keeps calling the unchanged theme provider.
+- [x] **Step 4: Run** `npx vitest run && npx tsc -b && npx eslint .` → PASS. **Step 5: Commit** `feat(frontend): restyle households and settings; literal guard complete`.
 
 ### Task 30: Resolve remaining Stage 7 findings and sweep
 
-- [ ] **Step 1:** Same as Task 14 for `Stage = 7`.
-- [ ] **Step 2: Sweep** for icon-only buttons without names: `grep -rn 'size="icon' frontend/src --include=*.tsx`; for each hit, confirm `aria-label`, `aria-labelledby`, or sr-only text. Fix misses with an RTL `getByRole("button", { name })` assertion in that component's test.
-- [ ] **Step 3:** Every `design-audit.md` row now has a fix commit (the `Resolved` SHA is filled at close-out). List any row still open; there must be none.
-- [ ] **Step 4: Commit** fixes as `fix(frontend): <summary> (DA-NNN)`.
+- [x] **Step 1:** Same as Task 14 for `Stage = 7`.
+- [x] **Step 2: Sweep** for icon-only buttons without names: `grep -rn 'size="icon' frontend/src --include=*.tsx`; for each hit, confirm `aria-label`, `aria-labelledby`, or sr-only text. Fix misses with an RTL `getByRole("button", { name })` assertion in that component's test.
+- [x] **Step 3:** Every `design-audit.md` row now has a fix commit (the `Resolved` SHA is filled at close-out). List any row still open; there must be none.
+- [x] **Step 4: Commit** fixes as `fix(frontend): <summary> (DA-NNN)`.
 
 ### Task 31: Finish review
 
-- [ ] **Step 1:** Dispatch `impeccable:impeccable-finish-reviewer` with: `design.md` (direction contract), `comps/dashboard.html` (approved comp), and the running app if a browser is available (otherwise the source tree; say which in the brief).
-- [ ] **Step 2:** Add each material fix it returns to `design-audit.md` as a new row (`Stage 7`, ID continuing the sequence, Description prefixed `finish-review:`).
-- [ ] **Step 3:** Fix each, with a test where jsdom can observe it. Re-dispatch the finish reviewer once; repeat until it returns no material fixes (FR-17, PRD acceptance).
-- [ ] **Step 4: Commit** each fix `fix(frontend): <summary> (DA-NNN)`.
+- [x] **Step 1:** Dispatch `impeccable:impeccable-finish-reviewer` with: `design.md` (direction contract), `comps/dashboard.html` (approved comp), and the running app if a browser is available (otherwise the source tree; say which in the brief).
+- [x] **Step 2:** Add each material fix it returns to `design-audit.md` as a new row (`Stage 7`, ID continuing the sequence, Description prefixed `finish-review:`).
+- [x] **Step 3:** Fix each, with a test where jsdom can observe it. Re-dispatch the finish reviewer once; repeat until it returns no material fixes (FR-17, PRD acceptance).
+- [x] **Step 4: Commit** each fix `fix(frontend): <summary> (DA-NNN)`.
 
 ### Task 32: DESIGN.md from the shipped build
 
 **Files:**
 - Create: `DESIGN.md` and `.impeccable/design.json` at the Impeccable root recorded in `design-audit.md` (`frontend/` per design.md §5.1 unless Task 1 decided otherwise)
 
-- [ ] **Step 1:** Dispatch `impeccable:impeccable-documenter` (scan mode) against the final build, giving it `PRODUCT.md`, `design.md`, and the paths of `index.css`, `components/ui`, `components/common`.
-- [ ] **Step 2: Check the output contains**, and add if missing: the token tables as shipped (including Task 5's L nudges and the `--warning-text` role), the Fraunces ≥ 18 px rule, the `tnum` outcome from Task 6, the swatch and calendar-colour rules, the `coarse:` target rule, the focus and reduced-motion rules, and an "Exceptions" section listing every `ALLOWED` entry from `no-color-literals.test.ts` plus the brand-mark/favicon image asset and calendar user colours as data.
-- [ ] **Step 3:** Confirm every `ALLOWED` entry's `reason` appears in DESIGN.md's Exceptions section (manual cross-check; list the pairs in the commit body).
-- [ ] **Step 4: Commit** `docs(frontend): DESIGN.md and design.json from the shipped build`.
+- [x] **Step 1:** Dispatch `impeccable:impeccable-documenter` (scan mode) against the final build, giving it `PRODUCT.md`, `design.md`, and the paths of `index.css`, `components/ui`, `components/common`.
+- [x] **Step 2: Check the output contains**, and add if missing: the token tables as shipped (including Task 5's L nudges and the `--warning-text` role), the Fraunces ≥ 18 px rule, the `tnum` outcome from Task 6, the swatch and calendar-colour rules, the `coarse:` target rule, the focus and reduced-motion rules, and an "Exceptions" section listing every `ALLOWED` entry from `no-color-literals.test.ts` plus the brand-mark/favicon image asset and calendar user colours as data.
+- [x] **Step 3:** Confirm every `ALLOWED` entry's `reason` appears in DESIGN.md's Exceptions section (manual cross-check; list the pairs in the commit body).
+- [x] **Step 4: Commit** `docs(frontend): DESIGN.md and design.json from the shipped build`.
 
 ### Task 33: Final budgets
 
-- [ ] **Step 1:** From `frontend/`, run the Task 2 measurement commands on the final branch.
-- [ ] **Step 2:** JS gzip must be ≤ 1.10 × the Task 2 baseline; latin default font payload ≤ 150 KB. If either fails, STOP and report to the controller with the numbers; do not silently trim features.
-- [ ] **Step 3:** Record both numbers next to the baseline in `design-audit.md` `## Baselines` and commit `docs(task-057): final bundle and font budgets`.
+- [x] **Step 1:** From `frontend/`, run the Task 2 measurement commands on the final branch.
+- [x] **Step 2:** JS gzip must be ≤ 1.10 × the Task 2 baseline; latin default font payload ≤ 150 KB. If either fails, STOP and report to the controller with the numbers; do not silently trim features.
+- [x] **Step 3:** Record both numbers next to the baseline in `design-audit.md` `## Baselines` and commit `docs(task-057): final bundle and font budgets`.
 
 Then run the **Stage close-out procedure** (title: `task-057 stage 7: household and finish`; the PR body carries the budget numbers).
