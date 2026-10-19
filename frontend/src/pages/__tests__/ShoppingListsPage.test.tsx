@@ -54,4 +54,13 @@ describe("ShoppingListsPage — delete confirmation", () => {
     await userEvent.click(screen.getByRole("button", { name: "Cancel" }));
     expect(mockDeleteMutate).not.toHaveBeenCalled();
   });
+
+  it("keeps the dialog open with Delete available when the delete fails", async () => {
+    renderPage();
+    await userEvent.click(screen.getByRole("button", { name: "Delete Groceries" }));
+    await userEvent.click(screen.getByRole("button", { name: "Delete" }));
+    // onSuccess is never invoked on failure (the hook toasts the error)
+    expect(screen.getByText("Delete shopping list?")).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Delete" })).toBeEnabled();
+  });
 });

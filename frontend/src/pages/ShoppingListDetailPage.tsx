@@ -288,7 +288,7 @@ export function ShoppingListDetailPage() {
                   const showBox = shoppingMode || isArchived;
                   const rowClass = cn(
                     "flex w-full items-center gap-3 px-2 py-2 rounded text-left transition-colors",
-                    shoppingMode ? "min-h-16 coarse:min-h-11" : "min-h-11 md:min-h-0",
+                    shoppingMode ? "min-h-16" : "min-h-11 md:min-h-0",
                     interactive && "cursor-pointer hover:bg-accent/30 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring",
                     item.checked && "opacity-60",
                   );

@@ -96,6 +96,14 @@ describe("ShoppingListDetailPage — row behavior", () => {
     expect(screen.getByRole("checkbox", { name: /Eggs/ })).toHaveAttribute("aria-checked", "true");
   });
 
+  it("keeps shopping-mode rows at least 64px tall on touch devices", async () => {
+    renderPage();
+    await userEvent.click(screen.getByText("Start Shopping"));
+    const row = screen.getByRole("checkbox", { name: /Milk/ });
+    expect(row).toHaveClass("min-h-16");
+    expect(row.className).not.toMatch(/coarse:min-h/);
+  });
+
   it("toggles a row from the keyboard", async () => {
     renderPage();
     await userEvent.click(screen.getByText("Start Shopping"));
