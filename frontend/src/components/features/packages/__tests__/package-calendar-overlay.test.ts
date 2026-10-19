@@ -1,5 +1,6 @@
 import { describe, it, expect } from "vitest";
 import { packagesToCalendarEvents } from "../package-calendar-overlay";
+import { PACKAGE_EVENT_COLOR } from "@/lib/calendar/event-colors";
 import type { Package } from "@/types/models/package";
 
 function makePkg(overrides: Partial<Package["attributes"]> = {}): Package {
@@ -38,7 +39,7 @@ describe("packagesToCalendarEvents", () => {
     expect(event.attributes.allDay).toBe(true);
     expect(event.attributes.startTime).toBe("2026-04-01T00:00:00Z");
     expect(event.attributes.endTime).toBe("2026-04-01T23:59:59Z");
-    expect(event.attributes.userColor).toBe("#0d9488");
+    expect(event.attributes.userColor).toBe(PACKAGE_EVENT_COLOR);
   });
 
   it("filters out packages without ETA", () => {

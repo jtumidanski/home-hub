@@ -14,9 +14,11 @@ import { TaskCard } from "@/components/features/tasks/task-card";
 import { CreateTaskDialog } from "@/components/features/tasks/create-task-dialog";
 import { DataTable, type DataTableColumnDef } from "@/components/common/data-table";
 import { ErrorCard } from "@/components/common/error-card";
+import { PageHeader } from "@/components/common/page-header";
+import { EmptyState } from "@/components/common/empty-state";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Plus, Circle, CheckCircle2, Trash2 } from "lucide-react";
+import { Plus, Circle, CheckCircle2, Trash2, ListChecks } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 const TASK_STATUS_OPTIONS = [
@@ -109,6 +111,7 @@ export function TasksPage() {
           <Button
             variant="ghost"
             size="sm"
+            className="coarse:min-h-11 coarse:min-w-11"
             aria-label={isCompleted ? "Mark incomplete" : "Mark complete"}
             onClick={(e) => {
               e.stopPropagation();
@@ -129,7 +132,7 @@ export function TasksPage() {
             {row.original.attributes.title}
           </p>
           {row.original.attributes.dueOn && (
-            <p className="text-xs text-muted-foreground">Due: {row.original.attributes.dueOn}</p>
+            <p className="text-sm text-muted-foreground tabular-nums">Due {row.original.attributes.dueOn}</p>
           )}
         </div>
       ),
@@ -162,6 +165,8 @@ export function TasksPage() {
         <Button
           variant="ghost"
           size="sm"
+          className="coarse:min-h-11 coarse:min-w-11"
+          aria-label="Delete task"
           onClick={(e) => {
             e.stopPropagation();
             handleDelete(row.original.id);
@@ -192,12 +197,14 @@ export function TasksPage() {
   return (
     <PullToRefresh onRefresh={handleRefresh}>
       <div className="p-4 md:p-6 space-y-4">
-        <div className="flex items-center justify-between">
-          <h1 className="text-xl md:text-2xl font-semibold">Tasks</h1>
-          <Button size="sm" onClick={() => setOpen(true)}>
-            <Plus className="mr-2 h-4 w-4" />New Task
-          </Button>
-        </div>
+        <PageHeader
+          title="Tasks"
+          actions={
+            <Button size="sm" className="coarse:min-h-11" onClick={() => setOpen(true)}>
+              <Plus className="mr-2 h-4 w-4" />New Task
+            </Button>
+          }
+        />
 
         <ListFilterBar statusOptions={TASK_STATUS_OPTIONS} />
 
@@ -205,16 +212,17 @@ export function TasksPage() {
 
         {isMobile ? (
           filteredTasks.length === 0 ? (
-            <div className="flex flex-col items-center justify-center py-12 text-center">
-              <p className="text-muted-foreground">
-                {hasActiveFilters ? "No items found." : "No tasks yet. Create your first task to get started."}
-              </p>
-              {hasActiveFilters && (
-                <Button variant="link" size="sm" onClick={() => window.history.pushState({}, "", window.location.pathname)}>
-                  Clear filters
-                </Button>
-              )}
-            </div>
+            <EmptyState
+              icon={ListChecks}
+              title={hasActiveFilters ? "No items found." : "No tasks yet. Create your first task to get started."}
+              action={
+                hasActiveFilters ? (
+                  <Button variant="link" size="sm" onClick={() => window.history.pushState({}, "", window.location.pathname)}>
+                    Clear filters
+                  </Button>
+                ) : undefined
+              }
+            />
           ) : (
             <div className="space-y-3">
               {filteredTasks.map((task) => (

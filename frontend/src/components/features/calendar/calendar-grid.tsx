@@ -113,7 +113,7 @@ export function CalendarGrid({
             {hours.map((hour) => (
               <div
                 key={hour}
-                className="absolute w-full text-right pr-2 text-xs text-muted-foreground leading-none"
+                className="absolute w-full text-right pr-2 text-xs text-muted-foreground leading-tight"
                 style={{ top: `${(hour - START_HOUR) * HOUR_HEIGHT - 6}px` }}
               >
                 {formatHour(hour)}
@@ -150,10 +150,10 @@ export function CalendarGrid({
                 {/* Current time indicator */}
                 {today && currentTimeTop >= 0 && currentTimeTop <= hours.length * HOUR_HEIGHT && (
                   <div
-                    className="absolute w-full border-t-2 border-red-500 z-10"
+                    className="absolute w-full border-t-2 border-primary z-10"
                     style={{ top: `${currentTimeTop}px` }}
                   >
-                    <div className="absolute -left-1 -top-1.5 w-3 h-3 rounded-full bg-red-500" />
+                    <div className="absolute -left-1 -top-1.5 w-3 h-3 rounded-full bg-primary" />
                   </div>
                 )}
 

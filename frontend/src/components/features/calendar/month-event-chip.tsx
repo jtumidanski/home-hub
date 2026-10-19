@@ -1,5 +1,6 @@
 import type { CalendarEvent } from "@/types/models/calendar";
-import { eventChipColors, formatChipTime } from "./calendar-utils";
+import { eventChipColors } from "@/lib/calendar/event-colors";
+import { formatChipTime } from "./calendar-utils";
 
 interface MonthEventChipProps {
   event: CalendarEvent;
@@ -16,8 +17,8 @@ export function MonthEventChip({ event, timezone }: MonthEventChipProps) {
 
   return (
     <div
-      className="rounded px-1 py-0.5 text-[10px] leading-tight truncate"
-      style={eventChipColors(event)}
+      className="rounded px-1 py-0.5 text-xs leading-tight truncate"
+      style={eventChipColors(event.attributes)}
       title={attrs.title}
     >
       {timeLabel && <span className="font-semibold mr-1">{timeLabel}</span>}

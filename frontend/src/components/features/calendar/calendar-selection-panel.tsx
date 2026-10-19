@@ -37,7 +37,7 @@ export function CalendarSelectionPanel({ connectionId, sources }: CalendarSelect
           />
           <div
             className="w-3 h-3 rounded-full flex-shrink-0"
-            style={{ backgroundColor: source.attributes.color || "#888" }}
+            style={{ backgroundColor: source.attributes.color || "var(--calendar-busy)" }}
           />
           <span>{source.attributes.name}</span>
           {source.attributes.primary && (

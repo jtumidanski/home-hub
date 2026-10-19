@@ -1,5 +1,6 @@
 import type { CalendarEvent } from "@/types/models/calendar";
 import { cn } from "@/lib/utils";
+import { eventChipColors } from "@/lib/calendar/event-colors";
 import { MonthEventChip } from "./month-event-chip";
 
 interface DayBucket {
@@ -19,11 +20,6 @@ interface MonthDayCellProps {
 
 const MAX_DOTS = 4;
 
-function eventColor(event: CalendarEvent): string {
-  const { attributes: attrs } = event;
-  return attrs.title === "Busy" && !attrs.isOwner ? "var(--calendar-busy)" : attrs.userColor;
-}
-
 function MonthDayDots({ events }: { events: CalendarEvent[] }) {
   const overflow = events.length > MAX_DOTS;
   const shown = overflow ? events.slice(0, MAX_DOTS - 1) : events;
@@ -33,7 +29,7 @@ function MonthDayDots({ events }: { events: CalendarEvent[] }) {
         <span
           key={evt.id}
           className="w-1.5 h-1.5 rounded-full"
-          style={{ backgroundColor: eventColor(evt) }}
+          style={{ backgroundColor: eventChipColors(evt.attributes).backgroundColor }}
         />
       ))}
       {overflow && (
@@ -58,7 +54,16 @@ export function MonthDayCell({
 }: MonthDayCellProps) {
   const ordered = [...bucket.allDay, ...bucket.timed];
   const dayLabel = day.toLocaleDateString("en-US", { month: "long", day: "numeric" });
-  const label = `${dayLabel}, ${ordered.length} event${ordered.length === 1 ? "" : "s"}`;
+  const owners = [
+    ...new Set(
+      ordered
+        .filter((e) => !(e.attributes.title === "Busy" && !e.attributes.isOwner))
+        .map((e) => e.attributes.userDisplayName)
+        .filter(Boolean),
+    ),
+  ];
+  const count = `${ordered.length} event${ordered.length === 1 ? "" : "s"}`;
+  const label = `${dayLabel}, ${count}${owners.length > 0 ? `: ${owners.join(", ")}` : ""}`;
 
   const cellTone = isToday ? "bg-primary/10" : !inMonth ? "bg-muted/30" : "";
   const numberTone = isToday ? "text-primary" : !inMonth ? "text-muted-foreground" : "";
@@ -69,7 +74,7 @@ export function MonthDayCell({
       aria-label={label}
       onClick={() => onDayClick(day)}
       className={cn(
-        "flex flex-col min-h-0 overflow-hidden border-r border-b last:border-r-0 text-left p-1 cursor-pointer hover:bg-accent/40",
+        "flex flex-col min-h-0 overflow-hidden border-r border-b last:border-r-0 text-left p-1 cursor-pointer hover:bg-accent/40 focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-ring",
         cellTone,
       )}
     >

@@ -53,13 +53,13 @@ export function TaskCard({ task, ownerName, onToggleComplete, onDelete }: TaskCa
             {overdue ? "overdue" : attributes.status}
           </Badge>
           {attributes.dueOn && (
-            <span className="inline-flex items-center gap-1 text-xs text-muted-foreground">
-              <Calendar className="h-3 w-3" />
-              {attributes.dueOn}
+            <span className="inline-flex items-center gap-1 text-sm text-muted-foreground tabular-nums">
+              <Calendar aria-hidden="true" className="h-3.5 w-3.5" />
+              Due {attributes.dueOn}
             </span>
           )}
           {ownerName && (
-            <span className="text-xs text-muted-foreground">{ownerName}</span>
+            <span className="text-sm text-muted-foreground">{ownerName}</span>
           )}
         </div>
       </CardContent>

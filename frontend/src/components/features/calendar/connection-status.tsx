@@ -76,6 +76,7 @@ export function ConnectionStatus({ connection }: ConnectionStatusProps) {
             onClick={() => triggerSync.mutate(connection.id)}
             disabled={triggerSync.isPending || attrs.status !== "connected"}
             title="Sync now"
+            aria-label="Sync now"
           >
             <RefreshCw
               className={`h-4 w-4 ${triggerSync.isPending ? "animate-spin" : ""}`}
@@ -86,6 +87,7 @@ export function ConnectionStatus({ connection }: ConnectionStatusProps) {
             size="sm"
             onClick={() => setShowDisconnect(true)}
             title="Disconnect"
+            aria-label="Disconnect"
           >
             <Unlink className="h-4 w-4" />
           </Button>

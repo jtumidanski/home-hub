@@ -1,7 +1,7 @@
 import { useState } from "react";
 import type { CalendarEvent } from "@/types/models/calendar";
 import { EventPopover } from "./event-popover";
-import { eventChipColors } from "./calendar-utils";
+import { eventChipColors } from "@/lib/calendar/event-colors";
 
 interface EventBlockProps {
   event: CalendarEvent;
@@ -22,24 +22,26 @@ export function EventBlock({ event, top, height, left, width, hasWriteAccess, on
     <>
       <button
         type="button"
-        className="absolute rounded px-1.5 py-0.5 text-xs leading-tight overflow-hidden cursor-pointer border border-foreground/10 hover:brightness-110 transition-all"
+        className="absolute rounded px-1.5 py-0.5 text-xs leading-tight overflow-hidden cursor-pointer border border-foreground/10 hover:brightness-110 transition-[filter] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring"
         style={{
           top: `${top}px`,
           height: `${Math.max(height, 18)}px`,
           left,
           width,
-          ...eventChipColors(event),
+          ...eventChipColors(attrs),
         }}
         onClick={() => setShowPopover(true)}
       >
         <div className="font-medium truncate">{attrs.title}</div>
         {height > 30 && (
-          <div className="truncate opacity-80">
+          <div className="truncate">
             {new Date(attrs.startTime).toLocaleTimeString([], { hour: "numeric", minute: "2-digit" })}
           </div>
         )}
       </button>
       {showPopover && (
+        // Portal events bubble through the React tree; keep them off the grid column's click-to-create handler.
+        <span className="contents" onClick={(e) => e.stopPropagation()}>
         <EventPopover
           event={event}
           onClose={() => setShowPopover(false)}
@@ -53,6 +55,7 @@ export function EventBlock({ event, top, height, left, width, hasWriteAccess, on
             onDelete?.(evt);
           }}
         />
+        </span>
       )}
     </>
   );

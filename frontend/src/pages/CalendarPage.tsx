@@ -2,6 +2,7 @@ import { useState, useEffect, useMemo, useCallback, useSyncExternalStore } from 
 import { useSearchParams } from "react-router-dom";
 import { ChevronLeft, ChevronRight, Plus, CalendarIcon } from "lucide-react";
 import { toast } from "sonner";
+import { PageHeader } from "@/components/common/page-header";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
@@ -287,60 +288,55 @@ export function CalendarPage() {
   return (
     <div className="p-4 md:p-6 flex flex-col h-full gap-4">
       {/* Header */}
-      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
-        <div>
-          <h1 className="text-xl md:text-2xl font-semibold">Calendar</h1>
-          <p className="text-sm text-muted-foreground">
-            {viewMode === "month" ? formatMonthYear(monthAnchor) : formatDateRange(weekStart, weekEnd)}
-          </p>
-        </div>
+      <PageHeader
+        title="Calendar"
+        description={viewMode === "month" ? formatMonthYear(monthAnchor) : formatDateRange(weekStart, weekEnd)}
+        actions={
+          <>
+            <ViewModeToggle mode={viewMode} onChange={handleViewModeChange} />
+            <div className="flex items-center border rounded-md">
+              <Button variant="ghost" size="sm" onClick={goPrev} aria-label="Previous period">
+                <ChevronLeft className="h-4 w-4" />
+              </Button>
+              <Popover open={calPickerOpen} onOpenChange={setCalPickerOpen}>
+                <PopoverTrigger render={<Button variant="ghost" size="sm" />}>
+                  <CalendarIcon className="h-4 w-4" />
+                  Pick date
+                </PopoverTrigger>
+                <PopoverContent className="w-auto p-0" align="center">
+                  <Calendar
+                    mode="single"
+                    selected={viewMode === "month" ? monthAnchor : weekStart}
+                    onSelect={handleCalendarSelect}
+                    defaultMonth={viewMode === "month" ? monthAnchor : weekStart}
+                  />
+                </PopoverContent>
+              </Popover>
+              <Button variant="ghost" size="sm" onClick={goNext} aria-label="Next period">
+                <ChevronRight className="h-4 w-4" />
+              </Button>
+            </div>
 
-        <div className="flex items-center gap-2">
-          <ViewModeToggle mode={viewMode} onChange={handleViewModeChange} />
-          <div className="flex items-center border rounded-md">
-            <Button variant="ghost" size="sm" onClick={goPrev}>
-              <ChevronLeft className="h-4 w-4" />
-            </Button>
-            <Popover open={calPickerOpen} onOpenChange={setCalPickerOpen}>
-              <PopoverTrigger
-                className="inline-flex items-center justify-center gap-1 rounded-md px-3 h-8 text-sm font-medium hover:bg-accent hover:text-accent-foreground cursor-pointer"
+            {hasWriteAccess && (
+              <Button size="sm" onClick={handleAddEvent}>
+                <Plus className="h-4 w-4 mr-1" />
+                Add Event
+              </Button>
+            )}
+
+            {connections.length === 0 && <ConnectCalendarButton />}
+            {activeConnection && (
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setShowSources(!showSources)}
               >
-                <CalendarIcon className="h-4 w-4" />
-                Today
-              </PopoverTrigger>
-              <PopoverContent className="w-auto p-0" align="center">
-                <Calendar
-                  mode="single"
-                  selected={viewMode === "month" ? monthAnchor : weekStart}
-                  onSelect={handleCalendarSelect}
-                  defaultMonth={viewMode === "month" ? monthAnchor : weekStart}
-                />
-              </PopoverContent>
-            </Popover>
-            <Button variant="ghost" size="sm" onClick={goNext}>
-              <ChevronRight className="h-4 w-4" />
-            </Button>
-          </div>
-
-          {hasWriteAccess && (
-            <Button size="sm" onClick={handleAddEvent}>
-              <Plus className="h-4 w-4 mr-1" />
-              Add Event
-            </Button>
-          )}
-
-          {connections.length === 0 && <ConnectCalendarButton />}
-          {activeConnection && (
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => setShowSources(!showSources)}
-            >
-              Settings
-            </Button>
-          )}
-        </div>
-      </div>
+                Settings
+              </Button>
+            )}
+          </>
+        }
+      />
 
       {/* Re-authorization banner */}
       {needsReauth && <ReauthorizeBanner />}
@@ -356,7 +352,7 @@ export function CalendarPage() {
             .map((u) => (
               <div key={u.displayName} className="flex items-center gap-3 text-sm">
                 <div
-                  className="w-3 h-3 rounded-full flex-shrink-0"
+                  className="w-3 h-3 rounded-full flex-shrink-0 ring-1 ring-border"
                   style={{ backgroundColor: u.color }}
                 />
                 <span className="text-muted-foreground">{u.displayName}</span>
