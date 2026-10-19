@@ -32,6 +32,7 @@
 }
 
 @custom-variant dark (&:is(.dark *));
+@custom-variant coarse (@media (pointer: coarse));
 
 @theme {
     --text-xs: 0.75rem;
@@ -127,6 +128,7 @@
     --color-swatch-pink-soft: var(--swatch-pink-soft);
     --color-swatch-rose: var(--swatch-rose);
     --color-swatch-rose-soft: var(--swatch-rose-soft);
+    --ease-out: cubic-bezier(.2,.7,.2,1);
     --shadow-card: var(--elevation-card);
     --shadow-overlay: var(--elevation-overlay);
     --radius-sm: calc(var(--radius) * 0.6);
@@ -171,7 +173,9 @@
     --chart-3: oklch(0.64 0.12 80);
     --chart-4: oklch(0.52 0.08 240);
     --chart-5: oklch(0.48 0.09 340);
-    --radius: 0.625rem;
+    --radius: 0.75rem;
+    --duration-fast: 120ms;
+    --duration-base: 200ms;
     --sidebar: oklch(0.965 0.014 80);
     --sidebar-foreground: var(--foreground);
     --sidebar-primary: var(--primary);
@@ -305,7 +309,11 @@
 
 @layer base {
   * {
-    @apply border-border outline-ring/50;
+    @apply border-border;
+    }
+  :focus-visible {
+    outline: 2px solid var(--ring);
+    outline-offset: 2px;
     }
   html, body, #root {
     height: 100%;
@@ -317,4 +325,13 @@
   html {
     @apply font-sans;
     }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
 }

@@ -123,3 +123,50 @@ describe("typography", () => {
     expect(body).toMatch(/--text-display:\s*3rem/);
   });
 });
+
+describe("base layer", () => {
+  const css = readIndexCss();
+  const squash = (s: string) => s.replace(/\s+/g, " ");
+
+  it("declares the coarse-pointer variant", () => {
+    expect(css).toContain("@custom-variant coarse (@media (pointer: coarse));");
+  });
+
+  it("drops the 50% alpha outline from the base * rule", () => {
+    expect(css).not.toContain("outline-ring/50");
+  });
+
+  it("draws a global 2px focus ring with a 2px offset", () => {
+    const m = /:focus-visible\s*\{([^}]*)\}/.exec(css);
+    expect(m).not.toBeNull();
+    const body = squash(m![1] as string);
+    expect(body).toContain("outline: 2px solid var(--ring)");
+    expect(body).toContain("outline-offset: 2px");
+  });
+
+  it("collapses motion under prefers-reduced-motion", () => {
+    const m = /@media \(prefers-reduced-motion: reduce\)\s*\{([\s\S]*?\})\s*\}/.exec(css);
+    expect(m).not.toBeNull();
+    const body = squash(m![1] as string);
+    expect(body).toContain("animation-duration: 0.01ms !important");
+    expect(body).toContain("transition-duration: 0.01ms !important");
+    expect(body).toContain("animation-iteration-count: 1 !important");
+  });
+
+  it("sets radius and motion tokens", () => {
+    expect(tokenBlock(css, ":root").get("--radius")).toBe("0.75rem");
+    expect(tokenBlock(css, ":root").get("--duration-fast")).toBe("120ms");
+    expect(tokenBlock(css, ":root").get("--duration-base")).toBe("200ms");
+    expect(css).toMatch(/--ease-out:\s*cubic-bezier\(\.2,\s*\.7,\s*\.2,\s*1\)/);
+  });
+
+  it("has no elevation in dark and maps raw elevation tokens to shadow utilities", () => {
+    expect(tokenBlock(css, ".dark").get("--elevation-card")).toBe("none");
+    expect(tokenBlock(css, ".dark").get("--elevation-overlay")).toBe("none");
+    expect(css).toContain("--shadow-card: var(--elevation-card)");
+    expect(css).toContain("--shadow-overlay: var(--elevation-overlay)");
+    expect(tokenBlock(css, ":root").get("--elevation-overlay")).toBe(
+      "0 4px 12px oklch(0.3 0.03 50 / 0.10), 0 12px 32px oklch(0.3 0.03 50 / 0.12)",
+    );
+  });
+});
