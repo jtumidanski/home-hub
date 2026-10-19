@@ -5,7 +5,7 @@ import { Card, CardAction, CardContent, CardHeader, CardTitle } from "@/componen
 import { Skeleton } from "@/components/ui/skeleton";
 import { WidgetError } from "@/components/features/dashboard-widgets/widget-error";
 import { UtensilsCrossed, ChevronRight } from "lucide-react";
-import { getLocalWeekStart, getLocalTodayStr, getLocalDateStrOffset } from "@/lib/date-utils";
+import { getLocalWeekStart, getLocalTodayStr, getLocalDateStrOffset, formatShortWeekday } from "@/lib/date-utils";
 import type { Slot } from "@/types/models/meal-plan";
 
 const SLOT_ORDER: Slot[] = ["breakfast", "lunch", "dinner", "snack", "side"];
@@ -66,9 +66,9 @@ export function MealPlanTodayDetail({ horizonDays }: MealPlanTodayDetailProps) {
     <Link to="/app/meals" className="@container group/meals block h-full rounded-xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
       <Card className="@container h-full motion-safe:transition-colors group-hover/meals:bg-accent">
         <CardHeader>
-          <CardTitle className="text-sm font-medium">Meals</CardTitle>
+          <CardTitle className="font-heading text-lg @xl:text-2xl">Meals</CardTitle>
           <CardAction>
-            <ChevronRight className="h-4 w-4 text-muted-foreground" />
+            <ChevronRight className="size-4 @xl:size-6 text-muted-foreground" aria-hidden="true" />
           </CardAction>
         </CardHeader>
         <CardContent className="space-y-3">
@@ -76,8 +76,8 @@ export function MealPlanTodayDetail({ horizonDays }: MealPlanTodayDetailProps) {
             <h4 className="text-xs font-medium text-muted-foreground">Today</h4>
             {today.length === 0 ? (
               <div className="flex items-center gap-2 text-muted-foreground mt-1">
-                <UtensilsCrossed className="h-4 w-4" />
-                <p className="text-sm">No meals planned</p>
+                <UtensilsCrossed className="size-4 @xl:size-6 shrink-0" aria-hidden="true" />
+                <p className="text-sm @xl:text-xl">No meals planned</p>
               </div>
             ) : (
               <ul className="mt-1 space-y-1">
@@ -86,7 +86,7 @@ export function MealPlanTodayDetail({ horizonDays }: MealPlanTodayDetailProps) {
                     <span className="text-xs font-medium text-muted-foreground w-16 shrink-0">
                       {SLOT_LABELS[item.slot]}
                     </span>
-                    <span className="text-sm truncate">{item.recipe_title}</span>
+                    <span className="text-sm @xl:text-xl truncate">{item.recipe_title}</span>
                   </li>
                 ))}
               </ul>
@@ -101,9 +101,9 @@ export function MealPlanTodayDetail({ horizonDays }: MealPlanTodayDetailProps) {
                 {followUps.map((f) => (
                   <li key={f.day} className="flex items-baseline gap-2">
                     <span className="text-xs font-medium text-muted-foreground w-16 shrink-0">
-                      {f.day.slice(5)}
+                      {formatShortWeekday(f.day)}
                     </span>
-                    <span className="text-sm truncate">{f.item?.recipe_title ?? "—"}</span>
+                    <span className="text-sm @xl:text-xl truncate">{f.item?.recipe_title ?? "—"}</span>
                   </li>
                 ))}
               </ul>

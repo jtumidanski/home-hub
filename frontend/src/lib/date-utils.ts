@@ -93,3 +93,14 @@ export function getLocalDateStrOffset(tz: string | undefined, offsetDays: number
   const d = out.find((p) => p.type === "day")!.value;
   return `${y}-${m}-${d}`;
 }
+
+/**
+ * Formats a YYYY-MM-DD household-local date string as a short weekday ("Tue").
+ * The string is already a calendar date in the household timezone, so it is
+ * anchored at noon UTC and formatted in UTC to avoid any day shift.
+ */
+export function formatShortWeekday(dateStr: string): string {
+  const [y, m, d] = dateStr.split("-").map(Number);
+  const anchor = new Date(Date.UTC(y ?? 1970, (m ?? 1) - 1, d ?? 1, 12, 0, 0));
+  return new Intl.DateTimeFormat("en-US", { weekday: "short", timeZone: "UTC" }).format(anchor);
+}
