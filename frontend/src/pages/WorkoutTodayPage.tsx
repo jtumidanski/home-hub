@@ -1,5 +1,6 @@
-import { useEffect, useRef, useState } from "react";
-import { ChevronDown, ChevronUp } from "lucide-react";
+import { useEffect, useId, useRef, useState } from "react";
+import { ChevronDown, ChevronUp, Dumbbell } from "lucide-react";
+import { EmptyState } from "@/components/common/empty-state";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -41,7 +42,7 @@ export function WorkoutTodayPage() {
         </CardHeader>
         <CardContent>
           {items.length === 0 ? (
-            <p className="text-muted-foreground">Nothing planned for today.</p>
+            <EmptyState icon={Dumbbell} title="Nothing planned for today" description="Plan workouts for the week to see them here." headingLevel="h3" className="py-6" />
           ) : (
             <ul className="space-y-2">
               {items.map((it) => (
@@ -56,6 +57,7 @@ export function WorkoutTodayPage() {
 }
 
 function TodayItem({ item, weekStart }: { item: WeekItem; weekStart: string }) {
+  const uid = useId();
   const [expanded, setExpanded] = useState(false);
   const firstInputRef = useRef<HTMLInputElement>(null);
   const patch = usePatchPerformance();
@@ -158,7 +160,7 @@ function TodayItem({ item, weekStart }: { item: WeekItem; weekStart: string }) {
             {item.exerciseName}
             {item.exerciseDeleted && <span className="text-muted-foreground"> (deleted)</span>}
           </p>
-          <p className="text-xs text-muted-foreground">{summarizePlanned(item)}</p>
+          <p className="text-xs text-muted-foreground tabular-nums">{summarizePlanned(item)}</p>
         </div>
         <div className="flex items-center gap-2 shrink-0">
           <StatusBadge status={status} />
@@ -171,23 +173,23 @@ function TodayItem({ item, weekStart }: { item: WeekItem; weekStart: string }) {
           {item.kind === "strength" && (
             <div className={`grid gap-1.5 ${isBw ? "grid-cols-2" : "grid-cols-4"}`}>
               <div>
-                <label className="text-[10px] text-muted-foreground block mb-0.5">Sets</label>
-                <Input ref={firstInputRef} className="h-8" value={sets} onChange={(e) => setSets(e.target.value)} type="number" inputMode="numeric" />
+                <label htmlFor={`${uid}-sets`} className="text-xs text-muted-foreground block mb-0.5">Sets</label>
+                <Input ref={firstInputRef} id={`${uid}-sets`} className="h-8 tabular-nums" value={sets} onChange={(e) => setSets(e.target.value)} type="number" inputMode="numeric" />
               </div>
               <div>
-                <label className="text-[10px] text-muted-foreground block mb-0.5">Reps</label>
-                <Input className="h-8" value={reps} onChange={(e) => setReps(e.target.value)} type="number" inputMode="numeric" />
+                <label htmlFor={`${uid}-reps`} className="text-xs text-muted-foreground block mb-0.5">Reps</label>
+                <Input id={`${uid}-reps`} className="h-8 tabular-nums" value={reps} onChange={(e) => setReps(e.target.value)} type="number" inputMode="numeric" />
               </div>
               {!isBw && (
                 <>
                   <div>
-                    <label className="text-[10px] text-muted-foreground block mb-0.5">Weight</label>
-                    <Input className="h-8" value={weight} onChange={(e) => setWeight(e.target.value)} type="number" inputMode="decimal" />
+                    <label htmlFor={`${uid}-weight`} className="text-xs text-muted-foreground block mb-0.5">Weight</label>
+                    <Input id={`${uid}-weight`} className="h-8 tabular-nums" value={weight} onChange={(e) => setWeight(e.target.value)} type="number" inputMode="decimal" />
                   </div>
                   <div>
-                    <label className="text-[10px] text-muted-foreground block mb-0.5">Unit</label>
+                    <label htmlFor={`${uid}-wunit`} className="text-xs text-muted-foreground block mb-0.5">Unit</label>
                     <Select value={weightUnit} onValueChange={(v) => v && setWeightUnit(v)}>
-                      <SelectTrigger className="h-8"><SelectValue /></SelectTrigger>
+                      <SelectTrigger id={`${uid}-wunit`} className="h-8"><SelectValue /></SelectTrigger>
                       <SelectContent>
                         <SelectItem value="lb">lb</SelectItem>
                         <SelectItem value="kg">kg</SelectItem>
@@ -201,39 +203,39 @@ function TodayItem({ item, weekStart }: { item: WeekItem; weekStart: string }) {
           {item.kind === "isometric" && (
             <div className="grid grid-cols-3 gap-1.5">
               <div>
-                <label className="text-[10px] text-muted-foreground block mb-0.5">Sets</label>
-                <Input ref={firstInputRef} className="h-8" value={sets} onChange={(e) => setSets(e.target.value)} type="number" inputMode="numeric" />
+                <label htmlFor={`${uid}-sets`} className="text-xs text-muted-foreground block mb-0.5">Sets</label>
+                <Input ref={firstInputRef} id={`${uid}-sets`} className="h-8 tabular-nums" value={sets} onChange={(e) => setSets(e.target.value)} type="number" inputMode="numeric" />
               </div>
               <div>
-                <label className="text-[10px] text-muted-foreground block mb-0.5">Duration</label>
+                <label htmlFor={`${uid}-min`} className="text-xs text-muted-foreground block mb-0.5">Duration</label>
                 <div className="flex gap-1">
-                  <Input className="h-8" placeholder="Min" value={durMin} onChange={(e) => setDurMin(e.target.value)} type="number" inputMode="numeric" />
-                  <Input className="h-8" placeholder="Sec" value={durSec} onChange={(e) => setDurSec(e.target.value)} type="number" inputMode="numeric" />
+                  <Input id={`${uid}-min`} aria-label="Duration minutes" className="h-8 tabular-nums" placeholder="Min" value={durMin} onChange={(e) => setDurMin(e.target.value)} type="number" inputMode="numeric" />
+                  <Input aria-label="Duration seconds" className="h-8 tabular-nums" placeholder="Sec" value={durSec} onChange={(e) => setDurSec(e.target.value)} type="number" inputMode="numeric" />
                 </div>
               </div>
               <div>
-                <label className="text-[10px] text-muted-foreground block mb-0.5">Weight</label>
-                <Input className="h-8" value={weight} onChange={(e) => setWeight(e.target.value)} type="number" inputMode="decimal" />
+                <label htmlFor={`${uid}-weight`} className="text-xs text-muted-foreground block mb-0.5">Weight</label>
+                <Input id={`${uid}-weight`} className="h-8 tabular-nums" value={weight} onChange={(e) => setWeight(e.target.value)} type="number" inputMode="decimal" />
               </div>
             </div>
           )}
           {item.kind === "cardio" && (
             <div className="grid grid-cols-3 gap-1.5">
               <div>
-                <label className="text-[10px] text-muted-foreground block mb-0.5">Duration</label>
+                <label htmlFor={`${uid}-min`} className="text-xs text-muted-foreground block mb-0.5">Duration</label>
                 <div className="flex gap-1">
-                  <Input ref={firstInputRef} className="h-8" placeholder="Min" value={durMin} onChange={(e) => setDurMin(e.target.value)} type="number" inputMode="numeric" />
-                  <Input className="h-8" placeholder="Sec" value={durSec} onChange={(e) => setDurSec(e.target.value)} type="number" inputMode="numeric" />
+                  <Input ref={firstInputRef} id={`${uid}-min`} aria-label="Duration minutes" className="h-8 tabular-nums" placeholder="Min" value={durMin} onChange={(e) => setDurMin(e.target.value)} type="number" inputMode="numeric" />
+                  <Input aria-label="Duration seconds" className="h-8 tabular-nums" placeholder="Sec" value={durSec} onChange={(e) => setDurSec(e.target.value)} type="number" inputMode="numeric" />
                 </div>
               </div>
               <div>
-                <label className="text-[10px] text-muted-foreground block mb-0.5">Distance</label>
-                <Input className="h-8" value={distance} onChange={(e) => setDistance(e.target.value)} type="number" inputMode="decimal" />
+                <label htmlFor={`${uid}-distance`} className="text-xs text-muted-foreground block mb-0.5">Distance</label>
+                <Input id={`${uid}-distance`} className="h-8 tabular-nums" value={distance} onChange={(e) => setDistance(e.target.value)} type="number" inputMode="decimal" />
               </div>
               <div>
-                <label className="text-[10px] text-muted-foreground block mb-0.5">Unit</label>
+                <label htmlFor={`${uid}-dunit`} className="text-xs text-muted-foreground block mb-0.5">Unit</label>
                 <Select value={distanceUnit} onValueChange={(v) => v && setDistanceUnit(v)}>
-                  <SelectTrigger className="h-8"><SelectValue /></SelectTrigger>
+                  <SelectTrigger id={`${uid}-dunit`} className="h-8"><SelectValue /></SelectTrigger>
                   <SelectContent>
                     <SelectItem value="mi">mi</SelectItem>
                     <SelectItem value="km">km</SelectItem>

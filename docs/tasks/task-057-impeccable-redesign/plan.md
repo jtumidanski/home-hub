@@ -574,7 +574,7 @@ Same steps as Task 14, for `Stage = 5`. Then the **Stage close-out procedure** (
 
 Mapping: `bg-emerald-500/10 text-emerald-600` → `bg-success/10 text-success`; `bg-amber-500/10 text-amber-600` → `bg-warning/15 text-warning-text`; `WorkoutReviewPage` "Target met" `text-emerald-600` → `text-success` (keep its `aria-label`).
 
-- [ ] **Step 1: Remove PENDING entries; run guard** → FAIL. **Step 2: Implement** the mapping, `PageHeader`, `tabular-nums` on sets/reps/weights, Stage 6 rows in these files. **Step 3: Run** guard + area tests → PASS; tsc; eslint. **Step 4: Commit** `feat(frontend): restyle workouts`.
+- [x] **Step 1: Remove PENDING entries; run guard** → FAIL. **Step 2: Implement** the mapping, `PageHeader`, `tabular-nums` on sets/reps/weights, Stage 6 rows in these files. **Step 3: Run** guard + area tests → PASS; tsc; eslint. **Step 4: Commit** `feat(frontend): restyle workouts`.
 
 ### Task 27: Packages and weather
 

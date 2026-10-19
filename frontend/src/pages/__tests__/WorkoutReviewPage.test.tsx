@@ -271,7 +271,7 @@ describe("WorkoutReviewPage empty week", () => {
       error: null,
     }));
     renderPage();
-    expect(screen.getByText("No workouts logged for this week.")).toBeInTheDocument();
+    expect(screen.getByText("No workouts logged for this week")).toBeInTheDocument();
     expect(screen.getByRole("button", { name: /Jump to previous populated week 2026-04-06/ })).toBeInTheDocument();
     expect(screen.getByRole("button", { name: /No later populated week/ })).toBeDisabled();
   });

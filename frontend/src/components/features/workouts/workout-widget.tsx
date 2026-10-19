@@ -68,13 +68,13 @@ export function WorkoutWidget() {
                 return (
                   <div key={item.id} className="flex items-center gap-2">
                     {status === "done" ? (
-                      <Check className="size-4 @xl:size-6 text-success shrink-0" aria-label="Completed" />
+                      <Check className="size-4 @xl:size-6 text-success shrink-0" role="img" aria-label="Completed" />
                     ) : status === "skipped" ? (
-                      <SkipForward className="size-4 @xl:size-6 text-muted-foreground shrink-0" aria-label="Skipped" />
+                      <SkipForward className="size-4 @xl:size-6 text-muted-foreground shrink-0" role="img" aria-label="Skipped" />
                     ) : status === "partial" ? (
-                      <CircleDot className="size-4 @xl:size-6 text-warning-text shrink-0" aria-label="Partially completed" />
+                      <CircleDot className="size-4 @xl:size-6 text-warning-text shrink-0" role="img" aria-label="Partially completed" />
                     ) : (
-                      <Circle className="size-4 @xl:size-6 text-muted-foreground shrink-0" aria-label="Pending" />
+                      <Circle className="size-4 @xl:size-6 text-muted-foreground shrink-0" role="img" aria-label="Pending" />
                     )}
                     <span className={cn("text-sm @xl:text-xl truncate", resolved && "text-muted-foreground line-through")}>
                       {item.exerciseName}

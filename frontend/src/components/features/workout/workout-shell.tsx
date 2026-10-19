@@ -1,6 +1,7 @@
 import { NavLink, Outlet } from "react-router-dom";
 import { CalendarDays, Dumbbell, ListChecks, Tag, BarChart3 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { PageHeader } from "@/components/common/page-header";
 
 // Shared chrome for the Workout section. Today / Week / Exercises / Taxonomy /
 // Review tabs map to nested routes; the rendered page sits inside <Outlet />.
@@ -15,26 +16,29 @@ const tabs = [
 export function WorkoutShell() {
   return (
     <div className="p-4 md:p-6 space-y-4">
-      <div className="flex items-center justify-between flex-wrap gap-2">
-        <h1 className="text-2xl font-bold">Workouts</h1>
-        <nav className="flex flex-wrap gap-1">
+      <PageHeader title="Workouts" />
+      <nav aria-label="Workout sections" className="-mx-1 overflow-x-auto px-1">
+        <ul className="flex min-w-max gap-1 border-b">
           {tabs.map((t) => (
-            <NavLink
-              key={t.to}
-              to={t.to}
-              className={({ isActive }) =>
-                cn(
-                  "flex items-center gap-1 rounded-md px-3 py-1.5 text-sm font-medium transition-colors",
-                  isActive ? "bg-primary text-primary-foreground" : "hover:bg-muted",
-                )
-              }
-            >
-              <t.icon className="h-4 w-4" />
-              {t.label}
-            </NavLink>
+            <li key={t.to}>
+              <NavLink
+                to={t.to}
+                className={({ isActive }) =>
+                  cn(
+                    "-mb-px flex min-h-9 items-center gap-1.5 border-b-2 px-3 text-sm transition-colors coarse:min-h-11 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring",
+                    isActive
+                      ? "border-primary font-semibold text-foreground"
+                      : "border-transparent font-medium text-muted-foreground hover:bg-muted hover:text-foreground",
+                  )
+                }
+              >
+                <t.icon className="h-4 w-4" aria-hidden="true" />
+                {t.label}
+              </NavLink>
+            </li>
           ))}
-        </nav>
-      </div>
+        </ul>
+      </nav>
       <Outlet />
     </div>
   );

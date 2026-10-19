@@ -200,16 +200,16 @@ export function WorkoutWeekPage() {
                 <CardHeader className="p-3">
                   <CardTitle className="flex items-center justify-between text-sm">
                     <span>{label}</span>
-                    <button
+                    <Button
+                      size="xs"
+                      variant={isRest ? "secondary" : "ghost"}
+                      aria-pressed={isRest}
+                      aria-label={`Rest day, ${label}`}
                       onClick={() => toggleRestDay(day)}
-                      className={`text-xs rounded-full px-2 py-0.5 border transition-colors ${
-                        isRest
-                          ? "bg-secondary text-secondary-foreground border-secondary"
-                          : "text-muted-foreground border-transparent hover:border-muted-foreground/30"
-                      }`}
+                      className={isRest ? "" : "text-muted-foreground"}
                     >
                       Rest
-                    </button>
+                    </Button>
                   </CardTitle>
                 </CardHeader>
                 <CardContent className="p-3 pt-0 space-y-1">
@@ -372,16 +372,22 @@ function PlannedRow({
     >
       <div className="flex items-start gap-1">
         <GripVertical className="h-3 w-3 mt-0.5 shrink-0 text-muted-foreground cursor-grab" />
-        <div className="flex-1 min-w-0 cursor-pointer" onClick={() => setEditing(!editing)}>
+        <button
+          type="button"
+          className="flex-1 min-w-0 cursor-pointer rounded text-left focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring"
+          aria-expanded={editing}
+          aria-label={`Edit ${item.exerciseName}`}
+          onClick={() => setEditing(!editing)}
+        >
           <p className="font-medium truncate">{item.exerciseName}</p>
-          <p className="text-muted-foreground truncate">{summarize(item)}</p>
-        </div>
+          <p className="text-muted-foreground truncate tabular-nums">{summarize(item)}</p>
+        </button>
         <Button
-          size="icon"
+          size="icon-xs"
           variant="ghost"
           onClick={onDelete}
-          aria-label="Delete"
-          className="shrink-0 h-6 w-6"
+          aria-label={`Delete ${item.exerciseName}`}
+          className="shrink-0"
         >
           <Trash2 className="h-3 w-3" />
         </Button>
@@ -390,13 +396,13 @@ function PlannedRow({
         <div className="mt-2 space-y-1.5 border-t pt-2">
           {item.kind === "strength" && (
             <div className={`grid gap-1 ${isBw ? "grid-cols-2" : "grid-cols-2"}`}>
-              <Input ref={firstInputRef} className="h-6 text-xs" placeholder="Sets" value={sets} onChange={(e) => setSets(e.target.value)} type="number" />
-              <Input className="h-6 text-xs" placeholder="Reps" value={reps} onChange={(e) => setReps(e.target.value)} type="number" />
+              <Input ref={firstInputRef} aria-label="Sets" className="tabular-nums" placeholder="Sets" value={sets} onChange={(e) => setSets(e.target.value)} type="number" />
+              <Input aria-label="Reps" className="tabular-nums" placeholder="Reps" value={reps} onChange={(e) => setReps(e.target.value)} type="number" />
               {!isBw && (
                 <>
-                  <Input className="h-6 text-xs" placeholder="Weight" value={weight} onChange={(e) => setWeight(e.target.value)} type="number" />
+                  <Input aria-label="Weight" className="tabular-nums" placeholder="Weight" value={weight} onChange={(e) => setWeight(e.target.value)} type="number" />
                   <Select value={weightUnit} onValueChange={(v) => v && setWeightUnit(v)}>
-                    <SelectTrigger className="h-6 text-xs"><SelectValue /></SelectTrigger>
+                    <SelectTrigger aria-label="Weight unit" className="text-xs"><SelectValue /></SelectTrigger>
                     <SelectContent>
                       <SelectItem value="lb">lb</SelectItem>
                       <SelectItem value="kg">kg</SelectItem>
@@ -408,14 +414,14 @@ function PlannedRow({
           )}
           {item.kind === "isometric" && (
             <div className="grid grid-cols-2 gap-1">
-              <Input ref={firstInputRef} className="h-6 text-xs" placeholder="Sets" value={sets} onChange={(e) => setSets(e.target.value)} type="number" />
+              <Input ref={firstInputRef} aria-label="Sets" className="tabular-nums" placeholder="Sets" value={sets} onChange={(e) => setSets(e.target.value)} type="number" />
               <div className="flex gap-0.5">
-                <Input className="h-6 text-xs" placeholder="Min" value={durMin} onChange={(e) => setDurMin(e.target.value)} type="number" />
-                <Input className="h-6 text-xs" placeholder="Sec" value={durSec} onChange={(e) => setDurSec(e.target.value)} type="number" />
+                <Input aria-label="Duration minutes" className="tabular-nums" placeholder="Min" value={durMin} onChange={(e) => setDurMin(e.target.value)} type="number" />
+                <Input aria-label="Duration seconds" className="tabular-nums" placeholder="Sec" value={durSec} onChange={(e) => setDurSec(e.target.value)} type="number" />
               </div>
-              <Input className="h-6 text-xs" placeholder="Weight" value={weight} onChange={(e) => setWeight(e.target.value)} type="number" />
+              <Input aria-label="Weight" className="tabular-nums" placeholder="Weight" value={weight} onChange={(e) => setWeight(e.target.value)} type="number" />
               <Select value={weightUnit} onValueChange={(v) => v && setWeightUnit(v)}>
-                <SelectTrigger className="h-6 text-xs"><SelectValue /></SelectTrigger>
+                <SelectTrigger aria-label="Weight unit" className="text-xs"><SelectValue /></SelectTrigger>
                 <SelectContent>
                   <SelectItem value="lb">lb</SelectItem>
                   <SelectItem value="kg">kg</SelectItem>
@@ -426,13 +432,13 @@ function PlannedRow({
           {item.kind === "cardio" && (
             <div className="space-y-1">
               <div className="flex gap-0.5">
-                <Input ref={firstInputRef} className="h-6 text-xs" placeholder="Min" value={durMin} onChange={(e) => setDurMin(e.target.value)} type="number" />
-                <Input className="h-6 text-xs" placeholder="Sec" value={durSec} onChange={(e) => setDurSec(e.target.value)} type="number" />
+                <Input ref={firstInputRef} aria-label="Duration minutes" className="tabular-nums" placeholder="Min" value={durMin} onChange={(e) => setDurMin(e.target.value)} type="number" />
+                <Input aria-label="Duration seconds" className="tabular-nums" placeholder="Sec" value={durSec} onChange={(e) => setDurSec(e.target.value)} type="number" />
               </div>
               <div className="flex gap-0.5">
-                <Input className="h-6 text-xs flex-1" placeholder="Distance" value={distance} onChange={(e) => setDistance(e.target.value)} type="number" />
+                <Input aria-label="Distance" className="tabular-nums flex-1" placeholder="Distance" value={distance} onChange={(e) => setDistance(e.target.value)} type="number" />
                 <Select value={distanceUnit} onValueChange={(v) => v && setDistanceUnit(v)}>
-                  <SelectTrigger className="h-6 text-xs w-16"><SelectValue /></SelectTrigger>
+                  <SelectTrigger aria-label="Distance unit" className="w-16 text-xs"><SelectValue /></SelectTrigger>
                   <SelectContent>
                     <SelectItem value="mi">mi</SelectItem>
                     <SelectItem value="km">km</SelectItem>
@@ -443,8 +449,8 @@ function PlannedRow({
             </div>
           )}
           <div className="flex gap-1">
-            <Button size="sm" className="h-6 text-xs" onClick={save}>Save</Button>
-            <Button size="sm" variant="ghost" className="h-6 text-xs" onClick={() => setEditing(false)}>Cancel</Button>
+            <Button size="sm" onClick={save}>Save</Button>
+            <Button size="sm" variant="ghost" onClick={() => setEditing(false)}>Cancel</Button>
           </div>
         </div>
       )}
@@ -477,7 +483,7 @@ function ExercisePickerButton({
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger>
-        <Button variant="outline" size="sm" className="h-7 w-full text-xs">
+        <Button variant="outline" size="sm" className="w-full">
           + Add Exercise
         </Button>
       </DialogTrigger>
@@ -548,7 +554,7 @@ function ExercisePickerModal({
     <div className="space-y-3">
       <div className="grid grid-cols-2 gap-2">
         <Select value={themeId} onValueChange={(v) => setThemeId(v ?? "all")}>
-          <SelectTrigger className="h-8 text-xs">
+          <SelectTrigger aria-label="Theme" className="text-xs">
             <SelectValue placeholder="Theme">{themeLabel}</SelectValue>
           </SelectTrigger>
           <SelectContent>
@@ -561,7 +567,7 @@ function ExercisePickerModal({
           </SelectContent>
         </Select>
         <Select value={regionId} onValueChange={(v) => setRegionId(v ?? "all")}>
-          <SelectTrigger className="h-8 text-xs">
+          <SelectTrigger aria-label="Region" className="text-xs">
             <SelectValue placeholder="Region">{regionLabel}</SelectValue>
           </SelectTrigger>
           <SelectContent>
@@ -580,7 +586,8 @@ function ExercisePickerModal({
           value={query}
           onChange={(e) => setQuery(e.target.value)}
           placeholder="Search exercises…"
-          className="h-8 pl-7 text-xs"
+          aria-label="Search exercises"
+          className="pl-7"
         />
       </div>
       <div className="max-h-72 overflow-y-auto space-y-1 border rounded p-1">
@@ -591,7 +598,7 @@ function ExercisePickerModal({
             <button
               key={e.id}
               onClick={() => setSelected(e)}
-              className="w-full text-left px-2 py-1.5 text-xs rounded hover:bg-muted"
+              className="w-full text-left px-2 py-2 text-sm rounded hover:bg-muted coarse:min-h-11 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring"
             >
               <span className="font-medium">{e.attributes.name}</span>
               <span className="text-muted-foreground ml-1">({e.attributes.kind.charAt(0).toUpperCase() + e.attributes.kind.slice(1)})</span>
@@ -665,13 +672,13 @@ function ExerciseInitialValuesForm({
       </div>
       {kind === "strength" && (
         <div className="grid grid-cols-2 gap-2">
-          <Input placeholder="Sets" value={sets} onChange={(e) => setSets(e.target.value)} type="number" />
-          <Input placeholder="Reps" value={reps} onChange={(e) => setReps(e.target.value)} type="number" />
+          <Input aria-label="Sets" className="tabular-nums" placeholder="Sets" value={sets} onChange={(e) => setSets(e.target.value)} type="number" />
+          <Input aria-label="Reps" className="tabular-nums" placeholder="Reps" value={reps} onChange={(e) => setReps(e.target.value)} type="number" />
           {!isBw && (
             <>
-              <Input placeholder="Weight" value={weight} onChange={(e) => setWeight(e.target.value)} type="number" />
+              <Input aria-label="Weight" className="tabular-nums" placeholder="Weight" value={weight} onChange={(e) => setWeight(e.target.value)} type="number" />
               <Select value={weightUnit} onValueChange={(v) => v && setWeightUnit(v)}>
-                <SelectTrigger><SelectValue>{weightUnit}</SelectValue></SelectTrigger>
+                <SelectTrigger aria-label="Weight unit"><SelectValue>{weightUnit}</SelectValue></SelectTrigger>
                 <SelectContent>
                   <SelectItem value="lb">lb</SelectItem>
                   <SelectItem value="kg">kg</SelectItem>
@@ -683,14 +690,14 @@ function ExerciseInitialValuesForm({
       )}
       {kind === "isometric" && (
         <div className="grid grid-cols-2 gap-2">
-          <Input placeholder="Sets" value={sets} onChange={(e) => setSets(e.target.value)} type="number" />
+          <Input aria-label="Sets" className="tabular-nums" placeholder="Sets" value={sets} onChange={(e) => setSets(e.target.value)} type="number" />
           <div className="flex gap-1">
-            <Input placeholder="Min" value={durMin} onChange={(e) => setDurMin(e.target.value)} type="number" />
-            <Input placeholder="Sec" value={durSec} onChange={(e) => setDurSec(e.target.value)} type="number" />
+            <Input aria-label="Duration minutes" className="tabular-nums" placeholder="Min" value={durMin} onChange={(e) => setDurMin(e.target.value)} type="number" />
+            <Input aria-label="Duration seconds" className="tabular-nums" placeholder="Sec" value={durSec} onChange={(e) => setDurSec(e.target.value)} type="number" />
           </div>
-          <Input placeholder="Weight" value={weight} onChange={(e) => setWeight(e.target.value)} type="number" />
+          <Input aria-label="Weight" className="tabular-nums" placeholder="Weight" value={weight} onChange={(e) => setWeight(e.target.value)} type="number" />
           <Select value={weightUnit} onValueChange={(v) => v && setWeightUnit(v)}>
-            <SelectTrigger><SelectValue>{weightUnit}</SelectValue></SelectTrigger>
+            <SelectTrigger aria-label="Weight unit"><SelectValue>{weightUnit}</SelectValue></SelectTrigger>
             <SelectContent>
               <SelectItem value="lb">lb</SelectItem>
               <SelectItem value="kg">kg</SelectItem>
@@ -701,13 +708,13 @@ function ExerciseInitialValuesForm({
       {kind === "cardio" && (
         <div className="space-y-2">
           <div className="flex gap-1">
-            <Input placeholder="Min" value={durMin} onChange={(e) => setDurMin(e.target.value)} type="number" />
-            <Input placeholder="Sec" value={durSec} onChange={(e) => setDurSec(e.target.value)} type="number" />
+            <Input aria-label="Duration minutes" className="tabular-nums" placeholder="Min" value={durMin} onChange={(e) => setDurMin(e.target.value)} type="number" />
+            <Input aria-label="Duration seconds" className="tabular-nums" placeholder="Sec" value={durSec} onChange={(e) => setDurSec(e.target.value)} type="number" />
           </div>
           <div className="flex gap-1">
-            <Input className="flex-1" placeholder="Distance" value={distance} onChange={(e) => setDistance(e.target.value)} type="number" />
+            <Input aria-label="Distance" className="flex-1 tabular-nums" placeholder="Distance" value={distance} onChange={(e) => setDistance(e.target.value)} type="number" />
             <Select value={distanceUnit} onValueChange={(v) => v && setDistanceUnit(v)}>
-              <SelectTrigger className="w-20"><SelectValue>{distanceUnit}</SelectValue></SelectTrigger>
+              <SelectTrigger aria-label="Distance unit" className="w-20"><SelectValue>{distanceUnit}</SelectValue></SelectTrigger>
               <SelectContent>
                 <SelectItem value="mi">mi</SelectItem>
                 <SelectItem value="km">km</SelectItem>
