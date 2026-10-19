@@ -81,12 +81,12 @@ Run in this order for every stage. Do not skip steps for "small" stages.
 **Interfaces:**
 - Produces: the **Impeccable root** (`frontend/` or repo root), recorded as the first line of the "Method" section of `design-audit.md`: `Impeccable root: <path>`. Tasks 3 and 32 read it from there.
 
-- [ ] **Step 1: Decide the root.** Move `.impeccable/config.json` to `frontend/.impeccable/config.json` (keep `.impeccable/hook.cache.json` out of git; check `.gitignore`). From `frontend/`, run the Impeccable `context` command and confirm it resolves the config; then trigger the Impeccable hook (edit-and-revert any `.tsx` under `frontend/src`) and confirm it reads the moved config. If both resolve, the root is `frontend/`. If either does not, move the config back and the root is the repo root.
-- [ ] **Step 2: Clean the config.** Remove the `nested-cards` ignore entry that points at `.superpowers/brainstorm/...` (untracked scratch file). Keep the Fraunces `overused-font` entry and the `comps/dashboard.html` `nested-cards` entry.
-- [ ] **Step 3: Run `/impeccable:impeccable init`** with the Impeccable root as project root. Give it design.md §2 as the product-context brief. When it runs its confirmation round, ask the user to confirm or correct those answers. Do not answer for them. Save `PRODUCT.md` at the Impeccable root.
-- [ ] **Step 4: Write the `design-audit.md` skeleton** with these headings, in order: `# Task 057 — Design Audit`, `## Method` (first line `Impeccable root: <path>`), `## Baselines`, `## Findings`, `## Accessibility verification log`. Findings table header (used by every later task):
+- [x] **Step 1: Decide the root.** Move `.impeccable/config.json` to `frontend/.impeccable/config.json` (keep `.impeccable/hook.cache.json` out of git; check `.gitignore`). From `frontend/`, run the Impeccable `context` command and confirm it resolves the config; then trigger the Impeccable hook (edit-and-revert any `.tsx` under `frontend/src`) and confirm it reads the moved config. If both resolve, the root is `frontend/`. If either does not, move the config back and the root is the repo root.
+- [x] **Step 2: Clean the config.** Remove the `nested-cards` ignore entry that points at `.superpowers/brainstorm/...` (untracked scratch file). Keep the Fraunces `overused-font` entry and the `comps/dashboard.html` `nested-cards` entry.
+- [x] **Step 3: Run `/impeccable:impeccable init`** with the Impeccable root as project root. Give it design.md §2 as the product-context brief. When it runs its confirmation round, ask the user to confirm or correct those answers. Do not answer for them. Save `PRODUCT.md` at the Impeccable root.
+- [x] **Step 4: Write the `design-audit.md` skeleton** with these headings, in order: `# Task 057 — Design Audit`, `## Method` (first line `Impeccable root: <path>`), `## Baselines`, `## Findings`, `## Accessibility verification log`. Findings table header (used by every later task):
   `| ID | Sev | Surface | Theme | Location | Description | Fix | Stage | Resolved |`
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
   ```bash
   git add -A .impeccable frontend/.impeccable frontend/PRODUCT.md PRODUCT.md docs/tasks/task-057-impeccable-redesign/design-audit.md
   git commit -m "docs(task-057): impeccable root, PRODUCT.md, audit skeleton"
@@ -98,14 +98,14 @@ Run in this order for every stage. Do not skip steps for "small" stages.
 **Files:**
 - Modify: `docs/tasks/task-057-impeccable-redesign/design-audit.md` (`## Baselines`)
 
-- [ ] **Step 1: Confirm the frontend is still at task start.** `git diff --quiet 9e00203 HEAD -- frontend` must exit 0 (9e00203 is `main` at task start).
-- [ ] **Step 2: Measure.** From `frontend/`: `npm ci && npm run build`, then
+- [x] **Step 1: Confirm the frontend is still at task start.** `git diff --quiet 9e00203 HEAD -- frontend` must exit 0 (9e00203 is `main` at task start).
+- [x] **Step 2: Measure.** From `frontend/`: `npm ci && npm run build`, then
   ```bash
   for f in dist/assets/*.js; do gzip -9 -c "$f" | wc -c; done | awk '{s+=$1} END {print s}'
   ls -l dist/assets/*.woff2
   ```
-- [ ] **Step 3: Record** in `## Baselines`: ref `9e00203`, JS gzip total in bytes, the Geist woff2 files a latin-only page loads and their byte total, and the exact commands above. Later stages compare against these numbers.
-- [ ] **Step 4: Commit** `docs(task-057): record bundle and font baselines`.
+- [x] **Step 3: Record** in `## Baselines`: ref `9e00203`, JS gzip total in bytes, the Geist woff2 files a latin-only page loads and their byte total, and the exact commands above. Later stages compare against these numbers.
+- [x] **Step 4: Commit** `docs(task-057): record bundle and font baselines`.
 
 ### Task 3: Whole-app design audit
 
@@ -127,10 +127,10 @@ The audit runs against the task-start codebase (FR-12). It is the controller's j
 | e | Habits/Tracker, all Workouts routes, Packages, Weather; `features/tracker|trackers|workout|workouts|packages|weather` | 6 |
 | f | Households, Household members, Settings, Data retention; `features/households` | 7 |
 
-- [ ] **Step 1: Dispatch the six shards.** Each agent runs `/impeccable:impeccable audit` over its scope, judging every page at desktop ≥1280 px, mobile ≈390 px, and (shard b) kiosk, in light and dark, against design.md §1 anti-goals and FR-18–FR-22. If it can render the app, it does; otherwise it audits from source and says so. It writes rows in the findings-table format with `ID` left as `?`, and puts any finding that is really a primitive problem (button, badge, input, focus ring, token) in Stage 1 regardless of shard. Shard a also states whether `page-header` and `empty-state` are confirmed as needed (design.md §5.1) and whether any further primitive is warranted (design.md §8).
-- [ ] **Step 2: Merge.** Concatenate shard rows into `## Findings`, de-duplicate (same location and same problem → one row, all surfaces listed), number `DA-001…` in Stage then Severity order, and check every row has a Stage. In `## Method`, record how each shard audited (rendered or source) and the page-header/empty-state decision. If a primitive beyond those two is warranted, add it as a Stage 1 row; Task 12 picks it up.
-- [ ] **Step 3: Check coverage.** Every route in `frontend/src/App.tsx` appears in at least one row's Surface or in a `Method` line saying it was audited with no findings.
-- [ ] **Step 4: Delete `audit-shards/` and commit** `docs(task-057): whole-app design audit`.
+- [x] **Step 1: Dispatch the six shards.** Each agent runs `/impeccable:impeccable audit` over its scope, judging every page at desktop ≥1280 px, mobile ≈390 px, and (shard b) kiosk, in light and dark, against design.md §1 anti-goals and FR-18–FR-22. If it can render the app, it does; otherwise it audits from source and says so. It writes rows in the findings-table format with `ID` left as `?`, and puts any finding that is really a primitive problem (button, badge, input, focus ring, token) in Stage 1 regardless of shard. Shard a also states whether `page-header` and `empty-state` are confirmed as needed (design.md §5.1) and whether any further primitive is warranted (design.md §8).
+- [x] **Step 2: Merge.** Concatenate shard rows into `## Findings`, de-duplicate (same location and same problem → one row, all surfaces listed), number `DA-001…` in Stage then Severity order, and check every row has a Stage. In `## Method`, record how each shard audited (rendered or source) and the page-header/empty-state decision. If a primitive beyond those two is warranted, add it as a Stage 1 row; Task 12 picks it up.
+- [x] **Step 3: Check coverage.** Every route in `frontend/src/App.tsx` appears in at least one row's Surface or in a `Method` line saying it was audited with no findings.
+- [x] **Step 4: Delete `audit-shards/` and commit** `docs(task-057): whole-app design audit`.
 
 ---
 
@@ -154,7 +154,7 @@ The audit runs against the task-start codebase (FR-12). It is the controller's j
   export function readableForeground(bg: string): "ink" | "paper" // higher contrast of INK/PAPER against bg; unparseable bg → "ink"
   ```
 
-- [ ] **Step 1: Write the failing tests**
+- [x] **Step 1: Write the failing tests**
   ```ts
   describe("parseColor", () => {
     it("parses short and long hex", () => {
@@ -182,13 +182,13 @@ The audit runs against the task-start codebase (FR-12). It is the controller's j
     it("falls back to ink when unparseable", () => { expect(readableForeground("")).toBe("ink"); });
   });
   ```
-- [ ] **Step 2: Run** `npx vitest run src/lib/__tests__/color-contrast.test.ts` → FAIL (module not found).
-- [ ] **Step 3: Implement.** OKLCH → sRGB follows the OKLab reference (Ottosson): `a = C·cos(h°)`, `b = C·sin(h°)`;
+- [x] **Step 2: Run** `npx vitest run src/lib/__tests__/color-contrast.test.ts` → FAIL (module not found).
+- [x] **Step 3: Implement.** OKLCH → sRGB follows the OKLab reference (Ottosson): `a = C·cos(h°)`, `b = C·sin(h°)`;
   `l_ = L + 0.3963377774a + 0.2158037573b`, `m_ = L − 0.1055613458a − 0.0638541728b`, `s_ = L − 0.0894841775a − 1.2914855480b`; cube each;
   `R = 4.0767416621l − 3.3077115913m + 0.2309699292s`, `G = −1.2684380046l + 2.6097574011m − 0.3413193965s`, `B = −0.0041960863l − 0.7034186147m + 1.7076147010s`;
   clamp linear to 0..1, then gamma-encode (`x ≤ 0.0031308 ? 12.92x : 1.055x^(1/2.4) − 0.055`). Luminance linearises back with the WCAG formula. No dependency.
-- [ ] **Step 4: Run** the test → PASS. `npx tsc -b` clean.
-- [ ] **Step 5: Commit** `feat(frontend): add WCAG colour contrast helper`.
+- [x] **Step 4: Run** the test → PASS. `npx tsc -b` clean.
+- [x] **Step 5: Commit** `feat(frontend): add WCAG colour contrast helper`.
 
 ### Task 5: Colour tokens and the token contrast test
 
@@ -217,7 +217,7 @@ Token values: use design.md §3.1 verbatim where given. Where the design is sile
 - Chart dark: same hues as light, L 0.70–0.78.
 - `@theme inline` maps every new role as `--color-<role>: var(--<role>)`, swatches included.
 
-- [ ] **Step 1: Write the failing test** (`design-tokens.test.ts`), with these exact tables:
+- [x] **Step 1: Write the failing test** (`design-tokens.test.ts`), with these exact tables:
   ```ts
   const THEME_INVARIANT = ["--radius", "--duration-fast", "--duration-base", "--on-color-ink", "--on-color-paper"];
   const TEXT_PAIRS: [fg: string, bg: string][] = [ // ≥ 4.5 in both themes
@@ -239,10 +239,10 @@ Token values: use design.md §3.1 verbatim where given. Where the design is sile
   ];
   ```
   Tests: (a) `tokenBlock(":root")` keys minus `THEME_INVARIANT` equal `tokenBlock(".dark")` keys; (b) every pair in both tables meets its threshold in both themes, with the failure message naming theme, pair and measured ratio; (c) `resolveToken(light, "--on-color-ink") === INK` and the same for paper; (d) every `--color-*` in `@theme inline` points at a token that exists in `:root`. Build the 16 names from a `TRACKER_COLORS` array literal in the test (Task 8 will make the test import it from `swatches.ts` instead).
-- [ ] **Step 2: Run** `npx vitest run src/__tests__/design-tokens.test.ts` → FAIL (grey tokens fail most pairs; new roles missing).
-- [ ] **Step 3: Implement** the tokens in `index.css` per design.md §3.1 and the list above.
-- [ ] **Step 4: Run** the test → PASS. Record any L nudges you made (token, old L, new L) in the commit body; they go into DESIGN.md at Task 32.
-- [ ] **Step 5: Commit** `feat(frontend): Kitchen Table colour tokens with contrast test`.
+- [x] **Step 2: Run** `npx vitest run src/__tests__/design-tokens.test.ts` → FAIL (grey tokens fail most pairs; new roles missing).
+- [x] **Step 3: Implement** the tokens in `index.css` per design.md §3.1 and the list above.
+- [x] **Step 4: Run** the test → PASS. Record any L nudges you made (token, old L, new L) in the commit body; they go into DESIGN.md at Task 32.
+- [x] **Step 5: Commit** `feat(frontend): Kitchen Table colour tokens with contrast test`.
 
 ### Task 6: Typography and fonts
 
@@ -253,13 +253,13 @@ Token values: use design.md §3.1 verbatim where given. Where the design is sile
 **Interfaces:**
 - Produces: `font-heading` (Fraunces stack), `font-sans` (Figtree stack), text scale `text-xs … text-3xl`, `text-display`.
 
-- [ ] **Step 1: Write the failing tests:** `index.css` contains no `geist` (case-insensitive) import; contains `@fontsource-variable/fraunces` and `@fontsource-variable/figtree` imports; `--font-heading` starts with `'Fraunces Variable', 'Fraunces Fallback'` and `--font-sans` starts with `'Figtree Variable', 'Figtree Fallback'`; `@font-face` blocks exist for `Fraunces Fallback` (src `local("Georgia")`) and `Figtree Fallback` (src `local("Arial")`), each with `size-adjust`, `ascent-override`, `descent-override`; `@theme` sets `--text-xl: 1.375rem`, `--text-2xl: 1.75rem`, `--text-3xl: 2.25rem`, `--text-display: 3rem`.
-- [ ] **Step 2: Run** → FAIL.
-- [ ] **Step 3: Swap dependencies:** `npm install @fontsource-variable/fraunces @fontsource-variable/figtree && npm uninstall @fontsource-variable/geist`. If a package ships a latin-only CSS entry (look under `node_modules/@fontsource-variable/<name>/` for `*latin*.css`), import that; otherwise import the package root and rely on `unicode-range`. For Fraunces import the `wght`-only entry (no `opsz` axis).
-- [ ] **Step 4: Check `tnum`.** With any local tool (e.g. `python3 -c "from fontTools.ttLib import TTFont; …"` if fontTools exists; it is not a project dependency), list Figtree's GSUB features. If `tnum` is present, continue. If absent, keep `@fontsource-variable/geist`, add `--font-numeric: 'Geist Variable', …` with a `font-numeric` utility, and note it for DESIGN.md. Write the answer in the commit body.
-- [ ] **Step 5: Implement** in `index.css`: font imports; fallback `@font-face` rules with metric overrides derived from each woff2's `hhea`/`OS/2` and `unitsPerEm` (put the numbers and how you derived them in a CSS comment); `--font-heading`, `--font-sans` stacks; `font-display: swap` (fontsource default; confirm); text scale in `@theme` with `--text-*--line-height` 1.5 for xs–lg and 1.2 for xl–display; base layer `h1,h2,h3 { letter-spacing: -0.01em }` is **not** added globally: apply `tracking-[-0.01em]` where `font-heading` is used (Tasks 11–12).
-- [ ] **Step 6: Run** the test → PASS. `npm run build`, then sum the woff2 files a latin page loads; must be ≤ 150 KB. If Fraunces variable pushes it over, switch Fraunces to static `@fontsource/fraunces` weight 600 and re-measure. Record the number in `design-audit.md` `## Baselines` as "Stage 1 font payload".
-- [ ] **Step 7: Commit** `feat(frontend): Fraunces + Figtree self-hosted type with metric fallbacks`.
+- [x] **Step 1: Write the failing tests:** `index.css` contains no `geist` (case-insensitive) import; contains `@fontsource-variable/fraunces` and `@fontsource-variable/figtree` imports; `--font-heading` starts with `'Fraunces Variable', 'Fraunces Fallback'` and `--font-sans` starts with `'Figtree Variable', 'Figtree Fallback'`; `@font-face` blocks exist for `Fraunces Fallback` (src `local("Georgia")`) and `Figtree Fallback` (src `local("Arial")`), each with `size-adjust`, `ascent-override`, `descent-override`; `@theme` sets `--text-xl: 1.375rem`, `--text-2xl: 1.75rem`, `--text-3xl: 2.25rem`, `--text-display: 3rem`.
+- [x] **Step 2: Run** → FAIL.
+- [x] **Step 3: Swap dependencies:** `npm install @fontsource-variable/fraunces @fontsource-variable/figtree && npm uninstall @fontsource-variable/geist`. If a package ships a latin-only CSS entry (look under `node_modules/@fontsource-variable/<name>/` for `*latin*.css`), import that; otherwise import the package root and rely on `unicode-range`. For Fraunces import the `wght`-only entry (no `opsz` axis).
+- [x] **Step 4: Check `tnum`.** With any local tool (e.g. `python3 -c "from fontTools.ttLib import TTFont; …"` if fontTools exists; it is not a project dependency), list Figtree's GSUB features. If `tnum` is present, continue. If absent, keep `@fontsource-variable/geist`, add `--font-numeric: 'Geist Variable', …` with a `font-numeric` utility, and note it for DESIGN.md. Write the answer in the commit body.
+- [x] **Step 5: Implement** in `index.css`: font imports; fallback `@font-face` rules with metric overrides derived from each woff2's `hhea`/`OS/2` and `unitsPerEm` (put the numbers and how you derived them in a CSS comment); `--font-heading`, `--font-sans` stacks; `font-display: swap` (fontsource default; confirm); text scale in `@theme` with `--text-*--line-height` 1.5 for xs–lg and 1.2 for xl–display; base layer `h1,h2,h3 { letter-spacing: -0.01em }` is **not** added globally: apply `tracking-[-0.01em]` where `font-heading` is used (Tasks 11–12).
+- [x] **Step 6: Run** the test → PASS. `npm run build`, then sum the woff2 files a latin page loads; must be ≤ 150 KB. If Fraunces variable pushes it over, switch Fraunces to static `@fontsource/fraunces` weight 600 and re-measure. Record the number in `design-audit.md` `## Baselines` as "Stage 1 font payload".
+- [x] **Step 7: Commit** `feat(frontend): Fraunces + Figtree self-hosted type with metric fallbacks`.
 
 ### Task 7: Base layer — focus, reduced motion, coarse pointer, shape, elevation, motion tokens
 
@@ -270,9 +270,9 @@ Token values: use design.md §3.1 verbatim where given. Where the design is sile
 **Interfaces:**
 - Produces: the `coarse:` variant; `--radius: 0.75rem`; `shadow-card`, `shadow-overlay` (via `--elevation-card`, `--elevation-overlay`; dark values `none`); `--duration-fast: 120ms`, `--duration-base: 200ms`, `--ease-out: cubic-bezier(.2,.7,.2,1)`; global focus ring.
 
-- [ ] **Step 1: Write the failing tests:** `index.css` contains `@custom-variant coarse (@media (pointer: coarse));`; does not contain `outline-ring/50`; contains a `:focus-visible` rule with `outline: 2px solid var(--ring)` and `outline-offset: 2px`; contains a `@media (prefers-reduced-motion: reduce)` block whose body includes `animation-duration: 0.01ms !important`, `transition-duration: 0.01ms !important` and `animation-iteration-count: 1 !important`; `:root --radius` is `0.75rem`; `--elevation-card` in `.dark` is `none`; `@theme inline` maps `--shadow-card: var(--elevation-card)` and `--shadow-overlay: var(--elevation-overlay)` (raw tokens must not share the `--shadow-*` name, or the mapping is circular).
-- [ ] **Step 2: Run** → FAIL.
-- [ ] **Step 3: Implement.** Light `--elevation-card` is the exact value in design.md §3.4; `--elevation-overlay` is `0 4px 12px oklch(0.3 0.03 50 / 0.10), 0 12px 32px oklch(0.3 0.03 50 / 0.12)`. Reduced-motion block:
+- [x] **Step 1: Write the failing tests:** `index.css` contains `@custom-variant coarse (@media (pointer: coarse));`; does not contain `outline-ring/50`; contains a `:focus-visible` rule with `outline: 2px solid var(--ring)` and `outline-offset: 2px`; contains a `@media (prefers-reduced-motion: reduce)` block whose body includes `animation-duration: 0.01ms !important`, `transition-duration: 0.01ms !important` and `animation-iteration-count: 1 !important`; `:root --radius` is `0.75rem`; `--elevation-card` in `.dark` is `none`; `@theme inline` maps `--shadow-card: var(--elevation-card)` and `--shadow-overlay: var(--elevation-overlay)` (raw tokens must not share the `--shadow-*` name, or the mapping is circular).
+- [x] **Step 2: Run** → FAIL.
+- [x] **Step 3: Implement.** Light `--elevation-card` is the exact value in design.md §3.4; `--elevation-overlay` is `0 4px 12px oklch(0.3 0.03 50 / 0.10), 0 12px 32px oklch(0.3 0.03 50 / 0.12)`. Reduced-motion block:
   ```css
   @media (prefers-reduced-motion: reduce) {
     *, *::before, *::after {
@@ -284,8 +284,8 @@ Token values: use design.md §3.1 verbatim where given. Where the design is sile
   }
   ```
   Base `*` rule keeps `border-border` and drops `outline-ring/50`.
-- [ ] **Step 4: Run** → PASS.
-- [ ] **Step 5: Commit** `feat(frontend): focus ring, reduced motion, coarse variant, shape and elevation tokens`.
+- [x] **Step 4: Run** → PASS.
+- [x] **Step 5: Commit** `feat(frontend): focus ring, reduced motion, coarse variant, shape and elevation tokens`.
 
 ### Task 8: Swatch module
 
@@ -305,9 +305,9 @@ Token values: use design.md §3.1 verbatim where given. Where the design is sile
   ```
   Task 25 may add roles (e.g. `"text"`) if the tracker code needs them; each new role is a full 16-entry literal map, and the completeness test covers it automatically.
 
-- [ ] **Step 1: Write the failing tests:** `TRACKER_COLORS` has 16 unique entries; for every role and every colour, `SWATCH_CLASSES[role][c]` is a non-empty string containing `swatch-${c}`; `swatchClass("red","soft") === "bg-swatch-red-soft"`; **Review Focus 2:** `swatchClass("chartreuse","solid") === "bg-muted-foreground"` and `swatchClass("", "soft") === "bg-muted"`, and neither contains `undefined`.
-- [ ] **Step 2: Run** → FAIL. **Step 3: Implement.** **Step 4: Run** both this test and `design-tokens.test.ts` → PASS.
-- [ ] **Step 5: Commit** `feat(frontend): tracker swatch token mapping`.
+- [x] **Step 1: Write the failing tests:** `TRACKER_COLORS` has 16 unique entries; for every role and every colour, `SWATCH_CLASSES[role][c]` is a non-empty string containing `swatch-${c}`; `swatchClass("red","soft") === "bg-swatch-red-soft"`; **Review Focus 2:** `swatchClass("chartreuse","solid") === "bg-muted-foreground"` and `swatchClass("", "soft") === "bg-muted"`, and neither contains `undefined`.
+- [x] **Step 2: Run** → FAIL. **Step 3: Implement.** **Step 4: Run** both this test and `design-tokens.test.ts` → PASS.
+- [x] **Step 5: Commit** `feat(frontend): tracker swatch token mapping`.
 
 ### Task 9: No-colour-literal guard
 
@@ -328,9 +328,9 @@ Initial `PENDING` (one entry per line, exactly this set):
 `pages/dashboard-designer/`; and `pages/<File>.tsx` for every top-level page file (CalendarPage, DashboardDesigner, DashboardManagementPage, DashboardRedirect, DashboardRenderer, DashboardShell, DataRetentionPage, HouseholdMembersPage, HouseholdsPage, IngredientDetailPage, IngredientsPage, LoginPage, MealsPage, OnboardingPage, PackagesPage, RecipeDetailPage, RecipeFormPage, RecipesPage, RemindersPage, SettingsPage, ShoppingListDetailPage, ShoppingListsPage, TasksPage, TrackerPage, WeatherPage, WishListPage, WorkoutExercisesPage, WorkoutReviewPage, WorkoutTaxonomyPage, WorkoutTodayPage, WorkoutWeekPage).
 Initial `ALLOWED`: empty.
 
-- [ ] **Step 1: Write the test** with four cases: (a) no unallowed literal in any non-pending file (failure message lists `file:line: match`); (b) every `PENDING` entry exists on disk; (c) every `ALLOWED` entry still matches its file (no stale entries); (d) a self-test that the matcher flags `"bg-red-500"`, `"dark:text-white"`, `"bg-black/30"`, `"#9ca3af"` and does not flag `"bg-primary"`, `"text-muted-foreground"`, `"bg-swatch-red"`, `"border-l-swatch-blue"`.
-- [ ] **Step 2: Run** `npx vitest run src/__tests__/no-color-literals.test.ts`. Expected: PASS, because everything with literals is pending. Then temporarily delete the `pages/IngredientsPage.tsx` entry and confirm it FAILS naming `text-yellow-600`; restore it.
-- [ ] **Step 3: Commit** `test(frontend): no-colour-literal guard with pending list`.
+- [x] **Step 1: Write the test** with four cases: (a) no unallowed literal in any non-pending file (failure message lists `file:line: match`); (b) every `PENDING` entry exists on disk; (c) every `ALLOWED` entry still matches its file (no stale entries); (d) a self-test that the matcher flags `"bg-red-500"`, `"dark:text-white"`, `"bg-black/30"`, `"#9ca3af"` and does not flag `"bg-primary"`, `"text-muted-foreground"`, `"bg-swatch-red"`, `"border-l-swatch-blue"`.
+- [x] **Step 2: Run** `npx vitest run src/__tests__/no-color-literals.test.ts`. Expected: PASS, because everything with literals is pending. Then temporarily delete the `pages/IngredientsPage.tsx` entry and confirm it FAILS naming `text-yellow-600`; restore it.
+- [x] **Step 3: Commit** `test(frontend): no-colour-literal guard with pending list`.
 
 ### Task 10: Control primitives
 
@@ -341,14 +341,14 @@ Initial `ALLOWED`: empty.
 **Interfaces:**
 - Produces: `Badge` variants `default | secondary | destructive | success | warning | info | outline | ghost | link` and prop `icon?: LucideIcon` (rendered first, `aria-hidden`, `data-icon="inline-start"`). Button sizes unchanged in name.
 
-- [ ] **Step 1: Write the failing tests.**
+- [x] **Step 1: Write the failing tests.**
   `button.test.tsx`: default button's class contains `focus-visible:outline-ring` and `coarse:min-h-11`, and contains neither `ring-ring/50` nor `outline-none`; `size="icon"` contains `coarse:size-11`; `size="icon-xs"` contains `size-6`.
   `badge.test.tsx`: `<Badge variant="success" icon={Check}>Done</Badge>` renders an `svg` with `aria-hidden="true"` before the text and has class `bg-success`; `variant="warning"` has `bg-warning` and `text-warning-foreground`; `variant="destructive"` has `bg-destructive` and `text-destructive-foreground`.
   A source-scan case in `button.test.tsx`: no file in `src/components/ui/` contains `ring-ring/50`.
-- [ ] **Step 2: Run** → FAIL.
-- [ ] **Step 3: Implement.** Replace `focus-visible:ring-3 focus-visible:ring-ring/50` (and `outline-none`) with `focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring` in every control. Controls `rounded-md`; inputs/selects/textareas use `border-input`, placeholder `text-muted-foreground`, disabled keeps text readable (`disabled:opacity-60` on fill, not on text alone). Button `default` size `h-9`; add `coarse:min-h-11` to text sizes and `coarse:size-11` to icon sizes. Status badges are solid fills with their `-foreground` text, `rounded-full`. Transitions use `duration-(--duration-fast) ease-out`.
-- [ ] **Step 4: Run** `npx vitest run src/components/ui` → PASS; `npx tsc -b`; `npx eslint src/components/ui`.
-- [ ] **Step 5: Commit** `feat(frontend): restyle control primitives for Kitchen Table`.
+- [x] **Step 2: Run** → FAIL.
+- [x] **Step 3: Implement.** Replace `focus-visible:ring-3 focus-visible:ring-ring/50` (and `outline-none`) with `focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring` in every control. Controls `rounded-md`; inputs/selects/textareas use `border-input`, placeholder `text-muted-foreground`, disabled keeps text readable (`disabled:opacity-60` on fill, not on text alone). Button `default` size `h-9`; add `coarse:min-h-11` to text sizes and `coarse:size-11` to icon sizes. Status badges are solid fills with their `-foreground` text, `rounded-full`. Transitions use `duration-(--duration-fast) ease-out`.
+- [x] **Step 4: Run** `npx vitest run src/components/ui` → PASS; `npx tsc -b`; `npx eslint src/components/ui`.
+- [x] **Step 5: Commit** `feat(frontend): restyle control primitives for Kitchen Table`.
 
 ### Task 11: Surface primitives
 
@@ -359,11 +359,11 @@ Initial `ALLOWED`: empty.
 **Interfaces:**
 - Consumes: `readableForeground` (Task 4), `bg-overlay`, `shadow-card`, `shadow-overlay`, `coarse:`.
 
-- [ ] **Step 1: Write the failing tests:** `CardTitle` has `font-heading` and the card root has `rounded-xl` and `shadow-card`; the dialog backdrop has `bg-overlay` and not `bg-black/30`; the dialog popup has `shadow-overlay`; `SidebarMenuButton` (or the existing nav item primitive) has `coarse:min-h-11`; `UserAvatar` with a light user colour renders `color: var(--on-color-ink)` and with a dark colour `var(--on-color-paper)` (no `text-white`).
-- [ ] **Step 2: Run** → FAIL.
-- [ ] **Step 3: Implement.** Cards: `bg-card rounded-xl shadow-card`, dark gets a hairline `border` (shadow is `none` there). Titles: `font-heading text-lg tracking-[-0.01em]` (18 px floor). Popover/tooltip/dialog: `shadow-overlay`, `bg-popover`, open/close animation durations from motion tokens. Sidebar: `bg-sidebar`; active item = `text-sidebar-primary bg-sidebar-accent rounded-md` (clay text on sage wash, design.md §3.6). Skeleton `bg-muted`. Calendar (day picker): selected = `bg-primary text-primary-foreground`, today = ring, focus per Task 10.
-- [ ] **Step 4: Run** `npx vitest run src/components/ui` → PASS; tsc; eslint.
-- [ ] **Step 5: Commit** `feat(frontend): restyle surface primitives`.
+- [x] **Step 1: Write the failing tests:** `CardTitle` has `font-heading` and the card root has `rounded-xl` and `shadow-card`; the dialog backdrop has `bg-overlay` and not `bg-black/30`; the dialog popup has `shadow-overlay`; `SidebarMenuButton` (or the existing nav item primitive) has `coarse:min-h-11`; `UserAvatar` with a light user colour renders `color: var(--on-color-ink)` and with a dark colour `var(--on-color-paper)` (no `text-white`).
+- [x] **Step 2: Run** → FAIL.
+- [x] **Step 3: Implement.** Cards: `bg-card rounded-xl shadow-card`, dark gets a hairline `border` (shadow is `none` there). Titles: `font-heading text-lg tracking-[-0.01em]` (18 px floor). Popover/tooltip/dialog: `shadow-overlay`, `bg-popover`, open/close animation durations from motion tokens. Sidebar: `bg-sidebar`; active item = `text-sidebar-primary bg-sidebar-accent rounded-md` (clay text on sage wash, design.md §3.6). Skeleton `bg-muted`. Calendar (day picker): selected = `bg-primary text-primary-foreground`, today = ring, focus per Task 10.
+- [x] **Step 4: Run** `npx vitest run src/components/ui` → PASS; tsc; eslint.
+- [x] **Step 5: Commit** `feat(frontend): restyle surface primitives`.
 
 ### Task 12: Common components, including PageHeader and EmptyState
 
@@ -383,11 +383,11 @@ Skip creating either new component if Task 3's `## Method` dropped it; add any e
   export function EmptyState(props: EmptyStateProps): React.JSX.Element   // title in <h2>, icon aria-hidden
   ```
 
-- [ ] **Step 1: Write the failing tests.** PageHeader: `getByRole("heading", { level: 1, name: "Recipes" })` has `font-heading`; **Review Focus 4:** the h1 has `min-w-0` and `break-words`, and the actions container has `flex-wrap`; description renders in `text-muted-foreground`; actions render. EmptyState: `getByRole("heading", { level: 2, name: "No recipes yet" })` has `font-heading` and `text-lg`; icon `svg` is `aria-hidden`; action renders.
-- [ ] **Step 2: Run** → FAIL.
-- [ ] **Step 3: Implement** both; PageHeader title `font-heading text-2xl tracking-[-0.01em]`. Restyle the existing common components onto tokens (no palette classes; weather icons map to chart tokens), and resolve every Stage 1 `design-audit.md` row whose Location is in `components/common/`.
-- [ ] **Step 4: Run** `npx vitest run src/components/common` → PASS; tsc; eslint.
-- [ ] **Step 5: Commit** `feat(frontend): PageHeader, EmptyState, restyled common components`.
+- [x] **Step 1: Write the failing tests.** PageHeader: `getByRole("heading", { level: 1, name: "Recipes" })` has `font-heading`; **Review Focus 4:** the h1 has `min-w-0` and `break-words`, and the actions container has `flex-wrap`; description renders in `text-muted-foreground`; actions render. EmptyState: `getByRole("heading", { level: 2, name: "No recipes yet" })` has `font-heading` and `text-lg`; icon `svg` is `aria-hidden`; action renders.
+- [x] **Step 2: Run** → FAIL.
+- [x] **Step 3: Implement** both; PageHeader title `font-heading text-2xl tracking-[-0.01em]`. Restyle the existing common components onto tokens (no palette classes; weather icons map to chart tokens), and resolve every Stage 1 `design-audit.md` row whose Location is in `components/common/`.
+- [x] **Step 4: Run** `npx vitest run src/components/common` → PASS; tsc; eslint.
+- [x] **Step 5: Commit** `feat(frontend): PageHeader, EmptyState, restyled common components`.
 
 ### Task 13: Brand mark and favicon
 
@@ -395,19 +395,19 @@ Skip creating either new component if Task 3's `## Method` dropped it; add any e
 - Modify: `frontend/src/components/common/brand-mark.tsx`, `frontend/public/favicon.svg`
 - Test: `frontend/src/components/common/__tests__/brand-mark.test.tsx` (create)
 
-- [ ] **Step 1: Write the failing test:** read `public/favicon.svg` with `fs`, render `BrandMark`, and assert the set of `fill`/`stop-color` values in each is identical (the two files stay in sync, design.md §3.4) and that neither contains `#6366f1`.
-- [ ] **Step 2: Run** → FAIL.
-- [ ] **Step 3: Implement** the "Window light" geometry from `docs/tasks/task-057-impeccable-redesign/comps/brand-mark-options.html` (element `#mB`, 32×32) in both files. Keep `role="img"` and the accessible name. Literal fills are the documented image-asset exception (`components/common` is outside the literal guard's scope).
-- [ ] **Step 4: Run** → PASS. **Step 5: Commit** `feat(frontend): Window light brand mark and favicon`.
+- [x] **Step 1: Write the failing test:** read `public/favicon.svg` with `fs`, render `BrandMark`, and assert the set of `fill`/`stop-color` values in each is identical (the two files stay in sync, design.md §3.4) and that neither contains `#6366f1`.
+- [x] **Step 2: Run** → FAIL.
+- [x] **Step 3: Implement** the "Window light" geometry from `docs/tasks/task-057-impeccable-redesign/comps/brand-mark-options.html` (element `#mB`, 32×32) in both files. Keep `role="img"` and the accessible name. Literal fills are the documented image-asset exception (`components/common` is outside the literal guard's scope).
+- [x] **Step 4: Run** → PASS. **Step 5: Commit** `feat(frontend): Window light brand mark and favicon`.
 
 ### Task 14: Resolve remaining Stage 1 findings
 
 **Files:** as named by the `design-audit.md` rows with `Stage = 1` not yet fixed by Tasks 5–13.
 
-- [ ] **Step 1:** List open Stage 1 rows. For each, write or update a test where the fix is testable in jsdom (role/name, class, attribute), then fix. Visual-only fixes need no test but must name the row ID in the commit message.
-- [ ] **Step 2:** Run the Impeccable detector on `frontend/src/index.css` and `components/ui|common`. If it raises `cream-palette`, add an ignore entry with reason `user confirmed warm paper background in task-057 design review` (design.md "Decisions confirmed"). Fix anything else it raises or add it as a row.
-- [ ] **Step 3:** `npx vitest run && npx tsc -b && npx eslint .` from `frontend/` → all pass.
-- [ ] **Step 4: Commit** each fix as you go: `fix(frontend): <summary> (DA-NNN)`.
+- [x] **Step 1:** List open Stage 1 rows. For each, write or update a test where the fix is testable in jsdom (role/name, class, attribute), then fix. Visual-only fixes need no test but must name the row ID in the commit message.
+- [x] **Step 2:** Run the Impeccable detector on `frontend/src/index.css` and `components/ui|common`. If it raises `cream-palette`, add an ignore entry with reason `user confirmed warm paper background in task-057 design review` (design.md "Decisions confirmed"). Fix anything else it raises or add it as a row.
+- [x] **Step 3:** `npx vitest run && npx tsc -b && npx eslint .` from `frontend/` → all pass.
+- [x] **Step 4: Commit** each fix as you go: `fix(frontend): <summary> (DA-NNN)`.
 
 Then run the **Stage close-out procedure** (PR 1 title: `task-057 stage 0+1: audit and foundation`).
 
