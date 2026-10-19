@@ -18,12 +18,27 @@ vi.mock("@/lib/hooks/api/use-weather", () => ({
           temperatureUnit: "F",
           summary: "Clear",
           icon: "clear",
+          highTemperature: 75,
+          lowTemperature: 55,
           fetchedAt: new Date().toISOString(),
         },
       },
     },
   }),
-  useWeatherForecast: () => ({ data: { data: [] } }),
+  useWeatherForecast: () => ({
+    data: {
+      data: ["a", "b", "c", "d"].map((id, i) => ({
+        id,
+        attributes: {
+          date: `2026-03-0${i + 1}`,
+          icon: "clear",
+          summary: "Clear",
+          highTemperature: 60 + i,
+          lowTemperature: 40 + i,
+        },
+      })),
+    },
+  }),
 }));
 
 import { WeatherWidget } from "../weather-widget";
@@ -36,5 +51,18 @@ describe("WeatherWidget", () => {
       </MemoryRouter>,
     );
     expect(screen.getByRole("link", { name: "Weather" })).toHaveAttribute("href", "/app/weather");
+  });
+
+  it("shows the current temperature once, as its own focal row, with H/L and three forecast days", () => {
+    render(
+      <MemoryRouter>
+        <WeatherWidget />
+      </MemoryRouter>,
+    );
+    const temp = screen.getByText("70F");
+    expect(temp).toHaveClass("tabular-nums", "text-display");
+    expect(screen.getByText("H 75°")).toBeInTheDocument();
+    expect(screen.getByText("L 55°")).toBeInTheDocument();
+    expect(screen.getByText("61°")).toBeInTheDocument();
   });
 });
