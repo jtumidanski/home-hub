@@ -103,7 +103,7 @@ export function IngredientPreview({ planId }: IngredientPreviewProps) {
       )}
       {groups.map((group) => (
         <div key={group.name}>
-          <h4 className="text-xs font-semibold text-muted-foreground uppercase tracking-wide border-t pt-2 mb-1">
+          <h4 className="text-sm font-medium text-muted-foreground border-t pt-2 mb-1">
             {group.name}
           </h4>
           <ul className="space-y-0.5 text-sm">

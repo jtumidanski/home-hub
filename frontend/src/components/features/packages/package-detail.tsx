@@ -49,7 +49,7 @@ export function PackageDetail({ packageId, carrier, trackingNumber }: PackageDet
       )}
 
       <div className="space-y-2">
-        <h4 className="text-xs font-medium text-muted-foreground uppercase tracking-wider">
+        <h4 className="text-sm font-medium text-muted-foreground">
           Tracking History
         </h4>
         {events.length === 0 ? (

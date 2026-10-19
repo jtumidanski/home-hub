@@ -125,7 +125,7 @@ export function SidebarGroupLabel({ className, ...props }: React.ComponentProps<
     <div
       data-slot="sidebar-group-label"
       className={cn(
-        "flex h-7 shrink-0 items-center gap-2 rounded-md px-2 text-xs font-semibold uppercase tracking-wider text-muted-foreground coarse:min-h-11",
+        "flex h-7 shrink-0 items-center gap-2 rounded-md px-2 text-sm font-medium text-muted-foreground coarse:min-h-11",
         className,
       )}
       {...props}

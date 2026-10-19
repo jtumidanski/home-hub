@@ -23,7 +23,7 @@ interface NavGroupProps {
 
 /** The one group-label recipe, shared with DashboardsNavGroup. */
 export const groupLabelClasses =
-  "flex h-7 w-full shrink-0 cursor-pointer items-center gap-2 rounded-md px-2 text-xs font-semibold uppercase tracking-wider text-muted-foreground transition-colors hover:text-sidebar-foreground focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring motion-reduce:transition-none coarse:min-h-11";
+  "flex h-7 w-full shrink-0 cursor-pointer items-center gap-2 rounded-md px-2 text-sm font-medium text-muted-foreground transition-colors hover:text-sidebar-foreground focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring motion-reduce:transition-none coarse:min-h-11";
 
 export function NavGroup({
   group,
