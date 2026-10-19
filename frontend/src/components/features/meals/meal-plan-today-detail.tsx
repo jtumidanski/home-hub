@@ -3,6 +3,7 @@ import { usePlans, usePlan } from "@/lib/hooks/api/use-meals";
 import { useTenant } from "@/context/tenant-context";
 import { Card, CardAction, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
+import { WidgetError } from "@/components/features/dashboard-widgets/widget-error";
 import { UtensilsCrossed, ChevronRight } from "lucide-react";
 import { getLocalWeekStart, getLocalTodayStr, getLocalDateStrOffset } from "@/lib/date-utils";
 import type { Slot } from "@/types/models/meal-plan";
@@ -46,13 +47,7 @@ export function MealPlanTodayDetail({ horizonDays }: MealPlanTodayDetailProps) {
   }
 
   if (plansError || detailError) {
-    return (
-      <Card className="border-destructive">
-        <CardContent className="py-3">
-          <p className="text-sm text-destructive">Failed to load meal plan</p>
-        </CardContent>
-      </Card>
-    );
+    return <WidgetError message="Failed to load meal plan" />;
   }
 
   const items = planDetail?.data?.attributes?.items ?? [];
@@ -68,8 +63,8 @@ export function MealPlanTodayDetail({ horizonDays }: MealPlanTodayDetailProps) {
   }
 
   return (
-    <Link to="/app/meals" className="block h-full transition-opacity hover:opacity-80">
-      <Card className="h-full">
+    <Link to="/app/meals" className="@container group/meals block h-full rounded-xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
+      <Card className="@container h-full motion-safe:transition-colors group-hover/meals:bg-accent">
         <CardHeader>
           <CardTitle className="text-sm font-medium">Meals</CardTitle>
           <CardAction>

@@ -5,6 +5,7 @@ import { hasLocation } from "@/types/models/household";
 import { WeatherIcon } from "@/components/common/weather-icon";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
+import { WidgetError } from "@/components/features/dashboard-widgets/widget-error";
 import { AlertTriangle, MapPin } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
@@ -101,12 +102,7 @@ export function WeatherWidget(_props: WeatherWidgetProps = {}) {
 
   if (isError || !weather) {
     return (
-      <Card className="@container h-full">
-        <CardContent className="flex items-center gap-2 py-6 text-muted-foreground">
-          <AlertTriangle className="size-4 @xl:size-6 shrink-0" />
-          <span className="text-sm @xl:text-xl">Weather data unavailable</span>
-        </CardContent>
-      </Card>
+      <WidgetError message="Weather data unavailable" />
     );
   }
 

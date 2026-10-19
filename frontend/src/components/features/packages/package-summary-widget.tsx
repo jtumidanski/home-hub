@@ -4,6 +4,7 @@ import { Card, CardAction, CardContent, CardHeader, CardTitle } from "@/componen
 import { Button } from "@/components/ui/button";
 import { EmptyState } from "@/components/common/empty-state";
 import { Skeleton } from "@/components/ui/skeleton";
+import { WidgetError } from "@/components/features/dashboard-widgets/widget-error";
 import { Package, Truck, AlertTriangle, ChevronRight } from "lucide-react";
 
 export function PackageSummaryWidget() {
@@ -24,13 +25,7 @@ export function PackageSummaryWidget() {
   }
 
   if (isError) {
-    return (
-      <Card className="border-destructive">
-        <CardContent className="py-3">
-          <p className="text-sm text-destructive">Failed to load package summary</p>
-        </CardContent>
-      </Card>
-    );
+    return <WidgetError message="Failed to load package summary" />;
   }
 
   const hasPackages = summary && (summary.arrivingTodayCount > 0 || summary.inTransitCount > 0 || summary.exceptionCount > 0);
@@ -60,8 +55,8 @@ export function PackageSummaryWidget() {
   }
 
   return (
-    <Link to="/app/packages" className="block h-full transition-opacity hover:opacity-80">
-      <Card className="@container h-full">
+    <Link to="/app/packages" className="@container group/packages block h-full rounded-xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
+      <Card className="@container h-full motion-safe:transition-colors group-hover/packages:bg-accent">
         <CardHeader>
           <CardTitle className="font-heading text-lg @xl:text-2xl">Packages</CardTitle>
           <CardAction>

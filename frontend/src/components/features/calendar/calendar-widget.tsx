@@ -3,6 +3,7 @@ import { Link } from "react-router-dom";
 import { useCalendarEvents } from "@/lib/hooks/api/use-calendar";
 import { Card, CardAction, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
+import { WidgetError } from "@/components/features/dashboard-widgets/widget-error";
 import { CalendarDays, ChevronRight } from "lucide-react";
 import { getLocalTodayRange, getLocalTodayStr } from "@/lib/date-utils";
 import { useTenant } from "@/context/tenant-context";
@@ -59,13 +60,7 @@ export function CalendarWidget(_props: CalendarWidgetProps = {}) {
   }
 
   if (isError) {
-    return (
-      <Card className="border-destructive">
-        <CardContent className="py-3">
-          <p className="text-sm text-destructive">Failed to load calendar events</p>
-        </CardContent>
-      </Card>
-    );
+    return <WidgetError message="Failed to load calendar events" />;
   }
 
   const events = sortEvents(
@@ -78,8 +73,8 @@ export function CalendarWidget(_props: CalendarWidgetProps = {}) {
   );
 
   return (
-    <Link to="/app/calendar" className="block h-full transition-opacity hover:opacity-80">
-      <Card className="h-full">
+    <Link to="/app/calendar" className="@container group/calendar block h-full rounded-xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
+      <Card className="@container h-full motion-safe:transition-colors group-hover/calendar:bg-accent">
         <CardHeader>
           <CardTitle className="font-heading text-lg @xl:text-2xl">Calendar</CardTitle>
           <CardAction>

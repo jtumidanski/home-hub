@@ -3,6 +3,7 @@ import { usePlans, usePlan } from "@/lib/hooks/api/use-meals";
 import { useTenant } from "@/context/tenant-context";
 import { Card, CardAction, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
+import { WidgetError } from "@/components/features/dashboard-widgets/widget-error";
 import { UtensilsCrossed, ChevronRight } from "lucide-react";
 import { getLocalWeekStart, getLocalTodayStr } from "@/lib/date-utils";
 import type { Slot } from "@/types/models/meal-plan";
@@ -59,13 +60,7 @@ export function MealPlanWidget(_props: MealPlanWidgetProps = {}) {
   }
 
   if (isError) {
-    return (
-      <Card className="border-destructive">
-        <CardContent className="py-3">
-          <p className="text-sm text-destructive">Failed to load meal plan</p>
-        </CardContent>
-      </Card>
-    );
+    return <WidgetError message="Failed to load meal plan" />;
   }
 
   const todayItems = planDetail?.data?.attributes?.items
