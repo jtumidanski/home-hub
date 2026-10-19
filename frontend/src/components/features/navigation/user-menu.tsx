@@ -9,21 +9,26 @@ import { cn } from "@/lib/utils";
 
 interface UserMenuProps {
   onAction?: () => void;
-  iconSize?: string;
+  size?: "default" | "lg";
 }
 
-export function UserMenu({ onAction, iconSize = "h-4 w-4" }: UserMenuProps) {
+const menuItemClasses =
+  "flex w-full cursor-pointer items-center gap-3 rounded-md px-3 py-2 text-sm outline-none select-none coarse:min-h-11 data-highlighted:bg-accent data-highlighted:text-accent-foreground focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-ring";
+
+export function UserMenu({ onAction, size = "default" }: UserMenuProps) {
   const { user } = useAuth();
   const logout = useLogout();
   const navigate = useNavigate();
 
   if (!user) return null;
 
+  const iconSize = size === "lg" ? "size-5" : "size-4";
+
   return (
     <MenuPrimitive.Root>
       <MenuPrimitive.Trigger
         className={cn(
-          "flex w-full cursor-pointer items-center justify-between rounded-md p-3 text-left transition-colors hover:bg-sidebar-accent/50 outline-none focus-visible:ring-2 focus-visible:ring-ring",
+          "flex w-full cursor-pointer items-center justify-between rounded-md p-3 text-left transition-colors motion-reduce:transition-none coarse:min-h-11 hover:bg-sidebar-accent/50 outline-none focus-visible:ring-2 focus-visible:ring-ring",
         )}
       >
         <UserAvatar
@@ -37,7 +42,7 @@ export function UserMenu({ onAction, iconSize = "h-4 w-4" }: UserMenuProps) {
           <p className="truncate text-sm font-medium">{user.attributes.displayName}</p>
           <p className="truncate text-xs text-muted-foreground">{user.attributes.email}</p>
         </div>
-        <ChevronDown className="ml-2 h-4 w-4 shrink-0 text-muted-foreground" />
+        <ChevronDown className="ml-2 size-4 shrink-0 text-muted-foreground" />
       </MenuPrimitive.Trigger>
       <MenuPrimitive.Portal>
         <MenuPrimitive.Positioner side="top" sideOffset={8} align="start" className="z-50">
@@ -50,7 +55,7 @@ export function UserMenu({ onAction, iconSize = "h-4 w-4" }: UserMenuProps) {
             )}
           >
             <MenuPrimitive.Item
-              className="flex w-full cursor-pointer items-center gap-3 rounded-md px-3 py-2 text-sm outline-none select-none hover:bg-accent hover:text-accent-foreground focus:bg-accent focus:text-accent-foreground"
+              className={menuItemClasses}
               onClick={() => {
                 navigate(settingsNavItem.to);
                 onAction?.();
@@ -60,14 +65,14 @@ export function UserMenu({ onAction, iconSize = "h-4 w-4" }: UserMenuProps) {
               {settingsNavItem.label}
             </MenuPrimitive.Item>
             <MenuPrimitive.Item
-              className="flex w-full cursor-pointer items-center gap-3 rounded-md px-3 py-2 text-sm text-destructive outline-none select-none hover:bg-accent focus:bg-accent"
+              className={cn(menuItemClasses, "text-destructive data-highlighted:text-destructive")}
               onClick={() => {
                 logout.mutate();
                 onAction?.();
               }}
             >
               <LogOut className={iconSize} />
-              Sign Out
+              Sign out
             </MenuPrimitive.Item>
           </MenuPrimitive.Popup>
         </MenuPrimitive.Positioner>

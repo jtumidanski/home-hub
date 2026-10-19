@@ -14,7 +14,6 @@ const PENDING: string[] = [
   "components/features/households/",
   "components/features/ingredients/",
   "components/features/meals/",
-  "components/features/navigation/",
   "components/features/packages/",
   "components/features/recipes/",
   "components/features/reminders/",

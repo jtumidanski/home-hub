@@ -125,7 +125,7 @@ export function SidebarGroupLabel({ className, ...props }: React.ComponentProps<
     <div
       data-slot="sidebar-group-label"
       className={cn(
-        "flex h-7 shrink-0 items-center gap-2 rounded-md px-2 text-xs font-semibold uppercase tracking-wider text-muted-foreground",
+        "flex h-7 shrink-0 items-center gap-2 rounded-md px-2 text-xs font-semibold uppercase tracking-wider text-muted-foreground coarse:min-h-11",
         className,
       )}
       {...props}
@@ -223,7 +223,7 @@ export function SidebarMenuBadge({ className, ...props }: React.ComponentProps<"
     <span
       data-slot="sidebar-menu-badge"
       className={cn(
-        "ml-auto flex h-5 min-w-5 items-center justify-center rounded-full bg-primary px-1.5 text-[10px] font-medium text-primary-foreground",
+        "ml-auto flex h-5 min-w-5 items-center justify-center rounded-full bg-primary px-1.5 text-xs font-medium text-primary-foreground",
         className,
       )}
       {...props}
