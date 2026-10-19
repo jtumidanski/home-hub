@@ -1,5 +1,6 @@
 import { describe, it, expect, vi } from "vitest";
 import { render, screen } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
 import { PackageCard } from "../package-card";
 import type { Package } from "@/types/models/package";
 
@@ -58,10 +59,35 @@ describe("PackageCard", () => {
 
     expect(screen.getByRole("button", { name: "Refresh tracking" })).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Delete" })).toBeInTheDocument();
-    expect(screen.getByTitle("Edit")).toBeInTheDocument();
-    expect(screen.getByTitle("Make private")).toBeInTheDocument();
-    expect(screen.getByTitle("Archive")).toBeInTheDocument();
-    expect(screen.getByTitle("Delete")).toBeInTheDocument();
+    for (const name of ["Refresh tracking", "Edit", "Make private", "Archive", "Delete"]) {
+      expect(screen.getByRole("button", { name })).toHaveAttribute("aria-label", name);
+    }
+  });
+
+  it("offers the owner actions in a mobile overflow menu with Delete separated", async () => {
+    const user = userEvent.setup();
+    render(<PackageCard pkg={makePkg()} />);
+
+    await user.click(screen.getByRole("button", { name: "More actions" }));
+
+    const items = await screen.findAllByRole("menuitem");
+    expect(items.map((i) => i.textContent?.trim())).toEqual([
+      "Refresh tracking",
+      "Edit",
+      "Make private",
+      "Archive",
+      "Delete",
+    ]);
+    expect(screen.getByRole("separator")).toBeInTheDocument();
+    expect(items[4]).toHaveAttribute("data-variant", "destructive");
+
+    await user.click(screen.getByRole("menuitem", { name: "Archive" }));
+    expect(mockMutate).toHaveBeenCalledWith("pkg-1");
+  });
+
+  it("does not render the overflow menu for non-owners", () => {
+    render(<PackageCard pkg={makePkg({ isOwner: false })} />);
+    expect(screen.queryByRole("button", { name: "More actions" })).not.toBeInTheDocument();
   });
 
   it("hides owner actions for non-owner", () => {

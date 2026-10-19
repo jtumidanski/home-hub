@@ -126,7 +126,7 @@ export function LocationSearch({ value, onSelect, onClear, isPending }: Location
         role="combobox"
         aria-autocomplete="list"
         aria-expanded={open && results.length > 0}
-        aria-controls={listboxId}
+        aria-controls={open && results.length > 0 ? listboxId : undefined}
         aria-activedescendant={open && selectedIndex >= 0 ? optionId(selectedIndex) : undefined}
         value={query}
         onChange={(e) => setQuery(e.target.value)}

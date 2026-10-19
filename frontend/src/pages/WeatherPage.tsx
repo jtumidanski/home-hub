@@ -62,7 +62,7 @@ function HourlyBreakdown({ entries, isToday }: { entries: HourlyForecastEntry[];
           <span className="w-16 shrink-0 text-muted-foreground text-xs">
             {formatHourlyTime(entry.time)}
           </span>
-          <WeatherIcon icon={entry.icon} className="h-5 w-5 shrink-0 text-muted-foreground" />
+          <WeatherIcon icon={entry.icon} className="size-6 shrink-0 text-foreground" />
           <span className="w-10 shrink-0 font-medium tabular-nums">{Math.round(entry.temperature)}°</span>
           <span className="w-24 shrink-0 text-xs text-muted-foreground truncate">
             {entry.summary}
@@ -135,32 +135,32 @@ export function WeatherPage() {
   const selector =
     savedLocations.length > 0 ? (
       <div className="space-y-1">
-      <Label htmlFor="weather-location-select" className="text-xs text-muted-foreground">
-        Location
-      </Label>
-      <Select
-        value={selectedLocationId ?? PRIMARY_VALUE}
-        onValueChange={handleSelectChange}
-      >
-        <SelectTrigger id="weather-location-select" className="w-full max-w-xs">
-          <SelectValue>
-            {selectedLocationId
-              ? (savedLocations.find((l) => l.id === selectedLocationId)?.attributes.label ??
-                 savedLocations.find((l) => l.id === selectedLocationId)?.attributes.placeName)
-              : (household?.attributes.locationName ?? "Primary Location")}
-          </SelectValue>
-        </SelectTrigger>
-        <SelectContent>
-          <SelectItem value={PRIMARY_VALUE}>
-            {household?.attributes.locationName ?? "Primary Location"}
-          </SelectItem>
-          {savedLocations.map((loc) => (
-            <SelectItem key={loc.id} value={loc.id}>
-              {loc.attributes.label ?? loc.attributes.placeName}
+        <Label htmlFor="weather-location-select" className="text-xs text-muted-foreground">
+          Location
+        </Label>
+        <Select
+          value={selectedLocationId ?? PRIMARY_VALUE}
+          onValueChange={handleSelectChange}
+        >
+          <SelectTrigger id="weather-location-select" className="w-full max-w-xs">
+            <SelectValue>
+              {selectedLocationId
+                ? (savedLocations.find((l) => l.id === selectedLocationId)?.attributes.label ??
+                   savedLocations.find((l) => l.id === selectedLocationId)?.attributes.placeName)
+                : (household?.attributes.locationName ?? "Primary Location")}
+            </SelectValue>
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value={PRIMARY_VALUE}>
+              {household?.attributes.locationName ?? "Primary Location"}
             </SelectItem>
-          ))}
-        </SelectContent>
-      </Select>
+            {savedLocations.map((loc) => (
+              <SelectItem key={loc.id} value={loc.id}>
+                {loc.attributes.label ?? loc.attributes.placeName}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
       </div>
     ) : null;
 
@@ -174,7 +174,7 @@ export function WeatherPage() {
             <EmptyState
               icon={MapPin}
               title="No location set"
-              description="No location set for this household."
+              description="Set a primary location for this household to see its forecast."
               action={
                 <Button variant="outline" onClick={() => navigate("/app/households")}>
                   Set Location
@@ -272,7 +272,7 @@ export function WeatherPage() {
                         {formatDayName(day.attributes.date, index)}
                       </p>
                     </div>
-                    <WeatherIcon icon={day.attributes.icon} className="h-8 w-8 shrink-0 text-muted-foreground" />
+                    <WeatherIcon icon={day.attributes.icon} className="size-10 shrink-0 text-foreground" />
                     <p className="text-sm text-muted-foreground flex-1 min-w-0 truncate">
                       {day.attributes.summary}
                     </p>
