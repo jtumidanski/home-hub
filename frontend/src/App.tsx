@@ -1,3 +1,4 @@
+import { toasterStyle, toastOptions } from "@/lib/toast-options";
 import React from "react";
 import { BrowserRouter, Routes, Route, Navigate, useParams } from "react-router-dom";
 import { Toaster } from "sonner";
@@ -52,23 +53,14 @@ function RedirectSummaryToReview() {
   return <Navigate to={target} replace />;
 }
 
-const toastBase = "bg-popover text-popover-foreground border-border shadow-overlay";
-
 function ThemedToaster() {
   const { theme } = useTheme();
   return (
     <Toaster
       theme={theme}
       closeButton
-      toastOptions={{
-        classNames: {
-          toast: toastBase,
-          success: "border-success",
-          error: "border-destructive",
-          warning: "border-warning",
-          info: "border-info",
-        },
-      }}
+      style={toasterStyle}
+      toastOptions={toastOptions}
     />
   );
 }

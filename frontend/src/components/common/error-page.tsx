@@ -49,7 +49,7 @@ export function ErrorPage({
   onRetry,
 }: ErrorPageProps) {
   const navigate = useNavigate();
-  const [retrying, setRetrying] = useState(false);
+  const [retrying, setRetrying] = useState(0);
 
   return (
     <div className="flex min-h-[50vh] items-center justify-center p-6">
@@ -70,7 +70,7 @@ export function ErrorPage({
               {showRetryButton && onRetry && (
                 <Button
                   onClick={() => {
-                    setRetrying(true);
+                    setRetrying((n) => n + 1);
                     onRetry();
                   }}
                 >
@@ -82,7 +82,7 @@ export function ErrorPage({
               </Link>
             </div>
             <p role="status" className="sr-only">
-              {retrying ? "Retrying…" : ""}
+              {retrying > 0 ? `Retrying… (attempt ${retrying})` : ""}
             </p>
           </div>
         }
