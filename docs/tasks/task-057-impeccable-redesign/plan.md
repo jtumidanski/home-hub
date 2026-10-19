@@ -453,11 +453,11 @@ Then run the **Stage close-out procedure** (title: `task-057 stage 2: shell`).
 - Modify: `no-color-literals.test.ts` (remove `components/features/dashboard-widgets/`)
 - Test: `frontend/src/components/features/dashboard-widgets/__tests__/widget-container.test.tsx` (create)
 
-- [ ] **Step 1:** Cut the stage branch.
-- [ ] **Step 2: Write the failing test (Review Focus 3):** for each adapter exported from the widget registry (iterate `widget-registry.ts` so new widgets are covered automatically), render it with its data hooks mocked the way the existing `dashboard-widgets/__tests__` do (fixtures from `lib/dashboard/fixtures` may be imported read-only), and assert the root element has class `@container` and the widget title (if any) has `font-heading`. Remove the PENDING entry and run guard + this test → FAIL.
-- [ ] **Step 3: Implement.** Widget root `@container`; title `font-heading text-lg @xl:text-2xl`; headline metric (Today count, temperature) `tabular-nums text-3xl @md:text-display`; list rows `text-sm @xl:text-xl`; icons `size-4 @xl:size-6`. Breakpoints per widget are the implementer's call (design.md §8). Status rows carry icon + text. Leave calendar-widget `userColor` dots as they are (data, not a literal); Task 22 moves them to `eventChipColors`.
-- [ ] **Step 4: Run** the new test, the guard, and `npx vitest run src/lib/dashboard` → PASS. `git diff --stat origin/main -- frontend/src/lib/dashboard` must print nothing.
-- [ ] **Step 5: Commit** `feat(frontend): container-query widget internals for kiosk legibility`.
+- [x] **Step 1:** Cut the stage branch.
+- [x] **Step 2: Write the failing test (Review Focus 3):** for each adapter exported from the widget registry (iterate `widget-registry.ts` so new widgets are covered automatically), render it with its data hooks mocked the way the existing `dashboard-widgets/__tests__` do (fixtures from `lib/dashboard/fixtures` may be imported read-only), and assert the root element has class `@container` and the widget title (if any) has `font-heading`. Remove the PENDING entry and run guard + this test → FAIL.
+- [x] **Step 3: Implement.** Widget root `@container`; title `font-heading text-lg @xl:text-2xl`; headline metric (Today count, temperature) `tabular-nums text-3xl @md:text-display`; list rows `text-sm @xl:text-xl`; icons `size-4 @xl:size-6`. Breakpoints per widget are the implementer's call (design.md §8). Status rows carry icon + text. Leave calendar-widget `userColor` dots as they are (data, not a literal); Task 22 moves them to `eventChipColors`.
+- [x] **Step 4: Run** the new test, the guard, and `npx vitest run src/lib/dashboard` → PASS. `git diff --stat origin/main -- frontend/src/lib/dashboard` must print nothing.
+- [x] **Step 5: Commit** `feat(frontend): container-query widget internals for kiosk legibility`.
 
 ### Task 18: Dashboard pages and designer
 
@@ -466,9 +466,9 @@ Then run the **Stage close-out procedure** (title: `task-057 stage 2: shell`).
 - Modify: `no-color-literals.test.ts` (remove those five page files, `pages/dashboard-designer/`, `components/features/dashboards/`)
 - Test: existing `pages/__tests__` and `pages/dashboard-designer/__tests__` (update)
 
-- [ ] **Step 1: Remove PENDING entries; run guard** → FAIL naming `bg-black/30` in `config-panel.tsx` and `palette-drawer.tsx`.
-- [ ] **Step 2: Implement:** backdrops `bg-overlay`; management page uses `PageHeader` and `EmptyState`; greeting header per design.md §3.6 (Fraunces `text-2xl`, muted date). Grid props, layout JSON handling and `state.ts` logic unchanged.
-- [ ] **Step 3: Run** `npx vitest run src/pages src/lib/dashboard src/__tests__` → PASS; tsc; eslint. **Step 4: Commit** `feat(frontend): restyle dashboard pages and designer`.
+- [x] **Step 1: Remove PENDING entries; run guard** → FAIL naming `bg-black/30` in `config-panel.tsx` and `palette-drawer.tsx`.
+- [x] **Step 2: Implement:** backdrops `bg-overlay`; management page uses `PageHeader` and `EmptyState`; greeting header per design.md §3.6 (Fraunces `text-2xl`, muted date). Grid props, layout JSON handling and `state.ts` logic unchanged.
+- [x] **Step 3: Run** `npx vitest run src/pages src/lib/dashboard src/__tests__` → PASS; tsc; eslint. **Step 4: Commit** `feat(frontend): restyle dashboard pages and designer`.
 
 ### Task 19: Resolve remaining Stage 3 findings
 
