@@ -34,6 +34,10 @@
 # Node
 node_modules/
 
+# Impeccable local state (config.json is tracked)
+.impeccable/hook.cache.json
+.impeccable/config.local.json
+
 # Frontend build output
 frontend/dist/
 frontend/dist-ssr/

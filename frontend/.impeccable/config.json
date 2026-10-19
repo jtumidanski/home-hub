@@ -1,0 +1,23 @@
+{
+  "detector": {
+    "ignoreRules": [],
+    "ignoreFiles": [],
+    "ignoreValues": [
+      {
+        "rule": "overused-font",
+        "value": "fraunces",
+        "createdAt": "2026-10-19T12:20:52.769Z",
+        "reason": "user confirmed: after being told Fraunces is flagged as overused, user replied 'i'm good with that' (task-057 design session)"
+      },
+      {
+        "rule": "nested-cards",
+        "value": "*",
+        "files": [
+          "docs/tasks/task-057-impeccable-redesign/comps/dashboard.html"
+        ],
+        "createdAt": "2026-10-19T12:22:54.706Z",
+        "reason": "assistant: outer .app element is a device frame around the comp, not a UI card; same false positive already triaged on the scratch copy"
+      }
+    ]
+  }
+}
