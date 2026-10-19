@@ -341,7 +341,12 @@ export function DataRetentionPage() {
         pending={patchHousehold.isPending || patchUser.isPending}
         onConfirm={async () => {
           if (!shrinkWarning) return;
-          await applyPatch(shrinkWarning.scope, shrinkWarning.category, shrinkWarning.days);
+          try {
+            await applyPatch(shrinkWarning.scope, shrinkWarning.category, shrinkWarning.days);
+          } catch {
+            // The mutation hook already surfaces the error toast; keep the dialog open.
+            return;
+          }
           setShrinkWarning(null);
         }}
       />

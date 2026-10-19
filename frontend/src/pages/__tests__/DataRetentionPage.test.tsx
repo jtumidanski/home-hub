@@ -4,6 +4,7 @@ import userEvent from "@testing-library/user-event";
 
 const mockPurgeAsync = vi.fn();
 const mockPreview = vi.fn();
+const mockPatchHousehold = vi.fn();
 let patchPending = false;
 
 vi.mock("@/lib/hooks/api/use-retention", () => ({
@@ -25,7 +26,7 @@ vi.mock("@/lib/hooks/api/use-retention", () => ({
     },
   }),
   useRetentionRuns: () => ({ isLoading: false, data: { data: [] } }),
-  usePatchHouseholdRetention: () => ({ mutateAsync: vi.fn(), isPending: patchPending }),
+  usePatchHouseholdRetention: () => ({ mutateAsync: mockPatchHousehold, isPending: patchPending }),
   usePatchUserRetention: () => ({ mutateAsync: vi.fn(), isPending: false }),
   usePurgeRetention: () => ({ mutateAsync: mockPurgeAsync, isPending: false }),
 }));
@@ -49,6 +50,7 @@ describe("DataRetentionPage", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     patchPending = false;
+    mockPatchHousehold.mockResolvedValue({});
     mockPreview.mockResolvedValue({ data: { attributes: { deleted: 7 } } });
     mockPurgeAsync.mockResolvedValue({ data: { attributes: { deleted: 3 } } });
   });
@@ -114,5 +116,19 @@ describe("DataRetentionPage", () => {
     const pendingBtn = within(screen.getByRole("dialog")).getByRole("button", { name: "Working…" });
     expect(pendingBtn).toBeDisabled();
     expect(pendingBtn.className).toContain("destructive");
+  });
+
+  it("keeps the shrink dialog open without an unhandled rejection when the save fails", async () => {
+    mockPatchHousehold.mockRejectedValue(new Error("boom"));
+    const user = userEvent.setup();
+    render(<DataRetentionPage />);
+    const input = screen.getByRole("spinbutton", { name: "Reminders retention days" });
+    await user.clear(input);
+    await user.type(input, "10");
+    await user.click(screen.getByRole("button", { name: "Save" }));
+    const dialog = await screen.findByRole("dialog");
+    await user.click(within(dialog).getByRole("button", { name: "Confirm" }));
+    await waitFor(() => expect(mockPatchHousehold).toHaveBeenCalled());
+    expect(screen.getByRole("dialog")).toBeInTheDocument();
   });
 });

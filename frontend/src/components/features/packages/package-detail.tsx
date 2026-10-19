@@ -1,3 +1,4 @@
+import { cn } from "@/lib/utils";
 import { usePackage } from "@/lib/hooks/api/use-packages";
 import { StatusBadge } from "./status-badge";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -59,7 +60,7 @@ export function PackageDetail({ packageId, carrier, trackingNumber }: PackageDet
             {events.map((evt, i) => (
               <div key={i} className="flex gap-3 py-1.5">
                 <div className="flex flex-col items-center">
-                  <div className={`w-2 h-2 rounded-full mt-1.5 ${i === 0 ? "bg-primary" : "bg-muted-foreground/30"}`} />
+                  <div className={cn("w-2 h-2 rounded-full mt-1.5", i === 0 ? "bg-primary" : "bg-muted-foreground/30")} />
                   {i < events.length - 1 && <div className="w-px flex-1 bg-muted-foreground/20" />}
                 </div>
                 <div className="min-w-0 flex-1 pb-2">

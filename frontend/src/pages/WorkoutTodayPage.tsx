@@ -1,3 +1,4 @@
+import { cn } from "@/lib/utils";
 import { useEffect, useId, useRef, useState } from "react";
 import { ChevronDown, ChevronUp, Dumbbell } from "lucide-react";
 import { EmptyState } from "@/components/common/empty-state";
@@ -173,7 +174,7 @@ function TodayItem({ item, weekStart }: { item: WeekItem; weekStart: string }) {
       {expanded ? (
         <div className="space-y-3 border-t pt-3">
           {item.kind === "strength" && (
-            <div className={`grid gap-1.5 ${isBw ? "grid-cols-2" : "grid-cols-4"}`}>
+            <div className={cn("grid gap-1.5", isBw ? "grid-cols-2" : "grid-cols-4")}>
               <div>
                 <label htmlFor={`${uid}-sets`} className="text-xs text-muted-foreground block mb-0.5">Sets</label>
                 <Input ref={firstInputRef} id={`${uid}-sets`} className="h-8 tabular-nums" value={sets} onChange={(e) => setSets(e.target.value)} type="number" inputMode="numeric" />

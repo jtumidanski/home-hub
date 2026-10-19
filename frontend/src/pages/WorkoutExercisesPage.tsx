@@ -1,3 +1,4 @@
+import { cn } from "@/lib/utils";
 import { useState } from "react";
 import { Dumbbell, Plus, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -174,7 +175,7 @@ function ExerciseCreateDialog({
             <Label htmlFor="ex-name">Name</Label>
             <Input id="ex-name" value={name} onChange={(e) => setName(e.target.value)} />
           </div>
-          <div className={`grid gap-2 ${kind === "strength" ? "grid-cols-2" : "grid-cols-1"}`}>
+          <div className={cn("grid gap-2", kind === "strength" ? "grid-cols-2" : "grid-cols-1")}>
             <div>
               <Label>Kind</Label>
               <Select value={kind} onValueChange={(v) => setKind(v as WorkoutKind)}>
