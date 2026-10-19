@@ -17,6 +17,6 @@ export const toastOptions = {
     error: "border-destructive!",
     warning: "border-warning!",
     info: "border-info!",
-    closeButton: "size-6!",
+    closeButton: "size-6! coarse:size-11!",
   },
 };

@@ -10,12 +10,12 @@ describe("toast options", () => {
     });
   });
 
-  it("uses important per-type borders and a 24px close button", () => {
+  it("uses important per-type borders and a 24px close button with a 44px coarse target", () => {
     const c = toastOptions.classNames;
     expect(c.success).toBe("border-success!");
     expect(c.error).toBe("border-destructive!");
     expect(c.warning).toBe("border-warning!");
     expect(c.info).toBe("border-info!");
-    expect(c.closeButton).toBe("size-6!");
+    expect(c.closeButton).toBe("size-6! coarse:size-11!");
   });
 });
