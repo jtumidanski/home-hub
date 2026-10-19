@@ -17,7 +17,7 @@ export function MonthEventChip({ event, timezone }: MonthEventChipProps) {
 
   return (
     <div
-      className="rounded px-1 py-0.5 text-[10px] leading-tight truncate"
+      className="rounded px-1 py-0.5 text-xs leading-tight truncate"
       style={eventChipColors(event.attributes)}
       title={attrs.title}
     >

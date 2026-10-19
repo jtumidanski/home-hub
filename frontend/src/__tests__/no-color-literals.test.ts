@@ -8,7 +8,6 @@ const SCANNED_ROOTS = ["components/features", "pages"];
 
 /** Path prefixes (relative to frontend/src) not yet migrated; files under them are skipped. */
 const PENDING: string[] = [
-  "components/features/calendar/",
   "components/features/households/",
   "components/features/packages/",
   "components/features/reminders/",
@@ -18,7 +17,6 @@ const PENDING: string[] = [
   "components/features/weather/",
   "components/features/workout/",
   "components/features/workouts/",
-  "pages/CalendarPage.tsx",
   "pages/DataRetentionPage.tsx",
   "pages/HouseholdMembersPage.tsx",
   "pages/HouseholdsPage.tsx",

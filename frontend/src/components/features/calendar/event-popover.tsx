@@ -1,6 +1,6 @@
-import { useEffect, useRef } from "react";
-import { X, Clock, MapPin, User, Pencil, Trash2 } from "lucide-react";
+import { Clock, MapPin, User, Pencil, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
 import type { CalendarEvent } from "@/types/models/calendar";
 
 interface EventPopoverProps {
@@ -12,18 +12,7 @@ interface EventPopoverProps {
 }
 
 export function EventPopover({ event, onClose, hasWriteAccess, onEdit, onDelete }: EventPopoverProps) {
-  const ref = useRef<HTMLDivElement>(null);
   const { attributes: attrs } = event;
-
-  useEffect(() => {
-    function handleClickOutside(e: MouseEvent) {
-      if (ref.current && !ref.current.contains(e.target as Node)) {
-        onClose();
-      }
-    }
-    document.addEventListener("mousedown", handleClickOutside);
-    return () => document.removeEventListener("mousedown", handleClickOutside);
-  }, [onClose]);
 
   const startTime = new Date(attrs.startTime);
   const endTime = new Date(attrs.endTime);
@@ -35,27 +24,16 @@ export function EventPopover({ event, onClose, hasWriteAccess, onEdit, onDelete 
   const canModify = attrs.isOwner && hasWriteAccess;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/20" onClick={onClose}>
-      <div
-        ref={ref}
-        className="bg-background border rounded-lg shadow-lg p-4 w-80 max-w-[90vw]"
-        onClick={(e) => e.stopPropagation()}
-      >
-        <div className="flex items-start justify-between mb-3">
-          <div className="flex items-center gap-2">
-            <div className="w-3 h-3 rounded-full flex-shrink-0" style={{ backgroundColor: attrs.userColor }} />
-            <h3 className="font-semibold text-sm">{attrs.title}</h3>
-          </div>
-          <button
-            type="button"
-            onClick={onClose}
-            aria-label="Close"
-            className="inline-flex size-6 shrink-0 items-center justify-center rounded-md text-muted-foreground hover:text-foreground focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring coarse:size-11"
-          >
-            <X className="h-4 w-4" />
-          </button>
+    <Dialog open onOpenChange={(open) => { if (!open) onClose(); }}>
+      <DialogContent className="w-80 max-w-[90vw] gap-0">
+        <div className="mb-3 flex items-center gap-2">
+          <div
+            className="size-3 shrink-0 rounded-full ring-1 ring-border"
+            style={{ backgroundColor: attrs.userColor }}
+            aria-hidden="true"
+          />
+          <DialogTitle className="text-sm font-semibold">{attrs.title}</DialogTitle>
         </div>
-
         <div className="space-y-2 text-sm text-muted-foreground">
           <div className="flex items-center gap-2">
             <Clock className="h-3.5 w-3.5" />
@@ -101,7 +79,7 @@ export function EventPopover({ event, onClose, hasWriteAccess, onEdit, onDelete 
             </Button>
           </div>
         )}
-      </div>
-    </div>
+      </DialogContent>
+    </Dialog>
   );
 }

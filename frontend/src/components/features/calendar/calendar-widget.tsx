@@ -96,7 +96,7 @@ export function CalendarWidget(_props: CalendarWidgetProps = {}) {
             <div className="space-y-2">
               {events.map((event) => (
                 <div key={event.id} className="flex items-start gap-2">
-                  <span className="text-xs font-medium text-muted-foreground w-16 shrink-0 pt-0.5">
+                  <span className="text-sm @xl:text-xl font-medium tabular-nums text-muted-foreground w-20 @xl:w-28 shrink-0">
                     {event.attributes.allDay ? "All Day" : formatEventTime(event.attributes.startTime)}
                   </span>
                   <div className="flex items-center gap-1.5 min-w-0">

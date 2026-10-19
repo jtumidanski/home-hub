@@ -65,7 +65,7 @@ export function MonthDayCell({
       aria-label={label}
       onClick={() => onDayClick(day)}
       className={cn(
-        "flex flex-col min-h-0 overflow-hidden border-r border-b last:border-r-0 text-left p-1 cursor-pointer hover:bg-accent/40",
+        "flex flex-col min-h-0 overflow-hidden border-r border-b last:border-r-0 text-left p-1 cursor-pointer hover:bg-accent/40 focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-ring",
         cellTone,
       )}
     >
