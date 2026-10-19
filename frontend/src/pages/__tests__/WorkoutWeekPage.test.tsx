@@ -91,7 +91,7 @@ describe("WorkoutWeekPage", () => {
     setWeek([item("a", "Squat", 0, 0), item("b", "Row", 0, 1), item("c", "Press", 2, 0)]);
     renderPage();
     await user.click(screen.getByRole("combobox", { name: "Move Squat to day" }));
-    const listbox = screen.getByRole("listbox");
+    const listbox = await screen.findByRole("listbox");
     // Current day is not offered.
     expect(within(listbox).queryByRole("option", { name: "Mon" })).toBeNull();
     await user.click(within(listbox).getByRole("option", { name: "Wed" }));
