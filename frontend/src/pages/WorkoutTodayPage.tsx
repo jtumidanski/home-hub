@@ -157,17 +157,17 @@ function TodayItem({ item, weekStart }: { item: WeekItem; weekStart: string }) {
         aria-expanded={expanded}
         onClick={() => setExpanded(!expanded)}
       >
-        <div className="min-w-0 flex-1">
-          <p className="font-medium truncate">
+        <span className="block min-w-0 flex-1">
+          <span className="block font-medium truncate">
             {item.exerciseName}
             {item.exerciseDeleted && <span className="text-muted-foreground"> (deleted)</span>}
-          </p>
-          <p className="text-xs text-muted-foreground tabular-nums">{summarizePlanned(item)}</p>
-        </div>
-        <div className="flex items-center gap-2 shrink-0">
+          </span>
+          <span className="block text-xs text-muted-foreground tabular-nums">{summarizePlanned(item)}</span>
+        </span>
+        <span className="flex items-center gap-2 shrink-0">
           <StatusBadge status={status} />
-          {expanded ? <ChevronUp className="h-4 w-4 text-muted-foreground" /> : <ChevronDown className="h-4 w-4 text-muted-foreground" />}
-        </div>
+          {expanded ? <ChevronUp aria-hidden="true" className="h-4 w-4 text-muted-foreground" /> : <ChevronDown aria-hidden="true" className="h-4 w-4 text-muted-foreground" />}
+        </span>
       </button>
 
       {expanded ? (
