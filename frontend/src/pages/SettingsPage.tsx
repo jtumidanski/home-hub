@@ -7,8 +7,10 @@ import { ErrorCard } from "@/components/common/error-card";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { UserAvatar } from "@/components/ui/user-avatar";
-import { Moon, Sun, Shuffle, RotateCcw, Trash2 } from "lucide-react";
+import { Check, Moon, Sun, Shuffle, RotateCcw, Trash2 } from "lucide-react";
 import { toast } from "sonner";
+import { PageHeader } from "@/components/common/page-header";
+import { membershipRoleLabelMap } from "@/types/models/membership";
 import { cn } from "@/lib/utils";
 
 const AVATAR_STYLES = ["adventurer", "bottts", "fun-emoji"] as const;
@@ -44,12 +46,13 @@ function AvatarPicker({
 
   return (
     <div className="space-y-4">
-      <div className="flex gap-2">
+      <div className="flex gap-2" role="group" aria-label="Avatar style">
         {AVATAR_STYLES.map((style) => (
           <Button
             key={style}
             variant={activeStyle === style ? "default" : "outline"}
             size="sm"
+            aria-pressed={activeStyle === style}
             onClick={() => setActiveStyle(style)}
           >
             {STYLE_LABELS[style]}
@@ -58,7 +61,7 @@ function AvatarPicker({
       </div>
 
       <div className="grid grid-cols-4 gap-3 sm:grid-cols-6">
-        {seeds.map((seed) => {
+        {seeds.map((seed, index) => {
           const descriptor = `dicebear:${activeStyle}:${seed}`;
           const isSelected = currentAvatarUrl === descriptor;
           return (
@@ -66,17 +69,27 @@ function AvatarPicker({
               key={seed}
               type="button"
               disabled={isPending}
+              aria-pressed={isSelected}
+              aria-label={`Choose avatar ${index + 1}`}
               onClick={() => onSelect(descriptor)}
               className={cn(
-                "rounded-lg border-2 p-1.5 transition-colors hover:border-primary",
+                "relative rounded-lg border-2 p-1.5 transition-colors hover:border-primary focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring disabled:opacity-50",
                 isSelected ? "border-primary bg-primary/10" : "border-transparent",
               )}
             >
               <img
                 src={`https://api.dicebear.com/9.x/${activeStyle}/svg?seed=${seed}`}
-                alt={`${STYLE_LABELS[activeStyle]} avatar ${seed}`}
+                alt=""
+                width={48}
+                height={48}
+                loading="lazy"
                 className="h-12 w-12 rounded-md"
               />
+              {isSelected && (
+                <span className="absolute right-0.5 top-0.5 flex size-4 items-center justify-center rounded-full bg-primary text-primary-foreground">
+                  <Check aria-hidden="true" className="size-3" />
+                </span>
+              )}
             </button>
           );
         })}
@@ -93,7 +106,7 @@ function AvatarPicker({
 function SettingsPageSkeleton() {
   return (
     <div className="p-4 md:p-6 space-y-6" role="status" aria-label="Loading">
-      <Skeleton className="h-8 w-32" />
+      <PageHeader title="Settings" />
       <Skeleton className="h-40 w-full" />
       <Skeleton className="h-24 w-full" />
     </div>
@@ -153,20 +166,27 @@ export function SettingsPage() {
   const { avatarUrl, providerAvatarUrl } = user.attributes;
   const hasUserSelectedAvatar = avatarUrl.startsWith("dicebear:");
   const hasProviderAvatar = !!providerAvatarUrl;
+  const resolvedRole = appContext.attributes.resolvedRole;
+  const roleLabel = membershipRoleLabelMap[resolvedRole];
 
   return (
     <div className="p-4 md:p-6 space-y-6">
-      <h1 className="text-xl md:text-2xl font-semibold">Settings</h1>
+      <PageHeader title="Settings" />
 
       <Card>
         <CardHeader>
           <CardTitle>Profile</CardTitle>
           <CardDescription>Your account information</CardDescription>
         </CardHeader>
-        <CardContent className="space-y-2">
-          <div><span className="text-sm font-medium">Name:</span> <span className="text-sm">{user.attributes.displayName}</span></div>
-          <div><span className="text-sm font-medium">Email:</span> <span className="text-sm">{user.attributes.email}</span></div>
-          <div><span className="text-sm font-medium">Role:</span> <span className="text-sm">{appContext.attributes.resolvedRole}</span></div>
+        <CardContent>
+          <dl className="grid grid-cols-[auto_1fr] gap-x-4 gap-y-2 text-sm">
+            <dt className="text-muted-foreground">Name</dt>
+            <dd>{user.attributes.displayName}</dd>
+            <dt className="text-muted-foreground">Email</dt>
+            <dd>{user.attributes.email}</dd>
+            <dt className="text-muted-foreground">Role</dt>
+            <dd>{roleLabel}</dd>
+          </dl>
         </CardContent>
       </Card>
 
@@ -224,10 +244,18 @@ export function SettingsPage() {
           <CardDescription>Customize how Home Hub looks</CardDescription>
         </CardHeader>
         <CardContent>
-          <Button variant="outline" onClick={toggleTheme}>
-            {theme === "light" ? <Moon className="mr-2 h-4 w-4" /> : <Sun className="mr-2 h-4 w-4" />}
-            {theme === "light" ? "Switch to Dark Mode" : "Switch to Light Mode"}
-          </Button>
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <div>
+              <p className="text-sm font-medium">Theme</p>
+              <p className="text-sm text-muted-foreground">
+                Current theme: {theme === "light" ? "Light" : "Dark"}
+              </p>
+            </div>
+            <Button variant="outline" onClick={toggleTheme}>
+              {theme === "light" ? <Moon className="mr-2 h-4 w-4" /> : <Sun className="mr-2 h-4 w-4" />}
+              {theme === "light" ? "Switch to Dark Mode" : "Switch to Light Mode"}
+            </Button>
+          </div>
         </CardContent>
       </Card>
 
