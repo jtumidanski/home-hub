@@ -35,7 +35,7 @@ export function PaletteDrawer({ open, onOpenChange, dispatch }: PaletteDrawerPro
         <DialogPrimitive.Popup
           data-testid="palette-drawer"
           className={cn(
-            "fixed top-0 right-0 z-50 flex h-full w-full max-w-sm flex-col gap-2 border-l border-border bg-popover p-4 text-popover-foreground shadow-lg outline-none",
+            "fixed top-0 right-0 z-50 flex h-full w-full max-w-sm flex-col gap-2 border-l border-border bg-popover p-4 text-popover-foreground shadow-overlay outline-none data-open:animate-in data-open:slide-in-from-right duration-(--duration-fast)",
           )}
         >
           <div className="flex items-center justify-between">
@@ -71,11 +71,11 @@ export function PaletteDrawer({ open, onOpenChange, dispatch }: PaletteDrawerPro
                     dispatch({ type: "add", widget });
                     onOpenChange(false);
                   }}
-                  className="flex w-full flex-col items-start rounded-md border border-border bg-background p-3 text-left hover:bg-accent"
+                  className="flex w-full flex-col items-start rounded-md border border-border bg-background p-3 text-left hover:bg-accent focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring coarse:min-h-11"
                 >
                   <span className="font-medium">{def.displayName}</span>
                   <span className="text-xs text-muted-foreground">{def.description}</span>
-                  <span className="mt-1 text-[10px] text-muted-foreground">
+                  <span className="mt-1 text-xs text-muted-foreground">
                     Default size {def.defaultSize.w} × {def.defaultSize.h}
                   </span>
                 </button>

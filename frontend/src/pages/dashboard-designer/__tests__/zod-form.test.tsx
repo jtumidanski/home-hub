@@ -25,4 +25,15 @@ describe("ZodFormFields", () => {
     render(<Harness />);
     expect(screen.getByTestId("zod-field-title")).toHaveAttribute("data-slot", "input");
   });
+
+  it("associates labels with text inputs and radio groups (DA-052)", () => {
+    const rich = z.object({ title: z.string(), mode: z.enum(["a", "b"]) });
+    function RichHarness() {
+      const form = useForm<z.infer<typeof rich>>({ defaultValues: { title: "", mode: "a" } });
+      return <ZodFormFields schema={rich} form={form} />;
+    }
+    render(<RichHarness />);
+    expect(screen.getByRole("textbox", { name: "Title" })).toBe(screen.getByTestId("zod-field-title"));
+    expect(screen.getByRole("radiogroup", { name: "Mode" })).toBeInTheDocument();
+  });
 });
