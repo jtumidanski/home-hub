@@ -41,6 +41,7 @@ function ThemesPanel() {
           <Input value={name} onChange={(e) => setName(e.target.value)} placeholder="New theme" />
           <Button
             size="icon"
+            aria-label="Add theme"
             onClick={() => {
               if (!name.trim()) return;
               create.mutate(
@@ -52,7 +53,7 @@ function ThemesPanel() {
               );
             }}
           >
-            <Plus className="h-4 w-4" />
+            <Plus aria-hidden="true" className="h-4 w-4" />
           </Button>
         </div>
         <ul className="divide-y">
@@ -62,11 +63,12 @@ function ThemesPanel() {
               <Button
                 size="icon"
                 variant="ghost"
+                aria-label={`Delete ${t.attributes.name}`}
                 onClick={() =>
                   remove.mutate(t.id, { onError: () => toast.error("Delete failed") })
                 }
               >
-                <Trash2 className="h-3 w-3" />
+                <Trash2 aria-hidden="true" className="h-3 w-3" />
               </Button>
             </li>
           ))}
@@ -92,6 +94,7 @@ function RegionsPanel() {
           <Input value={name} onChange={(e) => setName(e.target.value)} placeholder="New region" />
           <Button
             size="icon"
+            aria-label="Add region"
             onClick={() => {
               if (!name.trim()) return;
               create.mutate(
@@ -103,7 +106,7 @@ function RegionsPanel() {
               );
             }}
           >
-            <Plus className="h-4 w-4" />
+            <Plus aria-hidden="true" className="h-4 w-4" />
           </Button>
         </div>
         <ul className="divide-y">
@@ -113,11 +116,12 @@ function RegionsPanel() {
               <Button
                 size="icon"
                 variant="ghost"
+                aria-label={`Delete ${r.attributes.name}`}
                 onClick={() =>
                   remove.mutate(r.id, { onError: () => toast.error("Delete failed") })
                 }
               >
-                <Trash2 className="h-3 w-3" />
+                <Trash2 aria-hidden="true" className="h-3 w-3" />
               </Button>
             </li>
           ))}
