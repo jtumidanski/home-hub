@@ -104,7 +104,7 @@ export function MealPlanWidget(_props: MealPlanWidgetProps = {}) {
                 </span>
                 <Link
                   to={`/app/recipes/${item.recipe_id}`}
-                  className="text-sm @xl:text-xl text-primary hover:underline truncate"
+                  className="inline-flex min-h-6 items-center text-sm @xl:text-xl text-primary hover:underline truncate coarse:min-h-11"
                 >
                   {item.recipe_title}
                 </Link>

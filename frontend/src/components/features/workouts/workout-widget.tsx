@@ -4,6 +4,7 @@ import { useTenant } from "@/context/tenant-context";
 import { useLocalDate } from "@/lib/hooks/use-local-date";
 import { Card, CardAction, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
+import { cn } from "@/lib/utils";
 import { Dumbbell, BedDouble, Check, Circle, CircleDot, SkipForward, ChevronRight } from "lucide-react";
 
 export function WorkoutWidget() {
@@ -75,7 +76,7 @@ export function WorkoutWidget() {
                     ) : (
                       <Circle className="size-4 @xl:size-6 text-muted-foreground shrink-0" aria-label="Pending" />
                     )}
-                    <span className={`text-sm @xl:text-xl truncate ${resolved ? "text-muted-foreground line-through" : ""}`}>
+                    <span className={cn("text-sm @xl:text-xl truncate", resolved && "text-muted-foreground line-through")}>
                       {item.exerciseName}
                     </span>
                   </div>
