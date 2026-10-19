@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
-import { render, screen } from "@testing-library/react";
+import { render, screen, act } from "@testing-library/react";
 import { MemoryRouter, Routes, Route } from "react-router-dom";
 import type { Dashboard } from "@/types/models/dashboard";
 
@@ -123,5 +123,31 @@ describe("DashboardShell header", () => {
       expect(screen.getByRole("heading", { level: 1 })).toHaveTextContent(/^Good morning$/);
     });
     authUser.value = { attributes: { displayName: "Jordan Smith" } };
+  });
+
+  it("refreshes greeting and date as time passes", () => {
+    mobileFlag.value = false;
+    vi.useFakeTimers();
+    try {
+      vi.setSystemTime(new Date("2026-03-05T16:59:30Z")); // 11:59 in New York
+      renderShell();
+      expect(screen.getByRole("heading", { level: 1 })).toHaveTextContent("Good morning, Jordan");
+      act(() => {
+        vi.advanceTimersByTime(120_000);
+      });
+      expect(screen.getByRole("heading", { level: 1 })).toHaveTextContent("Good afternoon, Jordan");
+
+      vi.setSystemTime(new Date("2026-03-06T04:58:30Z")); // 23:58 on the 5th
+      act(() => {
+        vi.advanceTimersByTime(60_000);
+      });
+      expect(screen.getByText(/Thursday, March 5/)).toBeInTheDocument();
+      act(() => {
+        vi.advanceTimersByTime(120_000);
+      });
+      expect(screen.getByText(/Friday, March 6/)).toBeInTheDocument();
+    } finally {
+      vi.useRealTimers();
+    }
   });
 });

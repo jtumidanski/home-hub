@@ -11,6 +11,8 @@ import { Button } from "@/components/ui/button";
 import { LAYOUT_SCHEMA_VERSION } from "@/lib/dashboard/widget-types";
 import { useAuth } from "@/components/providers/auth-provider";
 import { useMobile } from "@/lib/hooks/use-mobile";
+import { useLocalDate } from "@/lib/hooks/use-local-date";
+import { useTimeOfDay } from "@/lib/hooks/use-time-of-day";
 
 export function DashboardShell() {
   const { dashboardId } = useParams<{ dashboardId: string }>();
@@ -20,24 +22,25 @@ export function DashboardShell() {
   const timezone = household?.attributes.timezone || undefined;
 
   const { user } = useAuth();
-  const firstName = user?.attributes.displayName?.trim().split(/\s+/)[0] ?? "";
+  const givenName = user?.attributes.givenName?.trim();
+  const firstName = givenName || (user?.attributes.displayName?.trim().split(/\s+/)[0] ?? "");
+  const localDate = useLocalDate(timezone);
+  const timeOfDay = useTimeOfDay(timezone);
 
   const { dateLabel, greeting } = useMemo(() => {
-    const now = new Date();
-    const hour = Number(
-      new Intl.DateTimeFormat("en-US", { hour: "numeric", hourCycle: "h23", timeZone: timezone }).format(now),
-    );
-    const salutation = hour < 12 ? "Good morning" : hour < 18 ? "Good afternoon" : "Good evening";
+    const salutation = `Good ${timeOfDay}`;
     return {
       greeting: firstName ? `${salutation}, ${firstName}` : salutation,
-      dateLabel: now.toLocaleDateString("en-US", {
+      dateLabel: new Date().toLocaleDateString("en-US", {
         weekday: "long",
         day: "numeric",
         month: "long",
         timeZone: timezone,
       }),
     };
-  }, [timezone, firstName]);
+    // localDate is a refresh trigger: the label must recompute when the day rolls over.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [timezone, firstName, timeOfDay, localDate]);
 
   if (isLoading) return <DashboardSkeleton />;
   if (isError || !data?.data) return <Error404Page />;
