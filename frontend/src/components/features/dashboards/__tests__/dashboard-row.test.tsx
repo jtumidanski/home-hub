@@ -54,6 +54,12 @@ describe("DashboardRow", () => {
     expect(screen.getByRole("link", { name: /edit home/i })).toHaveAttribute("href", "/app/dashboards/d-1/edit");
   });
 
+  it("gives icon-only drag handle and edit link 44px coarse-pointer targets", () => {
+    renderRow(dash({ id: "d-1", name: "Home" }));
+    expect(screen.getByRole("button", { name: /drag home to reorder/i })).toHaveClass("coarse:size-11");
+    expect(screen.getByRole("link", { name: /edit home/i })).toHaveClass("coarse:size-11");
+  });
+
   it("renders the kebab actions trigger", () => {
     renderRow(dash({ id: "d-1", name: "Home" }));
     expect(screen.getByRole("button", { name: /dashboard actions for home/i })).toBeInTheDocument();

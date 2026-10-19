@@ -40,6 +40,11 @@ describe("PaletteDrawer", () => {
     expect(screen.getByTestId("palette-add-tasks-summary")).toBeInTheDocument();
   });
 
+  it("renders the themed overlay backdrop", () => {
+    render(<PaletteDrawer open onOpenChange={vi.fn()} dispatch={vi.fn()} />);
+    expect(document.body.querySelector(".bg-overlay")).not.toBeNull();
+  });
+
   it("adds a widget and closes the drawer on click", () => {
     const dispatch = vi.fn();
     const onOpenChange = vi.fn();
