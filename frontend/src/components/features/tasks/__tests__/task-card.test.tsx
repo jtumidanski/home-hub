@@ -26,7 +26,7 @@ describe("TaskCard", () => {
 
     expect(screen.getByText("Buy groceries")).toBeInTheDocument();
     expect(screen.getByText("pending")).toBeInTheDocument();
-    expect(screen.getByText("2099-12-31")).toBeInTheDocument();
+    expect(screen.getByText(/Due 2099-12-31/)).toBeInTheDocument();
   });
 
   it('renders "Mark complete" action for pending task', async () => {

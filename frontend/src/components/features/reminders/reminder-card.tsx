@@ -51,12 +51,12 @@ export function ReminderCard({ reminder, ownerName, onSnooze, onDismiss, onDelet
           <Badge variant={attributes.active ? "default" : "secondary"}>
             {statusLabel}
           </Badge>
-          <span className="inline-flex items-center gap-1 text-xs text-muted-foreground">
-            <Clock className="h-3 w-3" />
+          <span className="inline-flex items-center gap-1 text-sm text-muted-foreground tabular-nums">
+            <Clock aria-hidden="true" className="h-3.5 w-3.5" />
             {new Date(attributes.scheduledFor).toLocaleString()}
           </span>
           {ownerName && (
-            <span className="text-xs text-muted-foreground">{ownerName}</span>
+            <span className="text-sm text-muted-foreground">{ownerName}</span>
           )}
         </div>
       </CardContent>

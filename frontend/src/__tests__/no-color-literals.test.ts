@@ -10,8 +10,6 @@ const SCANNED_ROOTS = ["components/features", "pages"];
 const PENDING: string[] = [
   "components/features/households/",
   "components/features/packages/",
-  "components/features/reminders/",
-  "components/features/tasks/",
   "components/features/tracker/",
   "components/features/trackers/",
   "components/features/weather/",
@@ -21,9 +19,7 @@ const PENDING: string[] = [
   "pages/HouseholdMembersPage.tsx",
   "pages/HouseholdsPage.tsx",
   "pages/PackagesPage.tsx",
-  "pages/RemindersPage.tsx",
   "pages/SettingsPage.tsx",
-  "pages/TasksPage.tsx",
   "pages/TrackerPage.tsx",
   "pages/WeatherPage.tsx",
   "pages/WorkoutExercisesPage.tsx",

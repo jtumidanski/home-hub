@@ -92,6 +92,9 @@ describe("RemindersPage", () => {
     renderWithRouter(<RemindersPage />);
     expect(screen.getByText("Doctor appointment")).toBeInTheDocument();
     expect(screen.getByText("active")).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Snooze reminder" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Dismiss reminder" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Delete reminder" })).toBeInTheDocument();
   });
 
   it("opens create dialog when New Reminder button is clicked", async () => {

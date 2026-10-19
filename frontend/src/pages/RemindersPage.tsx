@@ -14,9 +14,11 @@ import { ReminderCard } from "@/components/features/reminders/reminder-card";
 import { CreateReminderDialog } from "@/components/features/reminders/create-reminder-dialog";
 import { DataTable, type DataTableColumnDef } from "@/components/common/data-table";
 import { ErrorCard } from "@/components/common/error-card";
+import { PageHeader } from "@/components/common/page-header";
+import { EmptyState } from "@/components/common/empty-state";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Plus, Clock, BellOff, Trash2 } from "lucide-react";
+import { Plus, Clock, BellOff, Trash2, Bell } from "lucide-react";
 
 const REMINDER_STATUS_OPTIONS = [
   { value: "active", label: "Active" },
@@ -115,7 +117,7 @@ export function RemindersPage() {
       cell: ({ row }) => (
         <div>
           <p className="font-medium">{row.original.attributes.title}</p>
-          <p className="text-xs text-muted-foreground">
+          <p className="text-sm text-muted-foreground tabular-nums">
             {new Date(row.original.attributes.scheduledFor).toLocaleString()}
           </p>
         </div>
@@ -151,15 +153,15 @@ export function RemindersPage() {
           <div className="flex items-center gap-1">
             {rem.attributes.active && (
               <>
-                <Button variant="ghost" size="sm" onClick={(e) => { e.stopPropagation(); handleSnooze(rem.id); }}>
+                <Button variant="ghost" size="sm" className="coarse:min-h-11 coarse:min-w-11" aria-label="Snooze reminder" onClick={(e) => { e.stopPropagation(); handleSnooze(rem.id); }}>
                   <Clock className="h-4 w-4" />
                 </Button>
-                <Button variant="ghost" size="sm" onClick={(e) => { e.stopPropagation(); handleDismiss(rem.id); }}>
+                <Button variant="ghost" size="sm" className="coarse:min-h-11 coarse:min-w-11" aria-label="Dismiss reminder" onClick={(e) => { e.stopPropagation(); handleDismiss(rem.id); }}>
                   <BellOff className="h-4 w-4" />
                 </Button>
               </>
             )}
-            <Button variant="ghost" size="sm" onClick={(e) => { e.stopPropagation(); handleDelete(rem.id); }}>
+            <Button variant="ghost" size="sm" className="coarse:min-h-11 coarse:min-w-11" aria-label="Delete reminder" onClick={(e) => { e.stopPropagation(); handleDelete(rem.id); }}>
               <Trash2 className="h-4 w-4 text-destructive" />
             </Button>
           </div>
@@ -187,12 +189,14 @@ export function RemindersPage() {
   return (
     <PullToRefresh onRefresh={handleRefresh}>
       <div className="p-4 md:p-6 space-y-4">
-        <div className="flex items-center justify-between">
-          <h1 className="text-xl md:text-2xl font-semibold">Reminders</h1>
-          <Button size="sm" onClick={() => setOpen(true)}>
-            <Plus className="mr-2 h-4 w-4" />New Reminder
-          </Button>
-        </div>
+        <PageHeader
+          title="Reminders"
+          actions={
+            <Button size="sm" className="coarse:min-h-11" onClick={() => setOpen(true)}>
+              <Plus className="mr-2 h-4 w-4" />New Reminder
+            </Button>
+          }
+        />
 
         <ListFilterBar statusOptions={REMINDER_STATUS_OPTIONS} />
 
@@ -200,16 +204,17 @@ export function RemindersPage() {
 
         {isMobile ? (
           filteredReminders.length === 0 ? (
-            <div className="flex flex-col items-center justify-center py-12 text-center">
-              <p className="text-muted-foreground">
-                {hasActiveFilters ? "No items found." : "No reminders yet. Create your first reminder to get started."}
-              </p>
-              {hasActiveFilters && (
-                <Button variant="link" size="sm" onClick={() => window.history.pushState({}, "", window.location.pathname)}>
-                  Clear filters
-                </Button>
-              )}
-            </div>
+            <EmptyState
+              icon={Bell}
+              title={hasActiveFilters ? "No items found." : "No reminders yet. Create your first reminder to get started."}
+              action={
+                hasActiveFilters ? (
+                  <Button variant="link" size="sm" onClick={() => window.history.pushState({}, "", window.location.pathname)}>
+                    Clear filters
+                  </Button>
+                ) : undefined
+              }
+            />
           ) : (
             <div className="space-y-3">
               {filteredReminders.map((reminder) => (

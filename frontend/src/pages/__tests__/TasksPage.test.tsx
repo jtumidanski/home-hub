@@ -84,6 +84,7 @@ describe("TasksPage", () => {
     expect(screen.getByText("Buy milk")).toBeInTheDocument();
     expect(screen.getByText("Walk dog")).toBeInTheDocument();
     expect(screen.getByText("Due: 2026-04-01")).toBeInTheDocument();
+    expect(screen.getAllByRole("button", { name: "Delete task" })).toHaveLength(2);
   });
 
   it("opens create dialog when New Task button is clicked", async () => {
