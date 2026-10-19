@@ -29,7 +29,7 @@ export function PaletteDrawer({ open, onOpenChange, dispatch }: PaletteDrawerPro
       <DialogPrimitive.Portal>
         <DialogPrimitive.Backdrop
           className={cn(
-            "fixed inset-0 z-50 bg-black/30 duration-100 data-open:animate-in data-open:fade-in-0 data-closed:animate-out data-closed:fade-out-0",
+            "fixed inset-0 z-50 bg-overlay duration-100 data-open:animate-in data-open:fade-in-0 data-closed:animate-out data-closed:fade-out-0",
           )}
         />
         <DialogPrimitive.Popup
@@ -39,11 +39,11 @@ export function PaletteDrawer({ open, onOpenChange, dispatch }: PaletteDrawerPro
           )}
         >
           <div className="flex items-center justify-between">
-            <DialogPrimitive.Title className="font-heading text-base font-medium">
+            <DialogPrimitive.Title className="font-heading text-lg font-medium">
               Add widget
             </DialogPrimitive.Title>
             <DialogPrimitive.Close
-              render={<Button variant="ghost" size="icon-sm" />}
+              render={<Button variant="ghost" size="icon-sm" className="coarse:size-11" />}
               aria-label="Close palette"
             >
               <XIcon />

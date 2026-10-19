@@ -21,6 +21,8 @@ import { DashboardRow } from "@/components/features/dashboards/dashboard-row";
 import { NewDashboardModal } from "@/components/features/dashboards/new-dashboard-modal";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
+import { PageHeader } from "@/components/common/page-header";
+import { EmptyState } from "@/components/common/empty-state";
 import { ErrorCard } from "@/components/common/error-card";
 import type { Dashboard } from "@/types/models/dashboard";
 
@@ -111,22 +113,26 @@ export function DashboardManagementPage() {
 
   return (
     <div className="p-4 md:p-6 space-y-4">
-      <div className="flex items-center justify-between">
-        <h1 className="text-xl md:text-2xl font-semibold">Dashboards</h1>
-        <Button size="sm" onClick={() => setModalOpen(true)}>
-          <Plus className="mr-2 h-4 w-4" />New Dashboard
-        </Button>
-      </div>
+      <PageHeader
+        title="Dashboards"
+        actions={
+          <Button size="sm" onClick={() => setModalOpen(true)}>
+            <Plus className="mr-2 h-4 w-4" />New Dashboard
+          </Button>
+        }
+      />
 
       <NewDashboardModal open={modalOpen} onOpenChange={setModalOpen} />
 
       {isEmpty ? (
-        <div className="flex flex-col items-center justify-center py-12 text-center space-y-4">
-          <p className="text-muted-foreground">No dashboards yet.</p>
-          <Button variant="outline" onClick={() => setModalOpen(true)}>
-            <Plus className="mr-2 h-4 w-4" />Create First Dashboard
-          </Button>
-        </div>
+        <EmptyState
+          title="No dashboards yet."
+          action={
+            <Button variant="outline" onClick={() => setModalOpen(true)}>
+              <Plus className="mr-2 h-4 w-4" />Create First Dashboard
+            </Button>
+          }
+        />
       ) : (
         <div className="space-y-6">
           {householdList.length > 0 &&

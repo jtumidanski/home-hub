@@ -23,7 +23,7 @@ export function DashboardShell() {
         className="flex min-h-[50vh] items-center justify-center p-6 text-center"
       >
         <div className="max-w-md space-y-2">
-          <h2 className="text-lg font-semibold">Dashboard needs a newer app version</h2>
+          <h2 className="font-heading text-lg">Dashboard needs a newer app version</h2>
           <p className="text-sm text-muted-foreground">
             This dashboard was saved with a newer layout schema than this app supports.
             Please refresh your browser to load the latest version.
@@ -36,7 +36,18 @@ export function DashboardShell() {
   return (
     <div className="flex flex-col">
       <div className="flex items-center justify-between p-4 md:px-6 md:pt-6">
-        <h1 className="text-xl md:text-2xl font-semibold">{dashboard.attributes.name}</h1>
+        <div className="min-w-0 space-y-1">
+          <h1 className="break-words font-heading text-2xl tracking-[-0.01em]">
+            {dashboard.attributes.name}
+          </h1>
+          <p className="text-sm text-muted-foreground">
+            {new Date().toLocaleDateString(undefined, {
+              weekday: "long",
+              day: "numeric",
+              month: "long",
+            })}
+          </p>
+        </div>
         {isMobile ? (
           <Button
             variant="outline"

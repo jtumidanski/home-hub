@@ -42,7 +42,7 @@ export default function DashboardDesigner() {
         data-testid="designer-mobile-blocker"
       >
         <div className="max-w-md space-y-3">
-          <h2 className="text-lg font-semibold">Editing needs a larger screen</h2>
+          <h2 className="font-heading text-lg">Editing needs a larger screen</h2>
           <p className="text-sm text-muted-foreground">
             The dashboard designer is only available on tablet-or-wider screens.
             Switch to a larger device to make changes.

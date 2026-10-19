@@ -111,7 +111,7 @@ export function DashboardRedirect() {
 function DashboardMessage({ title, body }: { title: string; body: string }) {
   return (
     <div className="p-8 max-w-xl mx-auto">
-      <h1 className="text-xl font-semibold mb-2">{title}</h1>
+      <h1 className="font-heading text-2xl tracking-[-0.01em] mb-2">{title}</h1>
       <p className="text-muted-foreground">{body}</p>
     </div>
   );
