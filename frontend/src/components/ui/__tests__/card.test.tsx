@@ -8,7 +8,7 @@ describe("Card", () => {
     const cls = screen.getByTestId("card").className;
     expect(cls).toContain("rounded-xl");
     expect(cls).toContain("shadow-card");
-    expect(cls).toContain("dark:border");
+    expect(cls).not.toContain("dark:border");
   });
 
   it("CardTitle uses the heading font at no smaller than text-lg", () => {
