@@ -69,4 +69,16 @@ describe("MealPlanTodayDetail", () => {
     expect(screen.getByText("Sat")).toBeInTheDocument();
     expect(screen.queryByText("05-02")).not.toBeInTheDocument();
   });
+
+  it("steps slot and weekday labels up on the kiosk container", () => {
+    mockPlan([
+      { id: "1", day: "2026-05-01", slot: "dinner", recipe_id: "r1", recipe_title: "Tacos" },
+      { id: "4", day: "2026-05-02", slot: "dinner", recipe_id: "r4", recipe_title: "Pasta" },
+    ]);
+    render(<MemoryRouter><MealPlanTodayDetail horizonDays={3} /></MemoryRouter>);
+    for (const label of [screen.getByText("Dinner"), screen.getByText("Sat")]) {
+      expect(label).toHaveClass("text-sm", "@xl:text-xl", "w-20", "@xl:w-28");
+    }
+    expect(screen.getByRole("heading", { level: 3, name: "Today" })).toBeInTheDocument();
+  });
 });

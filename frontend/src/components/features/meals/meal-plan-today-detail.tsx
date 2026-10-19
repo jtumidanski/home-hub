@@ -80,7 +80,7 @@ export function MealPlanTodayDetail({ horizonDays }: MealPlanTodayDetailProps) {
         </CardHeader>
         <CardContent className="space-y-3">
           <section>
-            <h4 className="text-xs font-medium text-muted-foreground">Today</h4>
+            <h3 className="text-xs @xl:text-base font-medium text-muted-foreground">Today</h3>
             {today.length === 0 ? (
               <div className="flex items-center gap-2 text-muted-foreground mt-1">
                 <UtensilsCrossed className="size-4 @xl:size-6 shrink-0" aria-hidden="true" />
@@ -90,7 +90,7 @@ export function MealPlanTodayDetail({ horizonDays }: MealPlanTodayDetailProps) {
               <ul className="mt-1 space-y-1">
                 {today.map((item) => (
                   <li key={item.id} className="flex items-baseline gap-2">
-                    <span className="text-xs font-medium text-muted-foreground w-16 shrink-0">
+                    <span className="text-sm @xl:text-xl font-medium text-muted-foreground w-20 @xl:w-28 shrink-0">
                       {SLOT_LABELS[item.slot]}
                     </span>
                     <span className="text-sm @xl:text-xl truncate">{item.recipe_title}</span>
@@ -101,13 +101,13 @@ export function MealPlanTodayDetail({ horizonDays }: MealPlanTodayDetailProps) {
           </section>
           {followUps.length > 0 && (
             <section>
-              <h4 className="text-xs font-medium text-muted-foreground">
+              <h3 className="text-xs @xl:text-base font-medium text-muted-foreground">
                 Next {followUps.length} {followUps.length === 1 ? "day" : "days"}
-              </h4>
+              </h3>
               <ul className="mt-1 space-y-1">
                 {followUps.map((f) => (
                   <li key={f.day} className="flex items-baseline gap-2">
-                    <span className="text-xs font-medium text-muted-foreground w-16 shrink-0">
+                    <span className="text-sm @xl:text-xl font-medium text-muted-foreground w-20 @xl:w-28 shrink-0">
                       {formatShortWeekday(f.day)}
                     </span>
                     <span className="text-sm @xl:text-xl truncate">{f.item?.recipe_title ?? "—"}</span>

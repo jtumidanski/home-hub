@@ -94,13 +94,13 @@ export function MealPlanWidget(_props: MealPlanWidgetProps = {}) {
         {todayItems.length === 0 ? (
           <div className="flex items-center gap-2 text-muted-foreground">
             <UtensilsCrossed className="size-5 @xl:size-6 shrink-0" aria-hidden="true" />
-            <p className="text-sm">No meals planned for today</p>
+            <p className="text-sm @xl:text-xl">No meals planned for today</p>
           </div>
         ) : (
           <div className="space-y-2">
             {todayItems.map((item) => (
               <div key={item.id} className="flex items-baseline gap-2">
-                <span className="text-xs font-medium text-muted-foreground w-16 shrink-0">
+                <span className="text-sm @xl:text-xl font-medium text-muted-foreground w-20 @xl:w-28 shrink-0">
                   {SLOT_LABELS[item.slot]}
                 </span>
                 <Link
