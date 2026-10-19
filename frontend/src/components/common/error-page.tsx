@@ -1,5 +1,7 @@
-import { useNavigate } from "react-router-dom";
-import { Button } from "@/components/ui/button";
+import { useState } from "react";
+import { Link, useNavigate } from "react-router-dom";
+import { Button, buttonVariants } from "@/components/ui/button";
+import { cn } from "@/lib/utils";
 import { EmptyState } from "@/components/common/empty-state";
 import { AlertTriangle } from "lucide-react";
 
@@ -32,7 +34,7 @@ function getDefaultMessage(statusCode: number): string {
     case 403:
       return "You don't have permission to access this page.";
     case 500:
-      return "An unexpected error occurred. Please try again later.";
+      return "Something went wrong on our end. Please try again in a moment.";
     default:
       return "An unexpected error occurred.";
   }
@@ -47,6 +49,7 @@ export function ErrorPage({
   onRetry,
 }: ErrorPageProps) {
   const navigate = useNavigate();
+  const [retrying, setRetrying] = useState(false);
 
   return (
     <div className="flex min-h-[50vh] items-center justify-center p-6">
@@ -57,18 +60,31 @@ export function ErrorPage({
         title={title ?? getDefaultTitle(statusCode)}
         description={message ?? getDefaultMessage(statusCode)}
         action={
-          showBackButton || (showRetryButton && onRetry) ? (
-            <div className="flex justify-center gap-2">
+          <div className="flex flex-col items-center gap-2">
+            <div className="flex flex-wrap justify-center gap-2">
               {showBackButton && (
                 <Button variant="outline" onClick={() => navigate(-1)}>
                   Go Back
                 </Button>
               )}
               {showRetryButton && onRetry && (
-                <Button onClick={onRetry}>Try Again</Button>
+                <Button
+                  onClick={() => {
+                    setRetrying(true);
+                    onRetry();
+                  }}
+                >
+                  Try Again
+                </Button>
               )}
+              <Link to="/app" className={cn(buttonVariants({ variant: "outline" }))}>
+                Home
+              </Link>
             </div>
-          ) : undefined
+            <p role="status" className="sr-only">
+              {retrying ? "Retrying…" : ""}
+            </p>
+          </div>
         }
       />
     </div>

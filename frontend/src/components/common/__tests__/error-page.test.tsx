@@ -14,6 +14,19 @@ describe("ErrorPage", () => {
     expect(screen.getByRole("heading", { level: 1, name: "Page Not Found" })).toBeInTheDocument();
   });
 
+  it("renders a Home link to the app", () => {
+    renderWithRouter(<ErrorPage statusCode={404} />);
+    expect(screen.getByRole("link", { name: "Home" })).toHaveAttribute("href", "/app");
+  });
+
+  it("announces a retry in a live region", async () => {
+    const user = userEvent.setup();
+    renderWithRouter(<ErrorPage statusCode={500} showRetryButton onRetry={vi.fn()} />);
+    expect(screen.getByRole("status")).toBeEmptyDOMElement();
+    await user.click(screen.getByRole("button", { name: /try again/i }));
+    expect(screen.getByRole("status")).toHaveTextContent("Retrying");
+  });
+
   it("renders default title for 404", () => {
     renderWithRouter(<ErrorPage statusCode={404} />);
     expect(screen.getByText("Page Not Found")).toBeInTheDocument();

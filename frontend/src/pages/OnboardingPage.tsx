@@ -17,8 +17,9 @@ import { invitationRoleLabelMap } from "@/types/models/invitation";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
-import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
+import { Card, CardContent, CardDescription, CardFooter, CardHeader } from "@/components/ui/card";
+import { BrandMark } from "@/components/common/brand-mark";
+import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Loader2, Check, X, Clock } from "lucide-react";
 
@@ -26,6 +27,7 @@ export function OnboardingPage() {
   const { user } = useAuth();
   const navigate = useNavigate();
   const [step, setStep] = useState<"invitations" | "tenant" | "household">("invitations");
+  const [skippedInvitations, setSkippedInvitations] = useState(false);
   const [createdTenant, setCreatedTenant] = useState<Tenant | null>(null);
   const createTenant = useCreateTenant();
   const createHousehold = useOnboardingCreateHousehold();
@@ -43,6 +45,11 @@ export function OnboardingPage() {
     ? "tenant"
     : step;
 
+  // The invitations step only counts when the user actually saw invitations.
+  const totalSteps = myInvitations.length > 0 || skippedInvitations ? 3 : 2;
+  const stepNumber =
+    effectiveStep === "household" ? totalSteps : effectiveStep === "tenant" ? totalSteps - 1 : 1;
+
   const handleAcceptInvitation = async (id: string) => {
     try {
       await acceptInvitation.mutateAsync(id);
@@ -58,6 +65,7 @@ export function OnboardingPage() {
       for (const inv of myInvitations) {
         await declineInvitation.mutateAsync(inv.id);
       }
+      setSkippedInvitations(true);
       setStep("tenant");
     } catch (error) {
       toast.error(createErrorFromUnknown(error, "Failed to decline invitations").message);
@@ -108,7 +116,11 @@ export function OnboardingPage() {
     <div className="flex min-h-dvh items-center justify-center bg-background px-4">
       <Card className="w-full max-w-md">
         <CardHeader className="text-center">
-          <CardTitle className="font-heading text-2xl tracking-[-0.01em] min-w-0 break-words">Welcome to Home Hub</CardTitle>
+          <BrandMark className="mx-auto mb-2 size-12" />
+          <p className="text-xs font-medium text-muted-foreground">
+            Step {stepNumber} of {totalSteps}
+          </p>
+          <h1 className="font-heading text-2xl tracking-[-0.01em] min-w-0 break-words">Welcome to Home Hub</h1>
           <CardDescription>
             {effectiveStep === "invitations"
               ? "You have pending invitations"
@@ -129,7 +141,7 @@ export function OnboardingPage() {
                     (h) => h.id === inv.relationships.household.data.id,
                   );
                   return (
-                    <div key={inv.id} className="flex items-center justify-between gap-3 rounded-md border p-3">
+                    <div key={inv.id} className="flex flex-wrap items-center justify-between gap-3 rounded-md border bg-background p-3">
                       <div className="min-w-0 flex-1">
                         <p className="font-medium">{hh?.attributes.name ?? "Unknown Household"}</p>
                         <div className="flex items-center gap-2 mt-1">
@@ -141,7 +153,7 @@ export function OnboardingPage() {
                         </div>
                       </div>
                       <Button
-                        size="sm"
+                        size="lg"
                         onClick={() => handleAcceptInvitation(inv.id)}
                         disabled={acceptInvitation.isPending}
                       >
@@ -161,9 +173,12 @@ export function OnboardingPage() {
                   <X className="mr-1 h-4 w-4" />Decline All
                 </Button>
                 <Button
-                  variant="outline"
+                  variant="secondary"
                   className="flex-1"
-                  onClick={() => setStep("tenant")}
+                  onClick={() => {
+                    setSkippedInvitations(true);
+                    setStep("tenant");
+                  }}
                 >
                   Create My Own
                 </Button>
@@ -220,6 +235,7 @@ export function OnboardingPage() {
                       <FormControl>
                         <Input {...field} />
                       </FormControl>
+                      <FormDescription>Use an IANA name, like America/New_York.</FormDescription>
                       <FormMessage />
                     </FormItem>
                   )}

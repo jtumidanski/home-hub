@@ -73,6 +73,29 @@ describe("OnboardingPage", () => {
     expect(screen.getByRole("button", { name: /continue/i })).toBeInTheDocument();
   });
 
+  it("renders exactly one h1 with the heading font and a step label", async () => {
+    renderPage();
+    const headings = screen.getAllByRole("heading", { level: 1 });
+    expect(headings).toHaveLength(1);
+    expect(headings[0]).toHaveClass("font-heading");
+    expect(await screen.findByText("Step 1 of 2")).toBeInTheDocument();
+  });
+
+  it("labels every form control on the tenant and household steps", async () => {
+    const user = userEvent.setup();
+    mockCreateTenantMutateAsync.mockResolvedValue({
+      data: { id: "t-1", type: "tenants", attributes: { name: "Home" } },
+    });
+    renderPage();
+    expect(screen.getByLabelText("Account Name")).toBeInTheDocument();
+    await user.click(screen.getByRole("button", { name: /continue/i }));
+    expect(await screen.findByLabelText("Household Name")).toBeInTheDocument();
+    expect(screen.getByLabelText("Timezone")).toBeInTheDocument();
+    expect(screen.getByLabelText("Imperial")).toBeInTheDocument();
+    expect(screen.getByLabelText("Metric")).toBeInTheDocument();
+    expect(screen.getByText("Step 2 of 2")).toBeInTheDocument();
+  });
+
   it("pre-fills tenant name from user display name", async () => {
     renderPage();
     await waitFor(() => {

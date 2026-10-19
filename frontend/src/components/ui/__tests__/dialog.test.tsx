@@ -25,4 +25,15 @@ describe("Dialog", () => {
     expect(popup).toContain("max-h-[calc(100dvh-2rem)]");
     expect(popup).toContain("overflow-y-auto");
   });
+
+  it("omits the title's close-button padding when the close button is hidden", () => {
+    render(
+      <Dialog open>
+        <DialogContent showCloseButton={false}>
+          <DialogTitle>Heading</DialogTitle>
+        </DialogContent>
+      </Dialog>,
+    );
+    expect(screen.getByText("Heading").className).not.toContain("pr-8");
+  });
 });

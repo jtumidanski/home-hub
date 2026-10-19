@@ -5,6 +5,10 @@ import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
 import { XIcon } from "lucide-react"
 
+// Lets DialogTitle reserve room for the absolutely-positioned close button only
+// when DialogContent actually renders it.
+const DialogCloseButtonContext = React.createContext(true)
+
 function Dialog({ ...props }: DialogPrimitive.Root.Props) {
   return <DialogPrimitive.Root data-slot="dialog" {...props} />
 }
@@ -56,7 +60,9 @@ function DialogContent({
         )}
         {...props}
       >
-        {children}
+        <DialogCloseButtonContext.Provider value={showCloseButton}>
+          {children}
+        </DialogCloseButtonContext.Provider>
         {showCloseButton && (
           <DialogPrimitive.Close
             data-slot="dialog-close"
@@ -116,11 +122,13 @@ function DialogFooter({
 }
 
 function DialogTitle({ className, ...props }: DialogPrimitive.Title.Props) {
+  const hasCloseButton = React.useContext(DialogCloseButtonContext)
   return (
     <DialogPrimitive.Title
       data-slot="dialog-title"
       className={cn(
-        "font-heading text-lg tracking-[-0.01em] leading-tight font-medium pr-8",
+        "font-heading text-lg tracking-[-0.01em] leading-tight font-medium",
+        hasCloseButton && "pr-8",
         className
       )}
       {...props}

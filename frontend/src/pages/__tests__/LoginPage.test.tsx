@@ -21,6 +21,25 @@ describe("LoginPage", () => {
     mockUseProviders.mockReturnValue({ data: null, isLoading: false, isError: false });
   });
 
+  it("renders exactly one h1 with the heading font", () => {
+    render(<LoginPage />);
+    const headings = screen.getAllByRole("heading", { level: 1 });
+    expect(headings).toHaveLength(1);
+    expect(headings[0]).toHaveClass("font-heading");
+  });
+
+  it("renders provider sign-in as a single link with no nested button", () => {
+    mockUseProviders.mockReturnValue({
+      data: { data: [{ id: "google", type: "auth-providers", attributes: { slug: "google", displayName: "Google" } }] },
+      isLoading: false,
+      isError: false,
+    });
+    render(<LoginPage />);
+    const link = screen.getByRole("link", { name: "Sign in with Google" });
+    expect(link.querySelector("button")).toBeNull();
+    expect(screen.queryByRole("button")).not.toBeInTheDocument();
+  });
+
   it("renders loading skeleton when isLoading is true", () => {
     mockUseProviders.mockReturnValue({ data: null, isLoading: true, isError: false });
     render(<LoginPage />);
