@@ -169,7 +169,10 @@ describe("HouseholdMembersPage", () => {
       isError: false,
     });
     renderPage();
-    expect(screen.getByText("Sole Owner")).toBeInTheDocument();
+    const badge = screen.getByText("Sole Owner");
+    expect(badge).toBeInTheDocument();
+    expect(badge).toHaveClass("bg-warning");
+    expect(badge).not.toHaveClass("bg-destructive");
   });
 
   it("renders pending invitations section", () => {
