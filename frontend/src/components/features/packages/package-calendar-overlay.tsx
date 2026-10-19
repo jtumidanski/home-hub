@@ -1,6 +1,7 @@
 import type { CalendarEvent } from "@/types/models/calendar";
 import type { Package } from "@/types/models/package";
 import { CARRIER_LABELS } from "@/types/models/package";
+import { PACKAGE_EVENT_COLOR } from "@/lib/calendar/event-colors";
 
 /**
  * Converts packages with ETAs into CalendarEvent objects so they can be
@@ -30,7 +31,7 @@ export function packagesToCalendarEvents(packages: Package[]): CalendarEvent[] {
           location: null,
           visibility: "default",
           userDisplayName: carrier,
-          userColor: "#0d9488", // teal-600 for package events
+          userColor: PACKAGE_EVENT_COLOR,
           isOwner: p.attributes.isOwner,
           sourceId: "",
           connectionId: "",

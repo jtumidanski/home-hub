@@ -1,7 +1,7 @@
 import { useState } from "react";
 import type { CalendarEvent } from "@/types/models/calendar";
 import { EventPopover } from "./event-popover";
-import { eventChipColors } from "./calendar-utils";
+import { eventChipColors } from "@/lib/calendar/event-colors";
 
 interface EventBlockProps {
   event: CalendarEvent;
@@ -28,13 +28,13 @@ export function EventBlock({ event, top, height, left, width, hasWriteAccess, on
           height: `${Math.max(height, 18)}px`,
           left,
           width,
-          ...eventChipColors(event),
+          ...eventChipColors(attrs),
         }}
         onClick={() => setShowPopover(true)}
       >
         <div className="font-medium truncate">{attrs.title}</div>
         {height > 30 && (
-          <div className="truncate opacity-80">
+          <div className="truncate">
             {new Date(attrs.startTime).toLocaleTimeString([], { hour: "numeric", minute: "2-digit" })}
           </div>
         )}

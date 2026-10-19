@@ -1,7 +1,6 @@
 import { describe, it, expect } from "vitest";
 import type { CalendarEvent } from "@/types/models/calendar";
 import {
-  eventChipColors,
   HOUR_HEIGHT,
   getStartOfWeek,
   getWeekDays,
@@ -500,27 +499,5 @@ describe("getEventsForDay timezone correctness", () => {
     const mar8 = new Date(Date.UTC(2026, 2, 8, 12));
     expect(getEventsForDay([evt], mar8, "America/New_York").timed).toHaveLength(1);
     expect(getEventsForDay([evt], mar7, "America/New_York").timed).toHaveLength(0);
-  });
-});
-
-describe("eventChipColors", () => {
-  const base = {
-    id: "e1",
-    type: "calendar-events",
-    attributes: { title: "Dentist", isOwner: true, userColor: "#1e3a8a" },
-  } as unknown as CalendarEvent;
-
-  it("uses paper text on a dark user colour and ink text on a light one", () => {
-    expect(eventChipColors(base).color).toBe("var(--on-color-paper)");
-    const light = { ...base, attributes: { ...base.attributes, userColor: "#fde68a" } } as CalendarEvent;
-    expect(eventChipColors(light)).toEqual({ backgroundColor: "#fde68a", color: "var(--on-color-ink)" });
-  });
-
-  it("uses the busy token pair for another user's Busy placeholder", () => {
-    const busy = { ...base, attributes: { ...base.attributes, title: "Busy", isOwner: false } } as CalendarEvent;
-    expect(eventChipColors(busy)).toEqual({
-      backgroundColor: "var(--calendar-busy)",
-      color: "var(--calendar-busy-foreground)",
-    });
   });
 });

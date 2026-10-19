@@ -1,5 +1,6 @@
 import type { CalendarEvent } from "@/types/models/calendar";
 import { cn } from "@/lib/utils";
+import { eventChipColors } from "@/lib/calendar/event-colors";
 import { MonthEventChip } from "./month-event-chip";
 
 interface DayBucket {
@@ -19,11 +20,6 @@ interface MonthDayCellProps {
 
 const MAX_DOTS = 4;
 
-function eventColor(event: CalendarEvent): string {
-  const { attributes: attrs } = event;
-  return attrs.title === "Busy" && !attrs.isOwner ? "var(--calendar-busy)" : attrs.userColor;
-}
-
 function MonthDayDots({ events }: { events: CalendarEvent[] }) {
   const overflow = events.length > MAX_DOTS;
   const shown = overflow ? events.slice(0, MAX_DOTS - 1) : events;
@@ -33,7 +29,7 @@ function MonthDayDots({ events }: { events: CalendarEvent[] }) {
         <span
           key={evt.id}
           className="w-1.5 h-1.5 rounded-full"
-          style={{ backgroundColor: eventColor(evt) }}
+          style={{ backgroundColor: eventChipColors(evt.attributes).backgroundColor }}
         />
       ))}
       {overflow && (
