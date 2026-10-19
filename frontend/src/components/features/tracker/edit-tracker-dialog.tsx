@@ -74,7 +74,7 @@ export function EditTrackerDialog({ open, onClose, tracker }: Props) {
               <div className="flex flex-wrap gap-2">
                 {COLOR_PALETTE.map((c) => (
                   <button key={c} type="button" aria-label={c} aria-pressed={field.value === c}
-                    className={cn("flex h-8 w-8 items-center justify-center rounded-full border-2 transition-all", swatchClass(c, "solid"), field.value === c ? "border-foreground scale-110" : "border-transparent")}
+                    className={cn("flex h-8 w-8 items-center justify-center rounded-full border-2 motion-safe:transition-colors", swatchClass(c, "solid"), field.value === c ? "border-foreground motion-safe:scale-110" : "border-transparent")}
                     onClick={() => field.onChange(c)}
                   >
                     {field.value === c && <span className="flex h-4 w-4 items-center justify-center rounded-full bg-background text-foreground"><Check className="h-3 w-3" aria-hidden="true" /></span>}

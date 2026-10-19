@@ -56,7 +56,7 @@ export function TodayView() {
       {items.length > 0 && (
         <div className="flex items-center gap-2 text-sm text-muted-foreground">
           <div className="flex-1 bg-muted rounded-full h-2 overflow-hidden">
-            <div className="bg-primary h-full transition-all" style={{ width: `${items.length > 0 ? (filledAndSkipped / items.length) * 100 : 0}%` }} />
+            <div className="bg-primary h-full motion-safe:transition-[width]" style={{ width: `${items.length > 0 ? (filledAndSkipped / items.length) * 100 : 0}%` }} />
           </div>
           <span>{filledAndSkipped}/{items.length} entries</span>
         </div>
