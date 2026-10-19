@@ -97,4 +97,17 @@ describe("DashboardKebabMenu", () => {
     const item = await screen.findByRole("menuitem", { name: /set as my default/i });
     expect(item).not.toHaveAttribute("data-disabled");
   });
+
+  it("styles the Delete item destructive when highlighted", async () => {
+    const user = userEvent.setup();
+    render(
+      <MemoryRouter>
+        <DashboardKebabMenu dashboard={dash("household")} isDefault={false} />
+      </MemoryRouter>,
+    );
+    await openMenu(user, "Name d-1");
+    const item = await screen.findByRole("menuitem", { name: /delete/i });
+    expect(item.className).toContain("data-highlighted:text-destructive");
+    expect(item.className).not.toContain("data-highlighted:text-accent-foreground");
+  });
 });
