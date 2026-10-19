@@ -13,7 +13,7 @@ import {
   sortableKeyboardCoordinates,
   verticalListSortingStrategy,
 } from "@dnd-kit/sortable";
-import { Plus } from "lucide-react";
+import { LayoutDashboard, Plus } from "lucide-react";
 import { useDashboards, useReorderDashboards } from "@/lib/hooks/api/use-dashboards";
 import { useHouseholdPreferences } from "@/lib/hooks/api/use-household-preferences";
 import { sortDashboards, computeReorderEntries } from "@/lib/dashboard/ordering";
@@ -68,7 +68,7 @@ export function DashboardManagementPage() {
     scope: "household" | "user",
   ) => (
     <section className="space-y-2">
-      <h2 className="text-sm font-semibold uppercase tracking-wider text-muted-foreground">
+      <h2 className="font-heading text-lg tracking-[-0.01em] text-foreground">
         {title}
       </h2>
       <DndContext
@@ -126,9 +126,11 @@ export function DashboardManagementPage() {
 
       {isEmpty ? (
         <EmptyState
+          icon={LayoutDashboard}
           title="No dashboards yet."
+          description="Create a dashboard to arrange widgets for your household."
           action={
-            <Button variant="outline" onClick={() => setModalOpen(true)}>
+            <Button onClick={() => setModalOpen(true)}>
               <Plus className="mr-2 h-4 w-4" />Create First Dashboard
             </Button>
           }

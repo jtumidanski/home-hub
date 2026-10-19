@@ -9,6 +9,7 @@ import { useTenant } from "@/context/tenant-context";
 import { seedLayout } from "@/lib/dashboard/seed-layout";
 import { kioskSeedLayout } from "@/lib/dashboard/kiosk-seed-layout";
 import { DashboardSkeleton } from "@/components/common/dashboard-skeleton";
+import { EmptyState } from "@/components/common/empty-state";
 import { getErrorMessage } from "@/lib/api/errors";
 
 /**
@@ -110,9 +111,8 @@ export function DashboardRedirect() {
 
 function DashboardMessage({ title, body }: { title: string; body: string }) {
   return (
-    <div className="p-8 max-w-xl mx-auto">
-      <h1 className="font-heading text-2xl tracking-[-0.01em] mb-2">{title}</h1>
-      <p className="text-muted-foreground">{body}</p>
+    <div className="p-4 md:p-6">
+      <EmptyState headingLevel="h1" title={title} description={body} />
     </div>
   );
 }
