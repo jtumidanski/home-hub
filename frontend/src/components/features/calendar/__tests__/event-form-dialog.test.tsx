@@ -63,6 +63,31 @@ describe("EventFormDialog — Ends control", () => {
     mockCreate.mockResolvedValue({});
   });
 
+  it("enables only the input matching the chosen Ends radio", async () => {
+    const user = userEvent.setup();
+    render(
+      <EventFormDialog
+        open
+        onOpenChange={vi.fn()}
+        connections={[makeConnection()]}
+        sources={[makeSource()]}
+        prefilledStart={new Date("2026-05-06T09:00:00")}
+      />,
+    );
+    await chooseRepeat(user, "Weekly");
+    const date = await screen.findByLabelText("End date", { selector: "input[aria-label='End date']" });
+    const count = screen.getByLabelText("Occurrences");
+    await user.click(screen.getByRole("radio", { name: "Never" }));
+    expect(date).toBeDisabled();
+    expect(count).toBeDisabled();
+    await user.click(screen.getByRole("radio", { name: "After" }));
+    expect(date).toBeDisabled();
+    expect(count).toBeEnabled();
+    await user.click(screen.getByRole("radio", { name: "On" }));
+    expect(date).toBeEnabled();
+    expect(count).toBeDisabled();
+  });
+
   it("hides the Ends control when 'Does not repeat' is selected", () => {
     render(
       <EventFormDialog

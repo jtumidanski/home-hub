@@ -68,6 +68,18 @@ describe("RadioGroupItem", () => {
     expect(radio.className).toContain("checked:border-primary");
     expect(radio.className).not.toContain("accent-primary");
     expect(radio.closest("label")!.className).toContain("coarse:min-h-11");
+    expect(radio.closest("label")!.className).toContain("min-h-6");
+  });
+
+  it("forwards aria props to the radiogroup element", () => {
+    render(
+      <RadioGroup value="a" onValueChange={() => {}} aria-describedby="x" aria-invalid>
+        <RadioGroupItem value="a">Alpha</RadioGroupItem>
+      </RadioGroup>
+    );
+    const group = screen.getByRole("radiogroup");
+    expect(group).toHaveAttribute("aria-describedby", "x");
+    expect(group).toHaveAttribute("aria-invalid", "true");
   });
 
   it("selects an item when its label is clicked", () => {

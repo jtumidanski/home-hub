@@ -9,18 +9,16 @@ interface RadioGroupContextValue {
 
 const RadioGroupContext = createContext<RadioGroupContextValue | undefined>(undefined);
 
-interface RadioGroupProps {
+interface RadioGroupProps extends Omit<React.ComponentProps<"div">, "value" | "onChange" | "role"> {
   value: string;
   onValueChange: (value: string) => void;
-  className?: string;
-  children: ReactNode;
 }
 
-export function RadioGroup({ value, onValueChange, className, children }: RadioGroupProps) {
+export function RadioGroup({ value, onValueChange, className, children, ...props }: RadioGroupProps) {
   const name = useId();
   return (
     <RadioGroupContext.Provider value={{ value, onValueChange, name }}>
-      <div role="radiogroup" className={cn("flex gap-4", className)}>
+      <div {...props} role="radiogroup" className={cn("flex gap-4", className)}>
         {children}
       </div>
     </RadioGroupContext.Provider>
@@ -42,7 +40,7 @@ export function RadioGroupItem({ value, id, className, children }: RadioGroupIte
   const itemId = id ?? `${context.name}-${value}`;
 
   return (
-    <label htmlFor={itemId} className={cn("flex cursor-pointer items-center gap-2 coarse:min-h-11", className)}>
+    <label htmlFor={itemId} className={cn("flex cursor-pointer items-center gap-2 min-h-6 coarse:min-h-11", className)}>
       <input
         type="radio"
         id={itemId}
