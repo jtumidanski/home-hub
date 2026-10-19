@@ -49,7 +49,18 @@ describe("ConfirmDialog", () => {
 
   it("disables both actions while pending", () => {
     setup({ pending: true });
-    expect(screen.getByRole("button", { name: "Remove" })).toBeDisabled();
+    expect(screen.getByRole("button", { name: "Working…" })).toBeDisabled();
     expect(screen.getByRole("button", { name: "Cancel" })).toBeDisabled();
+  });
+
+  it("shows visible pending text on the confirm button", () => {
+    setup({ pending: true });
+    expect(screen.getByRole("button", { name: "Working…" })).toHaveAttribute("aria-busy", "true");
+    expect(screen.queryByRole("button", { name: "Remove" })).not.toBeInTheDocument();
+  });
+
+  it("uses a custom pendingLabel", () => {
+    setup({ pending: true, pendingLabel: "Removing…" });
+    expect(screen.getByRole("button", { name: "Removing…" })).toBeDisabled();
   });
 });

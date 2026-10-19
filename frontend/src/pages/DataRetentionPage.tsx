@@ -20,7 +20,13 @@ import { EmptyState } from "@/components/common/empty-state";
 import { ConfirmDialog } from "@/components/common/confirm-dialog";
 import { retentionService, type RetentionCategoryView } from "@/services/api/retention";
 import { useTenant } from "@/context/tenant-context";
-import { History } from "lucide-react";
+import { History, MoreHorizontal, Trash2 } from "lucide-react";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { toast } from "sonner";
 
 function retentionDaysSchema(max: number) {
@@ -103,15 +109,25 @@ function CategoryRow({ category, current, scope, onSave, onPurge, saving }: RowP
           Save
         </Button>
       </div>
-      <Button
-        size="sm"
-        variant="outline"
-        className="text-destructive sm:ml-2"
-        aria-label={`Purge ${label} now`}
-        onClick={() => onPurge(category, scope)}
-      >
-        Purge now
-      </Button>
+      <DropdownMenu>
+        <DropdownMenuTrigger
+          render={
+            <Button
+              variant="ghost"
+              size="icon"
+              className="sm:ml-2"
+              aria-label={`More actions for ${label}`}
+            />
+          }
+        >
+          <MoreHorizontal aria-hidden="true" className="h-4 w-4" />
+        </DropdownMenuTrigger>
+        <DropdownMenuContent>
+          <DropdownMenuItem variant="destructive" onClick={() => onPurge(category, scope)}>
+            <Trash2 aria-hidden="true" /> Purge now
+          </DropdownMenuItem>
+        </DropdownMenuContent>
+      </DropdownMenu>
     </div>
   );
 }

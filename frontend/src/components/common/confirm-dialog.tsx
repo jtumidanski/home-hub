@@ -19,6 +19,8 @@ export interface ConfirmDialogProps {
   onConfirm: () => void;
   /** Disables both actions while the confirm action is in flight. */
   pending?: boolean;
+  /** Visible text on the confirm button while `pending`. */
+  pendingLabel?: string;
 }
 
 export function ConfirmDialog({
@@ -30,6 +32,7 @@ export function ConfirmDialog({
   cancelLabel = "Cancel",
   onConfirm,
   pending = false,
+  pendingLabel = "Working…",
 }: ConfirmDialogProps) {
   return (
     <Dialog
@@ -48,7 +51,7 @@ export function ConfirmDialog({
             {cancelLabel}
           </Button>
           <Button variant="destructive" onClick={onConfirm} disabled={pending} aria-busy={pending}>
-            {confirmLabel}
+            {pending ? pendingLabel : confirmLabel}
           </Button>
         </DialogFooter>
       </DialogContent>

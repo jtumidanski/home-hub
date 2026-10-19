@@ -1,8 +1,10 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
-import { render, screen, waitFor } from "@testing-library/react";
+import { render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 
 const mockPurgeAsync = vi.fn();
+const mockPreview = vi.fn();
+let patchPending = false;
 
 vi.mock("@/lib/hooks/api/use-retention", () => ({
   useRetentionPolicies: () => ({
@@ -23,7 +25,7 @@ vi.mock("@/lib/hooks/api/use-retention", () => ({
     },
   }),
   useRetentionRuns: () => ({ isLoading: false, data: { data: [] } }),
-  usePatchHouseholdRetention: () => ({ mutateAsync: vi.fn(), isPending: false }),
+  usePatchHouseholdRetention: () => ({ mutateAsync: vi.fn(), isPending: patchPending }),
   usePatchUserRetention: () => ({ mutateAsync: vi.fn(), isPending: false }),
   usePurgeRetention: () => ({ mutateAsync: mockPurgeAsync, isPending: false }),
 }));
@@ -32,11 +34,22 @@ vi.mock("@/context/tenant-context", () => ({
   useTenant: () => ({ tenant: { id: "t-1" } }),
 }));
 
+vi.mock("@/services/api/retention", () => ({
+  retentionService: { purge: (...args: unknown[]) => mockPreview(...args) },
+}));
+
 import { DataRetentionPage } from "../DataRetentionPage";
+
+async function openPurge(user: ReturnType<typeof userEvent.setup>) {
+  await user.click(screen.getByRole("button", { name: "More actions for Reminders" }));
+  await user.click(await screen.findByRole("menuitem", { name: "Purge now" }));
+}
 
 describe("DataRetentionPage", () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    patchPending = false;
+    mockPreview.mockResolvedValue({ data: { attributes: { deleted: 7 } } });
     mockPurgeAsync.mockResolvedValue({ data: { attributes: { deleted: 3 } } });
   });
 
@@ -63,10 +76,10 @@ describe("DataRetentionPage", () => {
   it("does not purge until the confirm dialog is accepted", async () => {
     const user = userEvent.setup();
     render(<DataRetentionPage />);
-    await user.click(screen.getByRole("button", { name: "Purge Reminders now" }));
+    await openPurge(user);
     expect(mockPurgeAsync).not.toHaveBeenCalled();
     const dialog = await screen.findByRole("dialog");
-    await user.click(screen.getByRole("button", { name: "Purge now" }));
+    await user.click(within(dialog).getByRole("button", { name: "Purge now" }));
     expect(mockPurgeAsync).toHaveBeenCalledWith({ category: "productivity.reminders", scope: "household" });
     await waitFor(() => expect(dialog).not.toBeInTheDocument());
   });
@@ -74,7 +87,7 @@ describe("DataRetentionPage", () => {
   it("does not purge when the confirm dialog is cancelled", async () => {
     const user = userEvent.setup();
     render(<DataRetentionPage />);
-    await user.click(screen.getByRole("button", { name: "Purge Reminders now" }));
+    await openPurge(user);
     await user.click(await screen.findByRole("button", { name: "Cancel" }));
     expect(mockPurgeAsync).not.toHaveBeenCalled();
   });
@@ -82,5 +95,24 @@ describe("DataRetentionPage", () => {
   it("renders an empty state when there are no reaper runs", () => {
     render(<DataRetentionPage />);
     expect(screen.getByText("No reaper runs yet")).toBeInTheDocument();
+  });
+
+  it("shrink-warning confirm is destructive-styled and disabled while the patch is pending (DA-138)", async () => {
+    const user = userEvent.setup();
+    const { rerender } = render(<DataRetentionPage />);
+    const input = screen.getByRole("spinbutton", { name: "Reminders retention days" });
+    await user.clear(input);
+    await user.type(input, "10");
+    await user.click(screen.getByRole("button", { name: "Save" }));
+    const dialog = await screen.findByRole("dialog");
+    const confirm = within(dialog).getByRole("button", { name: "Confirm" });
+    expect(confirm).toBeEnabled();
+    expect(confirm.className).toContain("destructive");
+
+    patchPending = true;
+    rerender(<DataRetentionPage />);
+    const pendingBtn = within(screen.getByRole("dialog")).getByRole("button", { name: "Working…" });
+    expect(pendingBtn).toBeDisabled();
+    expect(pendingBtn.className).toContain("destructive");
   });
 });
