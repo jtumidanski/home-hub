@@ -3,12 +3,11 @@ import type { UseFormReturn } from "react-hook-form";
 import { Controller } from "react-hook-form";
 import { z } from "zod";
 import { Label } from "@/components/ui/label";
+import { Input } from "@/components/ui/input";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Textarea } from "@/components/ui/textarea";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
-import { cn, toTitleCase } from "@/lib/utils";
-
-const inputClass =
-  "h-8 w-full min-w-0 rounded-lg border border-input bg-transparent px-2.5 py-1 text-base outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 md:text-sm";
+import { toTitleCase } from "@/lib/utils";
 
 /**
  * Unwraps Optional / Default / Nullable / Readonly wrappers to reach the
@@ -191,13 +190,10 @@ function renderField<T extends Record<string, unknown>>({
         control={form.control}
         render={({ field }) => (
           <label className="flex cursor-pointer items-center gap-2">
-            <input
-              type="checkbox"
+            <Checkbox
               checked={!!field.value}
-              onChange={(e) => field.onChange(e.target.checked)}
-              className="h-4 w-4"
+              onCheckedChange={(checked) => field.onChange(checked)}
               data-testid={`zod-field-${name}`}
-              aria-label={label}
             />
             <span className="text-sm">{label}</span>
           </label>
@@ -216,9 +212,8 @@ function renderField<T extends Record<string, unknown>>({
         render={({ field }) => (
           <div className="flex flex-col gap-1">
             <Label>{label}</Label>
-            <input
+            <Input
               type="number"
-              className={cn(inputClass)}
               min={min}
               max={max}
               step={int ? 1 : undefined}
@@ -252,9 +247,8 @@ function renderField<T extends Record<string, unknown>>({
           return (
             <div className="flex flex-col gap-1">
               <Label>{label}</Label>
-              <input
+              <Input
                 type="text"
-                className={cn(inputClass)}
                 maxLength={max}
                 value={value}
                 onChange={(e) => field.onChange(e.target.value)}
