@@ -229,7 +229,7 @@ export function IngredientDetailPage() {
               value={newAlias}
               onChange={(e) => setNewAlias(e.target.value)}
               onKeyDown={(e) => e.key === "Enter" && handleAddAlias()}
-              className="h-8 text-sm"
+              size="sm"
             />
             <Button size="sm" onClick={handleAddAlias} disabled={!newAlias.trim() || addAlias.isPending}>
               <Plus className="h-4 w-4" />
@@ -271,7 +271,6 @@ export function IngredientDetailPage() {
             placeholder="Search for target ingredient..."
             value={reassignSearch}
             onChange={(e) => setReassignSearch(e.target.value)}
-            className="h-8 text-sm"
           />
           <div className="max-h-32 overflow-y-auto space-y-1">
             {candidates.map((c) => (
