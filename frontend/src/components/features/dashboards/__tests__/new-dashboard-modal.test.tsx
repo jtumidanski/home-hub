@@ -70,6 +70,18 @@ describe("NewDashboardModal", () => {
     expect(mockCreateMutateAsync).not.toHaveBeenCalled();
   });
 
+  it("marks the name input invalid and describes it by the alert message", async () => {
+    const user = userEvent.setup();
+    renderModal();
+    const input = screen.getByLabelText(/name/i);
+    expect(input).not.toHaveAttribute("aria-invalid", "true");
+    await user.click(screen.getByRole("button", { name: /create/i }));
+    const alert = await screen.findByRole("alert");
+    expect(input).toHaveAttribute("aria-invalid", "true");
+    expect(input).toHaveAttribute("aria-describedby", alert.id);
+    expect(alert).toHaveTextContent(/name is required/i);
+  });
+
   it("creates a blank household dashboard when no copy source", async () => {
     mockCreateMutateAsync.mockResolvedValue({
       data: dash({ id: "new-1", scope: "household", name: "Fresh" }),

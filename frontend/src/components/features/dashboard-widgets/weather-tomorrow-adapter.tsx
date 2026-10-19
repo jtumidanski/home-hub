@@ -4,6 +4,7 @@ import { useTenant } from "@/context/tenant-context";
 import { useLocalDateOffset } from "@/lib/hooks/use-local-date-offset";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
+import { WidgetError } from "./widget-error";
 import { Cloud } from "lucide-react";
 
 export interface WeatherTomorrowConfig {
@@ -18,7 +19,7 @@ export function WeatherTomorrowAdapter({ config: _config }: { config: WeatherTom
 
   if (isLoading) {
     return (
-      <Card className="h-full">
+      <Card className="@container h-full">
         <CardHeader><Skeleton className="h-4 w-24" data-slot="skeleton" /></CardHeader>
         <CardContent>
           <Skeleton className="h-8 w-20 mb-1" data-slot="skeleton" />
@@ -30,19 +31,17 @@ export function WeatherTomorrowAdapter({ config: _config }: { config: WeatherTom
 
   if (isError) {
     return (
-      <Card className="h-full border-destructive">
-        <CardContent className="py-3"><p className="text-sm text-destructive">Failed to load forecast</p></CardContent>
-      </Card>
+      <WidgetError message="Failed to load forecast" />
     );
   }
 
   const entry = (data?.data ?? []).find((d) => d.attributes.date === tomorrow);
   if (!entry) {
     return (
-      <Card className="h-full">
-        <CardHeader><CardTitle className="text-sm font-medium">Tomorrow</CardTitle></CardHeader>
+      <Card className="@container h-full">
+        <CardHeader><CardTitle className="font-heading text-lg @xl:text-2xl">Tomorrow</CardTitle></CardHeader>
         <CardContent>
-          <p className="text-sm text-muted-foreground">Tomorrow's forecast not available</p>
+          <p className="text-sm @xl:text-xl text-muted-foreground">Tomorrow's forecast not available</p>
         </CardContent>
       </Card>
     );
@@ -50,17 +49,17 @@ export function WeatherTomorrowAdapter({ config: _config }: { config: WeatherTom
 
   const unit = entry.attributes.temperatureUnit;
   return (
-    <Card className="h-full">
+    <Card className="@container h-full">
       <CardHeader className="flex flex-row items-center justify-between pb-2">
-        <CardTitle className="text-sm font-medium">Tomorrow</CardTitle>
-        <Cloud className="h-4 w-4 text-muted-foreground" />
+        <CardTitle className="font-heading text-lg @xl:text-2xl">Tomorrow</CardTitle>
+        <Cloud className="size-4 @xl:size-6 text-muted-foreground" />
       </CardHeader>
       <CardContent>
         <div className="flex items-baseline gap-2">
-          <span className="text-2xl font-bold">{entry.attributes.highTemperature}{unit}</span>
-          <span className="text-sm text-muted-foreground">/ {entry.attributes.lowTemperature}{unit}</span>
+          <span className="tabular-nums text-3xl @md:text-display font-bold">{entry.attributes.highTemperature}{unit}</span>
+          <span className="text-sm @xl:text-xl text-muted-foreground">/ {entry.attributes.lowTemperature}{unit}</span>
         </div>
-        <p className="text-xs text-muted-foreground">{entry.attributes.summary}</p>
+        <p className="text-sm @xl:text-base text-muted-foreground">{entry.attributes.summary}</p>
       </CardContent>
     </Card>
   );

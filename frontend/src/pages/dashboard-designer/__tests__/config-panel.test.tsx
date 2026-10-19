@@ -60,6 +60,11 @@ describe("ConfigPanel", () => {
     ).toBe(true);
   });
 
+  it("renders the themed overlay backdrop", () => {
+    render(<ConfigPanel widget={tasksWidget()} dispatch={vi.fn()} />);
+    expect(document.body.querySelector(".bg-overlay")).not.toBeNull();
+  });
+
   it("Cancel closes without dispatching update-config", () => {
     const dispatch = vi.fn();
     render(<ConfigPanel widget={tasksWidget()} dispatch={dispatch} />);

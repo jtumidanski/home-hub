@@ -1,4 +1,4 @@
-import { Fragment, type ReactNode } from "react";
+import { Fragment, useId, type ReactNode } from "react";
 import type { UseFormReturn } from "react-hook-form";
 import { Controller } from "react-hook-form";
 import { z } from "zod";
@@ -101,6 +101,7 @@ export function ZodFormFields<T extends Record<string, unknown>>({
   form,
   path = "",
 }: ZodFormFieldsProps<T>) {
+  const idBase = useId();
   if (!isZodObject(schema)) {
     return (
       <pre className="rounded-md bg-muted p-2 text-xs">
@@ -117,7 +118,7 @@ export function ZodFormFields<T extends Record<string, unknown>>({
         const fullPath = path ? `${path}.${key}` : key;
         return (
           <div key={fullPath} className="flex flex-col gap-1">
-            {renderField({ name: fullPath, label: toTitleCase(key), schema: field, form })}
+            {renderField({ name: fullPath, id: `${idBase}-${fullPath}`, label: toTitleCase(key), schema: field, form })}
           </div>
         );
       })}
@@ -127,6 +128,8 @@ export function ZodFormFields<T extends Record<string, unknown>>({
 
 interface RenderFieldArgs<T extends Record<string, unknown>> {
   name: string;
+  /** Unique DOM id base for label association. */
+  id: string;
   label: string;
   schema: unknown;
   form: UseFormReturn<T>;
@@ -134,6 +137,7 @@ interface RenderFieldArgs<T extends Record<string, unknown>> {
 
 function renderField<T extends Record<string, unknown>>({
   name,
+  id,
   label,
   schema,
   form,
@@ -165,8 +169,9 @@ function renderField<T extends Record<string, unknown>>({
         control={form.control}
         render={({ field }) => (
           <div className="flex flex-col gap-1" data-testid={`zod-field-${name}`}>
-            <Label>{label}</Label>
+            <Label id={`${id}-label`}>{label}</Label>
             <RadioGroup
+              aria-labelledby={`${id}-label`}
               value={String(field.value ?? "")}
               onValueChange={(v) => field.onChange(v)}
             >
@@ -189,14 +194,17 @@ function renderField<T extends Record<string, unknown>>({
         name={name as any}
         control={form.control}
         render={({ field }) => (
-          <label className="flex cursor-pointer items-center gap-2">
+          <div className="flex items-center gap-2">
             <Checkbox
+              id={id}
               checked={!!field.value}
               onCheckedChange={(checked) => field.onChange(checked)}
               data-testid={`zod-field-${name}`}
             />
-            <span className="text-sm">{label}</span>
-          </label>
+            <Label htmlFor={id} className="cursor-pointer text-sm font-normal">
+              {label}
+            </Label>
+          </div>
         )}
       />
     );
@@ -211,8 +219,9 @@ function renderField<T extends Record<string, unknown>>({
         control={form.control}
         render={({ field }) => (
           <div className="flex flex-col gap-1">
-            <Label>{label}</Label>
+            <Label htmlFor={id}>{label}</Label>
             <Input
+              id={id}
               type="number"
               min={min}
               max={max}
@@ -246,8 +255,9 @@ function renderField<T extends Record<string, unknown>>({
           const value = typeof field.value === "string" ? field.value : "";
           return (
             <div className="flex flex-col gap-1">
-              <Label>{label}</Label>
+              <Label htmlFor={id}>{label}</Label>
               <Input
+                id={id}
                 type="text"
                 maxLength={max}
                 value={value}
@@ -274,8 +284,9 @@ function renderField<T extends Record<string, unknown>>({
       control={form.control}
       render={({ field }) => (
         <div className="flex flex-col gap-1">
-          <Label>{label}</Label>
+          <Label htmlFor={id}>{label}</Label>
           <Textarea
+            id={id}
             value={
               typeof field.value === "string" ? field.value : JSON.stringify(field.value ?? "")
             }

@@ -1,7 +1,10 @@
 import { useReducer, useState } from "react";
 import { Link, useNavigate, useOutletContext } from "react-router-dom";
 import { useMobile } from "@/lib/hooks/use-mobile";
+import { Circle, Monitor } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { EmptyState } from "@/components/common/empty-state";
 import { Input } from "@/components/ui/input";
 import {
   Dialog,
@@ -37,20 +40,17 @@ export default function DashboardDesigner() {
 
   if (isMobile) {
     return (
-      <div
-        className="flex min-h-[40vh] items-center justify-center p-6 text-center"
-        data-testid="designer-mobile-blocker"
-      >
-        <div className="max-w-md space-y-3">
-          <h2 className="text-lg font-semibold">Editing needs a larger screen</h2>
-          <p className="text-sm text-muted-foreground">
-            The dashboard designer is only available on tablet-or-wider screens.
-            Switch to a larger device to make changes.
-          </p>
-          <Button render={<Link to=".." />} variant="outline" size="sm">
-            View only
-          </Button>
-        </div>
+      <div role="alert" data-testid="designer-mobile-blocker">
+        <EmptyState
+          icon={Monitor}
+          title="Editing needs a larger screen"
+          description="The dashboard designer is only available on tablet-or-wider screens. Switch to a larger device to make changes."
+          action={
+            <Button render={<Link to=".." />} variant="outline" size="sm">
+              View only
+            </Button>
+          }
+        />
       </div>
     );
   }
@@ -89,7 +89,7 @@ export default function DashboardDesigner() {
 
   return (
     <div className="flex flex-col" data-testid="dashboard-designer">
-      <div className="flex flex-wrap items-center justify-between gap-2 border-b border-border bg-muted/40 p-3 md:px-6">
+      <div className="flex flex-wrap items-center justify-between gap-2 border-b border-border bg-card p-3 md:px-6">
         <div className="flex items-center gap-2">
           <Input
             aria-label="Dashboard name"
@@ -98,7 +98,9 @@ export default function DashboardDesigner() {
             className="max-w-xs"
           />
           {state.dirty ? (
-            <span className="text-xs text-muted-foreground">Unsaved changes</span>
+            <Badge variant="warning" icon={Circle}>
+              Unsaved changes
+            </Badge>
           ) : null}
         </div>
         <div className="flex items-center gap-2">
@@ -122,7 +124,6 @@ export default function DashboardDesigner() {
           </Button>
           <Button
             type="button"
-            size="sm"
             onClick={onSave}
             disabled={updateDashboard.isPending}
             data-testid="designer-save"

@@ -4,12 +4,13 @@ import { useNavigate } from "react-router-dom";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-import { MoreVertical, Pencil, Star, Trash2, ArrowUpCircle, Copy } from "lucide-react";
+import { AlertCircle, MoreVertical, Pencil, Star, Trash2, ArrowUpCircle, Copy } from "lucide-react";
 import { cn } from "@/lib/utils";
 import {
   Dialog,
   DialogContent,
   DialogDescription,
+  DialogFooter,
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
@@ -175,7 +176,7 @@ export function DashboardKebabMenu({ dashboard, isDefault }: DashboardKebabMenuP
               Delete &ldquo;{dashboard.attributes.name}&rdquo;? This cannot be undone.
             </DialogDescription>
           </DialogHeader>
-          <div className="flex justify-end gap-2">
+          <DialogFooter>
             <Button type="button" variant="outline" onClick={() => setDeleteOpen(false)}>
               Cancel
             </Button>
@@ -185,9 +186,10 @@ export function DashboardKebabMenu({ dashboard, isDefault }: DashboardKebabMenuP
               disabled={deleteMutation.isPending}
               onClick={handleDelete}
             >
+              <Trash2 className="h-4 w-4" />
               {deleteMutation.isPending ? "Deleting..." : "Delete"}
             </Button>
-          </div>
+          </DialogFooter>
         </DialogContent>
       </Dialog>
     </>
@@ -234,19 +236,31 @@ function RenameDialog({ open, onOpenChange, dashboard, onSubmit, isPending }: Re
         <form onSubmit={handleSubmit(submit)} className="space-y-4">
           <div className="space-y-2">
             <Label htmlFor="rename-name">Name</Label>
-            <Input id="rename-name" {...register("name")} />
+            <Input
+              id="rename-name"
+              aria-invalid={!!errors.name}
+              aria-describedby={errors.name ? "rename-name-error" : undefined}
+              {...register("name")}
+            />
             {errors.name && (
-              <p className="text-xs text-destructive">{errors.name.message}</p>
+              <p
+                id="rename-name-error"
+                role="alert"
+                className="flex items-center gap-1 text-sm text-destructive"
+              >
+                <AlertCircle className="size-4" aria-hidden="true" />
+                {errors.name.message}
+              </p>
             )}
           </div>
-          <div className="flex justify-end gap-2">
+          <DialogFooter>
             <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
               Cancel
             </Button>
             <Button type="submit" disabled={isPending}>
               {isPending ? "Saving..." : "Save"}
             </Button>
-          </div>
+          </DialogFooter>
         </form>
       </DialogContent>
     </Dialog>

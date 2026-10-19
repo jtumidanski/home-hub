@@ -29,7 +29,7 @@ function ForecastDayColumn({ label, icon, high, low, summary }: {
     <div className="flex flex-col items-center text-center gap-0.5">
       <span className="text-xs text-muted-foreground">{label}</span>
       <span title={summary}>
-        <WeatherIcon icon={icon} className="h-4 w-4 text-muted-foreground" />
+        <WeatherIcon icon={icon} className="size-4 @xl:size-6 shrink-0 text-muted-foreground" />
       </span>
       <div className="text-xs">
         <span className="font-medium">{Math.round(high)}°</span>
@@ -51,9 +51,9 @@ function CurrentDayColumn({ icon, summary, temp, tempUnit, high, low }: {
     <div className="flex flex-col items-center text-center gap-0.5">
       <div className="flex items-center gap-1">
         <span title={summary}>
-          <WeatherIcon icon={icon} className="h-4 w-4 text-muted-foreground" />
+          <WeatherIcon icon={icon} className="size-4 @xl:size-6 shrink-0 text-muted-foreground" />
         </span>
-        <span className="text-lg font-bold">{Math.round(temp)}{tempUnit}</span>
+        <span className="tabular-nums text-3xl @md:text-display font-bold">{Math.round(temp)}{tempUnit}</span>
       </div>
       <div className="text-xs">
         <span className="font-medium">{Math.round(high)}°</span>
@@ -126,7 +126,7 @@ export function WeatherWidget(_props: WeatherWidgetProps = {}) {
     return (
       <Card>
         <CardContent className="flex items-center gap-2 py-6 text-muted-foreground">
-          <AlertTriangle className="h-4 w-4" />
+          <AlertTriangle className="size-4 @xl:size-6 shrink-0" />
           <span className="text-sm">Weather data unavailable</span>
         </CardContent>
       </Card>
@@ -139,16 +139,16 @@ export function WeatherWidget(_props: WeatherWidgetProps = {}) {
       onClick={() => navigate("/app/weather")}
     >
       <CardHeader className="pb-2">
-        <CardTitle className="text-sm font-medium">Weather</CardTitle>
+        <CardTitle className="font-heading text-lg @xl:text-2xl">Weather</CardTitle>
       </CardHeader>
       <CardContent>
         {/* Mobile: centered current conditions + 3-col preview */}
         <div className="md:hidden">
           <div className="flex items-center justify-center gap-2">
             <span title={weather.summary}>
-              <WeatherIcon icon={weather.icon} className="h-5 w-5 text-muted-foreground" />
+              <WeatherIcon icon={weather.icon} className="size-5 @xl:size-6 shrink-0 text-muted-foreground" />
             </span>
-            <span className="text-2xl font-bold">
+            <span className="tabular-nums text-3xl @md:text-display font-bold">
               {Math.round(weather.temperature)}{weather.temperatureUnit}
             </span>
           </div>

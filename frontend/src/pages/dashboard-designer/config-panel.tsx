@@ -41,17 +41,7 @@ export function ConfigPanel({ widget, dispatch }: ConfigPanelProps) {
 
   const close = () => dispatch({ type: "select", id: null });
 
-  if (!open || !widget || !def) {
-    // Still render the Root so base-ui can manage focus/portal state, but
-    // keep it closed. The form inside never instantiates without a widget.
-    return (
-      <DialogPrimitive.Root open={false} onOpenChange={close}>
-        <DialogPrimitive.Portal>
-          <DialogPrimitive.Popup className="hidden" />
-        </DialogPrimitive.Portal>
-      </DialogPrimitive.Root>
-    );
-  }
+  if (!open || !widget || !def) return null;
 
   const onApply = form.handleSubmit((values) => {
     const parsed = def.configSchema.safeParse(values);
@@ -90,21 +80,21 @@ export function ConfigPanel({ widget, dispatch }: ConfigPanelProps) {
       <DialogPrimitive.Portal>
         <DialogPrimitive.Backdrop
           className={cn(
-            "fixed inset-0 z-50 bg-black/30 duration-100 data-open:animate-in data-open:fade-in-0 data-closed:animate-out data-closed:fade-out-0",
+            "fixed inset-0 z-50 bg-overlay duration-100 data-open:animate-in data-open:fade-in-0 data-closed:animate-out data-closed:fade-out-0",
           )}
         />
         <DialogPrimitive.Popup
           data-testid="config-panel"
           className={cn(
-            "fixed top-0 right-0 z-50 flex h-full w-full max-w-sm flex-col gap-3 border-l border-border bg-popover p-4 text-popover-foreground shadow-lg outline-none",
+            "fixed top-0 right-0 z-50 flex h-full w-full max-w-sm flex-col gap-3 border-l border-border bg-popover p-4 text-popover-foreground shadow-overlay outline-none data-open:animate-in data-open:slide-in-from-right duration-(--duration-fast)",
           )}
         >
           <div className="flex items-center justify-between">
-            <DialogPrimitive.Title className="font-heading text-base font-medium">
+            <DialogPrimitive.Title className="font-heading text-lg font-medium">
               Configure {def.displayName}
             </DialogPrimitive.Title>
             <DialogPrimitive.Close
-              render={<Button variant="ghost" size="icon-sm" />}
+              render={<Button variant="ghost" size="icon-sm" className="coarse:size-11" />}
               aria-label="Close config panel"
             >
               <XIcon />

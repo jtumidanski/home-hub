@@ -16,9 +16,11 @@ export interface WeatherAdapterConfig {
  */
 export function WeatherWidgetAdapter({ config }: { config: WeatherAdapterConfig }) {
   return (
-    <WeatherWidget
-      units={config.units}
-      {...(config.location !== null ? { locationOverride: config.location } : {})}
-    />
+    <div className="@container h-full">
+      <WeatherWidget
+        units={config.units}
+        {...(config.location !== null ? { locationOverride: config.location } : {})}
+      />
+    </div>
   );
 }

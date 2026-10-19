@@ -6,5 +6,9 @@ export interface HabitsAdapterConfig {
 
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 export function HabitsAdapter({ config: _config }: { config: HabitsAdapterConfig }) {
-  return <HabitsWidget />;
+  return (
+    <div className="@container h-full">
+      <HabitsWidget />
+    </div>
+  );
 }

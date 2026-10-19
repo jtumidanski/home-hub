@@ -13,8 +13,13 @@ export interface MealPlanAdapterConfig {
  *   plus dinners for the next horizonDays-1 days.
  */
 export function MealPlanAdapter({ config }: { config: MealPlanAdapterConfig }) {
-  if (config.view === "today-detail") {
-    return <MealPlanTodayDetail horizonDays={config.horizonDays} />;
-  }
-  return <MealPlanWidget horizonDays={config.horizonDays} />;
+  return (
+    <div className="@container h-full">
+      {config.view === "today-detail" ? (
+        <MealPlanTodayDetail horizonDays={config.horizonDays} />
+      ) : (
+        <MealPlanWidget horizonDays={config.horizonDays} />
+      )}
+    </div>
+  );
 }

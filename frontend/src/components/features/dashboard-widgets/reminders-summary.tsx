@@ -28,7 +28,7 @@ export function RemindersSummaryWidget({ config }: { config: RemindersSummaryCon
 
   if (isLoading) {
     return (
-      <Card className="h-full">
+      <Card className="@container h-full">
         <CardHeader className="pb-2">
           <Skeleton className="h-4 w-24" />
         </CardHeader>
@@ -45,15 +45,22 @@ export function RemindersSummaryWidget({ config }: { config: RemindersSummaryCon
   const sub = pickSub(summary, config.filter);
 
   return (
-    <Link to={LINK_BY_FILTER[config.filter]} className="block h-full transition-opacity hover:opacity-80">
-      <Card className="h-full">
+    <Link to={LINK_BY_FILTER[config.filter]} className="@container group/summary block h-full rounded-xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
+      <Card className="@container h-full motion-safe:transition-colors group-hover/summary:bg-accent">
         <CardHeader className="flex flex-row items-center justify-between pb-2">
-          <CardTitle className="text-sm font-medium">{title}</CardTitle>
-          <Bell className="h-4 w-4 text-muted-foreground" />
+          <CardTitle className="font-heading text-lg @xl:text-2xl">{title}</CardTitle>
+          <Bell className="size-4 @xl:size-6 text-muted-foreground" />
         </CardHeader>
         <CardContent>
-          <div className="text-2xl font-bold">{count ?? "-"}</div>
-          {sub && <p className="text-xs text-muted-foreground">{sub}</p>}
+          <div className="tabular-nums text-3xl @md:text-display font-bold">
+            {count ?? (
+              <>
+                <span aria-hidden="true">--</span>
+                <span className="sr-only">No data</span>
+              </>
+            )}
+          </div>
+          {sub && <p className="text-sm @xl:text-base text-muted-foreground">{sub}</p>}
         </CardContent>
       </Card>
     </Link>

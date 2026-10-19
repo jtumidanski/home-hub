@@ -76,40 +76,43 @@ export function MealPlanWidget(_props: MealPlanWidgetProps = {}) {
     }) ?? [];
 
   return (
-    <Link to="/app/meals" className="block h-full transition-opacity hover:opacity-80">
-      <Card className="h-full">
-        <CardHeader>
-          <CardTitle className="text-sm font-medium">Meals</CardTitle>
-          <CardAction>
-            <ChevronRight className="h-4 w-4 text-muted-foreground" />
-          </CardAction>
-        </CardHeader>
-        <CardContent>
-          {todayItems.length === 0 ? (
-            <div className="flex items-center gap-2 text-muted-foreground">
-              <UtensilsCrossed className="h-5 w-5" />
-              <p className="text-sm">No meals planned for today</p>
-            </div>
-          ) : (
-            <div className="space-y-2">
-              {todayItems.map((item) => (
-                <div key={item.id} className="flex items-baseline gap-2">
-                  <span className="text-xs font-medium text-muted-foreground w-16 shrink-0">
-                    {SLOT_LABELS[item.slot]}
-                  </span>
-                  <Link
-                    to={`/app/recipes/${item.recipe_id}`}
-                    className="text-sm text-primary hover:underline truncate"
-                    onClick={(e) => e.stopPropagation()}
-                  >
-                    {item.recipe_title}
-                  </Link>
-                </div>
-              ))}
-            </div>
-          )}
-        </CardContent>
-      </Card>
-    </Link>
+    <Card className="h-full">
+      <CardHeader>
+        <CardTitle className="font-heading text-lg @xl:text-2xl">Meals</CardTitle>
+        <CardAction>
+          <Link
+            to="/app/meals"
+            aria-label="Open meals"
+            className="inline-flex size-6 items-center justify-center rounded-md text-muted-foreground hover:text-foreground coarse:size-11"
+          >
+            <ChevronRight className="size-4" aria-hidden="true" />
+          </Link>
+        </CardAction>
+      </CardHeader>
+      <CardContent>
+        {todayItems.length === 0 ? (
+          <div className="flex items-center gap-2 text-muted-foreground">
+            <UtensilsCrossed className="size-5 @xl:size-6 shrink-0" aria-hidden="true" />
+            <p className="text-sm">No meals planned for today</p>
+          </div>
+        ) : (
+          <div className="space-y-2">
+            {todayItems.map((item) => (
+              <div key={item.id} className="flex items-baseline gap-2">
+                <span className="text-xs font-medium text-muted-foreground w-16 shrink-0">
+                  {SLOT_LABELS[item.slot]}
+                </span>
+                <Link
+                  to={`/app/recipes/${item.recipe_id}`}
+                  className="inline-flex min-h-6 items-center text-sm @xl:text-xl text-primary hover:underline truncate coarse:min-h-11"
+                >
+                  {item.recipe_title}
+                </Link>
+              </div>
+            ))}
+          </div>
+        )}
+      </CardContent>
+    </Card>
   );
 }

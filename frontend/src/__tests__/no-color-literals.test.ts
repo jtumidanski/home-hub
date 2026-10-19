@@ -9,8 +9,6 @@ const SCANNED_ROOTS = ["components/features", "pages"];
 /** Path prefixes (relative to frontend/src) not yet migrated; files under them are skipped. */
 const PENDING: string[] = [
   "components/features/calendar/",
-  "components/features/dashboard-widgets/",
-  "components/features/dashboards/",
   "components/features/households/",
   "components/features/ingredients/",
   "components/features/meals/",
@@ -23,13 +21,7 @@ const PENDING: string[] = [
   "components/features/weather/",
   "components/features/workout/",
   "components/features/workouts/",
-  "pages/dashboard-designer/",
   "pages/CalendarPage.tsx",
-  "pages/DashboardDesigner.tsx",
-  "pages/DashboardManagementPage.tsx",
-  "pages/DashboardRedirect.tsx",
-  "pages/DashboardRenderer.tsx",
-  "pages/DashboardShell.tsx",
   "pages/DataRetentionPage.tsx",
   "pages/HouseholdMembersPage.tsx",
   "pages/HouseholdsPage.tsx",

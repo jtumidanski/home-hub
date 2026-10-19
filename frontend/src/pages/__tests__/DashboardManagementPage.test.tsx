@@ -112,7 +112,8 @@ describe("DashboardManagementPage", () => {
   it("renders a page-level empty state when there are no dashboards", () => {
     mockUseDashboards.mockReturnValue({ data: { data: [] }, isLoading: false, isError: false });
     renderPage();
-    expect(screen.getByText(/no dashboards yet/i)).toBeInTheDocument();
+    expect(screen.getByRole("heading", { level: 1, name: "Dashboards" })).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: /no dashboards yet/i })).toBeInTheDocument();
     expect(screen.queryByText("Household Dashboards")).not.toBeInTheDocument();
     expect(screen.queryByText("My Dashboards")).not.toBeInTheDocument();
   });

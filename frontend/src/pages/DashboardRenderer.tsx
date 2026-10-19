@@ -64,7 +64,7 @@ export function DashboardRenderer() {
             <div
               key={w.id}
               style={{ gridColumn: `span ${w.w}`, gridRow: `span ${w.h}` }}
-              className="relative"
+              className="relative min-w-0 overflow-hidden"
               data-testid={`widget-slot-${w.id}`}
             >
               <Comp config={config} />

@@ -54,6 +54,12 @@ describe("DashboardRow", () => {
     expect(screen.getByRole("link", { name: /edit home/i })).toHaveAttribute("href", "/app/dashboards/d-1/edit");
   });
 
+  it("gives icon-only drag handle and edit link 44px coarse-pointer targets", () => {
+    renderRow(dash({ id: "d-1", name: "Home" }));
+    expect(screen.getByRole("button", { name: /drag home to reorder/i })).toHaveClass("coarse:size-11");
+    expect(screen.getByRole("link", { name: /edit home/i })).toHaveClass("coarse:size-11");
+  });
+
   it("renders the kebab actions trigger", () => {
     renderRow(dash({ id: "d-1", name: "Home" }));
     expect(screen.getByRole("button", { name: /dashboard actions for home/i })).toBeInTheDocument();
@@ -67,6 +73,15 @@ describe("DashboardRow", () => {
   it("shows a Default badge when the row is the current default", () => {
     renderRow(dash({ id: "d-1", name: "Home" }), "d-1");
     expect(screen.getByText(/default/i)).toBeInTheDocument();
+  });
+
+  it("renders the Default badge with accessible text and a decorative icon", () => {
+    renderRow(dash({ id: "d-1", name: "Home" }), "d-1");
+    const badge = screen.getByText("Default");
+    expect(badge).toBeInTheDocument();
+    const icon = badge.parentElement!.querySelector("svg");
+    expect(icon).not.toBeNull();
+    expect(icon).toHaveAttribute("aria-hidden", "true");
   });
 
   it("hides the Default badge when the row is not the default", () => {

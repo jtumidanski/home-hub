@@ -366,3 +366,176 @@ None.
 ### Verdict
 
 NEEDS-WORK. Build and tests pass. One blocking constraint violation: the toast close button has no 44px coarse target.
+
+## Plan Adherence Audit — task-057 Stage 3 (Tasks 17–19)
+
+**Branch:** task-057-impeccable-redesign-stage-3  **Range:** 93d320a..03c9210  **Date:** 2026-10-19
+
+### Verdict
+
+MOSTLY_COMPLETE, READY for close-out steps (rendered check, PR, Resolved cells). No blocking items. All 25 Stage 3 DA rows (DA-048..DA-072) have a fixing commit. X1-X3 are cited in commit messages but are not defined anywhere in design-audit.md or the other task docs (grep of `docs/`), so they can only be mapped by commit, not verified against a row.
+
+### Build and test
+
+| Check | Result |
+|---|---|
+| `npx vitest run src/components/features src/pages src/lib/dashboard src/__tests__` | PASS on re-run: 89 files, 523 tests. The first run showed 2 failures in 1 file under load; the immediate re-run was clean (likely timing flake, not investigated further). |
+| `npx tsc -b` | PASS (no output) |
+| `git diff --stat origin/main -- frontend/src/lib/dashboard` | empty (constraint held) |
+| Flagless `tools/verify.sh` | passed at 03c9210 per controller; not re-run |
+
+### Task 17 (bdba882, 6744ad7, 21ea425)
+
+| Step | Status | Evidence |
+|---|---|---|
+| Cut stage branch | DONE | branch task-057-impeccable-redesign-stage-3 |
+| Test iterating `widgetRegistry`, asserts `@container` root and `font-heading` title | DONE | widget-container.test.tsx imports `@/lib/dashboard/widget-registry`; extended in 6744ad7 for wrapped widgets |
+| PENDING entry `components/features/dashboard-widgets/` removed | DONE | no-color-literals.test.ts diff in bdba882 |
+| Implement ramp (`@container`, `font-heading text-lg @xl:text-2xl`, `@xl:` icon/list steps) | DONE | 16 adapter/summary files in bdba882. Calendar `userColor` dot kept. |
+| Wrapped widgets (calendar, meals, packages, habits, weather, workouts) | DONE (beyond listed Files) | 6744ad7, 21ea425 touch `components/features/{calendar,meals,packages,trackers,weather,workouts}/*-widget.tsx`. Needed for the registry-wide test to pass; reasonable scope extension. |
+| `lib/dashboard` untouched | DONE | diff stat empty |
+| Commit message | DONE | `feat(frontend): container-query widget internals for kiosk legibility` |
+
+### Task 18 (0f494d3, f6bf43c)
+
+| Step | Status | Evidence |
+|---|---|---|
+| PENDING entries removed (5 pages, designer dir, dashboards dir) | DONE | no-color-literals.test.ts: 7 lines removed in 0f494d3 (dashboard-widgets line removed in bdba882); all 8 Stage 3 entries are gone from the diff vs 93d320a |
+| `bg-black/30` -> `bg-overlay` | DONE | config-panel.tsx:83, palette-drawer.tsx:32; no `bg-black` remains in dashboard-designer |
+| Management page uses `PageHeader` and `EmptyState` | DONE | DashboardManagementPage.tsx:24-25, 116, 128 |
+| Greeting header (Fraunces text-2xl, muted date) | DONE | DashboardShell.tsx `PageHeader` at :52 with `toLocaleDateString` at :23 |
+| Grid props, layout JSON, state.ts unchanged | DONE | lib/dashboard diff empty; DashboardRenderer.tsx change is 2 lines (9f3512b, `min-w-0`/`@container` wrapper) |
+| Vitest src/pages, lib/dashboard, `__tests__`; tsc | DONE | see above (eslint not re-run here) |
+| Commit message | DONE | `feat(frontend): restyle dashboard pages and designer` |
+
+### Task 19
+
+| Item | Status | Evidence |
+|---|---|---|
+| Each Stage 3 row fixed, named in commit message | DONE | commits 48101d9, 21ea425, ca31c47, 9f3512b name rows in the subject |
+| Tests for jsdom-testable fixes | DONE | widget-error, lossy-config-badge, tasks-today, calendar-tomorrow, zod-form, DashboardShell, kebab-menu, dashboard-row, new-dashboard-modal, meal-plan-widget tests added/updated |
+| Impeccable detector run (Task 14 Step 2) | NOT VERIFIED | No evidence in the commits. Controller should confirm it is part of close-out or in the verification log. |
+| `lib/dashboard` diff empty | DONE | verified |
+| Stage close-out procedure | PENDING | controller's next steps, not failed |
+
+### Scope rulings (acceptable)
+
+- DA-064/065: class fixes on the existing drawers; no shared `Sheet` primitive. Token scrim (`bg-overlay`) is in place and the hidden dead popup was removed (config-panel.tsx, -14 lines in ca31c47). The row's "Sheet primitive" Fix text is not literally followed.
+- meal-plan-widget: card-wide `Link` replaced by an explicit "Open meals" icon link (03c9210) to remove a nested anchor. This is a behaviour change; list it in the PR body.
+
+### Partial or soft items (non-blocking)
+
+1. DA-056: 44px coarse targets applied to the drag handle, edit link and kebab (f6bf43c, 9f3512b). The row's "hide or relabel Edit on mobile" part was not done; the Edit link still renders on every viewport (dashboard-row.tsx:55-77). The designer shows a blocker on mobile (DA-072), so the user reaches an explanation rather than a dead end. Treat as DONE-with-note.
+2. DA-052: fix uses `useId` and `htmlFor` (zod-form.tsx:104, 172, 204). Whether raw inputs were swapped for the `Input`/`Checkbox` primitives was not checked.
+3. DA-066 "tooltip/aria-describedby" for the lossy badge was refined in 03c9210 (ids).
+4. Contrast and rendered items are asserted by class only; they will be recorded as `not rendered — browser unavailable`.
+
+### Input for step 5 (DA row to fixing commit)
+
+| Row | Fixing commit(s) |
+|---|---|
+| DA-048 | bdba882 (container ramp); 6744ad7 (wrapped widgets) |
+| DA-049 | 48101d9 |
+| DA-050 | 48101d9 (shared `widget-error.tsx`) |
+| DA-051 | 48101d9; 21ea425 (calendar dot name) |
+| DA-052 | ca31c47 |
+| DA-053 | ca31c47 |
+| DA-054 | ca31c47 |
+| DA-055 | 9f3512b |
+| DA-056 | f6bf43c (coarse targets); 9f3512b (kebab) |
+| DA-057 | ca31c47 |
+| DA-058 | 9f3512b (0f494d3 introduced `PageHeader` on the management page) |
+| DA-059 | 9f3512b (0f494d3 introduced `EmptyState`) |
+| DA-060 | 9f3512b |
+| DA-061 | 9f3512b |
+| DA-062 | 9f3512b |
+| DA-063 | 9f3512b (a11y tests in 03c9210) |
+| DA-064 | ca31c47 (0f494d3 for `bg-overlay`) |
+| DA-065 | ca31c47 (0f494d3 for `bg-overlay`) |
+| DA-066 | 48101d9; 03c9210 |
+| DA-067 | 48101d9 |
+| DA-068 | 48101d9 |
+| DA-069 | 48101d9; 21ea425 |
+| DA-070 | 48101d9 |
+| DA-071 | 9f3512b |
+| DA-072 | ca31c47 (designer blocker); 9f3512b (DashboardShell schema alert, DashboardRedirect) |
+| X1, X2 | 21ea425 (not defined in design-audit.md) |
+| X3 | 9f3512b (not defined in design-audit.md) |
+
+The Stage column in design-audit.md is the second-to-last cell; rows DA-048..DA-072 all have Stage = 3 and empty Resolved cells (lines 111-135). DA-045..047 belong to Stage 2.
+
+### Blocking items
+
+None.
+
+## Frontend Audit — task-057 Stage 3 (Dashboards & kiosk)
+
+- **Audit Scope:** `git diff 93d320a..HEAD -- frontend/` (49 files: 34 source, 15 tests). Covers the dashboard-widgets adapters, dashboards list/row/kebab/modal, the dashboard-designer panels, the Dashboard* pages, the six legacy widgets (calendar, meals, packages, trackers, weather, workouts), and the `no-color-literals` guard.
+- **Guidelines Source:** frontend-dev-guidelines skill + plan.md Global Constraints
+- **Date:** 2026-10-19
+- **Build:** PASS (`npm run build`, exit 0; only the chunk-size warning)
+- **Tests:** 921 passed, 0 failed (139 files). Runner is vitest, so `npm test` (`vitest run`) was used instead of `--watchAll=false`.
+- **Overall:** NEEDS-WORK (two blocking findings, both cheap)
+
+### Blocking
+
+1. `frontend/src/components/features/trackers/habits-widget.tsx:92` and `frontend/src/components/features/workouts/workout-widget.tsx:78` — `className={\`text-sm @xl:text-xl truncate ${cond ? "…" : ""}\`}` is template-string class concatenation. Stage 3 edited both lines (it added `@xl:text-xl`). This fails FE-02 and the "whole literal class strings" constraint. Fix: `className={cn("text-sm @xl:text-xl truncate", (done || skipped) && "text-muted-foreground line-through")}`, and the same for `resolved` in workout-widget. Import `cn` if it is missing.
+2. `frontend/src/components/features/meals/meal-plan-widget.tsx:105-110` — the recipe `Link` is `text-sm @xl:text-xl … truncate` with no target-size floor. It is a list-row pointer target, so the constraint requires `coarse:min-h-11` (and ≥24px otherwise). The tasks adapters already do this (`tasks-today-adapter.tsx:75`: `inline-flex min-h-6 items-center … coarse:min-h-11`). Fix: add `inline-flex min-h-6 items-center coarse:min-h-11` to the link. The existing `meal-plan-widget.test.tsx` role/name queries are unaffected. This is deferred item (a).
+
+### Non-blocking
+
+- `frontend/src/pages/dashboard-designer/zod-form.tsx:168,194,218,252,283` — five `name={name as any}`. FE-01 fails literally. None were introduced by Stage 3 (the diff adds none). Leave, or type the `FieldPath` generic in Stage 7.
+- `frontend/src/components/features/dashboards/dashboard-kebab-menu.tsx:33` — inline `z.object({ name: dashboardNameSchema })` in a component (FE-04). Pre-existing, and it composes the shared `new-dashboard-modal.schema` field. Move `renameSchema` into that schema file when convenient.
+- `frontend/src/components/features/weather/weather-widget.tsx:137-140` — `<Card onClick={navigate}>` is a clickable div. It has `cursor-pointer` (FE-19 met) but is not keyboard-operable, unlike the sibling widgets that wrap in a `Link`. Pre-existing. Convert it to a `Link` wrapper in a later stage.
+- `frontend/src/components/features/meals/meal-plan-widget.tsx:50-55` — a bespoke error card (`text-destructive`, no icon) instead of the shared `WidgetError`. The text says "Failed", so it is not colour-only, but it is inconsistent with the other widgets. Swap in `WidgetError`.
+- `frontend/src/__tests__/no-color-literals.test.ts:10-31` — the calendar, meals, packages, trackers, weather and workouts directories remain in PENDING, so the guard does not cover the widget files Stage 3 edited. I grepped them by hand and found no palette classes, hex values or oklch literals. Graduate them when those pages are migrated.
+- FE-17 — no test files exist for the Stage 3 edits to `weather-widget`, `habits-widget`, `workout-widget`, `package-summary-widget` and `calendar-widget`. The edits are class and typography only. `meal-plan-widget`, the adapters, the dashboards components and the designer panels all have tests.
+- `frontend/src/pages/DashboardDesigner.tsx:32` — `export default function`. FE-08 covers components, and this is a pre-existing page default consumed by the router. Leave.
+- `frontend/src/pages/dashboard-designer/widget-chrome.tsx:42-43` — `disabled` and `aria-disabled` are both set. Redundant but harmless. See (c).
+
+### Checklist
+
+| ID | Status | Evidence |
+|----|--------|----------|
+| FE-01 no `any` | FAIL (pre-existing) | `zod-form.tsx:168,194,218,252,283`. No other source file matches. Non-blocking, see above |
+| FE-02 no class concatenation | FAIL | `habits-widget.tsx:92`, `workout-widget.tsx:78` (Blocking 1). The other files use whole literals and `cn()`, e.g. `dashboard-row.tsx:65`, `dashboard-kebab-menu.tsx:101` |
+| FE-03 no direct API client | PASS | Grep for `api/client`: no matches |
+| FE-04 no inline Zod | FAIL (pre-existing) | `dashboard-kebab-menu.tsx:33` (non-blocking) |
+| FE-05 no content spinners | PASS | Grep for `animate-spin`: no matches. Content loading uses Skeleton (`meal-plan-widget.tsx:54`) |
+| FE-06 no colour literals | PASS | The palette/hex/oklch/rgb/hsl/`success-text` grep returns zero matches across all 34 source files. The guard test graduates the dashboard-widgets, dashboards, dashboard-designer and Dashboard* pages, and passes |
+| FE-07 no state mutation | PASS | `.sort(` sites at `calendar-widget.tsx:17` (spread copy), `calendar-tomorrow-adapter.tsx:67` (sorts the fresh array from `getEventsForDateStr` / spread, never state), `reminders-today-adapter.tsx:50` and `meal-plan-widget.tsx:73` (after `.filter`/`.map`), `DashboardRenderer.tsx:23` (spread copy). No `.push`/`.splice`. None feed setState |
+| FE-08 no default-export components | PASS | The only match is the page `DashboardDesigner.tsx:32` |
+| FE-09/10/12/13/14/16 | N/A | No hooks, models, services, key factories or schemas changed |
+| FE-11 error handling | PASS | `new-dashboard-modal.tsx:116` and `zod-form.tsx:297` are `catch {}` blocks. The former defers to the mutation-hook toasts (comment at :117), and the latter is JSON-parse fallback input handling with no async or API call. Neither swallows an API error silently |
+| FE-15 forms | PASS | The rename and new-dashboard forms use `react-hook-form` + `zodResolver` (`dashboard-kebab-menu.tsx`, `new-dashboard-modal.tsx`) |
+| FE-17 tests exist | PASS with gaps | See the non-blocking list. Tests were added or updated for the adapters, widget-error, lossy badge, kebab menu, row, modal, management page, shell, config-panel, palette-drawer, zod-form and meal-plan-widget |
+| FE-18 mocks | N/A | No services changed |
+| FE-19 cursor-pointer | PASS | The `<button>`/`<a>`/`Link` elements are native. The only clickable non-native element is `weather-widget.tsx:138` (`cursor-pointer`). The `MenuPrimitive.Item` has `cursor-pointer` (`dashboard-kebab-menu.tsx:111`) |
+
+### Plan Global Constraints
+
+| Constraint | Status | Evidence |
+|-----------|--------|----------|
+| No colour literals or palette classes | PASS | See FE-06 |
+| Status tokens only (no `success-text`) | PASS | Grep for `success-text`: zero matches |
+| Whole literal class strings | FAIL | See Blocking 1 |
+| Fraunces (`font-heading`) at least `text-lg`, never on controls | PASS | All 19 `font-heading` uses are `text-lg` or larger on CardTitle/Title/h2 (e.g. `tasks-today-adapter.tsx:60`, `palette-drawer.tsx:42`, `DashboardManagementPage.tsx:71`). None is on a Button, Link or input. The `Link` inside CardTitle, e.g. `tasks-today-adapter.tsx:61`, inherits the heading font and is a heading link, not a control |
+| Status never colour-only | PASS | `widget-error.tsx:11-14` pairs an AlertTriangle icon with text. `tasks-today-adapter.tsx:68-70` pairs the Overdue colour with an icon and a count label. The default badge uses a Star icon (`dashboard-row.tsx:62`) |
+| Pointer targets at least 24px; icon-only controls, list rows and primary actions `coarse:` 44px | FAIL | Meal-plan recipe link (Blocking 2). Others pass: `dashboard-row.tsx:50,75` (`size-7 coarse:size-11`), `dashboard-kebab-menu.tsx:93` (`coarse:size-11`), the card-action chevrons (`size-6 … coarse:size-11`), the drawer close buttons (`palette-drawer.tsx:46`, `config-panel.tsx:97`), the widget-chrome `icon-sm` (Button `coarse:size-11`, `button.tsx:34`), the `sm` Button (`coarse:min-h-11`, `button.tsx:26`) |
+| Motion collapses under reduced motion | PASS | The global rule at `index.css:330` plus `motion-safe:transition-colors` (`tasks-summary.tsx:54`, `reminders-summary.tsx:49`) and `prefersReducedMotion()` for the dnd transition (`dashboard-row.tsx:29`). The `transition-opacity` links on legacy widgets are collapsed by the global rule |
+| Tests updated, not deleted | PASS | `git diff --diff-filter=D 93d320a..HEAD` shows no deleted test files. The only guard-test change removes PENDING entries |
+| `frontend/src/lib/dashboard/**` untouched | PASS | `git diff --stat 93d320a..HEAD -- frontend/src/lib/dashboard` is empty |
+
+### Deferred-minor triage
+
+| Item | Decision |
+|------|----------|
+| (a) meal-plan recipe links lack `coarse:min-h-11` | FIX BEFORE PR. It violates a binding constraint, it is a one-line class change, and the tasks adapters set the precedent (Blocking 2) |
+| (b) "Open meals" link has no explicit focus ring | LEAVE. The global `:focus-visible` rule at `index.css:314` covers it. Add the explicit ring only if you want parity with the adapter chevrons |
+| (c) the disabled configure button's `title` is unreachable | LEAVE (Stage 7). `button.tsx:9` sets `disabled:pointer-events-none`, so the tooltip never fires. The state is still conveyed by `disabled` and `aria-label`, and the title is only a supplementary hint. A fix would wrap the button in a span, or put the reason into `aria-describedby` |
+| (d) the Overdue heading's `text-destructive` dark-mode contrast is unpinned | LEAVE. I computed destructive against card: light about 5.4:1 (L 0.52 vs 0.995) and dark about 6.6:1 (L 0.71 vs 0.23), both above AA. `design-tokens.test.ts:12` pins destructive against background. Optionally add `["--destructive","--card"]` to that list |
+| (e) `widget-error.tsx` has no retry affordance | LEAVE. Not a stated constraint. The widgets are read-only and refetch on their own query cadence. Record it as a Stage 7 or backlog UX improvement |
+
+### Verdict
+
+NEEDS-WORK. Build and tests pass (921/921). Two blocking constraint violations: template-string class concatenation (`habits-widget.tsx:92`, `workout-widget.tsx:78`) and the missing coarse target on the meal-plan recipe link (`meal-plan-widget.tsx:105`). Eight new non-blocking findings are listed above, four of them pre-existing. Deferred items (b) to (e) are leave, and (a) is fix-before-PR.

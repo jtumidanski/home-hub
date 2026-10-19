@@ -68,4 +68,16 @@ describe("CalendarTomorrowAdapter", () => {
     render(<MemoryRouter><CalendarTomorrowAdapter config={{ includeAllDay: true, limit: 5 }} /></MemoryRouter>);
     expect(screen.getByText(/No events tomorrow/i)).toBeInTheDocument();
   });
+
+  it("shows the owner name as text alongside the colour dot and labels the header link", () => {
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date("2026-05-01T12:00:00Z"));
+    (useCalendarEvents as unknown as ReturnType<typeof vi.fn>).mockReturnValue({
+      data: { data: [event("a", "Lunch", "2026-05-02T17:00:00Z", "2026-05-02T18:00:00Z")] },
+      isLoading: false, isError: false,
+    });
+    render(<MemoryRouter><CalendarTomorrowAdapter config={{ includeAllDay: true, limit: 5 }} /></MemoryRouter>);
+    expect(screen.getByText("(Me)")).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: "Open calendar" })).toHaveAttribute("href", "/app/calendar");
+  });
 });

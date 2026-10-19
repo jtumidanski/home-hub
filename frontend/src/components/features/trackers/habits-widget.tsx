@@ -4,6 +4,7 @@ import { useTenant } from "@/context/tenant-context";
 import { useLocalDate } from "@/lib/hooks/use-local-date";
 import { Card, CardAction, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
+import { cn } from "@/lib/utils";
 import { ListChecks, Check, Circle, SkipForward, ChevronRight } from "lucide-react";
 
 export function HabitsWidget() {
@@ -64,15 +65,15 @@ export function HabitsWidget() {
     <Link to="/app/habits" className="block h-full transition-opacity hover:opacity-80">
       <Card className="h-full">
         <CardHeader>
-          <CardTitle className="text-sm font-medium">Habits</CardTitle>
+          <CardTitle className="font-heading text-lg @xl:text-2xl">Habits</CardTitle>
           <CardAction>
-            <ChevronRight className="h-4 w-4 text-muted-foreground" />
+            <ChevronRight className="size-4 text-muted-foreground" aria-hidden="true" />
           </CardAction>
         </CardHeader>
         <CardContent>
           {items.length === 0 ? (
             <div className="flex items-center gap-2 text-muted-foreground">
-              <ListChecks className="h-5 w-5" />
+              <ListChecks className="size-5 @xl:size-6 shrink-0" />
               <p className="text-sm">No habits scheduled for today</p>
             </div>
           ) : (
@@ -83,13 +84,13 @@ export function HabitsWidget() {
                 return (
                   <div key={item.id} className="flex items-center gap-2">
                     {done ? (
-                      <Check className="h-4 w-4 text-green-600 shrink-0" aria-label="Completed" />
+                      <Check className="size-4 @xl:size-6 text-success shrink-0" aria-label="Completed" />
                     ) : skipped ? (
-                      <SkipForward className="h-4 w-4 text-muted-foreground shrink-0" aria-label="Skipped" />
+                      <SkipForward className="size-4 @xl:size-6 text-muted-foreground shrink-0" aria-label="Skipped" />
                     ) : (
-                      <Circle className="h-4 w-4 text-muted-foreground shrink-0" aria-label="Pending" />
+                      <Circle className="size-4 @xl:size-6 text-muted-foreground shrink-0" aria-label="Pending" />
                     )}
-                    <span className={`text-sm truncate ${done || skipped ? "text-muted-foreground line-through" : ""}`}>
+                    <span className={cn("text-sm @xl:text-xl truncate", (done || skipped) && "text-muted-foreground line-through")}>
                       {item.name}
                     </span>
                   </div>

@@ -81,15 +81,15 @@ export function CalendarWidget(_props: CalendarWidgetProps = {}) {
     <Link to="/app/calendar" className="block h-full transition-opacity hover:opacity-80">
       <Card className="h-full">
         <CardHeader>
-          <CardTitle className="text-sm font-medium">Calendar</CardTitle>
+          <CardTitle className="font-heading text-lg @xl:text-2xl">Calendar</CardTitle>
           <CardAction>
-            <ChevronRight className="h-4 w-4 text-muted-foreground" />
+            <ChevronRight className="size-4 text-muted-foreground" aria-hidden="true" />
           </CardAction>
         </CardHeader>
         <CardContent>
           {events.length === 0 ? (
             <div className="flex items-center gap-2 text-muted-foreground">
-              <CalendarDays className="h-5 w-5" />
+              <CalendarDays className="size-5 @xl:size-6 shrink-0" />
               <p className="text-sm">No events today</p>
             </div>
           ) : (
@@ -101,11 +101,11 @@ export function CalendarWidget(_props: CalendarWidgetProps = {}) {
                   </span>
                   <div className="flex items-center gap-1.5 min-w-0">
                     <span
-                      className="h-2 w-2 rounded-full shrink-0"
+                      className="size-3 rounded-full shrink-0 ring-1 ring-border"
                       style={{ backgroundColor: event.attributes.userColor }}
-                      title={event.attributes.userDisplayName}
                     />
-                    <span className="text-sm truncate">{event.attributes.title}</span>
+                    <span className="sr-only">{event.attributes.userDisplayName}</span>
+                    <span className="text-sm @xl:text-xl truncate">{event.attributes.title}</span>
                   </div>
                 </div>
               ))}

@@ -2,9 +2,11 @@ import { useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useNavigate } from "react-router-dom";
+import { AlertCircle } from "lucide-react";
 import {
   Dialog,
   DialogContent,
+  DialogFooter,
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
@@ -128,10 +130,19 @@ export function NewDashboardModal({ open, onOpenChange }: NewDashboardModalProps
             <Input
               id="dashboard-name"
               placeholder="My dashboard"
+              aria-invalid={!!errors.name}
+              aria-describedby={errors.name ? "dashboard-name-error" : undefined}
               {...register("name")}
             />
             {errors.name && (
-              <p className="text-xs text-destructive">{errors.name.message}</p>
+              <p
+                id="dashboard-name-error"
+                role="alert"
+                className="flex items-center gap-1 text-sm text-destructive"
+              >
+                <AlertCircle className="size-4" aria-hidden="true" />
+                {errors.name.message}
+              </p>
             )}
           </div>
 
@@ -166,7 +177,7 @@ export function NewDashboardModal({ open, onOpenChange }: NewDashboardModalProps
             </Select>
           </div>
 
-          <div className="flex justify-end gap-2 pt-2">
+          <DialogFooter>
             <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
               Cancel
             </Button>
@@ -175,7 +186,7 @@ export function NewDashboardModal({ open, onOpenChange }: NewDashboardModalProps
                 ? "Creating..."
                 : "Create"}
             </Button>
-          </div>
+          </DialogFooter>
         </form>
       </DialogContent>
     </Dialog>
