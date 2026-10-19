@@ -217,3 +217,9 @@ Geist woff2 files in `dist/assets` (variable font, split by `unicode-range` in `
 | 0+1 | /app/shopping/grocery | 1280, 390 | light, dark | keyboard walk (link-overlay cards), skeleton heights | not rendered — browser unavailable |
 | 0+1 | /app/ingredients, /app/ingredients/:id | 1280, 390 | light, dark | keyboard walk (link-overlay cards, bulk categorize), skeleton heights | not rendered — browser unavailable |
 | 0+1 | /app/workouts/today, /app/workouts/review | 1280, 390 | light, dark | keyboard walk, badge variants, contrast spot-checks | not rendered — browser unavailable |
+| 2 | /app (shell: sidebar, active nav item, user menu) | 1280 | light, dark | keyboard walk, active item clay-on-sage contrast, "My Dashboards" label contrast, destructive menu item on accent | not rendered — browser unavailable |
+| 2 | /app (mobile header + drawer) | 390 | light, dark | drawer focus trap, closed drawer out of Tab order, focus returns to menu button, 44 px targets, reduced motion, wordmark wrap | not rendered — browser unavailable |
+| 2 | /login | 1280, 390 | light, dark | keyboard walk (provider links: single tab stop), h1, brand mark, 44 px provider buttons | not rendered — browser unavailable |
+| 2 | /onboarding | 1280, 390 | light, dark | keyboard walk, step label, Accept target size, spinner under reduced motion | not rendered — browser unavailable |
+| 2 | unknown route (404) and error page | 1280, 390 | light, dark | h1, Home link, retry live region announcement | not rendered — browser unavailable |
+| 2 | toasts (any route) | 1280, 390 | light, dark | token surface/border actually applied over Sonner defaults, per-type border + icon, 24 px close button, reduced motion | not rendered — browser unavailable |
