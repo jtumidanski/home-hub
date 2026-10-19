@@ -247,7 +247,7 @@ function ReviewItemCard({ item }: { item: SummaryItem }) {
       <p className="flex items-center gap-1">
         {renderActual(item.kind, item.status, actual)}
         {targetMet(item.kind, item.planned, actual) && (
-          <span aria-label="Target met" title="Target met" className="text-emerald-600">
+          <span aria-label="Target met" title="Target met" className="text-success">
             <Check className="inline h-3 w-3" />
           </span>
         )}

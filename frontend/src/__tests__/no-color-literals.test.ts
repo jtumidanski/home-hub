@@ -34,7 +34,6 @@ const PENDING: string[] = [
   "pages/DataRetentionPage.tsx",
   "pages/HouseholdMembersPage.tsx",
   "pages/HouseholdsPage.tsx",
-  "pages/IngredientDetailPage.tsx",
   "pages/MealsPage.tsx",
   "pages/PackagesPage.tsx",
   "pages/RecipesPage.tsx",
@@ -46,9 +45,7 @@ const PENDING: string[] = [
   "pages/WeatherPage.tsx",
   "pages/WishListPage.tsx",
   "pages/WorkoutExercisesPage.tsx",
-  "pages/WorkoutReviewPage.tsx",
   "pages/WorkoutTaxonomyPage.tsx",
-  "pages/WorkoutTodayPage.tsx",
   "pages/WorkoutWeekPage.tsx",
 ];
 

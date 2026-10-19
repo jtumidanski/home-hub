@@ -261,15 +261,15 @@ function TodayItem({ item, weekStart }: { item: WeekItem; weekStart: string }) {
 }
 
 function StatusBadge({ status }: { status: string }) {
-  const tone =
+  const variant =
     status === "done"
-      ? "bg-emerald-500/10 text-emerald-600"
+      ? "success"
       : status === "skipped"
-      ? "bg-rose-500/10 text-rose-600"
+      ? "destructive"
       : status === "partial"
-      ? "bg-amber-500/10 text-amber-600"
-      : "bg-muted text-muted-foreground";
-  return <span className={`rounded px-2 py-0.5 text-xs font-medium ${tone}`}>{status}</span>;
+      ? "warning"
+      : "secondary";
+  return <Badge variant={variant}>{status}</Badge>;
 }
 
 function summarizePlanned(it: WeekItem): string {
