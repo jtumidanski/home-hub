@@ -132,7 +132,7 @@ export function TasksPage() {
             {row.original.attributes.title}
           </p>
           {row.original.attributes.dueOn && (
-            <p className="text-sm text-muted-foreground tabular-nums">Due: {row.original.attributes.dueOn}</p>
+            <p className="text-sm text-muted-foreground tabular-nums">Due {row.original.attributes.dueOn}</p>
           )}
         </div>
       ),
