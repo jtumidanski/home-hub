@@ -36,7 +36,7 @@ describe("TaskCard", () => {
 
     await user.click(screen.getByRole("button", { name: "Actions" }));
 
-    expect(screen.getByText("Mark complete")).toBeInTheDocument();
+    expect(await screen.findByText("Mark complete")).toBeInTheDocument();
   });
 
   it('renders "Mark incomplete" action for completed task', async () => {
@@ -46,7 +46,7 @@ describe("TaskCard", () => {
 
     await user.click(screen.getByRole("button", { name: "Actions" }));
 
-    expect(screen.getByText("Mark incomplete")).toBeInTheDocument();
+    expect(await screen.findByText("Mark incomplete")).toBeInTheDocument();
   });
 
   it("calls onToggleComplete with task id and status when Mark complete is clicked", async () => {
@@ -56,7 +56,7 @@ describe("TaskCard", () => {
     render(<TaskCard task={task} onToggleComplete={onToggleComplete} onDelete={vi.fn()} />);
 
     await user.click(screen.getByRole("button", { name: "Actions" }));
-    await user.click(screen.getByText("Mark complete"));
+    await user.click(await screen.findByText("Mark complete"));
 
     expect(onToggleComplete).toHaveBeenCalledWith("task-1", "pending");
   });
@@ -68,7 +68,7 @@ describe("TaskCard", () => {
     render(<TaskCard task={task} onToggleComplete={vi.fn()} onDelete={onDelete} />);
 
     await user.click(screen.getByRole("button", { name: "Actions" }));
-    await user.click(screen.getByText("Delete"));
+    await user.click(await screen.findByText("Delete"));
 
     expect(onDelete).toHaveBeenCalledWith("task-1");
   });

@@ -105,7 +105,7 @@ describe("RecipeCard", () => {
     render(<RecipeCard recipe={makeRecipe()} onDelete={onDelete} />);
 
     await user.click(screen.getByRole("button", { name: "Actions" }));
-    await user.click(screen.getByText("Delete"));
+    await user.click(await screen.findByText("Delete"));
 
     expect(onDelete).toHaveBeenCalledWith("recipe-1");
   });
@@ -115,7 +115,7 @@ describe("RecipeCard", () => {
     render(<RecipeCard recipe={makeRecipe()} onDelete={vi.fn()} />);
 
     await user.click(screen.getByRole("button", { name: "Actions" }));
-    await user.click(screen.getByText("Edit"));
+    await user.click(await screen.findByText("Edit"));
 
     expect(mockNavigate).toHaveBeenCalledWith("/app/recipes/recipe-1/edit");
   });

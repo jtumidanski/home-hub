@@ -25,15 +25,18 @@ export function PullToRefresh({ onRefresh, children }: PullToRefreshProps) {
     >
       {(pullDistance > 0 || isRefreshing) && (
         <div
-          className="flex items-center justify-center transition-[height] duration-150"
+          role="status"
+          className="flex items-center justify-center transition-[height] duration-(--duration-fast) ease-out"
           style={{ height: isRefreshing ? 48 : pullDistance }}
         >
           <Loader2
+            aria-hidden="true"
             className="h-5 w-5 animate-spin text-muted-foreground"
             style={{
               opacity: isRefreshing ? 1 : Math.min(pullDistance / 60, 1),
             }}
           />
+          <span className="sr-only">{isRefreshing ? "Refreshing" : "Pull to refresh"}</span>
         </div>
       )}
       {children}

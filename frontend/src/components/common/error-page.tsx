@@ -1,6 +1,6 @@
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { EmptyState } from "@/components/common/empty-state";
 import { AlertTriangle } from "lucide-react";
 
 interface ErrorPageProps {
@@ -50,29 +50,26 @@ export function ErrorPage({
 
   return (
     <div className="flex min-h-[50vh] items-center justify-center p-6">
-      <Card className="mx-auto max-w-md text-center">
-        <CardHeader>
-          <div className="mx-auto mb-2">
-            <AlertTriangle className="h-10 w-10 text-muted-foreground" />
-          </div>
-          <CardTitle>{title ?? getDefaultTitle(statusCode)}</CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <p className="text-sm text-muted-foreground">
-            {message ?? getDefaultMessage(statusCode)}
-          </p>
-          <div className="flex justify-center gap-2">
-            {showBackButton && (
-              <Button variant="outline" onClick={() => navigate(-1)}>
-                Go Back
-              </Button>
-            )}
-            {showRetryButton && onRetry && (
-              <Button onClick={onRetry}>Try Again</Button>
-            )}
-          </div>
-        </CardContent>
-      </Card>
+      <EmptyState
+        className="mx-auto max-w-md"
+        icon={AlertTriangle}
+        title={title ?? getDefaultTitle(statusCode)}
+        description={message ?? getDefaultMessage(statusCode)}
+        action={
+          showBackButton || (showRetryButton && onRetry) ? (
+            <div className="flex justify-center gap-2">
+              {showBackButton && (
+                <Button variant="outline" onClick={() => navigate(-1)}>
+                  Go Back
+                </Button>
+              )}
+              {showRetryButton && onRetry && (
+                <Button onClick={onRetry}>Try Again</Button>
+              )}
+            </div>
+          ) : undefined
+        }
+      />
     </div>
   );
 }
