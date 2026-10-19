@@ -53,7 +53,7 @@ export function PackageCard({ pkg }: PackageCardProps) {
                   </span>
                   {a.status && <StatusBadge status={a.status} />}
                   {a.private && (
-                    <Lock className="h-3 w-3 text-muted-foreground" />
+                    <Lock className="h-3 w-3 text-muted-foreground" aria-label="Private" role="img" />
                   )}
                 </div>
                 {!isRedacted && truncatedTracking && (
@@ -77,32 +77,31 @@ export function PackageCard({ pkg }: PackageCardProps) {
               </div>
             </div>
 
-            <div className="flex items-center gap-1 shrink-0">
+            <div className="flex items-center gap-1 shrink-0 flex-wrap justify-end">
               {a.isOwner && !isRedacted && (
                 <>
                   <Button
                     variant="ghost"
                     size="icon"
-                    className="h-7 w-7"
                     onClick={() => refreshMutation.mutate(pkg.id)}
                     disabled={refreshMutation.isPending}
                     title="Refresh tracking"
+                    aria-label="Refresh tracking"
                   >
                     <RefreshCw className={`h-3.5 w-3.5 ${refreshMutation.isPending ? "animate-spin" : ""}`} />
                   </Button>
                   <Button
                     variant="ghost"
                     size="icon"
-                    className="h-7 w-7"
                     onClick={() => setEditing(true)}
                     title="Edit"
+                    aria-label="Edit"
                   >
                     <Pencil className="h-3.5 w-3.5" />
                   </Button>
                   <Button
                     variant="ghost"
                     size="icon"
-                    className="h-7 w-7"
                     onClick={() =>
                       updateMutation.mutate({
                         id: pkg.id,
@@ -110,6 +109,7 @@ export function PackageCard({ pkg }: PackageCardProps) {
                       })
                     }
                     title={a.private ? "Make visible" : "Make private"}
+                    aria-label={a.private ? "Make visible" : "Make private"}
                   >
                     {a.private ? <Unlock className="h-3.5 w-3.5" /> : <Lock className="h-3.5 w-3.5" />}
                   </Button>
@@ -117,10 +117,10 @@ export function PackageCard({ pkg }: PackageCardProps) {
                     <Button
                       variant="ghost"
                       size="icon"
-                      className="h-7 w-7"
-                      onClick={() => unarchiveMutation.mutate(pkg.id)}
+                        onClick={() => unarchiveMutation.mutate(pkg.id)}
                       disabled={unarchiveMutation.isPending}
                       title="Unarchive"
+                      aria-label="Unarchive"
                     >
                       <ArchiveRestore className="h-3.5 w-3.5" />
                     </Button>
@@ -128,10 +128,10 @@ export function PackageCard({ pkg }: PackageCardProps) {
                     <Button
                       variant="ghost"
                       size="icon"
-                      className="h-7 w-7"
-                      onClick={() => archiveMutation.mutate(pkg.id)}
+                        onClick={() => archiveMutation.mutate(pkg.id)}
                       disabled={archiveMutation.isPending}
                       title="Archive"
+                      aria-label="Archive"
                     >
                       <Archive className="h-3.5 w-3.5" />
                     </Button>
@@ -139,10 +139,11 @@ export function PackageCard({ pkg }: PackageCardProps) {
                   <Button
                     variant="ghost"
                     size="icon"
-                    className="h-7 w-7 text-destructive hover:text-destructive"
+                    className="ml-2 text-destructive hover:text-destructive"
                     onClick={() => setConfirmingDelete(true)}
                     disabled={deleteMutation.isPending}
                     title="Delete"
+                    aria-label="Delete"
                   >
                     <Trash2 className="h-3.5 w-3.5" />
                   </Button>
@@ -152,9 +153,9 @@ export function PackageCard({ pkg }: PackageCardProps) {
                 <Button
                   variant="ghost"
                   size="icon"
-                  className="h-7 w-7"
                   onClick={() => setExpanded(!expanded)}
                   title={expanded ? "Collapse" : "Expand"}
+                  aria-label={expanded ? "Collapse" : "Expand"}
                 >
                   {expanded ? <ChevronUp className="h-3.5 w-3.5" /> : <ChevronDown className="h-3.5 w-3.5" />}
                 </Button>

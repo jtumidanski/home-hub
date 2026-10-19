@@ -110,7 +110,7 @@ export function CreatePackageDialog({ open, onClose }: CreatePackageDialogProps)
               <p className="text-xs text-destructive">{errors.trackingNumber.message}</p>
             )}
             {detectMutation.data?.data.attributes.confidence === "low" && (
-              <p className="text-xs text-amber-600">
+              <p className="text-xs text-warning-text">
                 Carrier could not be auto-detected. Please select manually.
               </p>
             )}

@@ -56,7 +56,8 @@ describe("PackageCard", () => {
   it("shows owner actions for package owner", () => {
     render(<PackageCard pkg={makePkg()} />);
 
-    expect(screen.getByTitle("Refresh tracking")).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Refresh tracking" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Delete" })).toBeInTheDocument();
     expect(screen.getByTitle("Edit")).toBeInTheDocument();
     expect(screen.getByTitle("Make private")).toBeInTheDocument();
     expect(screen.getByTitle("Archive")).toBeInTheDocument();

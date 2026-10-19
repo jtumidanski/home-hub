@@ -582,7 +582,7 @@ Mapping: `bg-emerald-500/10 text-emerald-600` → `bg-success/10 text-success`; 
 - Modify: `frontend/src/components/features/{packages,weather}/*`, `frontend/src/pages/{PackagesPage,WeatherPage}.tsx`
 - Modify: `no-color-literals.test.ts` (remove those two dirs and two page files)
 
-- [ ] **Step 1: Remove PENDING entries; run guard** → FAIL (packages ≈7 matches). **Step 2: Implement:** carrier icons map to `text-chart-1..5` (categorical, never carrying text); status (delivered/delayed/exception) uses `Badge` status variants with icons; weather temps `tabular-nums`. **Step 3: Run** guard + area tests → PASS. **Step 4: Commit** `feat(frontend): restyle packages and weather`.
+- [x] **Step 1: Remove PENDING entries; run guard** → FAIL (packages ≈7 matches). **Step 2: Implement:** carrier icons map to `text-chart-1..5` (categorical, never carrying text); status (delivered/delayed/exception) uses `Badge` status variants with icons; weather temps `tabular-nums`. **Step 3: Run** guard + area tests → PASS. **Step 4: Commit** `feat(frontend): restyle packages and weather`.
 
 ### Task 28: Resolve remaining Stage 6 findings
 

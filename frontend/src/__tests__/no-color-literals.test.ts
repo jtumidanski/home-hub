@@ -9,14 +9,10 @@ const SCANNED_ROOTS = ["components/features", "pages"];
 /** Path prefixes (relative to frontend/src) not yet migrated; files under them are skipped. */
 const PENDING: string[] = [
   "components/features/households/",
-  "components/features/packages/",
-  "components/features/weather/",
   "pages/DataRetentionPage.tsx",
   "pages/HouseholdMembersPage.tsx",
   "pages/HouseholdsPage.tsx",
-  "pages/PackagesPage.tsx",
   "pages/SettingsPage.tsx",
-  "pages/WeatherPage.tsx",
 ];
 
 /** Permitted literals: exact file + exact matched text; reason mirrors DESIGN.md. */

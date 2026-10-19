@@ -1,7 +1,9 @@
 import { useState, useCallback, useMemo } from "react";
-import { Plus } from "lucide-react";
+import { Package as PackageIcon, Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
+import { PageHeader } from "@/components/common/page-header";
+import { EmptyState } from "@/components/common/empty-state";
 import { ErrorCard } from "@/components/common/error-card";
 import { PullToRefresh } from "@/components/common/pull-to-refresh";
 import { PackageCard } from "@/components/features/packages/package-card";
@@ -51,37 +53,42 @@ export function PackagesPage() {
   return (
     <PullToRefresh onRefresh={handleRefresh}>
       <div className="p-4 md:p-6 space-y-4">
-        <div className="flex items-center justify-between">
-          <div>
-            <h1 className="text-xl md:text-2xl font-semibold">Packages</h1>
-            <p className="text-sm text-muted-foreground">
-              {packages.length} package{packages.length !== 1 ? "s" : ""}
-            </p>
-          </div>
-          <div className="flex items-center gap-2">
-            <Button
-              variant={showArchived ? "secondary" : "outline"}
-              size="sm"
-              onClick={() => setShowArchived(!showArchived)}
-            >
-              {showArchived ? "Hide Archived" : "Show Archived"}
-            </Button>
-            <Button size="sm" onClick={() => setShowCreate(true)}>
-              <Plus className="h-4 w-4 mr-1" />
-              Add Package
-            </Button>
-          </div>
-        </div>
+        <PageHeader
+          title="Packages"
+          description={`${packages.length} package${packages.length !== 1 ? "s" : ""}`}
+          actions={
+            <>
+              <Button
+                variant={showArchived ? "secondary" : "outline"}
+                size="sm"
+                onClick={() => setShowArchived(!showArchived)}
+              >
+                {showArchived ? "Hide Archived" : "Show Archived"}
+              </Button>
+              <Button size="sm" onClick={() => setShowCreate(true)}>
+                <Plus className="h-4 w-4 mr-1" />
+                Add Package
+              </Button>
+            </>
+          }
+        />
 
         {isError && (
           <ErrorCard message="Failed to load packages. Try refreshing the page." />
         )}
 
         {packages.length === 0 && !isError && (
-          <div className="text-center py-12 text-muted-foreground">
-            <p className="text-lg">No packages yet</p>
-            <p className="text-sm mt-1">Add a tracking number to get started.</p>
-          </div>
+          <EmptyState
+            icon={PackageIcon}
+            title="No packages yet"
+            description="Add a tracking number to get started."
+            action={
+              <Button size="sm" onClick={() => setShowCreate(true)}>
+                <Plus className="h-4 w-4 mr-1" />
+                Add Package
+              </Button>
+            }
+          />
         )}
 
         <div className="space-y-3">

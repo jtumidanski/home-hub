@@ -140,21 +140,22 @@ export function ManageLocationsDialog({ open, onOpenChange }: ManageLocationsDia
                         onChange={(e) => setEditLabel(e.target.value)}
                         onKeyDown={(e) => e.key === "Enter" && handleConfirmRename(loc.id)}
                         placeholder={loc.attributes.placeName}
-                        className="h-7 text-sm flex-1"
+                        className="text-sm flex-1"
+                        aria-label="Location name"
                         autoFocus
                       />
                       <Button
-                        size="sm"
+                        size="icon"
                         variant="ghost"
-                        className="h-7 w-7 p-0"
+                        aria-label="Save name"
                         onClick={() => handleConfirmRename(loc.id)}
                       >
                         <Check className="h-3.5 w-3.5" />
                       </Button>
                       <Button
-                        size="sm"
+                        size="icon"
                         variant="ghost"
-                        className="h-7 w-7 p-0"
+                        aria-label="Cancel rename"
                         onClick={() => setEditingId(null)}
                       >
                         <X className="h-3.5 w-3.5" />
@@ -173,9 +174,9 @@ export function ManageLocationsDialog({ open, onOpenChange }: ManageLocationsDia
                         )}
                       </div>
                       <Button
-                        size="sm"
+                        size="icon"
                         variant="ghost"
-                        className="h-7 w-7 p-0"
+                        aria-label={`Rename ${loc.attributes.label ?? loc.attributes.placeName}`}
                         onClick={() =>
                           handleStartRename(loc.id, loc.attributes.label)
                         }
@@ -183,9 +184,10 @@ export function ManageLocationsDialog({ open, onOpenChange }: ManageLocationsDia
                         <Pencil className="h-3.5 w-3.5" />
                       </Button>
                       <Button
-                        size="sm"
+                        size="icon"
                         variant="ghost"
-                        className="h-7 w-7 p-0 text-destructive hover:text-destructive"
+                        aria-label={`Delete ${loc.attributes.label ?? loc.attributes.placeName}`}
+                        className="text-destructive hover:text-destructive"
                         onClick={() => void handleDelete(loc.id)}
                       >
                         <X className="h-3.5 w-3.5" />
