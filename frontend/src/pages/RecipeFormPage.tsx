@@ -276,8 +276,9 @@ export function RecipeFormPage() {
                     <ul className="space-y-1">
                       {preview.normalization.map((n, i) => (
                         <li key={i} className="text-xs flex items-center gap-1.5">
-                          <span className={n.status === "unresolved" ? "text-yellow-500" : "text-green-500"}>
-                            {n.status === "unresolved" ? "?" : "✓"}
+                          <span className={n.status === "unresolved" ? "text-warning-text" : "text-success"}>
+                            <span aria-hidden="true">{n.status === "unresolved" ? "?" : "✓"}</span>
+                            <span className="sr-only">{n.status === "unresolved" ? "Unresolved" : "Resolved"}</span>
                           </span>
                           <span>{n.rawName}</span>
                           {n.canonicalName && (

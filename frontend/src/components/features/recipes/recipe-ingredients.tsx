@@ -26,9 +26,9 @@ function StatusIcon({ status }: { status: string }) {
     case "matched":
     case "alias_matched":
     case "manually_confirmed":
-      return <Check className="h-3.5 w-3.5 text-green-500 shrink-0" />;
+      return <Check aria-label="Resolved" className="h-3.5 w-3.5 text-success shrink-0" />;
     case "unresolved":
-      return <AlertTriangle className="h-3.5 w-3.5 text-yellow-500 shrink-0" />;
+      return <AlertTriangle aria-label="Unresolved" className="h-3.5 w-3.5 text-warning shrink-0" />;
     default:
       return null;
   }
@@ -69,7 +69,7 @@ export function RecipeIngredients({
         </div>
       )}
       {isNormalized && hasUnitWarnings && (
-        <div className="flex items-center gap-1 text-xs text-yellow-600">
+        <div className="flex items-center gap-1 text-xs text-warning-text">
           <CircleAlert className="h-3 w-3" />
           Some units are not recognized and may affect meal plan ingredient consolidation
         </div>
@@ -82,8 +82,9 @@ export function RecipeIngredients({
               <li key={ing.id} className="flex items-center gap-1.5 text-sm">
                 <StatusIcon status={ing.normalizationStatus} />
                 {ing.normalizationStatus !== "unresolved" && ing.rawUnit && !ing.canonicalUnit && (
-                  <span title={`Unit '${ing.rawUnit}' is not recognized and may prevent ingredient consolidation in meal exports`}>
-                    <CircleAlert className="h-3.5 w-3.5 text-yellow-500 shrink-0" />
+                  <span>
+                    <CircleAlert aria-hidden="true" className="h-3.5 w-3.5 text-warning shrink-0" />
+                    <span className="sr-only">{`Unit '${ing.rawUnit}' is not recognized and may prevent ingredient consolidation in meal exports`}</span>
                   </span>
                 )}
                 <span className="flex-1">

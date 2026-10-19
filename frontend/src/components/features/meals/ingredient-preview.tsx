@@ -96,7 +96,7 @@ export function IngredientPreview({ planId }: IngredientPreviewProps) {
   return (
     <div className="space-y-3">
       {unresolvedCount > 0 && (
-        <div className="flex items-center gap-1 text-xs text-yellow-600">
+        <div className="flex items-center gap-1 text-xs text-warning-text">
           <AlertTriangle className="h-3 w-3" />
           {unresolvedCount} ingredient{unresolvedCount > 1 ? "s" : ""} could not be consolidated
         </div>
