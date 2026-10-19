@@ -1,4 +1,5 @@
-import { render, screen } from "@testing-library/react";
+import { useState } from "react";
+import { fireEvent, render, screen } from "@testing-library/react";
 import { describe, expect, it } from "vitest";
 import { Input } from "../input";
 import { Textarea } from "../textarea";
@@ -54,7 +55,7 @@ describe("Button destructive", () => {
 });
 
 describe("RadioGroupItem", () => {
-  it("renders a 20px radio with border-input and a coarse row", () => {
+  it("renders a token-drawn 20px radio with a coarse row", () => {
     render(
       <RadioGroup value="a" onValueChange={() => {}}>
         <RadioGroupItem value="a">Alpha</RadioGroupItem>
@@ -62,7 +63,27 @@ describe("RadioGroupItem", () => {
     );
     const radio = screen.getByRole("radio", { name: "Alpha" });
     expect(radio.className).toContain("size-5");
+    expect(radio.className).toContain("appearance-none");
     expect(radio.className).toContain("border-input");
+    expect(radio.className).toContain("checked:border-primary");
+    expect(radio.className).not.toContain("accent-primary");
     expect(radio.closest("label")!.className).toContain("coarse:min-h-11");
+  });
+
+  it("selects an item when its label is clicked", () => {
+    const Harness = () => {
+      const [v, setV] = useState("a");
+      return (
+        <RadioGroup value={v} onValueChange={setV}>
+          <RadioGroupItem value="a">Alpha</RadioGroupItem>
+          <RadioGroupItem value="b">Beta</RadioGroupItem>
+        </RadioGroup>
+      );
+    };
+    render(<Harness />);
+    expect(screen.getByRole("radio", { name: "Beta" })).not.toBeChecked();
+    fireEvent.click(screen.getByText("Beta"));
+    expect(screen.getByRole("radio", { name: "Beta" })).toBeChecked();
+    expect(screen.getByRole("radio", { name: "Alpha" })).not.toBeChecked();
   });
 });

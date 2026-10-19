@@ -12,6 +12,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { useCreateEvent, useUpdateEvent } from "@/lib/hooks/api/use-calendar";
 import { createErrorFromUnknown } from "@/lib/api/errors";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { composeRecurrenceRule } from "@/lib/calendar/recurrence";
 import {
   eventFormSchema,
@@ -363,18 +364,13 @@ export function EventFormDialog({
                       render={({ field }) => (
                         <FormItem>
                           <FormControl>
-                            <div className="space-y-2">
+                            <RadioGroup
+                              value={field.value}
+                              onValueChange={(v) => field.onChange(v)}
+                              className="flex-col gap-2"
+                            >
                               <div className="flex items-center gap-2 text-sm">
-                                <label className="flex items-center gap-2">
-                                  <input
-                                    type="radio"
-                                    name="endsMode"
-                                    value="on"
-                                    checked={field.value === "on"}
-                                    onChange={() => field.onChange("on")}
-                                  />
-                                  On
-                                </label>
+                                <RadioGroupItem value="on">On</RadioGroupItem>
                                 <FormField
                                   control={form.control}
                                   name="endsOnDate"
@@ -394,16 +390,7 @@ export function EventFormDialog({
                                 />
                               </div>
                               <div className="flex items-center gap-2 text-sm">
-                                <label className="flex items-center gap-2">
-                                  <input
-                                    type="radio"
-                                    name="endsMode"
-                                    value="after"
-                                    checked={field.value === "after"}
-                                    onChange={() => field.onChange("after")}
-                                  />
-                                  After
-                                </label>
+                                <RadioGroupItem value="after">After</RadioGroupItem>
                                 <FormField
                                   control={form.control}
                                   name="endsAfterCount"
@@ -422,17 +409,8 @@ export function EventFormDialog({
                                 />
                                 <span className="text-muted-foreground">occurrences</span>
                               </div>
-                              <label className="flex items-center gap-2 text-sm">
-                                <input
-                                  type="radio"
-                                  name="endsMode"
-                                  value="never"
-                                  checked={field.value === "never"}
-                                  onChange={() => field.onChange("never")}
-                                />
-                                Never
-                              </label>
-                            </div>
+                              <RadioGroupItem value="never">Never</RadioGroupItem>
+                            </RadioGroup>
                           </FormControl>
                         </FormItem>
                       )}

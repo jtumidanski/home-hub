@@ -50,7 +50,7 @@ export function RadioGroupItem({ value, id, className, children }: RadioGroupIte
         value={value}
         checked={context.value === value}
         onChange={() => context.onValueChange(value)}
-        className="size-5 shrink-0 border-input accent-primary text-primary focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring"
+        className="size-5 shrink-0 cursor-pointer appearance-none rounded-full border border-input bg-background transition-colors duration-(--duration-fast) ease-out checked:border-6 checked:border-primary focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring disabled:cursor-not-allowed disabled:border-input disabled:bg-input/50 disabled:checked:border-muted-foreground dark:bg-input/30"
       />
       <span className="text-sm">{children}</span>
     </label>
