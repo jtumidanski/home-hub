@@ -10,6 +10,7 @@ import { RecipeSteps } from "@/components/features/recipes/recipe-steps";
 import { CookMode } from "@/components/features/recipes/cook-mode";
 import { RecipeImage } from "@/components/features/recipes/recipe-image";
 import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
+import { PageHeader } from "@/components/common/page-header";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -102,37 +103,35 @@ export function RecipeDetailPage() {
           </button>
         )}
 
-        <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3 sm:gap-4">
-          <div className="min-w-0">
-            <div className="flex items-center gap-2">
-              <span className="inline-flex">
-                {attrs.plannerReady
-                  ? <CheckCircle2 aria-hidden="true" className="h-5 w-5 shrink-0 text-success" />
-                  : <AlertCircle aria-hidden="true" className="h-5 w-5 shrink-0 text-warning" />
-                }
-                <span className="sr-only">{plannerTooltip}</span>
-              </span>
-              <h1 className="text-xl sm:text-2xl font-bold break-words">{attrs.title}</h1>
-            </div>
-            {attrs.description && (
-              <p className="mt-1 text-sm sm:text-base text-muted-foreground">{attrs.description}</p>
-            )}
-          </div>
-          <div className="flex flex-wrap gap-2 sm:shrink-0">
-            <Button variant="outline" size="sm" onClick={() => setCookModeOpen(true)}>
-              <Maximize2 className="h-4 w-4 sm:mr-1" />
-              <span className="hidden sm:inline">Cook Mode</span>
-            </Button>
-            <Button variant="outline" size="sm" onClick={() => navigate(`/app/recipes/${id}/edit`)}>
-              <Pencil className="h-4 w-4 sm:mr-1" />
-              <span className="hidden sm:inline">Edit</span>
-            </Button>
-            <Button variant="outline" size="sm" className="text-destructive" onClick={handleDelete}>
-              <Trash2 className="h-4 w-4 sm:mr-1" />
-              <span className="hidden sm:inline">Delete</span>
-            </Button>
-          </div>
-        </div>
+        <PageHeader
+          title={
+            <span className="inline-flex items-center gap-2">
+              {attrs.plannerReady
+                ? <CheckCircle2 aria-hidden="true" className="h-5 w-5 shrink-0 text-success" />
+                : <AlertCircle aria-hidden="true" className="h-5 w-5 shrink-0 text-warning-text" />
+              }
+              <span>{attrs.title}</span>
+            </span>
+          }
+          description={attrs.description || undefined}
+          actions={
+            <>
+              <Button variant="outline" size="sm" onClick={() => setCookModeOpen(true)}>
+                <Maximize2 className="h-4 w-4 sm:mr-1" />
+                <span className="hidden sm:inline">Cook Mode</span>
+              </Button>
+              <Button variant="outline" size="sm" onClick={() => navigate(`/app/recipes/${id}/edit`)}>
+                <Pencil className="h-4 w-4 sm:mr-1" />
+                <span className="hidden sm:inline">Edit</span>
+              </Button>
+              <Button variant="outline" size="sm" className="text-destructive" onClick={handleDelete}>
+                <Trash2 className="h-4 w-4 sm:mr-1" />
+                <span className="hidden sm:inline">Delete</span>
+              </Button>
+            </>
+          }
+        />
+        <p className="sr-only">{plannerTooltip}</p>
 
         {/* Metadata */}
         <div className="flex flex-wrap items-center gap-3 text-sm text-muted-foreground">

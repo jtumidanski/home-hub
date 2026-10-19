@@ -307,6 +307,27 @@
     --swatch-rose-soft: oklch(0.30 0.04 16);
 }
 
+/* Cook mode type scale: fluid sizes for reading at arm's length. */
+@utility text-cook-meta {
+    font-size: clamp(1rem, 2.5vw, 1.75rem);
+}
+@utility text-cook-section {
+    font-size: clamp(1.25rem, 3vw, 2.5rem);
+}
+@utility text-cook-step {
+    font-size: clamp(1.25rem, 3.5vw, 3rem);
+}
+@utility text-cook-focus {
+    font-size: clamp(1.5rem, 5vw, 5rem);
+}
+@utility text-cook-badge {
+    font-size: clamp(0.875rem, 2vw, 1.5rem);
+}
+@utility size-cook-badge {
+    width: clamp(2rem, 4vw, 3rem);
+    height: clamp(2rem, 4vw, 3rem);
+}
+
 @layer base {
   * {
     @apply border-border;

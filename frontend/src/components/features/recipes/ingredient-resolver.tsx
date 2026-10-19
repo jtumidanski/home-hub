@@ -3,6 +3,8 @@ import { Search, Plus } from "lucide-react";
 import { toast } from "sonner";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Label } from "@/components/ui/label";
 import { useIngredients, useCreateIngredient } from "@/lib/hooks/api/use-ingredients";
 import { useResolveIngredient } from "@/lib/hooks/api/use-ingredient-normalization";
 import { createErrorFromUnknown } from "@/lib/api/errors";
@@ -51,7 +53,7 @@ export function IngredientResolver({ recipeId, ingredientId, rawName }: Ingredie
 
   if (!isOpen) {
     return (
-      <Button variant="outline" size="sm" className="text-xs h-6 px-2" onClick={() => setIsOpen(true)}>
+      <Button variant="outline" size="sm" className="h-8 px-2 text-sm" onClick={() => setIsOpen(true)}>
         Resolve
       </Button>
     );
@@ -60,11 +62,12 @@ export function IngredientResolver({ recipeId, ingredientId, rawName }: Ingredie
   return (
     <div className="mt-1 p-2 border rounded-md bg-background shadow-sm space-y-2 w-64">
       <div className="relative">
-        <Search className="absolute left-2 top-1/2 h-3 w-3 -translate-y-1/2 text-muted-foreground" />
+        <Search aria-hidden="true" className="absolute left-2 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
         <Input
           value={searchQuery}
           onChange={(e) => setSearchQuery(e.target.value)}
-          className="h-7 text-xs pl-7"
+          className="h-8 pl-8 text-sm"
+          aria-label="Search ingredients"
           placeholder="Search ingredients..."
           autoFocus
         />
@@ -75,7 +78,7 @@ export function IngredientResolver({ recipeId, ingredientId, rawName }: Ingredie
           <button
             key={s.id}
             type="button"
-            className="w-full text-left px-2 py-1 text-xs hover:bg-muted rounded transition-colors"
+            className="w-full min-h-8 text-left px-2 py-1 text-sm hover:bg-muted rounded transition-colors coarse:min-h-11 focus-visible:outline-2 focus-visible:outline-ring"
             onClick={() => handleResolve(s.id)}
           >
             {s.attributes.name}
@@ -85,20 +88,19 @@ export function IngredientResolver({ recipeId, ingredientId, rawName }: Ingredie
           </button>
         ))}
         {suggestions.length === 0 && searchQuery && (
-          <p className="text-xs text-muted-foreground px-2 py-1">No matches found</p>
+          <p className="text-sm text-muted-foreground px-2 py-1">No matches found</p>
         )}
       </div>
 
       <div className="flex items-center gap-1.5">
-        <label className="flex items-center gap-1 text-xs text-muted-foreground cursor-pointer">
-          <input
-            type="checkbox"
-            checked={saveAsAlias}
-            onChange={(e) => setSaveAsAlias(e.target.checked)}
-            className="h-3 w-3"
-          />
+        <Checkbox
+          id={`save-as-alias-${ingredientId}`}
+          checked={saveAsAlias}
+          onCheckedChange={(checked) => setSaveAsAlias(checked === true)}
+        />
+        <Label htmlFor={`save-as-alias-${ingredientId}`} className="text-sm text-muted-foreground">
           Save as alias
-        </label>
+        </Label>
       </div>
 
       <div className="flex gap-1.5">
@@ -107,11 +109,11 @@ export function IngredientResolver({ recipeId, ingredientId, rawName }: Ingredie
             type="button"
             variant="outline"
             size="sm"
-            className="text-xs h-6 flex-1"
+            className="h-8 flex-1 text-sm"
             onClick={handleCreateAndResolve}
             disabled={createIngredient.isPending}
           >
-            <Plus className="mr-1 h-3 w-3" />
+            <Plus aria-hidden="true" className="mr-1 h-3 w-3" />
             Create &ldquo;{searchQuery}&rdquo;
           </Button>
         )}
@@ -119,7 +121,7 @@ export function IngredientResolver({ recipeId, ingredientId, rawName }: Ingredie
           type="button"
           variant="ghost"
           size="sm"
-          className="text-xs h-6"
+          className="h-8 text-sm"
           onClick={() => setIsOpen(false)}
         >
           Cancel

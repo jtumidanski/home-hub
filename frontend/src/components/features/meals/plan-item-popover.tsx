@@ -225,14 +225,12 @@ function AddModeForm({
                 {weekDays.map((d) => {
                   const checked = field.value.includes(d.dateStr);
                   return (
-                    <button
+                    <Button
                       key={d.dateStr}
                       type="button"
-                      className={`px-2.5 py-1 rounded-md text-xs font-medium border transition-colors ${
-                        checked
-                          ? "bg-primary text-primary-foreground border-primary"
-                          : "bg-background text-muted-foreground border-input hover:bg-accent hover:text-accent-foreground"
-                      }`}
+                      size="sm"
+                      variant={checked ? "default" : "outline"}
+                      aria-pressed={checked}
                       onClick={() => {
                         const next = checked
                           ? field.value.filter((v: string) => v !== d.dateStr)
@@ -241,7 +239,7 @@ function AddModeForm({
                       }}
                     >
                       {d.label}
-                    </button>
+                    </Button>
                   );
                 })}
               </div>

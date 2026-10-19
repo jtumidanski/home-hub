@@ -26,9 +26,9 @@ function StatusIcon({ status }: { status: string }) {
     case "matched":
     case "alias_matched":
     case "manually_confirmed":
-      return <Check aria-label="Resolved" className="h-3.5 w-3.5 text-success shrink-0" />;
+      return <Check role="img" aria-label="Resolved" className="h-3.5 w-3.5 text-success shrink-0" />;
     case "unresolved":
-      return <AlertTriangle aria-label="Unresolved" className="h-3.5 w-3.5 text-warning shrink-0" />;
+      return <AlertTriangle role="img" aria-label="Unresolved" className="h-3.5 w-3.5 text-warning-text shrink-0" />;
     default:
       return null;
   }
@@ -59,7 +59,7 @@ export function RecipeIngredients({
           <Button
             variant="outline"
             size="sm"
-            className="text-xs h-6"
+            className="h-8 text-sm"
             onClick={onRenormalize}
             disabled={isRenormalizing}
           >
@@ -83,7 +83,7 @@ export function RecipeIngredients({
                 <StatusIcon status={ing.normalizationStatus} />
                 {ing.normalizationStatus !== "unresolved" && ing.rawUnit && !ing.canonicalUnit && (
                   <span>
-                    <CircleAlert aria-hidden="true" className="h-3.5 w-3.5 text-warning shrink-0" />
+                    <CircleAlert aria-hidden="true" className="h-3.5 w-3.5 text-warning-text shrink-0" />
                     <span className="sr-only">{`Unit '${ing.rawUnit}' is not recognized and may prevent ingredient consolidation in meal exports`}</span>
                   </span>
                 )}
