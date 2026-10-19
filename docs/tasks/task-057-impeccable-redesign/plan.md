@@ -530,10 +530,10 @@ Same steps as Task 14, for `Stage = 4`. Then the **Stage close-out procedure** (
   ```
   Check the exact attribute names against `src/types/models/calendar.ts` and the current busy condition in `month-day-cell.tsx:24` / `event-block.tsx:31`; if the busy rule differs between files today, keep `month-day-cell`'s and note the unification in the PR body as a behaviour change.
 
-- [ ] **Step 1:** Cut the stage branch.
-- [ ] **Step 2: Write the failing tests (Review Focus 1):** busy non-owner → busy vars; busy owner → user colour; package sentinel → package vars; `#ffff00` → `color: "var(--on-color-ink)"`; `#000000` → `"var(--on-color-paper)"`; `""` and `"teal"` → returns `backgroundColor` unchanged and `color: "var(--on-color-ink)"`, no throw. Update `package-calendar-overlay.test.ts` to expect `userColor: PACKAGE_EVENT_COLOR` instead of `#0d9488`.
-- [ ] **Step 3: Run** → FAIL. **Step 4: Implement** the helper; replace every `#9ca3af` ternary and raw `backgroundColor: userColor` with `style={eventChipColors(attrs)}` (dots with no text may use only `backgroundColor`); overlay sets `userColor: PACKAGE_EVENT_COLOR`.
-- [ ] **Step 5: Run** `npx vitest run src/lib/calendar src/components/features/calendar src/components/features/packages` → PASS. **Step 6: Commit** `feat(frontend): token- and contrast-aware calendar event colours`.
+- [x] **Step 1:** Cut the stage branch.
+- [x] **Step 2: Write the failing tests (Review Focus 1):** busy non-owner → busy vars; busy owner → user colour; package sentinel → package vars; `#ffff00` → `color: "var(--on-color-ink)"`; `#000000` → `"var(--on-color-paper)"`; `""` and `"teal"` → returns `backgroundColor` unchanged and `color: "var(--on-color-ink)"`, no throw. Update `package-calendar-overlay.test.ts` to expect `userColor: PACKAGE_EVENT_COLOR` instead of `#0d9488`.
+- [x] **Step 3: Run** → FAIL. **Step 4: Implement** the helper; replace every `#9ca3af` ternary and raw `backgroundColor: userColor` with `style={eventChipColors(attrs)}` (dots with no text may use only `backgroundColor`); overlay sets `userColor: PACKAGE_EVENT_COLOR`.
+- [x] **Step 5: Run** `npx vitest run src/lib/calendar src/components/features/calendar src/components/features/packages` → PASS. **Step 6: Commit** `feat(frontend): token- and contrast-aware calendar event colours`.
 
 ### Task 23: Calendar, tasks, reminders
 
@@ -541,9 +541,9 @@ Same steps as Task 14, for `Stage = 4`. Then the **Stage close-out procedure** (
 - Modify: remaining `frontend/src/components/features/{calendar,tasks,reminders}/*`, `frontend/src/pages/{CalendarPage,TasksPage,RemindersPage}.tsx`
 - Modify: `no-color-literals.test.ts` (remove those three feature dirs and three page files)
 
-- [ ] **Step 1: Remove PENDING entries; run guard** → FAIL listing remaining calendar literals (e.g. `calendar-grid.tsx`, `connection-status.tsx`).
-- [ ] **Step 2: Implement:** map palette classes to semantic tokens (status) or `--chart-*` (categorical); `PageHeader`/`EmptyState` where hand-rolled; task/reminder rows `coarse:min-h-11`, times `tabular-nums`; fix Stage 5 rows in these files. Update any test asserting old classes.
-- [ ] **Step 3: Run** guard + area tests → PASS; tsc; eslint. **Step 4: Commit** `feat(frontend): restyle calendar, tasks, reminders`.
+- [x] **Step 1: Remove PENDING entries; run guard** → FAIL listing remaining calendar literals (e.g. `calendar-grid.tsx`, `connection-status.tsx`).
+- [x] **Step 2: Implement:** map palette classes to semantic tokens (status) or `--chart-*` (categorical); `PageHeader`/`EmptyState` where hand-rolled; task/reminder rows `coarse:min-h-11`, times `tabular-nums`; fix Stage 5 rows in these files. Update any test asserting old classes.
+- [x] **Step 3: Run** guard + area tests → PASS; tsc; eslint. **Step 4: Commit** `feat(frontend): restyle calendar, tasks, reminders`.
 
 ### Task 24: Resolve remaining Stage 5 findings
 
