@@ -9,6 +9,7 @@ import { PageHeader } from "@/components/common/page-header";
 import { useTenant } from "@/context/tenant-context";
 import { Button } from "@/components/ui/button";
 import { LAYOUT_SCHEMA_VERSION } from "@/lib/dashboard/widget-types";
+import { useAuth } from "@/components/providers/auth-provider";
 import { useMobile } from "@/lib/hooks/use-mobile";
 
 export function DashboardShell() {
@@ -18,16 +19,25 @@ export function DashboardShell() {
   const { household } = useTenant();
   const timezone = household?.attributes.timezone || undefined;
 
-  const dateLabel = useMemo(
-    () =>
-      new Date().toLocaleDateString("en-US", {
+  const { user } = useAuth();
+  const firstName = user?.attributes.displayName?.trim().split(/\s+/)[0] ?? "";
+
+  const { dateLabel, greeting } = useMemo(() => {
+    const now = new Date();
+    const hour = Number(
+      new Intl.DateTimeFormat("en-US", { hour: "numeric", hourCycle: "h23", timeZone: timezone }).format(now),
+    );
+    const salutation = hour < 12 ? "Good morning" : hour < 18 ? "Good afternoon" : "Good evening";
+    return {
+      greeting: firstName ? `${salutation}, ${firstName}` : salutation,
+      dateLabel: now.toLocaleDateString("en-US", {
         weekday: "long",
         day: "numeric",
         month: "long",
         timeZone: timezone,
       }),
-    [timezone],
-  );
+    };
+  }, [timezone, firstName]);
 
   if (isLoading) return <DashboardSkeleton />;
   if (isError || !data?.data) return <Error404Page />;
@@ -50,8 +60,14 @@ export function DashboardShell() {
     <div className="flex flex-col">
       <div className="p-4 md:p-6">
         <PageHeader
-          title={dashboard.attributes.name}
-          description={dateLabel}
+          title={greeting}
+          description={
+            <>
+              {dateLabel}
+              <span aria-hidden="true"> · </span>
+              <span>{dashboard.attributes.name}</span>
+            </>
+          }
           actions={
             isMobile ? (
               <p
