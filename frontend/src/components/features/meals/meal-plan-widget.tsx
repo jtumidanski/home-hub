@@ -81,13 +81,13 @@ export function MealPlanWidget(_props: MealPlanWidgetProps = {}) {
         <CardHeader>
           <CardTitle className="font-heading text-lg @xl:text-2xl">Meals</CardTitle>
           <CardAction>
-            <ChevronRight className="h-4 w-4 text-muted-foreground" />
+            <ChevronRight className="size-4 text-muted-foreground" aria-hidden="true" />
           </CardAction>
         </CardHeader>
         <CardContent>
           {todayItems.length === 0 ? (
             <div className="flex items-center gap-2 text-muted-foreground">
-              <UtensilsCrossed className="h-5 w-5" />
+              <UtensilsCrossed className="size-5 @xl:size-6 shrink-0" />
               <p className="text-sm">No meals planned for today</p>
             </div>
           ) : (

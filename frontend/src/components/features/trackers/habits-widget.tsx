@@ -66,13 +66,13 @@ export function HabitsWidget() {
         <CardHeader>
           <CardTitle className="font-heading text-lg @xl:text-2xl">Habits</CardTitle>
           <CardAction>
-            <ChevronRight className="h-4 w-4 text-muted-foreground" />
+            <ChevronRight className="size-4 text-muted-foreground" aria-hidden="true" />
           </CardAction>
         </CardHeader>
         <CardContent>
           {items.length === 0 ? (
             <div className="flex items-center gap-2 text-muted-foreground">
-              <ListChecks className="h-5 w-5" />
+              <ListChecks className="size-5 @xl:size-6 shrink-0" />
               <p className="text-sm">No habits scheduled for today</p>
             </div>
           ) : (
@@ -83,11 +83,11 @@ export function HabitsWidget() {
                 return (
                   <div key={item.id} className="flex items-center gap-2">
                     {done ? (
-                      <Check className="size-4 @xl:size-6 text-green-600 shrink-0" aria-label="Completed" />
+                      <Check className="size-4 @xl:size-6 text-success shrink-0" aria-label="Completed" />
                     ) : skipped ? (
-                      <SkipForward className="h-4 w-4 text-muted-foreground shrink-0" aria-label="Skipped" />
+                      <SkipForward className="size-4 @xl:size-6 text-muted-foreground shrink-0" aria-label="Skipped" />
                     ) : (
-                      <Circle className="h-4 w-4 text-muted-foreground shrink-0" aria-label="Pending" />
+                      <Circle className="size-4 @xl:size-6 text-muted-foreground shrink-0" aria-label="Pending" />
                     )}
                     <span className={`text-sm @xl:text-xl truncate ${done || skipped ? "text-muted-foreground line-through" : ""}`}>
                       {item.name}

@@ -40,12 +40,12 @@ export function PackageSummaryWidget() {
           <CardHeader>
             <CardTitle className="font-heading text-lg @xl:text-2xl">Packages</CardTitle>
             <CardAction>
-              <ChevronRight className="h-4 w-4 text-muted-foreground" />
+              <ChevronRight className="size-4 text-muted-foreground" aria-hidden="true" />
             </CardAction>
           </CardHeader>
           <CardContent>
             <div className="flex items-center gap-2 text-muted-foreground">
-              <Package className="h-5 w-5" />
+              <Package className="size-5 @xl:size-6 shrink-0" />
               <p className="text-sm">No packages being tracked</p>
             </div>
           </CardContent>
@@ -60,22 +60,22 @@ export function PackageSummaryWidget() {
         <CardHeader>
           <CardTitle className="font-heading text-lg @xl:text-2xl">Packages</CardTitle>
           <CardAction>
-            <ChevronRight className="h-4 w-4 text-muted-foreground" />
+            <ChevronRight className="size-4 text-muted-foreground" aria-hidden="true" />
           </CardAction>
         </CardHeader>
         <CardContent>
           <div className="flex flex-wrap gap-4">
             <div className="flex items-center gap-2">
-              <Truck className="h-4 w-4 text-muted-foreground" />
+              <Truck className="size-4 @xl:size-6 shrink-0 text-muted-foreground" />
               <span className="text-sm @xl:text-xl">{summary.arrivingTodayCount} arriving today</span>
             </div>
             <div className="flex items-center gap-2">
-              <Package className="h-4 w-4 text-muted-foreground" />
+              <Package className="size-4 @xl:size-6 shrink-0 text-muted-foreground" />
               <span className="text-sm @xl:text-xl">{summary.inTransitCount} in transit</span>
             </div>
             {summary.exceptionCount > 0 && (
               <div className="flex items-center gap-2">
-                <AlertTriangle className="h-4 w-4 text-destructive" />
+                <AlertTriangle className="size-4 @xl:size-6 shrink-0 text-destructive" />
                 <span className="text-sm @xl:text-xl text-destructive">{summary.exceptionCount} exception{summary.exceptionCount !== 1 ? "s" : ""}</span>
               </div>
             )}
