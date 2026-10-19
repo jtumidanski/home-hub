@@ -91,7 +91,7 @@ export function DashboardKebabMenu({ dashboard, isDefault }: DashboardKebabMenuP
         <MenuPrimitive.Trigger
           aria-label={`Dashboard actions for ${dashboard.attributes.name}`}
           className={cn(
-            "flex h-7 w-7 shrink-0 items-center justify-center rounded-md text-muted-foreground hover:bg-accent hover:text-accent-foreground outline-none",
+            "flex size-7 shrink-0 items-center justify-center rounded-md text-muted-foreground hover:bg-accent hover:text-accent-foreground focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring coarse:size-11",
           )}
         >
           <MoreVertical className="h-4 w-4" />
@@ -100,21 +100,21 @@ export function DashboardKebabMenu({ dashboard, isDefault }: DashboardKebabMenuP
           <MenuPrimitive.Positioner side="right" align="start" sideOffset={4} className="z-50">
             <MenuPrimitive.Popup
               className={cn(
-                "min-w-48 rounded-lg bg-popover p-1 text-popover-foreground shadow-lg ring-1 ring-foreground/10",
-                "origin-(--transform-origin) transition-[transform,scale,opacity] duration-100",
+                "min-w-48 rounded-lg bg-popover p-1 text-popover-foreground shadow-overlay ring-1 ring-foreground/10",
+                "origin-(--transform-origin) transition-[transform,scale,opacity] duration-(--duration-fast) ease-out",
                 "data-open:animate-in data-open:fade-in-0 data-open:zoom-in-95",
                 "data-closed:animate-out data-closed:fade-out-0 data-closed:zoom-out-95",
               )}
             >
               <MenuPrimitive.Item
-                className="flex w-full cursor-pointer items-center gap-3 rounded-md px-3 py-2 text-sm outline-none select-none hover:bg-accent hover:text-accent-foreground focus:bg-accent focus:text-accent-foreground"
+                className="flex w-full cursor-pointer items-center gap-2 rounded-md px-3 py-2.5 text-sm outline-none select-none coarse:min-h-11 data-highlighted:bg-accent data-highlighted:text-accent-foreground focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-ring"
                 onClick={() => setRenameOpen(true)}
               >
                 <Pencil className="h-4 w-4" />
                 Rename
               </MenuPrimitive.Item>
               <MenuPrimitive.Item
-                className="flex w-full cursor-pointer items-center gap-3 rounded-md px-3 py-2 text-sm outline-none select-none hover:bg-accent hover:text-accent-foreground focus:bg-accent focus:text-accent-foreground data-[disabled]:pointer-events-none data-[disabled]:opacity-50"
+                className="flex w-full cursor-pointer items-center gap-2 rounded-md px-3 py-2.5 text-sm outline-none select-none coarse:min-h-11 data-highlighted:bg-accent data-highlighted:text-accent-foreground focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-ring data-disabled:pointer-events-none data-disabled:opacity-50"
                 disabled={isDefault}
                 onClick={handleSetDefault}
               >
@@ -123,7 +123,7 @@ export function DashboardKebabMenu({ dashboard, isDefault }: DashboardKebabMenuP
               </MenuPrimitive.Item>
               {isUserScope && (
                 <MenuPrimitive.Item
-                  className="flex w-full cursor-pointer items-center gap-3 rounded-md px-3 py-2 text-sm outline-none select-none hover:bg-accent hover:text-accent-foreground focus:bg-accent focus:text-accent-foreground"
+                  className="flex w-full cursor-pointer items-center gap-2 rounded-md px-3 py-2.5 text-sm outline-none select-none coarse:min-h-11 data-highlighted:bg-accent data-highlighted:text-accent-foreground focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-ring"
                   onClick={handlePromote}
                 >
                   <ArrowUpCircle className="h-4 w-4" />
@@ -132,7 +132,7 @@ export function DashboardKebabMenu({ dashboard, isDefault }: DashboardKebabMenuP
               )}
               {isHouseholdScope && (
                 <MenuPrimitive.Item
-                  className="flex w-full cursor-pointer items-center gap-3 rounded-md px-3 py-2 text-sm outline-none select-none hover:bg-accent hover:text-accent-foreground focus:bg-accent focus:text-accent-foreground"
+                  className="flex w-full cursor-pointer items-center gap-2 rounded-md px-3 py-2.5 text-sm outline-none select-none coarse:min-h-11 data-highlighted:bg-accent data-highlighted:text-accent-foreground focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-ring"
                   onClick={handleCopyToMine}
                 >
                   <Copy className="h-4 w-4" />
@@ -140,7 +140,7 @@ export function DashboardKebabMenu({ dashboard, isDefault }: DashboardKebabMenuP
                 </MenuPrimitive.Item>
               )}
               <MenuPrimitive.Item
-                className="flex w-full cursor-pointer items-center gap-3 rounded-md px-3 py-2 text-sm text-destructive outline-none select-none hover:bg-accent focus:bg-accent"
+                className="flex w-full cursor-pointer items-center gap-2 rounded-md px-3 py-2.5 text-sm outline-none select-none coarse:min-h-11 data-highlighted:bg-accent data-highlighted:text-accent-foreground focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-ring text-destructive data-highlighted:text-destructive"
                 onClick={() => setDeleteOpen(true)}
               >
                 <Trash2 className="h-4 w-4" />
