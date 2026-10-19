@@ -8,7 +8,7 @@ import { PACKAGE_EVENT_COLOR } from "@/lib/calendar/event-colors";
  * rendered alongside real calendar events in the CalendarGrid.
  *
  * Package events are distinguished by:
- * - A "package" userColor (teal)
+ * - The PACKAGE_EVENT_COLOR sentinel (`var(--calendar-package)`) as userColor
  * - userDisplayName = carrier label
  */
 export function packagesToCalendarEvents(packages: Package[]): CalendarEvent[] {
