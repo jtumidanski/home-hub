@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { readableForeground } from "@/lib/color-contrast";
 import { cn } from "@/lib/utils";
 
 type AvatarSize = "sm" | "md" | "lg";
@@ -75,16 +76,19 @@ export function UserAvatar({
     );
   }
 
+  const background = getColorFromId(userId);
+  const foreground = readableForeground(background) === "ink" ? "var(--on-color-ink)" : "var(--on-color-paper)";
+
   return (
     <div
       role="img"
       aria-label={displayName}
       className={cn(
-        "flex shrink-0 items-center justify-center rounded-full font-medium text-white",
+        "flex shrink-0 items-center justify-center rounded-full font-medium",
         sizeClasses[size],
         className,
       )}
-      style={{ backgroundColor: getColorFromId(userId) }}
+      style={{ backgroundColor: background, color: foreground }}
     >
       {getInitials(displayName)}
     </div>

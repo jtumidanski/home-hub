@@ -1,5 +1,6 @@
 import { render, screen, fireEvent } from "@testing-library/react";
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
+import * as colorContrast from "@/lib/color-contrast";
 import { UserAvatar } from "../user-avatar";
 
 describe("UserAvatar", () => {
@@ -101,6 +102,23 @@ describe("UserAvatar", () => {
         "src",
         "https://api.dicebear.com/9.x/bottts/svg?seed=myseed",
       );
+    });
+  });
+
+  describe("foreground colour", () => {
+    it("uses the ink token on a light generated colour and never text-white", () => {
+      const { container } = render(<UserAvatar {...baseProps} />);
+      const div = container.querySelector("[role='img']") as HTMLElement;
+      expect(div.style.color).toBe("var(--on-color-ink)");
+      expect(div.className).not.toContain("text-white");
+    });
+
+    it("uses the paper token when the readable foreground is paper", () => {
+      const spy = vi.spyOn(colorContrast, "readableForeground").mockReturnValue("paper");
+      const { container } = render(<UserAvatar {...baseProps} />);
+      const div = container.querySelector("[role='img']") as HTMLElement;
+      expect(div.style.color).toBe("var(--on-color-paper)");
+      spy.mockRestore();
     });
   });
 });

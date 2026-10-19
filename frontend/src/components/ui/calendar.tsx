@@ -116,7 +116,7 @@ function Calendar({
           defaultClassNames.range_end
         ),
         today: cn(
-          "rounded-(--cell-radius) bg-muted text-foreground data-[selected=true]:rounded-none",
+          "rounded-(--cell-radius) bg-muted text-foreground ring-1 ring-inset ring-primary data-[selected=true]:rounded-none",
           defaultClassNames.today
         ),
         outside: cn(
