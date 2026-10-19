@@ -1,0 +1,130 @@
+{
+  "schemaVersion": 2,
+  "generatedAt": "2026-10-19T00:00:00Z",
+  "title": "Design System: Home Hub",
+  "tonalRampNote": "Every tonalRamp is a derived, illustrative OKLCH ramp synthesized around the canonical value for the sidecar preview. Only the canonical values are shipped tokens (src/index.css); ramp steps are not tokens.",
+  "extensions": {
+    "colorMeta": {
+      "background": { "role": "neutral", "displayName": "Cream Paper", "canonical": "oklch(0.985 0.008 85)", "tonalRamp": ["oklch(0.15 0.012 55)", "oklch(0.24 0.02 55)", "oklch(0.40 0.02 60)", "oklch(0.58 0.02 70)", "oklch(0.75 0.015 75)", "oklch(0.89 0.015 75)", "oklch(0.955 0.012 80)", "oklch(0.985 0.008 85)"] },
+      "foreground": { "role": "neutral", "displayName": "Warm Ink", "canonical": "oklch(0.24 0.02 55)", "tonalRamp": ["oklch(0.15 0.015 55)", "oklch(0.24 0.02 55)", "oklch(0.35 0.02 55)", "oklch(0.47 0.025 60)", "oklch(0.60 0.02 65)", "oklch(0.75 0.015 75)", "oklch(0.89 0.015 75)", "oklch(0.95 0.01 80)"] },
+      "primary": { "role": "primary", "displayName": "Clay", "canonical": "oklch(0.53 0.13 45)", "tonalRamp": ["oklch(0.25 0.07 45)", "oklch(0.35 0.10 45)", "oklch(0.45 0.12 45)", "oklch(0.53 0.13 45)", "oklch(0.65 0.12 48)", "oklch(0.72 0.12 50)", "oklch(0.85 0.07 55)", "oklch(0.95 0.03 60)"] },
+      "accent": { "role": "secondary", "displayName": "Herb Wash", "canonical": "oklch(0.93 0.035 145)", "tonalRamp": ["oklch(0.20 0.04 145)", "oklch(0.32 0.06 145)", "oklch(0.45 0.08 145)", "oklch(0.60 0.09 145)", "oklch(0.72 0.09 145)", "oklch(0.85 0.06 145)", "oklch(0.93 0.035 145)", "oklch(0.97 0.015 145)"] },
+      "warning": { "role": "tertiary", "displayName": "Ochre", "canonical": "oklch(0.80 0.13 80)", "tonalRamp": ["oklch(0.26 0.04 60)", "oklch(0.38 0.07 70)", "oklch(0.50 0.11 70)", "oklch(0.64 0.12 80)", "oklch(0.80 0.13 80)", "oklch(0.88 0.09 85)", "oklch(0.94 0.05 88)", "oklch(0.97 0.02 88)"] },
+      "warning-text": { "role": "tertiary", "displayName": "Ochre Ink", "canonical": "oklch(0.50 0.11 70)", "tonalRamp": ["oklch(0.26 0.04 60)", "oklch(0.38 0.07 70)", "oklch(0.50 0.11 70)", "oklch(0.64 0.12 80)", "oklch(0.80 0.13 80)", "oklch(0.88 0.09 85)", "oklch(0.94 0.05 88)", "oklch(0.97 0.02 88)"] },
+      "destructive": { "role": "neutral", "displayName": "Brick", "canonical": "oklch(0.52 0.19 25)", "tonalRamp": ["oklch(0.25 0.08 25)", "oklch(0.35 0.13 25)", "oklch(0.45 0.17 25)", "oklch(0.52 0.19 25)", "oklch(0.62 0.18 25)", "oklch(0.71 0.16 25)", "oklch(0.85 0.08 25)", "oklch(0.95 0.03 25)"] },
+      "success": { "role": "neutral", "displayName": "Garden Green", "canonical": "oklch(0.48 0.1 150)", "tonalRamp": ["oklch(0.22 0.05 150)", "oklch(0.34 0.08 150)", "oklch(0.48 0.1 150)", "oklch(0.60 0.11 150)", "oklch(0.72 0.11 150)", "oklch(0.83 0.07 150)", "oklch(0.92 0.04 150)", "oklch(0.97 0.015 150)"] },
+      "info": { "role": "neutral", "displayName": "Slate Blue", "canonical": "oklch(0.50 0.08 235)", "tonalRamp": ["oklch(0.22 0.04 235)", "oklch(0.36 0.06 235)", "oklch(0.50 0.08 235)", "oklch(0.60 0.08 235)", "oklch(0.72 0.08 235)", "oklch(0.83 0.05 235)", "oklch(0.92 0.025 235)", "oklch(0.97 0.01 235)"] }
+    },
+    "typographyMeta": {
+      "display": { "displayName": "Display", "purpose": "Kiosk headline metrics only (text-display, bold, tabular-nums)." },
+      "headline": { "displayName": "Headline", "purpose": "Page titles and kiosk widget titles at container width @xl (Fraunces, tracking -0.01em)." },
+      "title": { "displayName": "Title", "purpose": "CardTitle and section headings; 18px is the Fraunces floor." },
+      "body": { "displayName": "Body", "purpose": "Figtree for all controls, lists and tables; tabular-nums utility on numerals (Figtree has tnum, Fraunces does not)." },
+      "label": { "displayName": "Label", "purpose": "Secondary and meta text at 12px, Figtree." }
+    },
+    "shadows": [
+      { "name": "elevation-card", "value": "0 1px 2px oklch(0.3 0.03 50 / 0.06), 0 2px 8px oklch(0.3 0.03 50 / 0.05)", "purpose": "Light-theme card lift (shadow-card). Dark theme: none." },
+      { "name": "elevation-overlay", "value": "0 4px 12px oklch(0.3 0.03 50 / 0.10), 0 12px 32px oklch(0.3 0.03 50 / 0.12)", "purpose": "Light-theme popovers and dialogs (shadow-overlay). Dark theme: none." },
+      { "name": "focus-ring", "value": "outline: 2px solid var(--ring); outline-offset: 2px", "purpose": "Global :focus-visible in the base layer; ui primitives repeat it." }
+    ],
+    "motion": [
+      { "name": "duration-fast", "value": "120ms", "purpose": "Control state transitions." },
+      { "name": "duration-base", "value": "200ms", "purpose": "Open/close and insert/remove." },
+      { "name": "ease-out", "value": "cubic-bezier(.2,.7,.2,1)", "purpose": "Default easing." },
+      { "name": "reduced-motion", "value": "@media (prefers-reduced-motion: reduce) { animation/transition-duration: 0.01ms !important; animation-iteration-count: 1; scroll-behavior: auto }", "purpose": "Global collapse of all motion." }
+    ],
+    "breakpoints": [
+      { "name": "coarse (pointer)", "value": "@media (pointer: coarse)" },
+      { "name": "@md (container)", "value": "28rem" },
+      { "name": "@xl (container)", "value": "36rem" }
+    ]
+  },
+  "components": [
+    {
+      "name": "Primary Button",
+      "kind": "button",
+      "refersTo": "button-primary",
+      "description": "Clay call-to-action, 36px tall, 44px on coarse pointers.",
+      "html": "<button class=\"ds-btn-primary\">Save</button>",
+      "css": ".ds-btn-primary { background: var(--primary, oklch(0.53 0.13 45)); color: var(--primary-foreground, oklch(0.985 0.01 85)); height: 36px; padding: 0 10px; border: 1px solid transparent; border-radius: 9.6px; font: 500 14px/1.5 'Figtree Variable', system-ui, sans-serif; cursor: pointer; transition: background 120ms cubic-bezier(.2,.7,.2,1); } .ds-btn-primary:hover { background: color-mix(in oklch, var(--primary, oklch(0.53 0.13 45)) 80%, transparent); } .ds-btn-primary:focus-visible { outline: 2px solid var(--ring, oklch(0.53 0.13 45)); outline-offset: 2px; } .ds-btn-primary:active { transform: translateY(1px); } @media (pointer: coarse) { .ds-btn-primary { min-height: 44px; } }"
+    },
+    {
+      "name": "Secondary Button",
+      "kind": "button",
+      "refersTo": "button-secondary",
+      "description": "Quiet sand fill for secondary actions.",
+      "html": "<button class=\"ds-btn-secondary\">Cancel</button>",
+      "css": ".ds-btn-secondary { background: var(--secondary, oklch(0.93 0.025 75)); color: var(--secondary-foreground, oklch(0.28 0.025 55)); height: 36px; padding: 0 10px; border: 1px solid transparent; border-radius: 9.6px; font: 500 14px/1.5 'Figtree Variable', system-ui, sans-serif; cursor: pointer; } .ds-btn-secondary:hover { background: color-mix(in oklch, var(--secondary, oklch(0.93 0.025 75)) 80%, transparent); } .ds-btn-secondary:focus-visible { outline: 2px solid var(--ring, oklch(0.53 0.13 45)); outline-offset: 2px; } @media (pointer: coarse) { .ds-btn-secondary { min-height: 44px; } }"
+    },
+    {
+      "name": "Text Input",
+      "kind": "input",
+      "refersTo": "colors.input",
+      "description": "Transparent field with the darker 3:1 control border.",
+      "html": "<input class=\"ds-input\" placeholder=\"Search recipes\" />",
+      "css": ".ds-input { height: 32px; width: 220px; padding: 0 10px; background: transparent; color: var(--foreground, oklch(0.24 0.02 55)); border: 1px solid var(--input, oklch(0.62 0.02 65)); border-radius: 9.6px; font: 14px 'Figtree Variable', system-ui, sans-serif; } .ds-input::placeholder { color: var(--muted-foreground, oklch(0.47 0.025 60)); } .ds-input:focus-visible { outline: 2px solid var(--ring, oklch(0.53 0.13 45)); outline-offset: 2px; } @media (pointer: coarse) { .ds-input { min-height: 44px; font-size: 16px; } }"
+    },
+    {
+      "name": "Widget Card",
+      "kind": "card",
+      "refersTo": "card",
+      "description": "Kiosk widget: container-query card with a Fraunces title and tabular metric.",
+      "html": "<div class=\"ds-card\"><h3 class=\"ds-card-title\">Tasks</h3><div class=\"ds-card-metric\">12</div></div>",
+      "css": ".ds-card { container-type: inline-size; background: var(--card, oklch(0.995 0.004 85)); color: var(--card-foreground, oklch(0.24 0.02 55)); border-radius: 15px; padding: 16px; box-shadow: var(--elevation-card, 0 1px 2px oklch(0.3 0.03 50 / 0.06)), 0 0 0 1px color-mix(in oklch, var(--foreground, oklch(0.24 0.02 55)) 10%, transparent); transition: background 120ms; } .ds-card:hover { background: var(--accent, oklch(0.93 0.035 145)); } .ds-card-title { margin: 0 0 8px; font: 500 18px/1.5 'Fraunces Variable', Georgia, serif; letter-spacing: -0.01em; } .ds-card-metric { font: 700 28px/1.2 'Figtree Variable', system-ui, sans-serif; font-variant-numeric: tabular-nums; } @container (min-width: 36rem) { .ds-card-title { font-size: 28px; line-height: 1.2; } .ds-card-metric { font-size: 48px; } } @media (prefers-reduced-motion: reduce) { .ds-card { transition: none; } }"
+    },
+    {
+      "name": "Status Banner",
+      "kind": "custom",
+      "refersTo": "colors.warning-text",
+      "description": "Inline status with icon and text; warning uses warning-text for the icon.",
+      "html": "<div class=\"ds-banner\" role=\"status\"><span class=\"ds-banner-icon\" aria-hidden=\"true\">!</span><div>Weather data is out of date.</div></div>",
+      "css": ".ds-banner { display: flex; gap: 12px; align-items: flex-start; padding: 12px 16px; border: 1px solid var(--warning, oklch(0.80 0.13 80)); border-radius: 12px; background: color-mix(in oklch, var(--warning, oklch(0.80 0.13 80)) 10%, transparent); color: var(--foreground, oklch(0.24 0.02 55)); font: 14px/1.5 'Figtree Variable', system-ui, sans-serif; } .ds-banner-icon { color: var(--warning-text, oklch(0.50 0.11 70)); font-weight: 700; }"
+    },
+    {
+      "name": "Swatch Chip",
+      "kind": "chip",
+      "refersTo": "swatches",
+      "description": "Tracker colour: solid dot beside a soft tint, via swatchClass(color, role).",
+      "html": "<span class=\"ds-swatch\"><i class=\"ds-swatch-dot\"></i>Teal</span>",
+      "css": ".ds-swatch { display: inline-flex; align-items: center; gap: 6px; padding: 2px 10px; border-radius: 9999px; background: var(--swatch-teal-soft, oklch(0.93 0.04 183)); color: var(--foreground, oklch(0.24 0.02 55)); font: 500 12px/1.5 'Figtree Variable', system-ui, sans-serif; } .ds-swatch-dot { width: 8px; height: 8px; border-radius: 9999px; background: var(--swatch-teal, oklch(0.62 0.096 183)); }"
+    }
+  ],
+  "narrative": {
+    "northStar": "The Kitchen Table",
+    "overview": "Warm paper, clay and herb green, set in a soft old-style serif for headings and a friendly geometric sans for everything that is read or tapped. The system is comfortable rather than dense, calm rather than busy, and both themes are first-class: light is cream paper, dark is warm brown-black, never blue-black or neon.\n\nOne component set serves three contexts: a phone in one hand (coarse-pointer targets), a desktop planning session, and a wall kiosk read from 2-3 m (container-query type steps inside widgets). Content is the household's own data; nothing decorative fills space.",
+    "keyCharacteristics": [
+      "OKLCH tokens in src/index.css, one set for :root and one for .dark; components use token utilities only.",
+      "Hue family: clay (45), herb green (145), ochre (80), warm neutrals (55-85).",
+      "Two typefaces, self-hosted, no runtime third-party requests.",
+      "Status is never colour alone: icon plus text.",
+      "Light mode lifts surfaces with soft warm shadows; dark mode uses no shadows."
+    ],
+    "rules": [
+      { "name": "The Warning-Text Rule", "body": "--warning is an ochre fill and fails as text on light surfaces. Warning-coloured text and icons use --warning-text. Use --warning for fills and borders only.", "section": "colors" },
+      { "name": "The Single Action Colour Rule", "body": "Clay (--primary) is the only call-to-action colour and the focus ring. Herb green (--accent) is a quiet wash for hover, selection and active nav, never a button fill.", "section": "colors" },
+      { "name": "The Swatch Module Rule", "body": "Components never spell a swatch class. They call swatchClass(color, role) from src/lib/constants/swatches.ts with roles solid, soft, border.", "section": "colors" },
+      { "name": "The Neutral Fallback Rule", "body": "An unknown or empty colour string resolves to the muted neutral fallback; a swatch never renders as undefined.", "section": "colors" },
+      { "name": "The Token-Only Rule", "body": "no-color-literals.test.ts fails on any hex, rgb/hsl/oklch literal or Tailwind palette class in components/features and pages.", "section": "colors" },
+      { "name": "The 18px Serif Floor Rule", "body": "Fraunces is used only at 18px (text-lg) or larger, and never for controls, labels, table cells or body copy.", "section": "typography" },
+      { "name": "The Tabular Numerals Rule", "body": "Figtree has tnum; Fraunces does not. Numerals use the tabular-nums utility per element in Figtree; there is no numeric fallback font.", "section": "typography" },
+      { "name": "The Tonal Dark Rule", "body": "Never add a box-shadow in dark mode; use the surface lightness step and the hairline ring.", "section": "elevation" }
+    ],
+    "dos": [
+      "Do use token utilities (bg-primary, text-muted-foreground, bg-swatch-* via swatchClass) for all colour.",
+      "Do put focus on every interactive element as a 2 px --ring outline, offset 2 px; the base layer provides it.",
+      "Do honour reduced motion; the base layer collapses animation and transition durations globally.",
+      "Do convey status with an icon plus text, with colour as reinforcement only.",
+      "Do keep touch targets at least 24 px and add coarse:min-h-11 / coarse:size-11 to any new control.",
+      "Do use Fraunces only at text-lg or larger and add tabular-nums to numerals.",
+      "Do build widgets as @container cards with @xl: steps and WidgetError for failures."
+    ],
+    "donts": [
+      "Don't write palette classes, hex, rgb(), hsl() or oklch() literals in components/features or pages.",
+      "Don't use --warning as text colour; use --warning-text.",
+      "Don't put calendar user colours into tokens, or hard-code ink/paper on them; compute with eventChipColors.",
+      "Don't add shadows in dark mode.",
+      "Don't use viewport breakpoints for widget internals; use container queries.",
+      "Don't invent placeholder copy, stats or testimonials; only household data fills the UI."
+    ]
+  }
+}
