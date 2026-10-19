@@ -9,22 +9,10 @@ const SCANNED_ROOTS = ["components/features", "pages"];
 /** Path prefixes (relative to frontend/src) not yet migrated; files under them are skipped. */
 const PENDING: string[] = [
   "components/features/households/",
-  "components/features/packages/",
-  "components/features/tracker/",
-  "components/features/trackers/",
-  "components/features/weather/",
-  "components/features/workout/",
-  "components/features/workouts/",
   "pages/DataRetentionPage.tsx",
   "pages/HouseholdMembersPage.tsx",
   "pages/HouseholdsPage.tsx",
-  "pages/PackagesPage.tsx",
   "pages/SettingsPage.tsx",
-  "pages/TrackerPage.tsx",
-  "pages/WeatherPage.tsx",
-  "pages/WorkoutExercisesPage.tsx",
-  "pages/WorkoutTaxonomyPage.tsx",
-  "pages/WorkoutWeekPage.tsx",
 ];
 
 /** Permitted literals: exact file + exact matched text; reason mirrors DESIGN.md. */

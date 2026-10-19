@@ -1,6 +1,7 @@
-import { ChevronLeft, ChevronRight, Check } from "lucide-react";
+import { CalendarX, ChevronLeft, ChevronRight, Check } from "lucide-react";
 import { useNavigate, useParams } from "react-router-dom";
 import { Button } from "@/components/ui/button";
+import { EmptyState } from "@/components/common/empty-state";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
@@ -170,7 +171,7 @@ function TotalsCard({
 function Stat({ label, value }: { label: string; value: number }) {
   return (
     <div>
-      <p className="text-2xl font-bold">{value}</p>
+      <p className="text-2xl font-bold tabular-nums">{value}</p>
       <p className="text-xs text-muted-foreground">{label}</p>
     </div>
   );
@@ -201,7 +202,7 @@ function PerDayGrid({
                 <CardTitle className="flex items-center justify-between text-sm">
                   <h2 className="font-semibold">{label}</h2>
                   {block.isRestDay && (
-                    <Badge variant="secondary" className="text-[10px]">Rest</Badge>
+                    <Badge variant="secondary" className="text-xs">Rest</Badge>
                   )}
                 </CardTitle>
                 <p className="text-xs text-muted-foreground">
@@ -243,8 +244,8 @@ function ReviewItemCard({ item }: { item: SummaryItem }) {
         <span className={`font-medium truncate ${nameClass}`}>{item.exerciseName}</span>
         <StatusBadge status={status} />
       </div>
-      <p className="text-muted-foreground">Planned: {renderPlanned(item.kind, item.planned)}</p>
-      <p className="flex items-center gap-1">
+      <p className="text-muted-foreground tabular-nums">Planned: {renderPlanned(item.kind, item.planned)}</p>
+      <p className="flex items-center gap-1 tabular-nums">
         {renderActual(item.kind, item.status, actual)}
         {targetMet(item.kind, item.planned, actual) && (
           <span aria-label="Target met" title="Target met" className="text-success">
@@ -265,7 +266,7 @@ function StatusBadge({ status }: { status: PerformanceStatus }) {
   };
   const m = map[status];
   return (
-    <Badge variant={m.variant} className="text-[10px] shrink-0">
+    <Badge variant={m.variant} className="text-xs shrink-0">
       {m.label}
     </Badge>
   );
@@ -386,7 +387,7 @@ function EmptyWeekCard({ weekStart }: { weekStart: string }) {
         <CardTitle>Week of {weekStart}</CardTitle>
       </CardHeader>
       <CardContent>
-        <p className="text-sm text-muted-foreground">No workouts logged for this week.</p>
+        <EmptyState icon={CalendarX} title="No workouts logged for this week" headingLevel="h3" className="py-6" />
       </CardContent>
     </Card>
   );

@@ -1,6 +1,7 @@
 import { useState } from "react";
-import { Plus, Trash2 } from "lucide-react";
+import { Dumbbell, Plus, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { EmptyState } from "@/components/common/empty-state";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -50,9 +51,16 @@ export function WorkoutExercisesPage() {
         <Card>
           <CardContent className="p-3">
             {exercises.data?.data.length === 0 ? (
-              <p className="text-muted-foreground text-sm">
-                No exercises yet. Click "New" to create one.
-              </p>
+              <EmptyState
+                icon={Dumbbell}
+                title="No exercises yet"
+                description='Click "New" to create one.'
+                action={
+                  <Button onClick={() => setOpen(true)}>
+                    <Plus className="h-4 w-4 mr-1" /> New
+                  </Button>
+                }
+              />
             ) : (
               <ul className="divide-y">
                 {exercises.data?.data.map((e) => {
@@ -70,7 +78,7 @@ export function WorkoutExercisesPage() {
                         <div className="flex items-center gap-2">
                           <p className="font-medium">{e.attributes.name}</p>
                           {weightTypeLabel && (
-                            <span className="inline-flex items-center rounded border px-1.5 py-0.5 text-[10px] font-medium text-muted-foreground">
+                            <span className="inline-flex items-center rounded border px-1.5 py-0.5 text-xs font-medium text-muted-foreground">
                               {weightTypeLabel}
                             </span>
                           )}
@@ -83,6 +91,7 @@ export function WorkoutExercisesPage() {
                       <Button
                         size="icon"
                         variant="ghost"
+                        aria-label={`Delete ${e.attributes.name}`}
                         onClick={() =>
                           remove.mutate(e.id, { onError: () => toast.error("Delete failed") })
                         }

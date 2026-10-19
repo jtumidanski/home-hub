@@ -1,8 +1,16 @@
 import { useState } from "react";
-import { ChevronDown, ChevronUp, RefreshCw, Archive, ArchiveRestore, Trash2, Lock, Unlock, Pencil } from "lucide-react";
+import { ChevronDown, ChevronUp, RefreshCw, Archive, ArchiveRestore, Trash2, Lock, Unlock, Pencil, MoreHorizontal } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { cn } from "@/lib/utils";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { StatusBadge } from "./status-badge";
 import { CarrierIcon } from "./carrier-icon";
 import { PackageDetail } from "./package-detail";
@@ -39,6 +47,15 @@ export function PackageCard({ pkg }: PackageCardProps) {
       : a.trackingNumber
     : null;
 
+  const isArchived = a.status === "archived";
+  const archiveToggleMutation = isArchived ? unarchiveMutation : archiveMutation;
+  const archiveLabel = isArchived ? "Unarchive" : "Archive";
+  const privateLabel = a.private ? "Make visible" : "Make private";
+  const handleRefresh = () => refreshMutation.mutate(pkg.id);
+  const handleTogglePrivate = () =>
+    updateMutation.mutate({ id: pkg.id, attrs: { private: !a.private } });
+  const handleArchiveToggle = () => archiveToggleMutation.mutate(pkg.id);
+
   return (
     <>
       <Card className="overflow-hidden">
@@ -53,7 +70,7 @@ export function PackageCard({ pkg }: PackageCardProps) {
                   </span>
                   {a.status && <StatusBadge status={a.status} />}
                   {a.private && (
-                    <Lock className="h-3 w-3 text-muted-foreground" />
+                    <Lock className="h-3 w-3 text-muted-foreground" aria-label="Private" role="img" />
                   )}
                 </div>
                 {!isRedacted && truncatedTracking && (
@@ -77,84 +94,102 @@ export function PackageCard({ pkg }: PackageCardProps) {
               </div>
             </div>
 
-            <div className="flex items-center gap-1 shrink-0">
+            <div className="flex items-center gap-1 shrink-0 justify-end">
               {a.isOwner && !isRedacted && (
                 <>
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    className="h-7 w-7"
-                    onClick={() => refreshMutation.mutate(pkg.id)}
-                    disabled={refreshMutation.isPending}
-                    title="Refresh tracking"
-                  >
-                    <RefreshCw className={`h-3.5 w-3.5 ${refreshMutation.isPending ? "animate-spin" : ""}`} />
-                  </Button>
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    className="h-7 w-7"
-                    onClick={() => setEditing(true)}
-                    title="Edit"
-                  >
-                    <Pencil className="h-3.5 w-3.5" />
-                  </Button>
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    className="h-7 w-7"
-                    onClick={() =>
-                      updateMutation.mutate({
-                        id: pkg.id,
-                        attrs: { private: !a.private },
-                      })
-                    }
-                    title={a.private ? "Make visible" : "Make private"}
-                  >
-                    {a.private ? <Unlock className="h-3.5 w-3.5" /> : <Lock className="h-3.5 w-3.5" />}
-                  </Button>
-                  {a.status === "archived" ? (
+                  {/* Desktop: inline icon buttons */}
+                  <div className="hidden sm:flex items-center gap-1">
                     <Button
                       variant="ghost"
                       size="icon"
-                      className="h-7 w-7"
-                      onClick={() => unarchiveMutation.mutate(pkg.id)}
-                      disabled={unarchiveMutation.isPending}
-                      title="Unarchive"
+                      onClick={handleRefresh}
+                      disabled={refreshMutation.isPending}
+                      title="Refresh tracking"
+                      aria-label="Refresh tracking"
                     >
-                      <ArchiveRestore className="h-3.5 w-3.5" />
+                      <RefreshCw className={cn("h-3.5 w-3.5", refreshMutation.isPending && "animate-spin")} />
                     </Button>
-                  ) : (
                     <Button
                       variant="ghost"
                       size="icon"
-                      className="h-7 w-7"
-                      onClick={() => archiveMutation.mutate(pkg.id)}
-                      disabled={archiveMutation.isPending}
-                      title="Archive"
+                      onClick={() => setEditing(true)}
+                      title="Edit"
+                      aria-label="Edit"
                     >
-                      <Archive className="h-3.5 w-3.5" />
+                      <Pencil className="h-3.5 w-3.5" />
                     </Button>
-                  )}
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    className="h-7 w-7 text-destructive hover:text-destructive"
-                    onClick={() => setConfirmingDelete(true)}
-                    disabled={deleteMutation.isPending}
-                    title="Delete"
-                  >
-                    <Trash2 className="h-3.5 w-3.5" />
-                  </Button>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      onClick={handleTogglePrivate}
+                      title={privateLabel}
+                      aria-label={privateLabel}
+                    >
+                      {a.private ? <Unlock className="h-3.5 w-3.5" /> : <Lock className="h-3.5 w-3.5" />}
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      onClick={handleArchiveToggle}
+                      disabled={archiveToggleMutation.isPending}
+                      title={archiveLabel}
+                      aria-label={archiveLabel}
+                    >
+                      {isArchived ? <ArchiveRestore className="h-3.5 w-3.5" /> : <Archive className="h-3.5 w-3.5" />}
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="ml-2 text-destructive hover:text-destructive"
+                      onClick={() => setConfirmingDelete(true)}
+                      disabled={deleteMutation.isPending}
+                      title="Delete"
+                      aria-label="Delete"
+                    >
+                      <Trash2 className="h-3.5 w-3.5" />
+                    </Button>
+                  </div>
+                  {/* Mobile: overflow menu */}
+                  <div className="sm:hidden">
+                    <DropdownMenu>
+                      <DropdownMenuTrigger
+                        render={<Button variant="ghost" size="icon" aria-label="More actions" />}
+                      >
+                        <MoreHorizontal className="h-4 w-4" />
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent>
+                        <DropdownMenuItem onClick={handleRefresh} disabled={refreshMutation.isPending}>
+                          <RefreshCw /> Refresh tracking
+                        </DropdownMenuItem>
+                        <DropdownMenuItem onClick={() => setEditing(true)}>
+                          <Pencil /> Edit
+                        </DropdownMenuItem>
+                        <DropdownMenuItem onClick={handleTogglePrivate}>
+                          {a.private ? <Unlock /> : <Lock />} {privateLabel}
+                        </DropdownMenuItem>
+                        <DropdownMenuItem onClick={handleArchiveToggle} disabled={archiveToggleMutation.isPending}>
+                          {isArchived ? <ArchiveRestore /> : <Archive />} {archiveLabel}
+                        </DropdownMenuItem>
+                        <DropdownMenuSeparator />
+                        <DropdownMenuItem
+                          variant="destructive"
+                          onClick={() => setConfirmingDelete(true)}
+                          disabled={deleteMutation.isPending}
+                        >
+                          <Trash2 /> Delete
+                        </DropdownMenuItem>
+                      </DropdownMenuContent>
+                    </DropdownMenu>
+                  </div>
                 </>
               )}
               {!isRedacted && (
                 <Button
                   variant="ghost"
                   size="icon"
-                  className="h-7 w-7"
                   onClick={() => setExpanded(!expanded)}
                   title={expanded ? "Collapse" : "Expand"}
+                  aria-label={expanded ? "Collapse" : "Expand"}
                 >
                   {expanded ? <ChevronUp className="h-3.5 w-3.5" /> : <ChevronDown className="h-3.5 w-3.5" />}
                 </Button>

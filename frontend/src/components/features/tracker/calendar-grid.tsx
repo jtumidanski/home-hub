@@ -1,57 +1,19 @@
 import { useMemo, useState } from "react";
-import { Check, ChevronLeft, ChevronRight } from "lucide-react";
+import { CalendarOff, Check, ChevronLeft, ChevronRight, ListChecks } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { Input } from "@/components/ui/input";
+import { EmptyState } from "@/components/common/empty-state";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useMonthSummary, usePutEntry, useDeleteEntry, useSkipEntry } from "@/lib/hooks/api/use-trackers";
 import { useTenant } from "@/context/tenant-context";
 import { cn } from "@/lib/utils";
+import { swatchClass } from "@/lib/constants/swatches";
 import { getLocalTodayStr, getLocalMonth } from "@/lib/date-utils";
 import type { MonthItemInfo, TrackerEntry, SentimentValue, NumericValue, RangeValue } from "@/types/models/tracker";
-
-const colorBg: Record<string, string> = {
-  red: "bg-red-100 dark:bg-red-950", orange: "bg-orange-100 dark:bg-orange-950",
-  amber: "bg-amber-100 dark:bg-amber-950", yellow: "bg-yellow-100 dark:bg-yellow-950",
-  lime: "bg-lime-100 dark:bg-lime-950", green: "bg-green-100 dark:bg-green-950",
-  emerald: "bg-emerald-100 dark:bg-emerald-950", teal: "bg-teal-100 dark:bg-teal-950",
-  cyan: "bg-cyan-100 dark:bg-cyan-950", blue: "bg-blue-100 dark:bg-blue-950",
-  indigo: "bg-indigo-100 dark:bg-indigo-950", violet: "bg-violet-100 dark:bg-violet-950",
-  purple: "bg-purple-100 dark:bg-purple-950", fuchsia: "bg-fuchsia-100 dark:bg-fuchsia-950",
-  pink: "bg-pink-100 dark:bg-pink-950", rose: "bg-rose-100 dark:bg-rose-950",
-};
-
-const colorBorderLeft: Record<string, string> = {
-  red: "border-l-red-500", orange: "border-l-orange-500", amber: "border-l-amber-500", yellow: "border-l-yellow-500",
-  lime: "border-l-lime-500", green: "border-l-green-500", emerald: "border-l-emerald-500", teal: "border-l-teal-500",
-  cyan: "border-l-cyan-500", blue: "border-l-blue-500", indigo: "border-l-indigo-500", violet: "border-l-violet-500",
-  purple: "border-l-purple-500", fuchsia: "border-l-fuchsia-500", pink: "border-l-pink-500", rose: "border-l-rose-500",
-};
-
-const colorBorderSolid: Record<string, string> = {
-  red: "border-red-500", orange: "border-orange-500",
-  amber: "border-amber-500", yellow: "border-yellow-500",
-  lime: "border-lime-500", green: "border-green-500",
-  emerald: "border-emerald-500", teal: "border-teal-500",
-  cyan: "border-cyan-500", blue: "border-blue-500",
-  indigo: "border-indigo-500", violet: "border-violet-500",
-  purple: "border-purple-500", fuchsia: "border-fuchsia-500",
-  pink: "border-pink-500", rose: "border-rose-500",
-};
-
-const colorBgSolid: Record<string, string> = {
-  red: "bg-red-500", orange: "bg-orange-500",
-  amber: "bg-amber-500", yellow: "bg-yellow-500",
-  lime: "bg-lime-500", green: "bg-green-500",
-  emerald: "bg-emerald-500", teal: "bg-teal-500",
-  cyan: "bg-cyan-500", blue: "bg-blue-500",
-  indigo: "bg-indigo-500", violet: "bg-violet-500",
-  purple: "bg-purple-500", fuchsia: "bg-fuchsia-500",
-  pink: "bg-pink-500", rose: "bg-rose-500",
-};
 
 function splitMonth(month: string): [string, string] {
   const parts = month.split("-");
@@ -90,9 +52,10 @@ interface Props {
   month: string;
   onMonthChange: (month: string) => void;
   onViewReport: () => void;
+  onOpenSetup?: () => void;
 }
 
-export function CalendarGrid({ month, onMonthChange, onViewReport }: Props) {
+export function CalendarGrid({ month, onMonthChange, onViewReport, onOpenSetup }: Props) {
   const { household } = useTenant();
   const timezone = household?.attributes.timezone;
   const today = getLocalTodayStr(timezone);
@@ -137,15 +100,15 @@ export function CalendarGrid({ month, onMonthChange, onViewReport }: Props) {
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between">
-        <Button variant="ghost" size="icon" onClick={prevMonth}><ChevronLeft className="h-4 w-4" /></Button>
+        <Button variant="ghost" size="icon" onClick={prevMonth} aria-label="Previous month"><ChevronLeft className="h-4 w-4" aria-hidden="true" /></Button>
         <h2 className="text-lg font-semibold">{formatMonth(month)}</h2>
-        <Button variant="ghost" size="icon" onClick={nextMonth} disabled={month >= currentMonth}><ChevronRight className="h-4 w-4" /></Button>
+        <Button variant="ghost" size="icon" onClick={nextMonth} disabled={month >= currentMonth} aria-label="Next month"><ChevronRight className="h-4 w-4" aria-hidden="true" /></Button>
       </div>
 
       {summary && (
         <div className="flex items-center gap-2 text-sm text-muted-foreground">
           <div className="flex-1 bg-muted rounded-full h-2 overflow-hidden">
-            <div className="bg-primary h-full transition-all" style={{ width: `${summary.completion.expected > 0 ? ((summary.completion.filled + summary.completion.skipped) / summary.completion.expected) * 100 : 0}%` }} />
+            <div className="bg-primary h-full motion-safe:transition-[width]" style={{ width: `${summary.completion.expected > 0 ? ((summary.completion.filled + summary.completion.skipped) / summary.completion.expected) * 100 : 0}%` }} />
           </div>
           <span>{summary.completion.filled + summary.completion.skipped}/{summary.completion.expected} entries</span>
           {summary.complete && <Button variant="link" size="sm" className="text-xs" onClick={onViewReport}>View Report</Button>}
@@ -184,7 +147,7 @@ export function CalendarGrid({ month, onMonthChange, onViewReport }: Props) {
             {sortedItems.map((item) => (
               <tr key={item.id}>
                 <td className="p-1 font-medium truncate max-w-[120px] sticky left-0 bg-background z-10">
-                  <span className={cn("inline-block w-2 h-2 rounded-full mr-1", colorBg[item.color]?.replace("100", "500").replace("950", "500"))} />
+                  <span className={cn("inline-block w-2 h-2 rounded-full mr-1", swatchClass(item.color, "solid"))} />
                   {item.name}
                 </td>
                 {Array.from({ length: daysInMonth }, (_, i) => i + 1).map((day) => {
@@ -221,7 +184,12 @@ export function CalendarGrid({ month, onMonthChange, onViewReport }: Props) {
       </div>
 
       {sortedItems.length === 0 && (
-        <p className="text-muted-foreground text-sm text-center py-8">No habits yet. Add items in Setup to get started.</p>
+        <EmptyState
+          icon={ListChecks}
+          title="No habits yet"
+          description="Add habits in Setup to start tracking."
+          action={onOpenSetup ? <Button variant="outline" onClick={onOpenSetup}>Open Setup</Button> : undefined}
+        />
       )}
     </div>
   );
@@ -267,17 +235,17 @@ function MobileDayView({ month, items, entryMap, putEntry, deleteEntry, skipEntr
   return (
     <div className="space-y-3">
       <div className="flex items-center justify-between gap-2">
-        <Button variant="ghost" size="icon" onClick={() => setSelectedDay((d) => Math.max(1, d - 1))} disabled={selectedDay <= 1}>
-          <ChevronLeft className="h-4 w-4" />
+        <Button variant="ghost" size="icon" aria-label="Previous day" onClick={() => setSelectedDay((d) => Math.max(1, d - 1))} disabled={selectedDay <= 1}>
+          <ChevronLeft className="h-4 w-4" aria-hidden="true" />
         </Button>
         <p className="text-sm font-medium flex-1 text-center">{dateLabel}</p>
-        <Button variant="ghost" size="icon" onClick={() => setSelectedDay((d) => Math.min(daysInMonth, d + 1))} disabled={selectedDay >= daysInMonth}>
-          <ChevronRight className="h-4 w-4" />
+        <Button variant="ghost" size="icon" aria-label="Next day" onClick={() => setSelectedDay((d) => Math.min(daysInMonth, d + 1))} disabled={selectedDay >= daysInMonth}>
+          <ChevronRight className="h-4 w-4" aria-hidden="true" />
         </Button>
       </div>
 
       {visibleItems.length === 0 && (
-        <p className="text-muted-foreground text-sm text-center py-4">Nothing scheduled for this day.</p>
+        <EmptyState className="py-6" headingLevel="h3" icon={CalendarOff} title="Nothing scheduled" description="No habits are scheduled for this day." />
       )}
 
       {visibleItems.map((item) => {
@@ -290,14 +258,14 @@ function MobileDayView({ month, items, entryMap, putEntry, deleteEntry, skipEntr
         return (
           <Card key={item.id} className={cn(
             !hasValue && !isSkipped && "border-l-[3px]",
-            !hasValue && !isSkipped && colorBorderLeft[item.color],
+            !hasValue && !isSkipped && swatchClass(item.color, "borderLeft"),
             isSkipped && "opacity-60",
           )}>
             <CardContent className="py-3 px-4 space-y-2">
               <div className="flex items-center gap-2">
-                <span className={cn("w-3 h-3 rounded-full", colorBg[item.color]?.replace("100", "500").replace("950", "500"))} />
+                <span className={cn("w-3 h-3 rounded-full", swatchClass(item.color, "solid"))} />
                 <span className="font-medium text-sm">{item.name}</span>
-                {hasValue && <Badge className="ml-auto bg-green-100 text-green-700 dark:bg-green-950 dark:text-green-400 border-transparent"><Check className="h-3 w-3" />logged</Badge>}
+                {hasValue && <Badge className="ml-auto bg-success/15 text-success border-transparent"><Check className="h-3 w-3" />logged</Badge>}
                 {isSkipped && <Badge variant="secondary" className="ml-auto">skipped</Badge>}
               </div>
               {isFuture ? (
@@ -333,11 +301,11 @@ function CellContent({ itemId, date, today, scaleType, scaleConfig, scheduled, e
   const [open, setOpen] = useState(false);
 
   if (!scheduled && !entry) {
-    return <span className="text-muted-foreground/30">·</span>;
+    return <span className="text-muted-foreground">·</span>;
   }
 
   if (isFuture) {
-    return <span className={cn("inline-block w-6 h-6 rounded text-center leading-6", scheduled ? "border border-dashed border-muted-foreground/30" : "")}>
+    return <span className={cn("inline-flex size-7 coarse:size-11 items-center justify-center rounded text-muted-foreground", scheduled ? "border border-dashed border-muted-foreground/60" : "")}>
       {scheduled ? "" : "·"}
     </span>;
   }
@@ -372,13 +340,13 @@ function CellContent({ itemId, date, today, scaleType, scaleConfig, scheduled, e
   const ariaLabel = `${itemName}, ${dateLabel}. ${scoreLabel}.${hasNote ? ` Note: ${entry!.note}` : ""}`;
 
   const triggerClassName = cn(
-    "relative w-6 h-6 rounded text-center leading-6 text-[10px] transition-colors cursor-pointer",
-    hasValue && colorBg[color],
+    "relative inline-flex size-7 coarse:size-11 items-center justify-center rounded text-xs motion-safe:transition-colors cursor-pointer",
+    hasValue && swatchClass(color, "soft"),
     isSkipped && "bg-muted text-muted-foreground line-through",
     !hasValue && !isSkipped && scheduled && !hasNote && "border border-dashed border-primary/40 hover:bg-primary/10",
-    !hasValue && !isSkipped && !scheduled && !hasNote && "text-muted-foreground/30",
+    !hasValue && !isSkipped && !scheduled && !hasNote && "text-muted-foreground",
     hasNote && "border",
-    hasNote && (colorBorderSolid[color] ?? "border-foreground/30"),
+    hasNote && swatchClass(color, "border"),
   );
 
   const triggerNode = (
@@ -390,7 +358,7 @@ function CellContent({ itemId, date, today, scaleType, scaleConfig, scheduled, e
           className={cn(
             "absolute top-0 right-0 h-1.5 w-1.5",
             "[clip-path:polygon(100%_0,100%_100%,0_0)]",
-            colorBgSolid[color] ?? "bg-foreground/30",
+            swatchClass(color, "solid"),
           )}
         />
       )}

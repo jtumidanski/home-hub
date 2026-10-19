@@ -9,13 +9,7 @@ import { EditTrackerDialog } from "./edit-tracker-dialog";
 import { DAY_LABELS, SCALE_TYPE_LABELS, type Tracker } from "@/types/models/tracker";
 import { Skeleton } from "@/components/ui/skeleton";
 import { cn } from "@/lib/utils";
-
-const colorDot: Record<string, string> = {
-  red: "bg-red-500", orange: "bg-orange-500", amber: "bg-amber-500", yellow: "bg-yellow-500",
-  lime: "bg-lime-500", green: "bg-green-500", emerald: "bg-emerald-500", teal: "bg-teal-500",
-  cyan: "bg-cyan-500", blue: "bg-blue-500", indigo: "bg-indigo-500", violet: "bg-violet-500",
-  purple: "bg-purple-500", fuchsia: "bg-fuchsia-500", pink: "bg-pink-500", rose: "bg-rose-500",
-};
+import { swatchClass } from "@/lib/constants/swatches";
 
 function scheduleLabel(schedule: number[]): string {
   if (schedule.length === 0) return "Every day";
@@ -52,7 +46,7 @@ export function TrackerSetup() {
             <CardContent className="flex items-center justify-between py-3 px-4">
               <div className="flex items-center gap-3">
                 <span className="text-sm text-muted-foreground w-5">{i + 1}.</span>
-                <span className={cn("w-3 h-3 rounded-full", colorDot[t.attributes.color])} />
+                <span className={cn("w-3 h-3 rounded-full", swatchClass(t.attributes.color, "solid"))} />
                 <div>
                   <span className="font-medium">{t.attributes.name}</span>
                   <span className="text-xs text-muted-foreground ml-2">
@@ -63,8 +57,8 @@ export function TrackerSetup() {
                 </div>
               </div>
               <div className="flex gap-1">
-                <Button variant="ghost" size="icon" onClick={() => setEditTracker(t)}><Pencil className="h-4 w-4" /></Button>
-                <Button variant="ghost" size="icon" onClick={() => setDeleteTarget(t)}><Trash2 className="h-4 w-4" /></Button>
+                <Button variant="ghost" size="icon" aria-label={`Edit ${t.attributes.name}`} onClick={() => setEditTracker(t)}><Pencil aria-hidden="true" className="h-4 w-4" /></Button>
+                <Button variant="ghost" size="icon" aria-label={`Delete ${t.attributes.name}`} onClick={() => setDeleteTarget(t)}><Trash2 aria-hidden="true" className="h-4 w-4" /></Button>
               </div>
             </CardContent>
           </Card>

@@ -136,10 +136,10 @@ describe("CalendarGrid (desktop)", () => {
         .getAllByRole("button")
         .find((b) => b.getAttribute("aria-label")?.startsWith("Run, May 10"));
       expect(trigger).toBeDefined();
-      expect(trigger!.className).toContain("border-blue-500");
+      expect(trigger!.className).toContain("border-swatch-blue");
       const flange = trigger!.querySelector('[aria-hidden="true"]');
       expect(flange).not.toBeNull();
-      expect(flange?.className).toContain("bg-blue-500");
+      expect(flange?.className).toContain("bg-swatch-blue");
       expect(flange?.getAttribute("class")).toMatch(/\[clip-path:polygon/);
     });
 
@@ -184,7 +184,7 @@ describe("CalendarGrid (desktop)", () => {
       const trigger = screen
         .getAllByRole("button")
         .find((b) => b.getAttribute("aria-label")?.startsWith("Run, May 10"))!;
-      expect(trigger.className).not.toContain("border-blue-500");
+      expect(trigger.className).not.toContain("border-swatch-blue");
       expect(trigger.querySelector('[aria-hidden="true"]')).toBeNull();
     });
 
@@ -287,5 +287,52 @@ describe("CalendarGrid (desktop)", () => {
       // No emoji in the aria-label, even though the visible glyph is one.
       expect(may10.getAttribute("aria-label")).not.toMatch(/😊|😞|😐/);
     });
+  });
+});
+
+describe("CalendarGrid accessibility (DA-102, DA-103)", () => {
+  function renderGrid(onMonthChange = () => {}) {
+    mockedUseMonthSummary.mockReturnValue({
+      data: makeSummary([makeEntry("item-1", "2026-05-10", { note: null })]),
+      isLoading: false,
+    } as ReturnType<typeof useMonthSummary>);
+    render(<CalendarGrid month="2026-05" onMonthChange={onMonthChange} onViewReport={() => {}} />);
+  }
+
+  it("names the icon-only month and day navigation buttons", () => {
+    renderGrid();
+    expect(screen.getByRole("button", { name: "Previous month" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Next month" })).toBeDisabled();
+    expect(screen.getByRole("button", { name: "Previous day" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Next day" })).toBeInTheDocument();
+  });
+
+  it("navigates to the previous month", () => {
+    const onMonthChange = vi.fn();
+    renderGrid(onMonthChange);
+    fireEvent.click(screen.getByRole("button", { name: "Previous month" }));
+    expect(onMonthChange).toHaveBeenCalledWith("2026-04");
+  });
+
+  it("gives day cells a 28px target (44px on coarse pointers) and a readable text size", () => {
+    renderGrid();
+    const cell = screen.getAllByRole("button").find((b) => b.getAttribute("aria-label")?.startsWith("Run, May 10"))!;
+    expect(cell.className).toContain("size-7");
+    expect(cell.className).toContain("coarse:size-11");
+    expect(cell.className).toContain("text-xs");
+    expect(cell.className).not.toContain("text-[10px]");
+  });
+});
+
+describe("CalendarGrid empty state (DA-118)", () => {
+  it("offers an Open Setup action when there are no habits", () => {
+    const empty = makeSummary([]);
+    (empty.data.relationships as unknown as { items: { data: unknown[] } }).items.data = [];
+    mockedUseMonthSummary.mockReturnValue({ data: empty, isLoading: false } as ReturnType<typeof useMonthSummary>);
+    const onOpenSetup = vi.fn();
+    render(<CalendarGrid month="2026-05" onMonthChange={() => {}} onViewReport={() => {}} onOpenSetup={onOpenSetup} />);
+    expect(screen.getByRole("heading", { name: "No habits yet" })).toBeInTheDocument();
+    fireEvent.click(screen.getByRole("button", { name: "Open Setup" }));
+    expect(onOpenSetup).toHaveBeenCalled();
   });
 });

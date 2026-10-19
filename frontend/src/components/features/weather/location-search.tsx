@@ -1,8 +1,10 @@
-import { useState, useRef, useEffect, useCallback, useMemo } from "react";
+import { useId, useState, useRef, useEffect, useCallback, useMemo } from "react";
 import { useGeocodingSearch } from "@/lib/hooks/api/use-weather";
+import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { X, MapPin, Loader2 } from "lucide-react";
 import type { GeocodingResult } from "@/types/models/weather";
+import { cn } from "@/lib/utils";
 
 interface LocationSearchProps {
   value: string | null | undefined;
@@ -19,6 +21,8 @@ export function LocationSearch({ value, onSelect, onClear, isPending }: Location
   const [optimisticValue, setOptimisticValue] = useState<string | null>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
+  const listboxId = useId();
+  const optionId = (index: number) => `${listboxId}-option-${index}`;
 
   const { data } = useGeocodingSearch(debouncedQuery);
   const results = useMemo(() => data?.data ?? [], [data]);
@@ -99,13 +103,16 @@ export function LocationSearch({ value, onSelect, onClear, isPending }: Location
         {isPending ? (
           <Loader2 className="h-4 w-4 animate-spin text-muted-foreground shrink-0" />
         ) : (
-          <button
+          <Button
             type="button"
+            variant="ghost"
+            size="icon-xs"
             onClick={handleClear}
+            aria-label="Clear location"
             className="shrink-0 text-muted-foreground hover:text-foreground"
           >
             <X className="h-4 w-4" />
-          </button>
+          </Button>
         )}
       </div>
     );
@@ -116,20 +123,36 @@ export function LocationSearch({ value, onSelect, onClear, isPending }: Location
       <Input
         ref={inputRef}
         placeholder="Search for a city..."
+        aria-label="Search for a city"
+        role="combobox"
+        aria-autocomplete="list"
+        aria-expanded={open && results.length > 0}
+        aria-controls={open && results.length > 0 ? listboxId : undefined}
+        aria-activedescendant={open && selectedIndex >= 0 ? optionId(selectedIndex) : undefined}
         value={query}
         onChange={(e) => setQuery(e.target.value)}
         onKeyDown={handleKeyDown}
         onFocus={() => results.length > 0 && query.length >= 2 && setOpen(true)}
       />
+      <p role="status" aria-live="polite" className="sr-only">
+        {open && results.length > 0
+          ? `${results.length} result${results.length === 1 ? "" : "s"} available`
+          : ""}
+      </p>
       {open && results.length > 0 && (
-        <div className="absolute z-50 mt-1 w-full rounded-md border bg-popover shadow-md max-h-60 overflow-auto">
+        <div
+          id={listboxId}
+          role="listbox"
+          aria-label="Location results"
+          className="absolute z-50 mt-1 w-full rounded-md border bg-popover shadow-md max-h-60 overflow-auto"
+        >
           {results.map((result, index) => (
-            <button
+            <div
               key={result.id}
-              type="button"
-              className={`w-full px-3 py-2 text-left text-sm hover:bg-accent ${
-                index === selectedIndex ? "bg-accent" : ""
-              }`}
+              id={optionId(index)}
+              role="option"
+              aria-selected={index === selectedIndex}
+              className={cn("w-full cursor-pointer px-3 py-2 text-left text-sm hover:bg-accent", index === selectedIndex && "bg-accent")}
               onClick={() => handleSelect(result)}
             >
               <span className="font-medium">{result.attributes.name}</span>
@@ -139,7 +162,7 @@ export function LocationSearch({ value, onSelect, onClear, isPending }: Location
               {result.attributes.country && (
                 <span className="text-muted-foreground">, {result.attributes.country}</span>
               )}
-            </button>
+            </div>
           ))}
         </div>
       )}

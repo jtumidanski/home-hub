@@ -1,7 +1,8 @@
 import { usePackage } from "@/lib/hooks/api/use-packages";
 import { StatusBadge } from "./status-badge";
 import { Skeleton } from "@/components/ui/skeleton";
-import { ExternalLink } from "lucide-react";
+import { EmptyState } from "@/components/common/empty-state";
+import { Clock, ExternalLink } from "lucide-react";
 
 interface PackageDetailProps {
   packageId: string;
@@ -52,7 +53,7 @@ export function PackageDetail({ packageId, carrier, trackingNumber }: PackageDet
           Tracking History
         </h4>
         {events.length === 0 ? (
-          <p className="text-xs text-muted-foreground">No tracking events yet.</p>
+          <EmptyState icon={Clock} title="No tracking events yet" headingLevel="h3" className="py-4" />
         ) : (
           <div className="space-y-0">
             {events.map((evt, i) => (

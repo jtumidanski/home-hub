@@ -770,3 +770,131 @@ Commits do not cite DA IDs; mapping is by diff.
 | DA-098 | fb9a87d, aaae07e | kiosk-scale time column; owner name |
 | DA-099 | fba0231 | table secondary lines text-sm |
 | DA-100 | fb9a87d | weekday/hour labels (hour label leading-tight) |
+
+## Plan Adherence — task-057 Stage 6 (Body & home)
+
+**Range:** 7520d43..HEAD (926beb7), branch task-057-impeccable-redesign-stage-6
+**Verdict:** MOSTLY_COMPLETE, READY_TO_MERGE after the flagless gate passes. No blocking gaps. All 20 rows DA-101..DA-120 have a fixing commit; DA-119 and DA-108 carry accepted-ruling notes (below).
+
+### Task completion
+
+| Task | Status | Evidence |
+|---|---|---|
+| 25 Tracker swatch migration | DONE | Commit 3bebc71: tracker/, trackers/, TrackerPage removed from PENDING in `no-color-literals.test.ts` (-3 lines); duplicated colour maps replaced by `swatchClass` (task-25-report DA-101); `month-report.tsx` bars `bg-success`/`bg-muted-foreground`/`bg-destructive` with `role=img` aria-label and text legend (DA-111); colour pickers carry `aria-label` from the colour name plus `aria-pressed` (DA-104); calendar-grid test updated to `bg-swatch-blue`. |
+| 26 Workouts | DONE | Commit 23d48c2: guard entries removed (-5 lines); success/warning mapping; `workout-shell.tsx` PageHeader, scrollable tab strip, `coarse:min-h-11`, explicit focus-visible (DA-116, DA-114); `WorkoutTodayPage.tsx` labels via `htmlFor`/`useId` (DA-110); `text-[10px]` to `text-xs` (DA-117; `grep 'text-\[10px\]'` over the Stage 6 dirs and Workout pages, excluding tests, returns 0). New tests: workout-shell, WorkoutTodayPage. |
+| 27 Packages and weather | DONE | Commit be3fed0: guard entries removed (-4); `carrier-icon.tsx` outline Badge with `text-chart-1..3` icon, label text carries the meaning (DA-112); `status-badge.tsx` seven statuses to distinct Badge variants plus leading icons (DA-113); `location-search.tsx` combobox/listbox roles, `aria-expanded`/`aria-activedescendant`, live region, labelled clear button (DA-107); `manage-locations-dialog.tsx` icon-size buttons with name-bearing aria-labels (DA-106); PageHeader on both pages (DA-114); `tabular-nums` temps. |
+| 28 Remaining Stage 6 findings (28A, 28B) | DONE | 28A ca20358, 1d2499e, ab2640a, 6b5336b, 6d5486f; 28B 4bc6d51 plus review fix 3158d31 (coarse target on DropdownMenuItem); 926beb7 adds the Stage 6 accessibility log rows (close-out step 1). Task 28 has no plan checkboxes (progress.md notes this). Reviews: 28A APPROVED_WITH_FINDINGS (0 blocking), 28B CHANGES_REQUIRED then APPROVED after 3158d31. Close-out step 1 done as "not rendered" per 926beb7 (not independently re-verified here). |
+
+Tasks: 4/4 done (25, 26, 27, 28). Skipped without approval: 0. Plan Task 25 to 27 checkboxes are all `[x]`.
+
+### Row findings DA-101..DA-120
+
+All 20 rows resolved. Notes:
+- DA-108: tracker and workout parts needed no change (already `text-success` with aria-labelled icons; 23d48c2 added `role="img"` to workout-widget status icons); packages part is `text-warning-text` in create-package-dialog (be3fed0). Ruling recorded in task-28A-report (tracker DA-108 "needed no change").
+- DA-119: met through `@container` steps (`@md:`/`@xl:` icon and text sizes, icons `text-foreground`) rather than dedicated kiosk tokens; consistent with design.md section 3.5 mechanism, logged as a Stage 7 candidate (progress.md line 612). Accepted.
+- DA-109: Move-to-day `Select` appends to end of the target day only (no position choice); SC 2.5.7 still met. Minor, deferred.
+- DA-105: overflow menu uses a new `ui/dropdown-menu.tsx` (base-ui Menu wrapper, not in the brief; implementer concern recorded, reviewed and approved). No test pins its `coarse:min-h-11` class (deferred minor).
+
+### Build and test
+
+| Scope | Result |
+|---|---|
+| `cd frontend && npx tsc -b` | PASS (exit 0) |
+| `npx vitest run` (full frontend, incl. no-color-literals guard) | PASS, 156 files / 978 tests on a clean standalone run. A first run, executed concurrently with a second vitest process, reported 1 failed test; not reproducible on the isolated re-run, treated as environmental contention (same pattern as the Stage 5 note). |
+| Flagless `tools/verify.sh` | Not run here; per-task gates used `--quick --base` with frontend legs skipped (progress.md lines 601, 610). The flagless run is required before merge. |
+
+### Action items
+1. Merge only after flagless `tools/verify.sh` exits 0 (task gates skipped the frontend legs).
+2. PR body: manual rendered checks owed (log rows are "not rendered"), contrast of soft-swatch calendar cells, behaviour changes (Move to day control, mobile package overflow menu, EmptyState copy changes, "No workouts logged for this week" text), and the Stage 7 candidates from progress.md lines 603, 612, 616 (onDrop path untested, move-to-day position, `moveItem` silent return, weather-widget Card onClick has no keyboard path, no test for DropdownMenuItem coarse class, DA-119 dedicated tokens).
+3. Close-out step 4: fill `Resolved` with the SHAs below in a separate commit.
+
+### Row to SHA (DA-101..DA-120)
+
+Rows with a DA ID in the commit message are marked (msg); others are mapped by diff and task reports.
+
+| Row | SHA | Note |
+|---|---|---|
+| DA-101 | 3bebc71 | local maps deleted, `swatchClass` |
+| DA-102 | ca20358 (msg) | cell `size-7 coarse:size-11 text-xs` |
+| DA-103 | ca20358 (msg) | Previous/Next aria-labels |
+| DA-104 | 3bebc71 | picker aria-label, aria-pressed, check mark |
+| DA-105 | 4bc6d51 (msg), 3158d31 | aria-labels in be3fed0; mobile overflow menu in 4bc6d51; item coarse target in 3158d31 |
+| DA-106 | be3fed0 | manage-locations-dialog aria-labels, icon size |
+| DA-107 | be3fed0 | combobox semantics, live region |
+| DA-108 | be3fed0, 23d48c2 | packages `text-warning-text`; workout-widget `role="img"`; tracker no change needed |
+| DA-109 | 23d48c2, 6d5486f (msg) | Rest toggle, edit button, delete icon; Move to day control and valid button markup |
+| DA-110 | 23d48c2 | `htmlFor`/`useId` labels |
+| DA-111 | 3bebc71 | bar tokens, `role=img`, text legend; test cover in 6b5336b |
+| DA-112 | be3fed0 | carrier Badge, `text-chart-*` icon |
+| DA-113 | be3fed0 | seven statuses to distinct variants and icons |
+| DA-114 | 23d48c2, be3fed0, 1d2499e (msg) | workout shell; packages and weather; TrackerPage |
+| DA-115 | 1d2499e (msg) | `aria-pressed`, `role=group` |
+| DA-116 | 23d48c2 | workout-shell tabs |
+| DA-117 | 23d48c2 | `text-[10px]` to `text-xs` |
+| DA-118 | 23d48c2, be3fed0, ca20358 (msg), 4bc6d51 (msg) | workout pages; packages page and detail; tracker; package-summary-widget |
+| DA-119 | be3fed0, 4bc6d51 (msg) | larger icons, tabular-nums, then container-step kiosk sizing (accepted, see notes) |
+| DA-120 | ab2640a (msg) | `motion-safe:` transitions on bars and swatches |
+
+
+## Frontend Guidelines — task-057 Stage 6 (Body & home)
+
+- **Scope:** `git diff 7520d43..HEAD -- frontend/` (40 files; tracker/habits swatch migration, workout + workouts, packages, weather, new `components/ui/dropdown-menu.tsx`, `lib/constants/swatches.ts`, pages Tracker/Packages/Weather/WorkoutToday/Week/Review/Exercises)
+- **Build:** PASS (`npm run build`; only the pre-existing >500 kB chunk warning)
+- **Tests:** 978 passed, 0 failed (156 files, `npx vitest run`). One earlier run showed 1 failure caused by transient `node_modules` resolution errors (`chai/index.js`, `vitest/suppress-warnings.cjs`) while another process was touching the tree; the immediate re-run was clean.
+- **Lint:** 0 errors, 0 warnings on all touched directories (`npx eslint`)
+- **Overall:** PASS (no blocking findings)
+
+### Checklist
+
+| ID | Status | Evidence |
+|----|--------|----------|
+| FE-01 no `any` | PASS | grep of 26 changed non-test files: only hit is a comment word, `WorkoutReviewPage.tsx:150` |
+| FE-02 no class concatenation | WARN | Template-string classNames in touched files: `WorkoutExercisesPage.tsx:177`, `TrackerPage.tsx:49`, `WorkoutReviewPage.tsx:244`, `WorkoutTodayPage.tsx:174`, `WorkoutWeekPage.tsx:425`, `package-detail.tsx:62` are pre-existing (not in diff). Added by this stage: `location-search.tsx:154`, `package-card.tsx:109`, `weather-widget.tsx:200` (all static conditionals, should be `cn()`). Tracker swatch work correctly uses `cn(...)` (`create-tracker-dialog.tsx:92`) |
+| FE-03 no direct API client in components | PASS | no `api/client` import in changed files |
+| FE-04 no inline Zod | PASS | no `z.` in changed non-test files |
+| FE-05 no content spinners | PASS | `location-search.tsx:103` Loader2 in the search field (in-control pending, as in Stage 5); `package-card.tsx:109` icon spin on the refresh button while pending. Neither is content loading |
+| FE-06 no hardcoded colours | PASS | grep for palette classes/hex/rgb in changed non-test files: zero. `no-color-literals.test.ts` PENDING list shrunk by 12 entries (packages, tracker, trackers, weather, workout, workouts, six pages) and the test passes. Swatches via `SWATCH_CLASSES` whole literals incl. new `border` role (`swatches.ts:35-40`, neutral fallback `:47`); `--color-swatch-*` tokens exist (`index.css:99,195`) |
+| FE-07 no state mutation | PASS | `.sort` hits use copies (`calendar-grid.tsx:98`, `PackagesPage.tsx:37`, `create-tracker-dialog.tsx:112`, `edit-tracker-dialog.tsx:98`); `WorkoutWeekPage.tsx:122-145` mutates local arrays built by `filter/map` then passes to reorder, not to setState; `WorkoutReviewPage.tsx:340-341` local `parts` |
+| FE-08 no default exports | PASS | none |
+| FE-09/10 tenant guard / query keys | PASS (N/A) | no hooks changed |
+| FE-11 error handling | PASS (N/A) | no `.catch(` in changed files |
+| FE-12/13/14/15/16 models, services, keys, forms, schemas | PASS (N/A) | no types, services, hooks, or schemas changed; create/edit tracker dialogs keep existing react-hook-form pattern, only the swatch UI changed |
+| FE-19 cursor-pointer | WARN | OK: `location-search.tsx:154`, `weather-widget.tsx:139` (Card), `WorkoutWeekPage.tsx:392` edit button, `:627` exercise picker is a `<button>`. WARN: `dropdown-menu.tsx:56` `DropdownMenuItem` uses `cursor-default` (conventional for menu items, but the guideline asks for pointer on interactive non-button/anchor elements). Pre-existing, not in diff: `WorkoutTodayPage.tsx:156` clickable `div` (mouse-only expand, no role/keyboard) |
+| FE-17 tests | PASS | New/extended: `carrier-status.test.tsx`, `package-card.test.tsx`, `calendar-grid.test.tsx`, `month-report.test.tsx`, `tracker-dialogs.test.tsx`, `location-search.test.tsx`, `manage-locations-dialog.test.tsx`, `workout-shell.test.tsx`, `TrackerPage.test.tsx`, `WorkoutTodayPage.test.tsx`, `WorkoutWeekPage.test.tsx`. No tests deleted. `dropdown-menu.tsx` has no direct test (covered only via package-card) |
+| FE-18 mocks | PASS (N/A) | no service interface changes |
+
+### Global Constraints spot-check (design)
+
+- Frontend only; no `services/`, `shared/`, `theme-provider.tsx`, or `lib/dashboard/**` in the stat list.
+- No colour literals after the stage: no-color-literals test now scans all Stage 6 directories and passes; swatch classes are whole literals (`swatches.ts:20-40`), no assembled `bg-swatch-${c}`.
+- Status not colour-only: package `status-badge.tsx` extended with icon/label (tested in `carrier-status.test.tsx`); tracker swatch picker has `aria-label`/`aria-pressed` plus a check mark on the selected swatch (`create-tracker-dialog.tsx:92-95`); month sentiment bar has an aria-label and legend text.
+- Pointer targets: `DropdownMenuItem` `min-h-9 coarse:min-h-11` (`dropdown-menu.tsx:56`); ui `Button` `icon`/`sm` carry coarse variants; exercise-picker rows `coarse:min-h-11` (`WorkoutWeekPage.tsx:628`). Not met: `WorkoutTodayPage.tsx:174` log inputs `h-8` without coarse override (deferred minor).
+- Icon-only controls named: package-card desktop buttons `aria-label` (`package-card.tsx:104-145`), overflow trigger "More actions" (`:154`), calendar-grid prev/next (`calendar-grid.tsx:103,105,238,242`), Review week nav (`WorkoutReviewPage.tsx:95,100`), week-planner delete (`WorkoutWeekPage.tsx:399`). Gap: `tracker-setup.tsx:60-61` edit/delete icon buttons have no accessible name (see Non-Blocking 2).
+- Motion: swatch picker uses `motion-safe:` (`create-tracker-dialog.tsx:92`); `dropdown-menu.tsx:41` animates via `data-open:animate-in` utilities (tailwind-animate honours reduced motion only if configured; not verified in rendered check).
+- Fraunces: `weather-widget.tsx:142` `font-heading text-lg @xl:text-2xl` meets the 18 px floor and is on a heading, not a control.
+- Tailwind literals: `WorkoutWeekPage.tsx:425` pre-existing dead ternary `isBw ? "grid-cols-2" : "grid-cols-2"` (not touched).
+
+### Blocking (must fix)
+- None.
+
+### Non-Blocking (should fix)
+1. FE-02: use `cn()` for the three template-string classNames added this stage (`location-search.tsx:154`, `package-card.tsx:109`, `weather-widget.tsx:200`). Pre-existing instances listed above can go with Stage 7.
+2. Accessible names: `tracker-setup.tsx:60-61` icon-only edit/delete buttons have no `aria-label` (and icons lack `aria-hidden`); touched in this stage's diff, same class of defect as DA-091/DA-105. Also `tracker-setup.tsx:60-61` use `size="icon"` so targets are fine.
+3. FE-19: `DropdownMenuItem` `cursor-default` (`dropdown-menu.tsx:56`); consider `cursor-pointer` to match the guideline.
+4. Tests: no direct test for `dropdown-menu.tsx` (coarse class, Escape/keyboard) and `DropdownMenuItem` coarse class not pinned; package-card mobile/desktop trees both render in DOM (`hidden sm:flex` / `sm:hidden`), so role queries in jsdom see duplicates, which is why tests assert via `title`/within-scope.
+5. Reduced motion for `data-open:animate-in` on the dropdown content is not verified (rendered check owed).
+
+### Deferred-minor triage (does any block this PR?)
+
+| Ledger line | Verdict | Reason |
+|-------------|---------|--------|
+| Task 25: swatches.test ROLES omits `border`; no tests for picker aria (DA-104) / sentiment label (DA-111) | Resolved | `swatches.test.ts` updated, `tracker-dialogs.test.tsx` and `month-report.test.tsx` added in the stage |
+| Task 25: month-report legend not colour-keyed; soft-swatch cell contrast unmeasured | Non-blocking | DA-111 met by aria-label + legend text; contrast stays an owed rendered check in the PR body |
+| Task 26: `<p>` in `<button>` / aria-label masking; no WorkoutWeekPage tests | Resolved | `WorkoutWeekPage.tsx:392-398` now `<span class="block">` inside `<button>`; `WorkoutWeekPage.test.tsx` (+108) added |
+| Task 26: `WorkoutTodayPage.tsx:174` log inputs `h-8`, no coarse override | Non-blocking, Stage 7 | outside audit rows, but violates the 44 px coarse rule on a primary logging control; fix is one class |
+| Task 27: DA-105 overflow menu, aria-label tests, DA-119 tokens, DA-118 empty state, a11y | Resolved/folded | dropdown built (`package-card.tsx:150-183`), combobox/aria tests added; 28B closed DA-118/119 |
+| Task 28A: onDrop path untested; move-to-day appends only; `moveItem` silent return | Non-blocking, Stage 7 | SC 2.5.7 met by the Move-to-day control; drag path unchanged behaviour |
+| Task 28B: DA-119 via `@container` steps; sm breakpoint split untested; weather-widget Card click has no keyboard path (pre-existing) | Non-blocking, Stage 7 | pre-existing keyboard gap, no regression |
+| Task 28B: no test pins `coarse:min-h-11` on `DropdownMenuItem` | Non-blocking | matches Non-Blocking 4 |
+
+None of the deferred items should block the PR.

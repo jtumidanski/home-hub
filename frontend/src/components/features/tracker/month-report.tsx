@@ -83,17 +83,17 @@ function SentimentCard({ item }: { item: ReportItem }) {
       </CardHeader>
       <CardContent className="py-2 px-4 space-y-2">
         <p className="text-sm">{stats.positive}/{total} positive ({Math.round(stats.positive_ratio * 100)}%)</p>
-        <div className="flex gap-1 h-3 rounded overflow-hidden">
+        <div className="flex gap-1 h-3 rounded overflow-hidden" role="img" aria-label={`${stats.positive} positive, ${stats.neutral} neutral, ${stats.negative} negative`}>
           {total > 0 && <>
-            <div className="bg-green-500 transition-all" style={{ width: `${(stats.positive / total) * 100}%` }} />
-            <div className="bg-yellow-500 transition-all" style={{ width: `${(stats.neutral / total) * 100}%` }} />
-            <div className="bg-red-500 transition-all" style={{ width: `${(stats.negative / total) * 100}%` }} />
+            <div className="bg-success motion-safe:transition-[width]" style={{ width: `${(stats.positive / total) * 100}%` }} />
+            <div className="bg-muted-foreground motion-safe:transition-[width]" style={{ width: `${(stats.neutral / total) * 100}%` }} />
+            <div className="bg-destructive motion-safe:transition-[width]" style={{ width: `${(stats.negative / total) * 100}%` }} />
           </>}
         </div>
         <div className="flex flex-wrap gap-x-4 gap-y-1 text-xs text-muted-foreground">
-          <span>😊 {stats.positive}</span>
-          <span>😐 {stats.neutral}</span>
-          <span>😞 {stats.negative}</span>
+          <span>😊 Positive {stats.positive}</span>
+          <span>😐 Neutral {stats.neutral}</span>
+          <span>😞 Negative {stats.negative}</span>
           {stats.skipped_days > 0 && <span>skipped {stats.skipped_days}</span>}
         </div>
       </CardContent>

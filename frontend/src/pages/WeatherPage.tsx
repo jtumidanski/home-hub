@@ -4,11 +4,14 @@ import { useWeatherForecast, useCurrentWeather } from "@/lib/hooks/api/use-weath
 import { useLocationsOfInterest } from "@/lib/hooks/api/use-locations-of-interest";
 import { useTenant } from "@/context/tenant-context";
 import { hasLocation } from "@/types/models/household";
+import { PageHeader } from "@/components/common/page-header";
+import { EmptyState } from "@/components/common/empty-state";
 import { WeatherIcon } from "@/components/common/weather-icon";
 import { PullToRefresh } from "@/components/common/pull-to-refresh";
 import { Card, CardContent } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { MapPin, AlertTriangle, ChevronDown, Settings } from "lucide-react";
+import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import {
   Select,
@@ -59,8 +62,8 @@ function HourlyBreakdown({ entries, isToday }: { entries: HourlyForecastEntry[];
           <span className="w-16 shrink-0 text-muted-foreground text-xs">
             {formatHourlyTime(entry.time)}
           </span>
-          <WeatherIcon icon={entry.icon} className="h-4 w-4 shrink-0 text-muted-foreground" />
-          <span className="w-10 shrink-0 font-medium">{Math.round(entry.temperature)}°</span>
+          <WeatherIcon icon={entry.icon} className="size-6 shrink-0 text-foreground" />
+          <span className="w-10 shrink-0 font-medium tabular-nums">{Math.round(entry.temperature)}°</span>
           <span className="w-24 shrink-0 text-xs text-muted-foreground truncate">
             {entry.summary}
           </span>
@@ -117,67 +120,70 @@ export function WeatherPage() {
     return household?.attributes.locationName ?? null;
   })();
 
-  const headerTitle = (
-    <div className="flex flex-wrap items-center gap-2">
-      <h1 className="text-xl md:text-2xl font-semibold">
-        Weather{headerLocationName ? ` \u2014 ${headerLocationName}` : ""}
-      </h1>
-      <Button
-        variant="ghost"
-        size="sm"
-        className="h-7 px-2 text-xs"
-        onClick={() => setManageOpen(true)}
-      >
-        <Settings className="h-3.5 w-3.5 mr-1" />
-        Manage Locations
-      </Button>
-    </div>
+  const header = (
+    <PageHeader
+      title={`Weather${headerLocationName ? ` \u2014 ${headerLocationName}` : ""}`}
+      actions={
+        <Button variant="ghost" size="sm" onClick={() => setManageOpen(true)}>
+          <Settings className="h-3.5 w-3.5 mr-1" />
+          Manage Locations
+        </Button>
+      }
+    />
   );
 
   const selector =
     savedLocations.length > 0 ? (
-      <Select
-        value={selectedLocationId ?? PRIMARY_VALUE}
-        onValueChange={handleSelectChange}
-      >
-        <SelectTrigger className="w-full max-w-xs">
-          <SelectValue>
-            {selectedLocationId
-              ? (savedLocations.find((l) => l.id === selectedLocationId)?.attributes.label ??
-                 savedLocations.find((l) => l.id === selectedLocationId)?.attributes.placeName)
-              : (household?.attributes.locationName ?? "Primary Location")}
-          </SelectValue>
-        </SelectTrigger>
-        <SelectContent>
-          <SelectItem value={PRIMARY_VALUE}>
-            {household?.attributes.locationName ?? "Primary Location"}
-          </SelectItem>
-          {savedLocations.map((loc) => (
-            <SelectItem key={loc.id} value={loc.id}>
-              {loc.attributes.label ?? loc.attributes.placeName}
+      <div className="space-y-1">
+        <Label htmlFor="weather-location-select" className="text-xs text-muted-foreground">
+          Location
+        </Label>
+        <Select
+          value={selectedLocationId ?? PRIMARY_VALUE}
+          onValueChange={handleSelectChange}
+        >
+          <SelectTrigger id="weather-location-select" className="w-full max-w-xs">
+            <SelectValue>
+              {selectedLocationId
+                ? (savedLocations.find((l) => l.id === selectedLocationId)?.attributes.label ??
+                   savedLocations.find((l) => l.id === selectedLocationId)?.attributes.placeName)
+                : (household?.attributes.locationName ?? "Primary Location")}
+            </SelectValue>
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value={PRIMARY_VALUE}>
+              {household?.attributes.locationName ?? "Primary Location"}
             </SelectItem>
-          ))}
-        </SelectContent>
-      </Select>
+            {savedLocations.map((loc) => (
+              <SelectItem key={loc.id} value={loc.id}>
+                {loc.attributes.label ?? loc.attributes.placeName}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+      </div>
     ) : null;
 
   // Empty state: primary unset.
   if (!locationSet && !selectedLocationId) {
     return (
       <div className="p-4 md:p-6 space-y-4">
-        {headerTitle}
+        {header}
         <Card>
-          <CardContent className="flex flex-col items-center justify-center py-8 text-center">
-            <MapPin className="h-10 w-10 text-muted-foreground mb-3" />
-            <p className="text-muted-foreground mb-4">
-              No location set for this household.
-            </p>
-            <Button variant="outline" onClick={() => navigate("/app/households")}>
-              Set Location
-            </Button>
+          <CardContent>
+            <EmptyState
+              icon={MapPin}
+              title="No location set"
+              description="Set a primary location for this household to see its forecast."
+              action={
+                <Button variant="outline" onClick={() => navigate("/app/households")}>
+                  Set Location
+                </Button>
+              }
+            />
             {savedLocations.length > 0 && (
-              <div className="mt-6 w-full">
-                <p className="text-sm text-muted-foreground mb-2">
+              <div className="w-full pb-4">
+                <p className="text-sm text-muted-foreground mb-2 text-center">
                   Or pick one of your saved locations:
                 </p>
                 <div className="flex flex-wrap gap-2 justify-center">
@@ -213,11 +219,11 @@ export function WeatherPage() {
   if (forecastError || !forecastData?.data) {
     return (
       <div className="p-4 md:p-6 space-y-4">
-        {headerTitle}
+        {header}
         {selector}
         <Card>
           <CardContent className="flex items-center gap-2 py-6 text-muted-foreground">
-            <AlertTriangle className="h-4 w-4" />
+            <AlertTriangle aria-hidden="true" className="h-4 w-4" />
             <span>Failed to load weather forecast. Please try again later.</span>
           </CardContent>
         </Card>
@@ -233,7 +239,7 @@ export function WeatherPage() {
     <PullToRefresh onRefresh={handleRefresh}>
       <div className="p-4 md:p-6 space-y-4">
         <div className="space-y-2">
-          {headerTitle}
+          {header}
           {fetchedAt && (
             <p className="text-xs text-muted-foreground">
               Updated {formatTime(fetchedAt)}
@@ -266,11 +272,11 @@ export function WeatherPage() {
                         {formatDayName(day.attributes.date, index)}
                       </p>
                     </div>
-                    <WeatherIcon icon={day.attributes.icon} className="h-6 w-6 shrink-0 text-muted-foreground" />
+                    <WeatherIcon icon={day.attributes.icon} className="size-10 shrink-0 text-foreground" />
                     <p className="text-sm text-muted-foreground flex-1 min-w-0 truncate">
                       {day.attributes.summary}
                     </p>
-                    <div className="text-sm text-right shrink-0">
+                    <div className="text-sm text-right shrink-0 tabular-nums">
                       <span className="font-medium">
                         {Math.round(day.attributes.highTemperature)}°
                       </span>

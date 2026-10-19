@@ -7,6 +7,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { AlertTriangle, MapPin } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { cn } from "@/lib/utils";
 
 function formatTime(isoString: string): string {
   const date = new Date(isoString);
@@ -27,11 +28,11 @@ function ForecastDayColumn({ label, icon, high, low, summary }: {
 }) {
   return (
     <div className="flex flex-col items-center text-center gap-0.5">
-      <span className="text-xs text-muted-foreground">{label}</span>
+      <span className="text-xs @xl:text-base text-muted-foreground">{label}</span>
       <span title={summary}>
-        <WeatherIcon icon={icon} className="size-4 @xl:size-6 shrink-0 text-muted-foreground" />
+        <WeatherIcon icon={icon} className="size-6 @xl:size-10 shrink-0 text-foreground" />
       </span>
-      <div className="text-xs">
+      <div className="text-xs @xl:text-xl tabular-nums">
         <span className="font-medium">{Math.round(high)}°</span>
         <span className="text-muted-foreground ml-0.5">{Math.round(low)}°</span>
       </div>
@@ -51,11 +52,11 @@ function CurrentDayColumn({ icon, summary, temp, tempUnit, high, low }: {
     <div className="flex flex-col items-center text-center gap-0.5">
       <div className="flex items-center gap-1">
         <span title={summary}>
-          <WeatherIcon icon={icon} className="size-4 @xl:size-6 shrink-0 text-muted-foreground" />
+          <WeatherIcon icon={icon} className="size-6 @xl:size-10 shrink-0 text-foreground" />
         </span>
         <span className="tabular-nums text-3xl @md:text-display font-bold">{Math.round(temp)}{tempUnit}</span>
       </div>
-      <div className="text-xs">
+      <div className="text-xs @xl:text-xl tabular-nums">
         <span className="font-medium">{Math.round(high)}°</span>
         <span className="text-muted-foreground ml-0.5">{Math.round(low)}°</span>
       </div>
@@ -92,10 +93,10 @@ export function WeatherWidget(_props: WeatherWidgetProps = {}) {
 
   if (!locationSet) {
     return (
-      <Card>
+      <Card className="@container h-full">
         <CardContent className="flex flex-col items-center justify-center py-6 text-center">
-          <MapPin className="h-8 w-8 text-muted-foreground mb-2" />
-          <p className="text-sm text-muted-foreground mb-3">
+          <MapPin aria-hidden="true" className="size-8 @xl:size-12 text-muted-foreground mb-2" />
+          <p className="text-sm @xl:text-xl text-muted-foreground mb-3">
             Set your household location to see weather.
           </p>
           <Button variant="outline" size="sm" onClick={() => navigate("/app/households")}>
@@ -108,7 +109,7 @@ export function WeatherWidget(_props: WeatherWidgetProps = {}) {
 
   if (isLoading) {
     return (
-      <Card>
+      <Card className="@container h-full">
         <CardHeader className="pb-2">
           <Skeleton className="h-4 w-24" />
         </CardHeader>
@@ -124,10 +125,10 @@ export function WeatherWidget(_props: WeatherWidgetProps = {}) {
 
   if (isError || !weather) {
     return (
-      <Card>
+      <Card className="@container h-full">
         <CardContent className="flex items-center gap-2 py-6 text-muted-foreground">
           <AlertTriangle className="size-4 @xl:size-6 shrink-0" />
-          <span className="text-sm">Weather data unavailable</span>
+          <span className="text-sm @xl:text-xl">Weather data unavailable</span>
         </CardContent>
       </Card>
     );
@@ -135,7 +136,7 @@ export function WeatherWidget(_props: WeatherWidgetProps = {}) {
 
   return (
     <Card
-      className="cursor-pointer hover:bg-accent/50 transition-colors"
+      className="@container h-full cursor-pointer hover:bg-accent/50 transition-colors"
       onClick={() => navigate("/app/weather")}
     >
       <CardHeader className="pb-2">
@@ -146,13 +147,13 @@ export function WeatherWidget(_props: WeatherWidgetProps = {}) {
         <div className="md:hidden">
           <div className="flex items-center justify-center gap-2">
             <span title={weather.summary}>
-              <WeatherIcon icon={weather.icon} className="size-5 @xl:size-6 shrink-0 text-muted-foreground" />
+              <WeatherIcon icon={weather.icon} className="size-8 @xl:size-12 shrink-0 text-foreground" />
             </span>
             <span className="tabular-nums text-3xl @md:text-display font-bold">
               {Math.round(weather.temperature)}{weather.temperatureUnit}
             </span>
           </div>
-          <p className="text-xs text-muted-foreground mt-1 text-center">
+          <p className="text-xs @xl:text-base text-muted-foreground mt-1 text-center tabular-nums">
             H:{Math.round(weather.highTemperature)}° L:{Math.round(weather.lowTemperature)}°
           </p>
           {forecastData?.data && forecastData.data.length >= 4 && (
@@ -193,12 +194,13 @@ export function WeatherWidget(_props: WeatherWidgetProps = {}) {
             ))}
           </div>
         )}
-        <div className="flex items-center gap-1 mt-3 pt-3 border-t text-xs text-muted-foreground">
+        <div className="flex items-center gap-1 mt-3 pt-3 border-t text-xs @xl:text-base text-muted-foreground">
           {household?.attributes.locationName && (
             <span>{household.attributes.locationName}</span>
           )}
-          <span className="ml-auto flex items-center gap-1">
-            {isStale && <AlertTriangle className="h-3 w-3" />}
+          <span className={cn("ml-auto flex items-center gap-1 tabular-nums", isStale && "text-warning-text")}>
+            {isStale && <AlertTriangle aria-hidden="true" className="size-4 @xl:size-6" />}
+            {isStale && <span>Stale</span>}
             {formatTime(weather.fetchedAt)}
           </span>
         </div>

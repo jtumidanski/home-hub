@@ -8,20 +8,15 @@ import { Label } from "@/components/ui/label";
 import { useUpdateTracker } from "@/lib/hooks/api/use-trackers";
 import { trackerEditSchema, type TrackerEditData } from "@/lib/schemas/tracker.schema";
 import { COLOR_PALETTE, DAY_LABELS, type Tracker } from "@/types/models/tracker";
+import { Check } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { swatchClass } from "@/lib/constants/swatches";
 
 interface Props {
   open: boolean;
   onClose: () => void;
   tracker: Tracker;
 }
-
-const colorMap: Record<string, string> = {
-  red: "bg-red-500", orange: "bg-orange-500", amber: "bg-amber-500", yellow: "bg-yellow-500",
-  lime: "bg-lime-500", green: "bg-green-500", emerald: "bg-emerald-500", teal: "bg-teal-500",
-  cyan: "bg-cyan-500", blue: "bg-blue-500", indigo: "bg-indigo-500", violet: "bg-violet-500",
-  purple: "bg-purple-500", fuchsia: "bg-fuchsia-500", pink: "bg-pink-500", rose: "bg-rose-500",
-};
 
 export function EditTrackerDialog({ open, onClose, tracker }: Props) {
   const updateMutation = useUpdateTracker();
@@ -78,10 +73,12 @@ export function EditTrackerDialog({ open, onClose, tracker }: Props) {
             <Controller control={control} name="color" render={({ field }) => (
               <div className="flex flex-wrap gap-2">
                 {COLOR_PALETTE.map((c) => (
-                  <button key={c} type="button"
-                    className={cn("w-7 h-7 rounded-full border-2 transition-all", colorMap[c], field.value === c ? "border-foreground scale-110" : "border-transparent")}
+                  <button key={c} type="button" aria-label={c} aria-pressed={field.value === c}
+                    className={cn("flex h-8 w-8 items-center justify-center rounded-full border-2 motion-safe:transition-colors", swatchClass(c, "solid"), field.value === c ? "border-foreground motion-safe:scale-110" : "border-transparent")}
                     onClick={() => field.onChange(c)}
-                  />
+                  >
+                    {field.value === c && <span className="flex h-4 w-4 items-center justify-center rounded-full bg-background text-foreground"><Check className="h-3 w-3" aria-hidden="true" /></span>}
+                  </button>
                 ))}
               </div>
             )} />

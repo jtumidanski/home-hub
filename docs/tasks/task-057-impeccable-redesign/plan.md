@@ -561,10 +561,10 @@ Same steps as Task 14, for `Stage = 5`. Then the **Stage close-out procedure** (
 - Modify: `frontend/src/components/features/tracker/__tests__/calendar-grid.test.tsx` (line ~142 expects `bg-blue-500` → expect `bg-swatch-blue`)
 - Modify: `no-color-literals.test.ts` (remove `components/features/tracker/`, `components/features/trackers/`, `pages/TrackerPage.tsx`)
 
-- [ ] **Step 1:** Cut the stage branch. **Step 2:** Remove the PENDING entries; run the guard → FAIL (≈140 matches in `tracker/`).
-- [ ] **Step 3:** Update `calendar-grid.test.tsx` to expect `bg-swatch-blue`; run → FAIL.
-- [ ] **Step 4: Implement.** Delete the four duplicated `Record<TrackerColor, string>` maps (create/edit dialogs, today-view, tracker-setup) and use `SWATCH_CLASSES` / `swatchClass`. Sentiment colours in `month-report` (positive/neutral/negative bars) map to `bg-success` / `bg-muted-foreground` / `bg-destructive` with a text legend. Colour pickers keep the colour name as the accessible label.
-- [ ] **Step 5: Run** guard + `npx vitest run src/components/features/tracker src/lib` → PASS. **Step 6: Commit** `feat(frontend): migrate tracker colours to swatch tokens`.
+- [x] **Step 1:** Cut the stage branch. **Step 2:** Remove the PENDING entries; run the guard → FAIL (≈140 matches in `tracker/`).
+- [x] **Step 3:** Update `calendar-grid.test.tsx` to expect `bg-swatch-blue`; run → FAIL.
+- [x] **Step 4: Implement.** Delete the four duplicated `Record<TrackerColor, string>` maps (create/edit dialogs, today-view, tracker-setup) and use `SWATCH_CLASSES` / `swatchClass`. Sentiment colours in `month-report` (positive/neutral/negative bars) map to `bg-success` / `bg-muted-foreground` / `bg-destructive` with a text legend. Colour pickers keep the colour name as the accessible label.
+- [x] **Step 5: Run** guard + `npx vitest run src/components/features/tracker src/lib` → PASS. **Step 6: Commit** `feat(frontend): migrate tracker colours to swatch tokens`.
 
 ### Task 26: Workouts
 
@@ -574,7 +574,7 @@ Same steps as Task 14, for `Stage = 5`. Then the **Stage close-out procedure** (
 
 Mapping: `bg-emerald-500/10 text-emerald-600` → `bg-success/10 text-success`; `bg-amber-500/10 text-amber-600` → `bg-warning/15 text-warning-text`; `WorkoutReviewPage` "Target met" `text-emerald-600` → `text-success` (keep its `aria-label`).
 
-- [ ] **Step 1: Remove PENDING entries; run guard** → FAIL. **Step 2: Implement** the mapping, `PageHeader`, `tabular-nums` on sets/reps/weights, Stage 6 rows in these files. **Step 3: Run** guard + area tests → PASS; tsc; eslint. **Step 4: Commit** `feat(frontend): restyle workouts`.
+- [x] **Step 1: Remove PENDING entries; run guard** → FAIL. **Step 2: Implement** the mapping, `PageHeader`, `tabular-nums` on sets/reps/weights, Stage 6 rows in these files. **Step 3: Run** guard + area tests → PASS; tsc; eslint. **Step 4: Commit** `feat(frontend): restyle workouts`.
 
 ### Task 27: Packages and weather
 
@@ -582,7 +582,7 @@ Mapping: `bg-emerald-500/10 text-emerald-600` → `bg-success/10 text-success`; 
 - Modify: `frontend/src/components/features/{packages,weather}/*`, `frontend/src/pages/{PackagesPage,WeatherPage}.tsx`
 - Modify: `no-color-literals.test.ts` (remove those two dirs and two page files)
 
-- [ ] **Step 1: Remove PENDING entries; run guard** → FAIL (packages ≈7 matches). **Step 2: Implement:** carrier icons map to `text-chart-1..5` (categorical, never carrying text); status (delivered/delayed/exception) uses `Badge` status variants with icons; weather temps `tabular-nums`. **Step 3: Run** guard + area tests → PASS. **Step 4: Commit** `feat(frontend): restyle packages and weather`.
+- [x] **Step 1: Remove PENDING entries; run guard** → FAIL (packages ≈7 matches). **Step 2: Implement:** carrier icons map to `text-chart-1..5` (categorical, never carrying text); status (delivered/delayed/exception) uses `Badge` status variants with icons; weather temps `tabular-nums`. **Step 3: Run** guard + area tests → PASS. **Step 4: Commit** `feat(frontend): restyle packages and weather`.
 
 ### Task 28: Resolve remaining Stage 6 findings
 
