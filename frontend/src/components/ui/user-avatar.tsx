@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { readableForeground } from "@/lib/color-contrast";
+import { SWATCH_CLASSES, TRACKER_COLORS } from "@/lib/constants/swatches";
 import { cn } from "@/lib/utils";
 
 type AvatarSize = "sm" | "md" | "lg";
@@ -36,13 +36,13 @@ function getInitials(displayName: string): string {
   return displayName.slice(0, 2).toUpperCase();
 }
 
-function getColorFromId(userId: string): string {
+function getSoftSwatchFromId(userId: string): string {
   let hash = 0;
   for (let i = 0; i < userId.length; i++) {
     hash = userId.charCodeAt(i) + ((hash << 5) - hash);
   }
-  const hue = Math.abs(hash) % 360;
-  return `hsl(${hue}, 65%, 50%)`;
+  const color = TRACKER_COLORS[Math.abs(hash) % TRACKER_COLORS.length]!;
+  return SWATCH_CLASSES.soft[color];
 }
 
 export function UserAvatar({
@@ -76,19 +76,18 @@ export function UserAvatar({
     );
   }
 
-  const background = getColorFromId(userId);
-  const foreground = readableForeground(background) === "ink" ? "var(--on-color-ink)" : "var(--on-color-paper)";
+  const swatch = getSoftSwatchFromId(userId);
 
   return (
     <div
       role="img"
       aria-label={displayName}
       className={cn(
-        "flex shrink-0 items-center justify-center rounded-full font-medium",
+        "flex shrink-0 items-center justify-center rounded-full font-medium text-foreground",
+        swatch,
         sizeClasses[size],
         className,
       )}
-      style={{ backgroundColor: background, color: foreground }}
     >
       {getInitials(displayName)}
     </div>

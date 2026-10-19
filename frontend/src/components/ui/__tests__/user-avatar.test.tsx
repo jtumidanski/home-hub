@@ -1,6 +1,9 @@
 import { render, screen, fireEvent } from "@testing-library/react";
-import { describe, expect, it, vi } from "vitest";
-import * as colorContrast from "@/lib/color-contrast";
+import { readFileSync } from "node:fs";
+import { resolve } from "node:path";
+import { describe, expect, it } from "vitest";
+import { contrastRatio } from "@/lib/color-contrast";
+import { SWATCH_CLASSES } from "@/lib/constants/swatches";
 import { UserAvatar } from "../user-avatar";
 
 describe("UserAvatar", () => {
@@ -64,7 +67,9 @@ describe("UserAvatar", () => {
     it("has deterministic color from userId", () => {
       const { container } = render(<UserAvatar {...baseProps} />);
       const div = container.querySelector("[role='img']");
-      expect(div).toHaveStyle({ backgroundColor: expect.stringContaining("hsl(") });
+      const again = render(<UserAvatar {...baseProps} />).container.querySelector("[role='img']");
+      expect(div!.className).toBe(again!.className);
+      expect(Object.values(SWATCH_CLASSES.soft).some((c) => div!.className.split(" ").includes(c))).toBe(true);
     });
   });
 
@@ -106,19 +111,26 @@ describe("UserAvatar", () => {
   });
 
   describe("foreground colour", () => {
-    it("uses the ink token on a light generated colour and never text-white", () => {
+    it("uses text-foreground on a soft swatch and never text-white or inline colour", () => {
       const { container } = render(<UserAvatar {...baseProps} />);
       const div = container.querySelector("[role='img']") as HTMLElement;
-      expect(div.style.color).toBe("var(--on-color-ink)");
+      expect(div.className).toContain("text-foreground");
       expect(div.className).not.toContain("text-white");
+      expect(div.getAttribute("style")).toBeNull();
     });
 
-    it("uses the paper token when the readable foreground is paper", () => {
-      const spy = vi.spyOn(colorContrast, "readableForeground").mockReturnValue("paper");
-      const { container } = render(<UserAvatar {...baseProps} />);
-      const div = container.querySelector("[role='img']") as HTMLElement;
-      expect(div.style.color).toBe("var(--on-color-paper)");
-      spy.mockRestore();
+    it("keeps AA contrast between foreground and every soft swatch in both themes", () => {
+      const css = readFileSync(resolve(__dirname, "../../../index.css"), "utf8");
+      const darkAt = css.indexOf("\n.dark {");
+      const themes = { light: css.slice(0, darkAt), dark: css.slice(darkAt) };
+      for (const block of Object.values(themes)) {
+        const fg = /--foreground:\s*(oklch\([^)]*\))/.exec(block)![1]!;
+        const softs = [...block.matchAll(/--swatch-[a-z]+-soft:\s*(oklch\([^)]*\))/g)];
+        expect(softs.length).toBe(16);
+        for (const m of softs) {
+          expect(contrastRatio(fg, m[1]!)).toBeGreaterThanOrEqual(4.5);
+        }
+      }
     });
   });
 });
