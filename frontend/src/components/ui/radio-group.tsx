@@ -50,7 +50,7 @@ export function RadioGroupItem({ value, id, className, children }: RadioGroupIte
         value={value}
         checked={context.value === value}
         onChange={() => context.onValueChange(value)}
-        className="h-4 w-4 border-border text-primary focus:ring-ring"
+        className="h-4 w-4 border-border text-primary focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring"
       />
       <span className="text-sm">{children}</span>
     </label>
