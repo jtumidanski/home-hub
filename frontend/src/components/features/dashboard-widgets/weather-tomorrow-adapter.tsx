@@ -4,6 +4,7 @@ import { useTenant } from "@/context/tenant-context";
 import { useLocalDateOffset } from "@/lib/hooks/use-local-date-offset";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
+import { WidgetError } from "./widget-error";
 import { Cloud } from "lucide-react";
 
 export interface WeatherTomorrowConfig {
@@ -30,9 +31,7 @@ export function WeatherTomorrowAdapter({ config: _config }: { config: WeatherTom
 
   if (isError) {
     return (
-      <Card className="@container h-full border-destructive">
-        <CardContent className="py-3"><p className="text-sm text-destructive">Failed to load forecast</p></CardContent>
-      </Card>
+      <WidgetError message="Failed to load forecast" />
     );
   }
 
@@ -60,7 +59,7 @@ export function WeatherTomorrowAdapter({ config: _config }: { config: WeatherTom
           <span className="tabular-nums text-3xl @md:text-display font-bold">{entry.attributes.highTemperature}{unit}</span>
           <span className="text-sm @xl:text-xl text-muted-foreground">/ {entry.attributes.lowTemperature}{unit}</span>
         </div>
-        <p className="text-xs @xl:text-base text-muted-foreground">{entry.attributes.summary}</p>
+        <p className="text-sm @xl:text-base text-muted-foreground">{entry.attributes.summary}</p>
       </CardContent>
     </Card>
   );

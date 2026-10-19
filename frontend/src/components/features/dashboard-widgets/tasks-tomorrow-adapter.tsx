@@ -5,6 +5,7 @@ import { useTenant } from "@/context/tenant-context";
 import { useLocalDateOffset } from "@/lib/hooks/use-local-date-offset";
 import { Card, CardAction, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
+import { WidgetError } from "./widget-error";
 import { CheckSquare, ChevronRight } from "lucide-react";
 import type { Task } from "@/types/models/task";
 
@@ -33,9 +34,7 @@ export function TasksTomorrowAdapter({ config }: { config: TasksTomorrowConfig }
 
   if (isError) {
     return (
-      <Card className="@container h-full border-destructive">
-        <CardContent className="py-3"><p className="text-sm text-destructive">Failed to load tasks</p></CardContent>
-      </Card>
+      <WidgetError message="Failed to load tasks" />
     );
   }
 
@@ -50,7 +49,7 @@ export function TasksTomorrowAdapter({ config }: { config: TasksTomorrowConfig }
         <CardTitle className="font-heading text-lg @xl:text-2xl">
           <Link to="/app/tasks" className="hover:underline">{title}</Link>
         </CardTitle>
-        <CardAction><Link to="/app/tasks"><ChevronRight className="size-4 @xl:size-6 text-muted-foreground" /></Link></CardAction>
+        <CardAction><Link to="/app/tasks" aria-label="Open tasks" className="inline-flex size-6 items-center justify-center rounded-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring coarse:size-11"><ChevronRight aria-hidden="true" className="size-4 @xl:size-6 text-muted-foreground" /></Link></CardAction>
       </CardHeader>
       <CardContent>
         {visible.length === 0 ? (
@@ -61,11 +60,11 @@ export function TasksTomorrowAdapter({ config }: { config: TasksTomorrowConfig }
         ) : (
           <ul className="space-y-1">
             {visible.map((t) => (
-              <li key={t.id} className="text-sm @xl:text-xl">
-                <Link to="/app/tasks" className="hover:underline">{t.attributes.title}</Link>
+              <li key={t.id} className="text-base @xl:text-xl">
+                <Link to="/app/tasks" className="inline-flex min-h-6 items-center hover:underline coarse:min-h-11">{t.attributes.title}</Link>
               </li>
             ))}
-            {remainder > 0 && <li className="text-xs @xl:text-base text-muted-foreground">+{remainder} more</li>}
+            {remainder > 0 && <li className="text-sm @xl:text-base text-muted-foreground">+{remainder} more</li>}
           </ul>
         )}
       </CardContent>

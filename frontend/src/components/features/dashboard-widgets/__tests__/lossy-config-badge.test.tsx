@@ -3,13 +3,13 @@ import { render, screen } from "@testing-library/react";
 import { LossyConfigBadge } from "@/components/features/dashboard-widgets/lossy-config-badge";
 
 describe("LossyConfigBadge", () => {
-  it("renders with a tooltip title and label", () => {
+  it("renders a visible label with the explanation as real text", () => {
     render(<LossyConfigBadge />);
-    const badge = screen.getByText("reduced to defaults");
+    const badge = screen.getByText("Defaults used");
     expect(badge).toBeInTheDocument();
-    expect(badge.closest("[title]")).toHaveAttribute(
-      "title",
-      expect.stringContaining("reduced to defaults"),
-    );
+    const described = badge.closest("[aria-describedby]");
+    expect(described).not.toBeNull();
+    const id = described!.getAttribute("aria-describedby")!;
+    expect(document.getElementById(id)).toHaveTextContent("reduced to defaults");
   });
 });

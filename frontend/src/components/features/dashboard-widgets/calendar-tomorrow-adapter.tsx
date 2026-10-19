@@ -7,6 +7,7 @@ import { useTenant } from "@/context/tenant-context";
 import { useLocalDateOffset } from "@/lib/hooks/use-local-date-offset";
 import { Card, CardAction, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
+import { WidgetError } from "./widget-error";
 import { CalendarDays, ChevronRight } from "lucide-react";
 import type { CalendarEvent } from "@/types/models/calendar";
 
@@ -56,9 +57,7 @@ export function CalendarTomorrowAdapter({ config }: { config: CalendarTomorrowCo
 
   if (isError) {
     return (
-      <Card className="@container h-full border-destructive">
-        <CardContent className="py-3"><p className="text-sm text-destructive">Failed to load calendar</p></CardContent>
-      </Card>
+      <WidgetError message="Failed to load calendar" />
     );
   }
 
@@ -79,7 +78,7 @@ export function CalendarTomorrowAdapter({ config }: { config: CalendarTomorrowCo
         <CardTitle className="font-heading text-lg @xl:text-2xl">
           <Link to="/app/calendar" className="hover:underline">Tomorrow</Link>
         </CardTitle>
-        <CardAction><Link to="/app/calendar"><ChevronRight className="size-4 @xl:size-6 text-muted-foreground" /></Link></CardAction>
+        <CardAction><Link to="/app/calendar" aria-label="Open calendar" className="inline-flex size-6 items-center justify-center rounded-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring coarse:size-11"><ChevronRight aria-hidden="true" className="size-4 @xl:size-6 text-muted-foreground" /></Link></CardAction>
       </CardHeader>
       <CardContent>
         {visible.length === 0 ? (
@@ -91,17 +90,18 @@ export function CalendarTomorrowAdapter({ config }: { config: CalendarTomorrowCo
           <ul className="space-y-2">
             {visible.map((e) => (
               <li key={e.id} className="flex items-start gap-2 text-sm @xl:text-xl">
-                <span className="text-xs @xl:text-base font-medium text-muted-foreground w-16 shrink-0 pt-0.5">
+                <span className="text-sm @xl:text-base font-medium text-muted-foreground w-20 shrink-0 pt-0.5">
                   {e.attributes.allDay ? "All Day" : formatTime(e.attributes.startTime)}
                 </span>
                 <span className="flex items-center gap-1.5 min-w-0">
-                  <span className="h-2 w-2 rounded-full shrink-0" style={{ backgroundColor: e.attributes.userColor }} />
+                  <span aria-hidden="true" className="size-3 rounded-full shrink-0 border border-border ring-1 ring-background" style={{ backgroundColor: e.attributes.userColor }} />
                   <span className="truncate">{e.attributes.title}</span>
+                  <span className="shrink-0 text-sm @xl:text-base text-muted-foreground">({e.attributes.userDisplayName})</span>
                 </span>
               </li>
             ))}
             {remainder > 0 && (
-              <li className="text-xs @xl:text-base text-muted-foreground">+{remainder} more</li>
+              <li className="text-sm @xl:text-base text-muted-foreground">+{remainder} more</li>
             )}
           </ul>
         )}

@@ -1,19 +1,26 @@
 import { Badge } from "@/components/ui/badge";
 import { AlertTriangle } from "lucide-react";
 
+const EXPLANATION_ID = "lossy-config-explanation";
+
 /**
- * Small pill rendered on top of a widget whose persisted config failed
- * validation and was replaced with defaults. Hovering shows the reason.
+ * Pill rendered on top of a widget whose persisted config failed validation
+ * and was replaced with defaults. The explanation is real text (sr-only plus
+ * a title hint), not title-only.
  */
 export function LossyConfigBadge() {
   return (
     <Badge
-      variant="outline"
-      className="absolute right-2 top-2 gap-1 bg-background/90 backdrop-blur"
+      variant="warning"
+      className="absolute right-2 top-2 gap-1"
+      aria-describedby={EXPLANATION_ID}
       title="Saved configuration was invalid and reduced to defaults. Edit this widget to reconfigure."
     >
-      <AlertTriangle className="size-3" />
-      reduced to defaults
+      <AlertTriangle aria-hidden="true" className="size-3" />
+      Defaults used
+      <span id={EXPLANATION_ID} className="sr-only">
+        Saved configuration was invalid and reduced to defaults. Edit this widget to reconfigure.
+      </span>
     </Badge>
   );
 }

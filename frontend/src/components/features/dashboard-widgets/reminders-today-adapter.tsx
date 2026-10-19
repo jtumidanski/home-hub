@@ -3,6 +3,7 @@ import { Link } from "react-router-dom";
 import { useReminders } from "@/lib/hooks/api/use-reminders";
 import { Card, CardAction, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
+import { WidgetError } from "./widget-error";
 import { Bell, ChevronRight } from "lucide-react";
 import type { Reminder } from "@/types/models/reminder";
 
@@ -40,9 +41,7 @@ export function RemindersTodayAdapter({ config }: { config: RemindersTodayConfig
 
   if (isError) {
     return (
-      <Card className="@container h-full border-destructive">
-        <CardContent className="py-3"><p className="text-sm text-destructive">Failed to load reminders</p></CardContent>
-      </Card>
+      <WidgetError message="Failed to load reminders" />
     );
   }
 
@@ -57,7 +56,7 @@ export function RemindersTodayAdapter({ config }: { config: RemindersTodayConfig
         <CardTitle className="font-heading text-lg @xl:text-2xl">
           <Link to="/app/reminders" className="hover:underline">{title}</Link>
         </CardTitle>
-        <CardAction><Link to="/app/reminders"><ChevronRight className="size-4 @xl:size-6 text-muted-foreground" /></Link></CardAction>
+        <CardAction><Link to="/app/reminders" aria-label="Open reminders" className="inline-flex size-6 items-center justify-center rounded-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring coarse:size-11"><ChevronRight aria-hidden="true" className="size-4 @xl:size-6 text-muted-foreground" /></Link></CardAction>
       </CardHeader>
       <CardContent>
         {reminders.length === 0 ? (
@@ -70,7 +69,7 @@ export function RemindersTodayAdapter({ config }: { config: RemindersTodayConfig
             {reminders.map((r) => (
               <li key={r.id} className="flex items-baseline justify-between gap-2 text-sm @xl:text-xl">
                 <span className="truncate">{r.attributes.title}</span>
-                <span className="text-xs @xl:text-base text-muted-foreground shrink-0">{formatRelative(r.attributes.scheduledFor)}</span>
+                <span className="text-sm @xl:text-base text-muted-foreground shrink-0">{formatRelative(r.attributes.scheduledFor)}</span>
               </li>
             ))}
           </ul>

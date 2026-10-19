@@ -5,7 +5,8 @@ import { useTenant } from "@/context/tenant-context";
 import { useLocalDate } from "@/lib/hooks/use-local-date";
 import { Card, CardAction, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
-import { CheckSquare, AlertTriangle, ChevronRight } from "lucide-react";
+import { WidgetError } from "./widget-error";
+import { Check, CheckSquare, AlertTriangle, ChevronRight } from "lucide-react";
 import type { Task } from "@/types/models/task";
 
 export interface TasksTodayConfig {
@@ -34,9 +35,7 @@ export function TasksTodayAdapter({ config }: { config: TasksTodayConfig }) {
 
   if (isError) {
     return (
-      <Card className="@container h-full border-destructive">
-        <CardContent className="py-3"><p className="text-sm text-destructive">Failed to load tasks</p></CardContent>
-      </Card>
+      <WidgetError message="Failed to load tasks" />
     );
   }
 
@@ -61,19 +60,19 @@ export function TasksTodayAdapter({ config }: { config: TasksTodayConfig }) {
         <CardTitle className="font-heading text-lg @xl:text-2xl">
           <Link to="/app/tasks" className="hover:underline">{title}</Link>
         </CardTitle>
-        <CardAction><Link to="/app/tasks"><ChevronRight className="size-4 @xl:size-6 text-muted-foreground" /></Link></CardAction>
+        <CardAction><Link to="/app/tasks" aria-label="Open tasks" className="inline-flex size-6 items-center justify-center rounded-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring coarse:size-11"><ChevronRight aria-hidden="true" className="size-4 @xl:size-6 text-muted-foreground" /></Link></CardAction>
       </CardHeader>
       <CardContent className="space-y-3">
         {overdue.length > 0 && (
           <section>
-            <h4 className="text-xs @xl:text-base font-medium text-destructive flex items-center gap-1">
+            <h4 className="text-sm @xl:text-base font-medium text-destructive flex items-center gap-1">
               <AlertTriangle className="size-3 @xl:size-5" />
               Overdue ({overdue.length})
             </h4>
             <ul className="mt-1 space-y-1">
               {overdue.map((t) => (
-                <li key={t.id} className="text-sm @xl:text-xl">
-                  <Link to="/app/tasks" className="hover:underline">{t.attributes.title}</Link>
+                <li key={t.id} className="text-base @xl:text-xl">
+                  <Link to="/app/tasks" className="inline-flex min-h-6 items-center hover:underline coarse:min-h-11">{t.attributes.title}</Link>
                 </li>
               ))}
             </ul>
@@ -81,21 +80,24 @@ export function TasksTodayAdapter({ config }: { config: TasksTodayConfig }) {
         )}
         {todayTasks.length > 0 ? (
           <section>
-            <h4 className="text-xs @xl:text-base font-medium text-muted-foreground">Today</h4>
+            <h4 className="text-sm @xl:text-base font-medium text-muted-foreground">Today</h4>
             <ul className="mt-1 space-y-1">
               {todayTasks.map((t) => (
-                <li key={t.id} className="text-sm @xl:text-xl">
-                  <Link to="/app/tasks" className="hover:underline">{t.attributes.title}</Link>
+                <li key={t.id} className="text-base @xl:text-xl">
+                  <Link to="/app/tasks" className="inline-flex min-h-6 items-center hover:underline coarse:min-h-11">{t.attributes.title}</Link>
                 </li>
               ))}
             </ul>
           </section>
         ) : showAllCompleted ? (
-          <section className="text-sm @xl:text-xl text-muted-foreground">
+          <section className="text-base @xl:text-xl text-muted-foreground">
             <p className="font-medium text-foreground">All tasks completed!</p>
-            <ul className="mt-1 space-y-1 opacity-70">
+            <ul className="mt-1 space-y-1">
               {completedToday.map((t) => (
-                <li key={t.id}>{t.attributes.title}</li>
+                <li key={t.id} className="flex items-center gap-1.5 line-through">
+                  <Check aria-hidden="true" className="size-4 shrink-0 @xl:size-5" />
+                  {t.attributes.title}
+                </li>
               ))}
             </ul>
           </section>

@@ -86,6 +86,22 @@ describe("TasksTodayAdapter", () => {
       isError: true,
     });
     renderAdapter();
-    expect(screen.getByText(/Failed to load/i)).toBeInTheDocument();
+    expect(screen.getByRole("alert")).toHaveTextContent(/Failed to load/i);
+  });
+
+  it("gives the header chevron link an accessible name", () => {
+    (useTasks as unknown as ReturnType<typeof vi.fn>).mockReturnValue({ data: { data: [] }, isLoading: false, isError: false });
+    renderAdapter();
+    expect(screen.getByRole("link", { name: "Open tasks" })).toHaveAttribute("href", "/app/tasks");
+  });
+
+  it("marks completed tasks with strike-through instead of opacity", () => {
+    (useTasks as unknown as ReturnType<typeof vi.fn>).mockReturnValue({
+      data: { data: [task("a", "Done early", "completed", "2026-05-01", "2026-05-01T08:00:00Z")] },
+      isLoading: false,
+      isError: false,
+    });
+    renderAdapter();
+    expect(screen.getByText("Done early").closest("li")).toHaveClass("line-through");
   });
 });
