@@ -81,3 +81,45 @@ describe("design tokens", () => {
     expect(missing).toEqual([]);
   });
 });
+
+describe("typography", () => {
+  const css = readIndexCss();
+  const fontFace = (family: string) =>
+    new RegExp(`@font-face\\s*\\{[^}]*font-family:\\s*["']${family}["'][^}]*\\}`).exec(css)?.[0] ?? "";
+
+  it("does not import Geist", () => {
+    expect(css).not.toMatch(/geist/i);
+  });
+
+  it("imports Fraunces and Figtree variable fonts", () => {
+    expect(css).toMatch(/@import\s+["']@fontsource-variable\/fraunces/);
+    expect(css).toMatch(/@import\s+["']@fontsource-variable\/figtree/);
+  });
+
+  it("stacks lead with the variable face then its metric-matched fallback", () => {
+    expect(css).toMatch(/--font-heading:\s*'Fraunces Variable',\s*'Fraunces Fallback'/);
+    expect(css).toMatch(/--font-sans:\s*'Figtree Variable',\s*'Figtree Fallback'/);
+  });
+
+  it.each([
+    ["Fraunces Fallback", 'local("Georgia")'],
+    ["Figtree Fallback", 'local("Arial")'],
+  ])("%s is a local() face with metric overrides", (family, src) => {
+    const block = fontFace(family);
+    expect(block).not.toBe("");
+    expect(block).toContain(src);
+    for (const prop of ["size-adjust", "ascent-override", "descent-override"]) {
+      expect(block).toContain(`${prop}:`);
+    }
+  });
+
+  it("sets the text scale in @theme", () => {
+    const theme = /@theme\s*\{([^}]*)\}/.exec(css);
+    expect(theme).not.toBeNull();
+    const body = theme![1] as string;
+    expect(body).toMatch(/--text-xl:\s*1\.375rem/);
+    expect(body).toMatch(/--text-2xl:\s*1\.75rem/);
+    expect(body).toMatch(/--text-3xl:\s*2\.25rem/);
+    expect(body).toMatch(/--text-display:\s*3rem/);
+  });
+});

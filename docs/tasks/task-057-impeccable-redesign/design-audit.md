@@ -55,6 +55,7 @@ Geist woff2 files in `dist/assets` (variable font, split by `unicode-range` in `
 
 - **Latin-only page loads: 1 file, `geist-latin-wght-normal-BgDaEnEv.woff2`, 29400 bytes.** The browser fetches only subsets whose `unicode-range` matches characters on the page; the other four are not requested for English-only content.
 - Total of all woff2 in `dist` (reference): 76420 bytes.
+- **Stage 1 font payload (Fraunces wght + Figtree, latin page): 56776 bytes** (`fraunces-latin-wght-normal` 36620 + `figtree-latin-wght-normal` 20156; budget 150 KB). Baseline Geist was 29400, so +27376 bytes. `latin-ext` and `vietnamese` subsets load only when the page contains matching characters.
 
 ## Findings
 

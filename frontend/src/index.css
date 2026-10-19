@@ -1,13 +1,60 @@
 @import "tailwindcss";
 @import "tw-animate-css";
 @import "shadcn/tailwind.css";
-@import "@fontsource-variable/geist";
+/* No latin-only entry ships; wght.css is split per script with unicode-range, so a latin page loads only the latin file.
+   Fraunces: wght axis only (no opsz/SOFT/WONK) to keep the payload small. */
+@import "@fontsource-variable/fraunces/wght.css";
+@import "@fontsource-variable/figtree/index.css";
+
+/* Metric-matched fallbacks so text does not reflow when the web font swaps in (font-display: swap is the fontsource default).
+   Derived with fontTools from each latin woff2 (hhea table, unitsPerEm; hhea == OS/2 typo, lineGap 0):
+   - size-adjust = web font mean advance / fallback mean advance, over English letter frequencies plus a space (18%).
+   - ascent-override = hhea.ascent / unitsPerEm / size-adjust; descent-override likewise with |hhea.descent|.
+   Figtree: upm 1000, ascent 950, descent 250, mean advance 448.4 vs Arial 447.0 (per 1000 em) -> 100.3%, 94.7%, 24.9%.
+   Fraunces: upm 2000, ascent 1956, descent 510, mean advance 518.6 vs Georgia 443.3 (per 1000 em) -> 117.0%, 83.6%, 21.8%.
+   Arial/Georgia advances are the published per-glyph widths, not measured locally (neither font is installed here). */
+@font-face {
+    font-family: "Figtree Fallback";
+    src: local("Arial");
+    size-adjust: 100.3%;
+    ascent-override: 94.7%;
+    descent-override: 24.9%;
+    line-gap-override: 0%;
+}
+
+@font-face {
+    font-family: "Fraunces Fallback";
+    src: local("Georgia");
+    size-adjust: 117%;
+    ascent-override: 83.6%;
+    descent-override: 21.8%;
+    line-gap-override: 0%;
+}
 
 @custom-variant dark (&:is(.dark *));
 
+@theme {
+    --text-xs: 0.75rem;
+    --text-xs--line-height: 1.5;
+    --text-sm: 0.875rem;
+    --text-sm--line-height: 1.5;
+    --text-base: 1rem;
+    --text-base--line-height: 1.5;
+    --text-lg: 1.125rem;
+    --text-lg--line-height: 1.5;
+    --text-xl: 1.375rem;
+    --text-xl--line-height: 1.2;
+    --text-2xl: 1.75rem;
+    --text-2xl--line-height: 1.2;
+    --text-3xl: 2.25rem;
+    --text-3xl--line-height: 1.2;
+    --text-display: 3rem;
+    --text-display--line-height: 1.2;
+}
+
 @theme inline {
-    --font-heading: var(--font-sans);
-    --font-sans: 'Geist Variable', sans-serif;
+    --font-heading: 'Fraunces Variable', 'Fraunces Fallback', Georgia, serif;
+    --font-sans: 'Figtree Variable', 'Figtree Fallback', system-ui, sans-serif;
     --color-sidebar-ring: var(--sidebar-ring);
     --color-sidebar-border: var(--sidebar-border);
     --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
