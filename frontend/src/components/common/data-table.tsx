@@ -3,6 +3,7 @@ import {
   type DataTableColumnDef,
   dataTableFeatures,
 } from "@/components/common/data-table-features";
+import { EmptyState } from "@/components/common/empty-state";
 import { Skeleton } from "@/components/ui/skeleton";
 import { cn } from "@/lib/utils";
 
@@ -43,9 +44,7 @@ export function DataTable<TData extends RowData>({
 
   if (data.length === 0) {
     return (
-      <div className="flex flex-col items-center justify-center py-12 text-center">
-        <p className="text-muted-foreground">{emptyMessage}</p>
-      </div>
+      <EmptyState title={emptyMessage} />
     );
   }
 
@@ -58,6 +57,7 @@ export function DataTable<TData extends RowData>({
               {headerGroup.headers.map((header) => (
                 <th
                   key={header.id}
+                  scope="col"
                   className="h-10 px-4 text-left align-middle font-medium text-muted-foreground"
                 >
                   {header.isPlaceholder
@@ -73,10 +73,23 @@ export function DataTable<TData extends RowData>({
             <tr
               key={row.id}
               className={cn(
-                "border-b transition-colors hover:bg-muted/50",
-                onRowClick && "cursor-pointer"
+                "border-b transition-colors duration-(--duration-fast) ease-out hover:bg-muted/50",
+                onRowClick &&
+                  "cursor-pointer focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-ring"
               )}
+              tabIndex={onRowClick ? 0 : undefined}
               onClick={() => onRowClick?.(row.original)}
+              onKeyDown={
+                onRowClick
+                  ? (e) => {
+                      if (e.target !== e.currentTarget) return;
+                      if (e.key === "Enter" || e.key === " ") {
+                        e.preventDefault();
+                        onRowClick(row.original);
+                      }
+                    }
+                  : undefined
+              }
             >
               {row.getAllCells().map((cell) => (
                 <td key={cell.id} className="px-4 py-3 align-middle">

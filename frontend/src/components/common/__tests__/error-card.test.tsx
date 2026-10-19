@@ -3,14 +3,19 @@ import { render, screen } from "@testing-library/react";
 import { ErrorCard } from "../error-card";
 
 describe("ErrorCard", () => {
-  it("renders the error message", () => {
+  it("renders the error message in an alert", () => {
     render(<ErrorCard message="Something went wrong" />);
-    expect(screen.getByText("Something went wrong")).toBeInTheDocument();
+    expect(screen.getByRole("alert")).toHaveTextContent("Something went wrong");
+  });
+
+  it("carries an icon so status is not colour-only", () => {
+    render(<ErrorCard message="Error!" />);
+    const icon = screen.getByRole("alert").querySelector("svg");
+    expect(icon).toHaveAttribute("aria-hidden", "true");
   });
 
   it("renders with destructive styling", () => {
-    const { container } = render(<ErrorCard message="Error!" />);
-    expect(container.querySelector(".border-destructive")).toBeInTheDocument();
-    expect(container.querySelector(".text-destructive")).toBeInTheDocument();
+    render(<ErrorCard message="Error!" />);
+    expect(screen.getByRole("alert")).toHaveClass("border-destructive");
   });
 });

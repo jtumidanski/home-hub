@@ -108,7 +108,7 @@ export function OnboardingPage() {
     <div className="flex min-h-dvh items-center justify-center bg-background px-4">
       <Card className="w-full max-w-md">
         <CardHeader className="text-center">
-          <CardTitle className="text-2xl">Welcome to Home Hub</CardTitle>
+          <CardTitle className="font-heading text-2xl tracking-[-0.01em] min-w-0 break-words">Welcome to Home Hub</CardTitle>
           <CardDescription>
             {effectiveStep === "invitations"
               ? "You have pending invitations"
@@ -188,7 +188,7 @@ export function OnboardingPage() {
                   )}
                 />
                 <Button type="submit" className="w-full" disabled={tenantForm.formState.isSubmitting}>
-                  {tenantForm.formState.isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                  {tenantForm.formState.isSubmitting && <Loader2 className="mr-2 h-4 w-4 motion-safe:animate-spin" />}
                   Continue
                 </Button>
               </form>
@@ -241,7 +241,7 @@ export function OnboardingPage() {
                   )}
                 />
                 <Button type="submit" className="w-full" disabled={householdForm.formState.isSubmitting}>
-                  {householdForm.formState.isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                  {householdForm.formState.isSubmitting && <Loader2 className="mr-2 h-4 w-4 motion-safe:animate-spin" />}
                   Get Started
                 </Button>
               </form>

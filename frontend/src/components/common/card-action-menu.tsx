@@ -1,5 +1,4 @@
-import { useState, useRef, useEffect, useCallback } from "react";
-import { createPortal } from "react-dom";
+import { Menu as MenuPrimitive } from "@base-ui/react/menu";
 import { MoreVertical } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
@@ -16,88 +15,43 @@ interface CardActionMenuProps {
 }
 
 export function CardActionMenu({ actions }: CardActionMenuProps) {
-  const [open, setOpen] = useState(false);
-  const triggerRef = useRef<HTMLButtonElement>(null);
-  const menuRef = useRef<HTMLDivElement>(null);
-  const [position, setPosition] = useState({ top: 0, right: 0 });
-
-  const updatePosition = useCallback(() => {
-    if (!triggerRef.current) return;
-    const rect = triggerRef.current.getBoundingClientRect();
-    setPosition({
-      top: rect.bottom + 4,
-      right: window.innerWidth - rect.right,
-    });
-  }, []);
-
-  useEffect(() => {
-    if (!open) return;
-    updatePosition();
-
-    const handleClickOutside = (e: MouseEvent | TouchEvent) => {
-      const target = e.target as Node;
-      if (
-        menuRef.current && !menuRef.current.contains(target) &&
-        triggerRef.current && !triggerRef.current.contains(target)
-      ) {
-        setOpen(false);
-      }
-    };
-
-    document.addEventListener("mousedown", handleClickOutside);
-    document.addEventListener("touchstart", handleClickOutside);
-    window.addEventListener("scroll", () => setOpen(false), true);
-    return () => {
-      document.removeEventListener("mousedown", handleClickOutside);
-      document.removeEventListener("touchstart", handleClickOutside);
-      window.removeEventListener("scroll", () => setOpen(false), true);
-    };
-  }, [open, updatePosition]);
-
   return (
-    <>
-      <Button
-        ref={triggerRef}
-        variant="ghost"
-        size="icon"
-        onClick={(e) => {
-          e.stopPropagation();
-          setOpen((prev) => !prev);
-        }}
-        aria-label="Actions"
-        aria-expanded={open}
+    <MenuPrimitive.Root>
+      <MenuPrimitive.Trigger
+        render={<Button variant="ghost" size="icon" aria-label="Actions" />}
+        onClick={(e) => e.stopPropagation()}
       >
         <MoreVertical className="h-4 w-4" />
-      </Button>
-
-      {open &&
-        createPortal(
-          <div
-            ref={menuRef}
-            className="fixed z-50 min-w-[160px] rounded-md border bg-popover py-1 shadow-md"
-            style={{ top: position.top, right: position.right }}
+      </MenuPrimitive.Trigger>
+      <MenuPrimitive.Portal>
+        <MenuPrimitive.Positioner side="bottom" align="end" sideOffset={4} className="z-50">
+          <MenuPrimitive.Popup
+            className={cn(
+              "min-w-40 rounded-lg bg-popover p-1 text-popover-foreground shadow-overlay ring-1 ring-foreground/10",
+              "origin-(--transform-origin) transition-[transform,scale,opacity] duration-(--duration-fast) ease-out",
+              "data-open:animate-in data-open:fade-in-0 data-open:zoom-in-95",
+              "data-closed:animate-out data-closed:fade-out-0 data-closed:zoom-out-95",
+            )}
           >
             {actions.map((action) => (
-              <button
+              <MenuPrimitive.Item
                 key={action.label}
-                type="button"
                 onClick={(e) => {
                   e.stopPropagation();
                   action.onClick();
-                  setOpen(false);
                 }}
                 className={cn(
-                  "flex w-full items-center gap-2 px-3 py-2.5 text-sm transition-colors hover:bg-muted",
-                  action.variant === "destructive" && "text-destructive",
+                  "flex w-full cursor-pointer items-center gap-2 rounded-md px-3 py-2.5 text-sm outline-none select-none coarse:min-h-11 data-highlighted:bg-accent data-highlighted:text-accent-foreground focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-ring",
+                  action.variant === "destructive" && "text-destructive data-highlighted:text-destructive",
                 )}
               >
                 {action.icon}
                 {action.label}
-              </button>
+              </MenuPrimitive.Item>
             ))}
-          </div>,
-          document.body,
-        )}
-    </>
+          </MenuPrimitive.Popup>
+        </MenuPrimitive.Positioner>
+      </MenuPrimitive.Portal>
+    </MenuPrimitive.Root>
   );
 }

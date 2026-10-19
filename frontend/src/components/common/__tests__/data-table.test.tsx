@@ -65,4 +65,33 @@ describe("DataTable", () => {
     render(<DataTable columns={columns} data={sampleData} />);
     await user.click(screen.getByText("Alice"));
   });
+
+  it("makes clickable rows keyboard-activatable", async () => {
+    const user = userEvent.setup();
+    const onRowClick = vi.fn();
+    render(<DataTable columns={columns} data={sampleData} onRowClick={onRowClick} />);
+
+    const row = screen.getByText("Alice").closest("tr")!;
+    expect(row).toHaveAttribute("tabindex", "0");
+    row.focus();
+    await user.keyboard("{Enter}");
+    await user.keyboard(" ");
+    expect(onRowClick).toHaveBeenCalledTimes(2);
+    expect(onRowClick).toHaveBeenCalledWith(sampleData[0]);
+  });
+
+  it("leaves rows out of the tab order without onRowClick", () => {
+    render(<DataTable columns={columns} data={sampleData} />);
+    expect(screen.getByText("Alice").closest("tr")).not.toHaveAttribute("tabindex");
+  });
+
+  it("scopes header cells to columns", () => {
+    render(<DataTable columns={columns} data={sampleData} />);
+    expect(screen.getByRole("columnheader", { name: "ID" })).toHaveAttribute("scope", "col");
+  });
+
+  it("renders the empty message as an empty-state heading", () => {
+    render(<DataTable columns={columns} data={[]} emptyMessage="Nothing here" />);
+    expect(screen.getByRole("heading", { level: 2, name: "Nothing here" })).toBeInTheDocument();
+  });
 });

@@ -1,5 +1,6 @@
 import { ShieldAlert } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { StatusBanner } from "@/components/ui/status-banner";
 import { useReauthorizeCalendar } from "@/lib/hooks/api/use-calendar";
 
 export function ReauthorizeBanner() {
@@ -10,19 +11,18 @@ export function ReauthorizeBanner() {
   };
 
   return (
-    <div className="flex items-center gap-3 rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm dark:border-amber-800 dark:bg-amber-950/30">
-      <ShieldAlert className="h-4 w-4 text-amber-600 flex-shrink-0" />
-      <span className="flex-1 text-amber-800 dark:text-amber-200">
-        Upgrade your calendar connection to add and edit events.
-      </span>
-      <Button
-        variant="outline"
-        size="sm"
-        onClick={handleUpgrade}
-        disabled={reauthorize.isPending}
-      >
-        Upgrade Access
-      </Button>
-    </div>
+    <StatusBanner variant="warning" icon={ShieldAlert} className="items-center">
+      <div className="flex items-center gap-3">
+        <span className="flex-1">Upgrade your calendar connection to add and edit events.</span>
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={handleUpgrade}
+          disabled={reauthorize.isPending}
+        >
+          Upgrade Access
+        </Button>
+      </div>
+    </StatusBanner>
   );
 }

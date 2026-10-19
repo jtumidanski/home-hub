@@ -1,5 +1,5 @@
 import { describe, it, expect, vi } from "vitest";
-import { render, screen } from "@testing-library/react";
+import { render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { CardActionMenu } from "../card-action-menu";
 
@@ -26,7 +26,7 @@ describe("CardActionMenu", () => {
 
     await user.click(screen.getByRole("button", { name: "Actions" }));
 
-    expect(screen.getByText("Edit")).toBeInTheDocument();
+    expect(await screen.findByText("Edit")).toBeInTheDocument();
     expect(screen.getByText("Delete")).toBeInTheDocument();
   });
 
@@ -41,7 +41,7 @@ describe("CardActionMenu", () => {
 
     await user.click(screen.getByRole("button", { name: "Actions" }));
 
-    expect(screen.getByText("Edit")).toBeInTheDocument();
+    expect(await screen.findByText("Edit")).toBeInTheDocument();
     expect(screen.getByText("Delete")).toBeInTheDocument();
     expect(screen.getByText("Archive")).toBeInTheDocument();
   });
@@ -52,10 +52,10 @@ describe("CardActionMenu", () => {
     render(<CardActionMenu actions={makeActions({ onClick })} />);
 
     await user.click(screen.getByRole("button", { name: "Actions" }));
-    await user.click(screen.getByText("Edit"));
+    await user.click(await screen.findByText("Edit"));
 
     expect(onClick).toHaveBeenCalledOnce();
-    expect(screen.queryByText("Edit")).not.toBeInTheDocument();
+    await waitFor(() => expect(screen.queryByText("Edit")).not.toBeInTheDocument());
   });
 
   it("closes menu when clicking outside", async () => {
@@ -68,10 +68,52 @@ describe("CardActionMenu", () => {
     );
 
     await user.click(screen.getByRole("button", { name: "Actions" }));
-    expect(screen.getByText("Edit")).toBeInTheDocument();
+    expect(await screen.findByText("Edit")).toBeInTheDocument();
 
     await user.click(screen.getByText("Outside"));
 
-    expect(screen.queryByText("Edit")).not.toBeInTheDocument();
+    await waitFor(() => expect(screen.queryByText("Edit")).not.toBeInTheDocument());
+  });
+
+  it("exposes menu and menuitem roles", async () => {
+    const user = userEvent.setup();
+    render(<CardActionMenu actions={makeActions()} />);
+
+    await user.click(screen.getByRole("button", { name: "Actions" }));
+
+    expect(await screen.findByRole("menu")).toBeInTheDocument();
+    expect(screen.getByRole("menuitem", { name: "Edit" })).toBeInTheDocument();
+    expect(screen.getByRole("menuitem", { name: "Delete" })).toBeInTheDocument();
+  });
+
+  it("moves focus into the menu, supports arrow keys, and closes on Escape returning focus", async () => {
+    const user = userEvent.setup();
+    render(<CardActionMenu actions={makeActions()} />);
+    const trigger = screen.getByRole("button", { name: "Actions" });
+
+    trigger.focus();
+    await user.keyboard("{ArrowDown}");
+    expect(await screen.findByRole("menu")).toBeInTheDocument();
+    await waitFor(() => expect(screen.getByRole("menuitem", { name: "Edit" })).toHaveFocus());
+
+    await user.keyboard("{ArrowDown}");
+    await waitFor(() => expect(screen.getByRole("menuitem", { name: "Delete" })).toHaveFocus());
+
+    await user.keyboard("{Escape}");
+    await waitFor(() => expect(screen.queryByRole("menu")).not.toBeInTheDocument());
+    await waitFor(() => expect(trigger).toHaveFocus());
+  });
+
+  it("does not bubble item and trigger clicks to the parent", async () => {
+    const user = userEvent.setup();
+    const parentClick = vi.fn();
+    render(
+      <div onClick={parentClick}>
+        <CardActionMenu actions={makeActions()} />
+      </div>,
+    );
+    await user.click(screen.getByRole("button", { name: "Actions" }));
+    await user.click(await screen.findByRole("menuitem", { name: "Edit" }));
+    expect(parentClick).not.toHaveBeenCalled();
   });
 });

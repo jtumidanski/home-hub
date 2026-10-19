@@ -41,7 +41,6 @@ export function PlannerConfigForm({ value, onChange }: PlannerConfigFormProps) {
                 min={1}
                 value={value.eatWithinDays ?? ""}
                 onChange={(e) => update("eatWithinDays", e.target.value ? Number(e.target.value) : undefined)}
-                className="h-8 text-sm"
               />
             </div>
             <div>
@@ -51,7 +50,6 @@ export function PlannerConfigForm({ value, onChange }: PlannerConfigFormProps) {
                 min={0}
                 value={value.minGapDays ?? ""}
                 onChange={(e) => update("minGapDays", e.target.value ? Number(e.target.value) : undefined)}
-                className="h-8 text-sm"
               />
             </div>
             <div>
@@ -61,7 +59,6 @@ export function PlannerConfigForm({ value, onChange }: PlannerConfigFormProps) {
                 min={1}
                 value={value.maxConsecutiveDays ?? ""}
                 onChange={(e) => update("maxConsecutiveDays", e.target.value ? Number(e.target.value) : undefined)}
-                className="h-8 text-sm"
               />
             </div>
           </div>

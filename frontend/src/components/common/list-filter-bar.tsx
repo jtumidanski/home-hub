@@ -51,15 +51,16 @@ export function ListFilterBar({ statusOptions }: ListFilterBarProps) {
   };
 
   return (
-    <div className="flex flex-wrap items-center gap-2">
+    <div className="flex flex-col gap-2 sm:flex-row sm:flex-wrap sm:items-center">
       <Input
+        aria-label="Search by title"
         placeholder="Search by title..."
         value={query}
         onChange={(e) => updateParam("q", e.target.value)}
-        className="w-48"
+        className="w-full sm:w-48"
       />
       <Select value={status} onValueChange={(v) => updateParam("status", v ?? "all")}>
-        <SelectTrigger className="w-36">
+        <SelectTrigger aria-label="Filter by status" className="w-full sm:w-36">
           <span>{status === "all" ? "All statuses" : statusOptions.find((o) => o.value === status)?.label ?? status}</span>
         </SelectTrigger>
         <SelectContent>
@@ -72,7 +73,7 @@ export function ListFilterBar({ statusOptions }: ListFilterBarProps) {
         </SelectContent>
       </Select>
       <Select value={owner} onValueChange={(v) => updateParam("owner", v ?? "all")}>
-        <SelectTrigger className="w-40">
+        <SelectTrigger aria-label="Filter by owner" className="w-full sm:w-40">
           <span>{ownerLabel}</span>
         </SelectTrigger>
         <SelectContent>
@@ -86,8 +87,8 @@ export function ListFilterBar({ statusOptions }: ListFilterBarProps) {
         </SelectContent>
       </Select>
       {hasFilters && (
-        <Button variant="ghost" size="sm" onClick={clearFilters}>
-          <X className="mr-1 h-4 w-4" />
+        <Button variant="ghost" size="sm" onClick={clearFilters} className="coarse:min-h-11">
+          <X className="size-4" aria-hidden="true" />
           Clear filters
         </Button>
       )}

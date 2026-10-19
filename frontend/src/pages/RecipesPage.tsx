@@ -147,9 +147,9 @@ export function RecipesPage() {
 
         {/* Loading */}
         {isLoading && (
-          <div className="space-y-3">
+          <div className={isMobile ? "space-y-3" : "grid grid-cols-2 lg:grid-cols-3 gap-4"}>
             {Array.from({ length: 4 }).map((_, i) => (
-              <Skeleton key={i} className="h-24 w-full" />
+              <Skeleton key={i} className="h-28 w-full" />
             ))}
           </div>
         )}

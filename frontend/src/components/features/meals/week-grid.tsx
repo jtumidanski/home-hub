@@ -106,7 +106,10 @@ export function WeekGrid({ startsOn, items, locked, onCellClick, onItemClick, on
                             <div className="flex items-start justify-between gap-1">
                               <span className="font-medium leading-tight truncate min-w-0">
                                 {item.recipe_deleted && (
-                                  <AlertTriangle className="inline h-3 w-3 text-yellow-500 mr-1" />
+                                  <>
+                                    <AlertTriangle aria-hidden="true" className="inline h-3 w-3 text-warning mr-1" />
+                                    <span className="sr-only">Recipe deleted</span>
+                                  </>
                                 )}
                                 {item.recipe_title}
                               </span>

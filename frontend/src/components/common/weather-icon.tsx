@@ -10,6 +10,18 @@ import {
   type LucideProps,
 } from "lucide-react";
 import type { FC } from "react";
+import { cn } from "@/lib/utils";
+
+const colorMap: Record<string, string> = {
+  sun: "text-chart-3",
+  "cloud-sun": "text-chart-3",
+  cloud: "text-chart-4",
+  "cloud-fog": "text-chart-4",
+  "cloud-drizzle": "text-chart-4",
+  "cloud-rain": "text-chart-4",
+  snowflake: "text-chart-4",
+  "cloud-lightning": "text-chart-1",
+};
 
 const iconMap: Record<string, FC<LucideProps>> = {
   sun: Sun,
@@ -26,7 +38,16 @@ interface WeatherIconProps extends LucideProps {
   icon: string;
 }
 
-export function WeatherIcon({ icon, ...props }: WeatherIconProps) {
+/** Decorative by default; pass `aria-label` to expose it as a named image. */
+export function WeatherIcon({ icon, className, ...props }: WeatherIconProps) {
   const IconComponent = iconMap[icon] ?? Cloud;
-  return <IconComponent {...props} />;
+  const labelled = props["aria-label"] !== undefined;
+  return (
+    <IconComponent
+      aria-hidden={labelled ? undefined : true}
+      role={labelled ? "img" : undefined}
+      className={cn(colorMap[icon] ?? "text-chart-4", className)}
+      {...props}
+    />
+  );
 }

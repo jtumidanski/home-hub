@@ -1,6 +1,7 @@
 import { useState } from "react";
 import type { CalendarEvent } from "@/types/models/calendar";
 import { EventPopover } from "./event-popover";
+import { eventChipColors } from "./calendar-utils";
 
 interface EventBlockProps {
   event: CalendarEvent;
@@ -16,20 +17,18 @@ interface EventBlockProps {
 export function EventBlock({ event, top, height, left, width, hasWriteAccess, onEdit, onDelete }: EventBlockProps) {
   const [showPopover, setShowPopover] = useState(false);
   const { attributes: attrs } = event;
-  const isBusy = attrs.title === "Busy" && !attrs.isOwner;
 
   return (
     <>
       <button
         type="button"
-        className="absolute rounded px-1.5 py-0.5 text-xs leading-tight overflow-hidden cursor-pointer border border-white/20 hover:brightness-110 transition-all"
+        className="absolute rounded px-1.5 py-0.5 text-xs leading-tight overflow-hidden cursor-pointer border border-foreground/10 hover:brightness-110 transition-all"
         style={{
           top: `${top}px`,
           height: `${Math.max(height, 18)}px`,
           left,
           width,
-          backgroundColor: isBusy ? "#9ca3af" : attrs.userColor,
-          color: "white",
+          ...eventChipColors(event),
         }}
         onClick={() => setShowPopover(true)}
       >

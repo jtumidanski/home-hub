@@ -1,6 +1,7 @@
 import { useState } from "react";
 import type { CalendarEvent } from "@/types/models/calendar";
 import { EventPopover } from "./event-popover";
+import { eventChipColors } from "./calendar-utils";
 
 interface AllDayEventRowProps {
   events: CalendarEvent[];
@@ -14,13 +15,12 @@ export function AllDayEventRow({ events }: AllDayEventRowProps) {
   return (
     <div className="flex flex-col gap-1 px-1 py-1 min-h-[28px]">
       {events.map((evt) => {
-        const isBusy = evt.attributes.title === "Busy" && !evt.attributes.isOwner;
         return (
           <button
             key={evt.id}
             type="button"
-            className="block w-full rounded px-2 py-0.5 text-left text-xs text-white truncate cursor-pointer hover:brightness-110 transition-all"
-            style={{ backgroundColor: isBusy ? "#9ca3af" : evt.attributes.userColor }}
+            className="block w-full rounded px-2 py-0.5 text-left text-xs truncate cursor-pointer hover:brightness-110 transition-all"
+            style={eventChipColors(evt)}
             onClick={() => setSelectedEvent(evt)}
           >
             {evt.attributes.title}

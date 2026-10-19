@@ -24,7 +24,7 @@ export function OwnerSelect({ value, onChange, members }: OwnerSelectProps) {
 
   return (
     <Select value={value || EVERYONE_VALUE} onValueChange={(v) => onChange((v ?? EVERYONE_VALUE) === EVERYONE_VALUE ? "" : v!)}>
-      <SelectTrigger>
+      <SelectTrigger aria-label="Owner">
         <span>{displayLabel}</span>
       </SelectTrigger>
       <SelectContent>

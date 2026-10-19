@@ -56,4 +56,16 @@ describe("Sidebar primitives", () => {
 
     expect(screen.getByRole("link", { name: "Idle" })).not.toHaveAttribute("data-active");
   });
+
+  it("SidebarMenuButton has a coarse-pointer touch target and clay active text", () => {
+    render(
+      <SidebarProvider>
+        <SidebarMenuButton isActive>Item</SidebarMenuButton>
+      </SidebarProvider>,
+    );
+    const cls = screen.getByRole("button", { name: "Item" }).className;
+    expect(cls).toContain("coarse:min-h-11");
+    expect(cls).toContain("data-[active=true]:text-sidebar-primary");
+    expect(cls).toContain("data-[active=true]:bg-sidebar-accent");
+  });
 });

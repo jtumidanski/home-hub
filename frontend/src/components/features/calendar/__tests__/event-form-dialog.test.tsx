@@ -52,10 +52,40 @@ function makeSource(): CalendarSource {
   };
 }
 
+async function chooseRepeat(user: ReturnType<typeof userEvent.setup>, label: string) {
+  await user.click(screen.getByRole("combobox", { name: "Repeats" }));
+  await user.click(await screen.findByRole("option", { name: label }));
+}
+
 describe("EventFormDialog — Ends control", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     mockCreate.mockResolvedValue({});
+  });
+
+  it("enables only the input matching the chosen Ends radio", async () => {
+    const user = userEvent.setup();
+    render(
+      <EventFormDialog
+        open
+        onOpenChange={vi.fn()}
+        connections={[makeConnection()]}
+        sources={[makeSource()]}
+        prefilledStart={new Date("2026-05-06T09:00:00")}
+      />,
+    );
+    await chooseRepeat(user, "Weekly");
+    const date = await screen.findByLabelText("End date", { selector: "input[aria-label='End date']" });
+    const count = screen.getByLabelText("Occurrences");
+    await user.click(screen.getByRole("radio", { name: "Never" }));
+    expect(date).toBeDisabled();
+    expect(count).toBeDisabled();
+    await user.click(screen.getByRole("radio", { name: "After" }));
+    expect(date).toBeDisabled();
+    expect(count).toBeEnabled();
+    await user.click(screen.getByRole("radio", { name: "On" }));
+    expect(date).toBeEnabled();
+    expect(count).toBeDisabled();
   });
 
   it("hides the Ends control when 'Does not repeat' is selected", () => {
@@ -81,7 +111,7 @@ describe("EventFormDialog — Ends control", () => {
         prefilledStart={new Date("2026-05-06T09:00:00")}
       />,
     );
-    await user.selectOptions(screen.getByLabelText("Repeats"), "RRULE:FREQ=WEEKLY");
+    await chooseRepeat(user, "Weekly");
     const endInput = await screen.findByLabelText("End date", { selector: "input[aria-label='End date']" });
     expect((endInput as HTMLInputElement).value).toBe("2027-05-06");
   });
@@ -97,7 +127,7 @@ describe("EventFormDialog — Ends control", () => {
         prefilledStart={new Date("2026-05-06T09:00:00")}
       />,
     );
-    await user.selectOptions(screen.getByLabelText("Repeats"), "RRULE:FREQ=WEEKLY");
+    await chooseRepeat(user, "Weekly");
     const startInput = screen.getByLabelText("Start date");
     await user.clear(startInput);
     await user.type(startInput, "2026-06-10");
@@ -117,7 +147,7 @@ describe("EventFormDialog — Ends control", () => {
         prefilledStart={new Date("2026-05-06T09:00:00")}
       />,
     );
-    await user.selectOptions(screen.getByLabelText("Repeats"), "RRULE:FREQ=WEEKLY");
+    await chooseRepeat(user, "Weekly");
     const endInput = screen.getByLabelText("End date", { selector: "input[aria-label='End date']" });
     await user.clear(endInput);
     await user.type(endInput, "2026-08-01");
@@ -140,11 +170,11 @@ describe("EventFormDialog — Ends control", () => {
       />,
     );
     await user.type(screen.getByPlaceholderText("Event title"), "Standup");
-    await user.selectOptions(screen.getByLabelText("Repeats"), "RRULE:FREQ=WEEKLY");
+    await chooseRepeat(user, "Weekly");
     await user.click(screen.getByLabelText(/^never$/i));
     await user.click(screen.getByRole("button", { name: /create event/i }));
     expect(mockCreate).not.toHaveBeenCalled();
-    await user.click(screen.getByLabelText(/I understand this event has no end date/i));
+    await user.click(screen.getByRole("checkbox", { name: /I understand this event has no end date/i }));
     await user.click(screen.getByRole("button", { name: /create event/i }));
     await waitFor(() => expect(mockCreate).toHaveBeenCalledTimes(1));
     expect(mockCreate.mock.calls[0]![0].data.recurrence).toEqual(["RRULE:FREQ=WEEKLY"]);
@@ -162,7 +192,7 @@ describe("EventFormDialog — Ends control", () => {
       />,
     );
     await user.type(screen.getByPlaceholderText("Event title"), "Volleyball");
-    await user.selectOptions(screen.getByLabelText("Repeats"), "RRULE:FREQ=WEEKLY");
+    await chooseRepeat(user, "Weekly");
     const endInput = screen.getByLabelText("End date", { selector: "input[aria-label='End date']" });
     await user.clear(endInput);
     await user.type(endInput, "2026-06-10");
@@ -190,7 +220,7 @@ describe("EventFormDialog — Ends control", () => {
       />,
     );
     await user.type(screen.getByPlaceholderText("Event title"), "PT");
-    await user.selectOptions(screen.getByLabelText("Repeats"), "RRULE:FREQ=DAILY");
+    await chooseRepeat(user, "Daily");
     await user.click(screen.getByLabelText(/^after$/i));
     const countInput = screen.getByLabelText("Occurrences");
     await user.clear(countInput);
@@ -211,10 +241,9 @@ describe("EventFormDialog — Ends control", () => {
         prefilledStart={new Date("2026-05-06T09:00:00")}
       />,
     );
-    const repeats = screen.getByLabelText("Repeats");
-    await user.selectOptions(repeats, "RRULE:FREQ=WEEKLY");
+    await chooseRepeat(user, "Weekly");
     expect(await screen.findByLabelText("End date", { selector: "input[aria-label='End date']" })).toBeInTheDocument();
-    await user.selectOptions(repeats, "");
+    await chooseRepeat(user, "Does not repeat");
     expect(screen.queryByLabelText("End date", { selector: "input[aria-label='End date']" })).not.toBeInTheDocument();
   });
 });

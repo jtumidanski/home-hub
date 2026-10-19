@@ -1,9 +1,11 @@
 import { cn } from "@/lib/utils";
 
 /**
- * The Home Hub brand mark — a filled house with a lit doorway on an indigo
- * tile. Kept in sync with public/favicon.svg (the browser-tab icon). Sized via
- * className (defaults to size-8); the SVG scales to fit.
+ * The Home Hub brand mark — "Window light": a dark house silhouette with a lit
+ * window on a terracotta tile. Kept in sync with public/favicon.svg (the
+ * browser-tab icon). Literal fills are the documented image-asset exception to
+ * the no-colour-literal rule. Sized via className (defaults to size-8); the SVG
+ * scales to fit.
  */
 export function BrandMark({ className }: { className?: string }) {
   return (
@@ -13,16 +15,17 @@ export function BrandMark({ className }: { className?: string }) {
       role="img"
       aria-label="Home Hub"
     >
-      <defs>
-        <linearGradient id="hh-tile" x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0" stopColor="#6366f1" />
-          <stop offset="1" stopColor="#4338ca" />
-        </linearGradient>
-      </defs>
-      <rect width="32" height="32" rx="7.5" fill="url(#hh-tile)" />
-      <path d="M16 6.2 27 15.8 5 15.8 Z" fill="#ffffff" />
-      <rect x="8.5" y="14.5" width="15" height="11.5" rx="1.6" fill="#ffffff" />
-      <path d="M13.6 26 L13.6 21 Q13.6 19 16 19 Q18.4 19 18.4 21 L18.4 26 Z" fill="#f59e0b" />
+      <rect width="32" height="32" rx="7.5" fill="oklch(0.53 0.13 45)" />
+      <path
+        d="M16 5 L27.5 14.8 L24.5 14.8 L24.5 26.5 L7.5 26.5 L7.5 14.8 L4.5 14.8 Z"
+        fill="oklch(0.24 0.02 55)"
+      />
+      <rect x="11.5" y="15.5" width="9" height="7.5" rx="1.2" fill="oklch(0.80 0.13 80)" />
+      <path
+        d="M16 15.5 V23 M11.5 19.25 H20.5"
+        stroke="oklch(0.24 0.02 55)"
+        strokeWidth="1.3"
+      />
     </svg>
   );
 }

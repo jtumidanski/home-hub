@@ -9,18 +9,16 @@ interface RadioGroupContextValue {
 
 const RadioGroupContext = createContext<RadioGroupContextValue | undefined>(undefined);
 
-interface RadioGroupProps {
+interface RadioGroupProps extends Omit<React.ComponentProps<"div">, "value" | "onChange" | "role"> {
   value: string;
   onValueChange: (value: string) => void;
-  className?: string;
-  children: ReactNode;
 }
 
-export function RadioGroup({ value, onValueChange, className, children }: RadioGroupProps) {
+export function RadioGroup({ value, onValueChange, className, children, ...props }: RadioGroupProps) {
   const name = useId();
   return (
     <RadioGroupContext.Provider value={{ value, onValueChange, name }}>
-      <div role="radiogroup" className={cn("flex gap-4", className)}>
+      <div {...props} role="radiogroup" className={cn("flex gap-4", className)}>
         {children}
       </div>
     </RadioGroupContext.Provider>
@@ -42,7 +40,7 @@ export function RadioGroupItem({ value, id, className, children }: RadioGroupIte
   const itemId = id ?? `${context.name}-${value}`;
 
   return (
-    <label htmlFor={itemId} className={cn("flex cursor-pointer items-center gap-2", className)}>
+    <label htmlFor={itemId} className={cn("flex cursor-pointer items-center gap-2 min-h-6 coarse:min-h-11", className)}>
       <input
         type="radio"
         id={itemId}
@@ -50,7 +48,7 @@ export function RadioGroupItem({ value, id, className, children }: RadioGroupIte
         value={value}
         checked={context.value === value}
         onChange={() => context.onValueChange(value)}
-        className="h-4 w-4 border-border text-primary focus:ring-ring"
+        className="size-5 shrink-0 cursor-pointer appearance-none rounded-full border border-input bg-background transition-colors duration-(--duration-fast) ease-out checked:border-6 checked:border-primary focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring disabled:cursor-not-allowed disabled:border-input disabled:bg-input/50 disabled:checked:border-muted-foreground dark:bg-input/30"
       />
       <span className="text-sm">{children}</span>
     </label>

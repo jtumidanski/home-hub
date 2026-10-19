@@ -1,4 +1,4 @@
-import { useNavigate } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { Clock, Trash2, Pencil, CheckCircle2, AlertCircle, Circle } from "lucide-react";
 import { Card, CardHeader, CardTitle, CardContent, CardAction } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -17,7 +17,7 @@ function RecipeStatusIcon({ attrs }: { attrs: RecipeListAttributes }) {
   const allResolved = attrs.totalIngredients > 0 && attrs.resolvedIngredients === attrs.totalIngredients;
   const hasUnresolved = attrs.totalIngredients > 0 && attrs.resolvedIngredients < attrs.totalIngredients;
 
-  // Tooltip: planner status + any issues (no classification, no resolution count)
+  // Status text: planner status + any issues (no classification, no resolution count)
   const parts: string[] = [];
   if (attrs.plannerReady) {
     parts.push("Planner Ready");
@@ -28,15 +28,30 @@ function RecipeStatusIcon({ attrs }: { attrs: RecipeListAttributes }) {
     parts.push("has unresolved ingredients");
   }
 
-  const tooltip = parts.join(" — ");
+  const statusText = parts.join(" — ");
 
   if (attrs.plannerReady && allResolved) {
-    return <span title={tooltip}><CheckCircle2 className="h-4 w-4 text-green-500 shrink-0" /></span>;
+    return (
+      <span className="inline-flex">
+        <CheckCircle2 aria-hidden="true" className="h-4 w-4 text-success shrink-0" />
+        <span className="sr-only">{statusText}</span>
+      </span>
+    );
   }
   if (attrs.classification || attrs.totalIngredients > 0) {
-    return <span title={tooltip}><AlertCircle className="h-4 w-4 text-yellow-500 shrink-0" /></span>;
+    return (
+      <span className="inline-flex">
+        <AlertCircle aria-hidden="true" className="h-4 w-4 text-warning shrink-0" />
+        <span className="sr-only">{statusText}</span>
+      </span>
+    );
   }
-  return <span title={tooltip}><Circle className="h-4 w-4 text-muted-foreground/40 shrink-0" /></span>;
+  return (
+    <span className="inline-flex">
+      <Circle aria-hidden="true" className="h-4 w-4 text-muted-foreground shrink-0" />
+      <span className="sr-only">{statusText}</span>
+    </span>
+  );
 }
 
 export function RecipeCard({ recipe, onDelete }: RecipeCardProps) {
@@ -54,8 +69,7 @@ export function RecipeCard({ recipe, onDelete }: RecipeCardProps) {
   return (
     <Card
       size="sm"
-      className="cursor-pointer md:pt-0"
-      onClick={() => navigate(`/app/recipes/${id}`)}
+      className="relative md:pt-0 focus-within:outline-2 focus-within:outline-offset-2 focus-within:outline-ring"
     >
       <div className="flex items-start gap-3 pl-3 md:flex-col md:items-stretch md:pl-0">
         <RecipeImage
@@ -68,9 +82,16 @@ export function RecipeCard({ recipe, onDelete }: RecipeCardProps) {
           <CardHeader className="max-md:pl-0">
             <div className="flex items-center gap-2">
               <RecipeStatusIcon attrs={attributes} />
-              <CardTitle className="text-base">{attributes.title}</CardTitle>
+              <CardTitle className="text-base">
+                <Link
+                  to={`/app/recipes/${id}`}
+                  className="outline-none after:absolute after:inset-0 after:content-['']"
+                >
+                  {attributes.title}
+                </Link>
+              </CardTitle>
             </div>
-            <CardAction>
+            <CardAction className="relative z-10">
               <CardActionMenu
                 actions={[
                   {

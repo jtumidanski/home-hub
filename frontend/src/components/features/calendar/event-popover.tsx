@@ -46,7 +46,12 @@ export function EventPopover({ event, onClose, hasWriteAccess, onEdit, onDelete 
             <div className="w-3 h-3 rounded-full flex-shrink-0" style={{ backgroundColor: attrs.userColor }} />
             <h3 className="font-semibold text-sm">{attrs.title}</h3>
           </div>
-          <button type="button" onClick={onClose} className="text-muted-foreground hover:text-foreground">
+          <button
+            type="button"
+            onClick={onClose}
+            aria-label="Close"
+            className="inline-flex size-6 shrink-0 items-center justify-center rounded-md text-muted-foreground hover:text-foreground focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring coarse:size-11"
+          >
             <X className="h-4 w-4" />
           </button>
         </div>
