@@ -1,4 +1,5 @@
 import type { CalendarEvent } from "@/types/models/calendar";
+import { readableForeground } from "@/lib/color-contrast";
 
 export const HOUR_HEIGHT = 60; // px per hour
 export const START_HOUR = 6;
@@ -366,4 +367,19 @@ export function bucketEventsByDay(
     map.set(toDayKey(day), { allDay, timed: sortedTimed });
   }
   return map;
+}
+
+/**
+ * Background + readable text colour for an event chip. Busy placeholders use the
+ * calendar-busy token pair; user-coloured events pick ink or paper by contrast.
+ */
+export function eventChipColors(event: CalendarEvent): { backgroundColor: string; color: string } {
+  const { attributes: attrs } = event;
+  if (attrs.title === "Busy" && !attrs.isOwner) {
+    return { backgroundColor: "var(--calendar-busy)", color: "var(--calendar-busy-foreground)" };
+  }
+  return {
+    backgroundColor: attrs.userColor,
+    color: readableForeground(attrs.userColor) === "ink" ? "var(--on-color-ink)" : "var(--on-color-paper)",
+  };
 }

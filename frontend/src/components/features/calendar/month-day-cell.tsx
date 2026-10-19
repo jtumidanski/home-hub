@@ -21,7 +21,7 @@ const MAX_DOTS = 4;
 
 function eventColor(event: CalendarEvent): string {
   const { attributes: attrs } = event;
-  return attrs.title === "Busy" && !attrs.isOwner ? "#9ca3af" : attrs.userColor;
+  return attrs.title === "Busy" && !attrs.isOwner ? "var(--calendar-busy)" : attrs.userColor;
 }
 
 function MonthDayDots({ events }: { events: CalendarEvent[] }) {
