@@ -5,6 +5,8 @@ import { toast } from "sonner";
 import { Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
@@ -47,6 +49,14 @@ export function EventFormDialog({
     [connections],
   );
   const defaultConnection = writeConnections[0];
+  const sourceItems = useMemo(
+    () =>
+      sources.map((src) => ({
+        value: src.id,
+        label: `${src.attributes.name}${src.attributes.primary ? " (primary)" : ""}`,
+      })),
+    [sources],
+  );
 
   const defaults = useMemo(() => {
     if (editEvent) {
@@ -245,11 +255,9 @@ export function EventFormDialog({
               render={({ field }) => (
                 <FormItem className="flex items-center gap-2">
                   <FormControl>
-                    <input
-                      type="checkbox"
+                    <Checkbox
                       checked={field.value}
-                      onChange={field.onChange}
-                      className="h-4 w-4 rounded border-input"
+                      onCheckedChange={(checked) => field.onChange(checked)}
                     />
                   </FormControl>
                   <FormLabel className="!mt-0">All day</FormLabel>
@@ -326,17 +334,22 @@ export function EventFormDialog({
                     <FormItem>
                       <FormLabel>Repeats</FormLabel>
                       <FormControl>
-                        <select
+                        <Select
                           value={field.value}
-                          onChange={field.onChange}
-                          className="flex h-8 w-full rounded-lg border border-input bg-popover text-popover-foreground px-2.5 py-1.5 text-sm"
+                          items={RECURRENCE_OPTIONS}
+                          onValueChange={(v) => field.onChange(v)}
                         >
-                          {RECURRENCE_OPTIONS.map((opt) => (
-                            <option key={opt.value} value={opt.value}>
-                              {opt.label}
-                            </option>
-                          ))}
-                        </select>
+                          <SelectTrigger className="w-full">
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {RECURRENCE_OPTIONS.map((opt) => (
+                              <SelectItem key={opt.value} value={opt.value}>
+                                {opt.label}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
                       </FormControl>
                     </FormItem>
                   )}
@@ -375,7 +388,7 @@ export function EventFormDialog({
                                         form.setValue("endsOnDateUserEdited", true);
                                         dateField.onChange(e.target.value);
                                       }}
-                                      className="h-7 w-40"
+                                      className="w-40"
                                     />
                                   )}
                                 />
@@ -403,7 +416,7 @@ export function EventFormDialog({
                                       disabled={field.value !== "after"}
                                       value={countField.value}
                                       onChange={(e) => countField.onChange(Number(e.target.value))}
-                                      className="h-7 w-20"
+                                      className="w-20"
                                     />
                                   )}
                                 />
@@ -446,14 +459,17 @@ export function EventFormDialog({
                           name="endsNeverConfirmed"
                           render={({ field }) => (
                             <FormItem>
-                              <label className="flex items-center gap-2">
-                                <input
-                                  type="checkbox"
-                                  checked={field.value}
-                                  onChange={(e) => field.onChange(e.target.checked)}
-                                />
-                                I understand this event has no end date.
-                              </label>
+                              <div className="flex items-center gap-2">
+                                <FormControl>
+                                  <Checkbox
+                                    checked={field.value}
+                                    onCheckedChange={(checked) => field.onChange(checked)}
+                                  />
+                                </FormControl>
+                                <FormLabel className="!mt-0 font-normal">
+                                  I understand this event has no end date.
+                                </FormLabel>
+                              </div>
                               <FormMessage />
                             </FormItem>
                           )}
@@ -501,18 +517,22 @@ export function EventFormDialog({
                   <FormItem>
                     <FormLabel>Calendar</FormLabel>
                     <FormControl>
-                      <select
+                      <Select
                         value={field.value}
-                        onChange={field.onChange}
-                        className="flex h-8 w-full rounded-lg border border-input bg-popover text-popover-foreground px-2.5 py-1.5 text-sm"
+                        items={sourceItems}
+                        onValueChange={(v) => field.onChange(v)}
                       >
-                        {sources.map((src) => (
-                          <option key={src.id} value={src.id}>
-                            {src.attributes.name}
-                            {src.attributes.primary ? " (primary)" : ""}
-                          </option>
-                        ))}
-                      </select>
+                        <SelectTrigger className="w-full">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {sourceItems.map((item) => (
+                            <SelectItem key={item.value} value={item.value}>
+                              {item.label}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
                     </FormControl>
                   </FormItem>
                 )}
