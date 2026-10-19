@@ -11,7 +11,7 @@ name: PR Validation
 #   2. actions/setup-go and actions/setup-node are dropped. Both resolve and
 #      download a toolchain from github.com at job time -- the dependency this
 #      exit exists to remove, and the same reason Phase 5b dropped
-#      actions/setup-python. The runner image ships Go 1.27.0 (k3s 92f9cb2)
+#      actions/setup-python. The runner image ships Go 1.27.2 (k3s 92f9cb2)
 #      and Node 24.19.0. Both match what the original pinned.
 #   3. `docker build` is gone. Host-mode runners have no Docker daemon, so the
 #      image check runs through buildx `driver: remote` with
