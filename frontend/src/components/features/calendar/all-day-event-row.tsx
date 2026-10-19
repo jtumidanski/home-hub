@@ -19,7 +19,7 @@ export function AllDayEventRow({ events }: AllDayEventRowProps) {
           <button
             key={evt.id}
             type="button"
-            className="block w-full rounded px-2 py-0.5 text-left text-xs truncate cursor-pointer hover:brightness-110 transition-[filter] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring"
+            className="block w-full min-h-6 coarse:min-h-11 rounded px-2 py-0.5 text-left text-xs truncate cursor-pointer hover:brightness-110 transition-[filter] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring"
             style={eventChipColors(evt.attributes)}
             onClick={() => setSelectedEvent(evt)}
           >

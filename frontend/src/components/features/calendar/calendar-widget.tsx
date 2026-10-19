@@ -104,8 +104,10 @@ export function CalendarWidget(_props: CalendarWidgetProps = {}) {
                       className="size-3 rounded-full shrink-0 ring-1 ring-border"
                       style={{ backgroundColor: event.attributes.userColor }}
                     />
-                    <span className="sr-only">{event.attributes.userDisplayName}</span>
                     <span className="text-sm @xl:text-xl truncate">{event.attributes.title}</span>
+                    <span className="text-xs @xl:text-base text-muted-foreground truncate max-w-[30%] shrink-0">
+                      {event.attributes.userDisplayName}
+                    </span>
                   </div>
                 </div>
               ))}
