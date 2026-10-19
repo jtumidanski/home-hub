@@ -32,6 +32,7 @@ describe("LoginPage", () => {
     mockUseProviders.mockReturnValue({ data: null, isLoading: false, isError: true });
     render(<LoginPage />);
     expect(screen.getByText(/failed to load login providers/i)).toBeInTheDocument();
+    expect(screen.getByRole("alert")).toHaveAttribute("data-slot", "status-banner");
   });
 
   it("renders provider login buttons", () => {

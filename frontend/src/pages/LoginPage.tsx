@@ -2,6 +2,7 @@ import { useProviders } from "@/lib/hooks/api/use-auth";
 import { authService } from "@/services/api/auth";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { StatusBanner } from "@/components/ui/status-banner";
 import { Skeleton } from "@/components/ui/skeleton";
 
 export function LoginPage() {
@@ -12,16 +13,16 @@ export function LoginPage() {
     <div className="flex min-h-dvh items-center justify-center bg-background px-4">
       <Card className="w-full max-w-md">
         <CardHeader className="text-center">
-          <CardTitle className="text-2xl">Home Hub</CardTitle>
+          <CardTitle className="font-heading text-2xl tracking-[-0.01em] min-w-0 break-words">Home Hub</CardTitle>
           <CardDescription>Sign in to manage your household</CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
           {isLoading ? (
             <Skeleton className="h-10 w-full" role="status" aria-label="Loading" />
           ) : isError ? (
-            <p className="text-center text-sm text-destructive">
+            <StatusBanner variant="destructive">
               Failed to load login providers. Try refreshing the page.
-            </p>
+            </StatusBanner>
           ) : (
             providers.map((provider) => (
               <a
