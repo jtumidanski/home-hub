@@ -75,6 +75,15 @@ describe("DashboardRow", () => {
     expect(screen.getByText(/default/i)).toBeInTheDocument();
   });
 
+  it("renders the Default badge with accessible text and a decorative icon", () => {
+    renderRow(dash({ id: "d-1", name: "Home" }), "d-1");
+    const badge = screen.getByText("Default");
+    expect(badge).toBeInTheDocument();
+    const icon = badge.parentElement!.querySelector("svg");
+    expect(icon).not.toBeNull();
+    expect(icon).toHaveAttribute("aria-hidden", "true");
+  });
+
   it("hides the Default badge when the row is not the default", () => {
     renderRow(dash({ id: "d-1", name: "Home" }), "other");
     expect(screen.queryByText(/^default$/i)).not.toBeInTheDocument();

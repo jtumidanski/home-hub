@@ -110,4 +110,21 @@ describe("DashboardKebabMenu", () => {
     expect(item.className).toContain("data-highlighted:text-destructive");
     expect(item.className).not.toContain("data-highlighted:text-accent-foreground");
   });
+
+  it("marks the rename input invalid and describes it by the alert message", async () => {
+    const user = userEvent.setup();
+    render(
+      <MemoryRouter>
+        <DashboardKebabMenu dashboard={dash("household")} isDefault={false} />
+      </MemoryRouter>,
+    );
+    await openMenu(user, "Name d-1");
+    await user.click(await screen.findByRole("menuitem", { name: /rename/i }));
+    const input = await screen.findByRole("textbox", { name: "Name" });
+    await user.clear(input);
+    await user.click(screen.getByRole("button", { name: "Save" }));
+    const alert = await screen.findByRole("alert");
+    expect(input).toHaveAttribute("aria-invalid", "true");
+    expect(input).toHaveAttribute("aria-describedby", alert.id);
+  });
 });

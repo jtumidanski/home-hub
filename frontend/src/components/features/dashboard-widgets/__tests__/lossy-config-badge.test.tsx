@@ -12,4 +12,20 @@ describe("LossyConfigBadge", () => {
     const id = described!.getAttribute("aria-describedby")!;
     expect(document.getElementById(id)).toHaveTextContent("reduced to defaults");
   });
+
+  it("gives two badges on one page distinct description targets", () => {
+    render(
+      <>
+        <LossyConfigBadge />
+        <LossyConfigBadge />
+      </>,
+    );
+    const ids = screen
+      .getAllByText("Defaults used")
+      .map((el) => el.closest("[aria-describedby]")!.getAttribute("aria-describedby")!);
+    expect(ids[0]).not.toEqual(ids[1]);
+    for (const id of ids) {
+      expect(document.getElementById(id)).toHaveTextContent("reduced to defaults");
+    }
+  });
 });
