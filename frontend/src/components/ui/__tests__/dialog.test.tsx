@@ -19,5 +19,10 @@ describe("Dialog", () => {
     const title = screen.getByText("Heading").className;
     expect(title).toContain("font-heading");
     expect(title).toContain("text-lg");
+    expect(title).toContain("leading-tight");
+    expect(title).toContain("pr-8");
+    const popup = screen.getByRole("dialog").className;
+    expect(popup).toContain("max-h-[calc(100dvh-2rem)]");
+    expect(popup).toContain("overflow-y-auto");
   });
 });
