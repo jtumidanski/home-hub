@@ -80,10 +80,11 @@ export function getLocalDateStrOffset(tz: string | undefined, offsetDays: number
   const day = Number(parts.find((p) => p.type === "day")!.value);
 
   // Construct a Date at noon UTC on the resolved local date so adding days
-  // never crosses a DST cliff in the source timezone, then re-format in tz.
+  // never crosses a DST cliff in the source timezone, then format in UTC (the
+  // anchor already encodes the target calendar date).
   const anchor = new Date(Date.UTC(year, month - 1, day + offsetDays, 12, 0, 0));
   const out = new Intl.DateTimeFormat("en-CA", {
-    timeZone: resolved,
+    timeZone: "UTC",
     year: "numeric",
     month: "2-digit",
     day: "2-digit",
