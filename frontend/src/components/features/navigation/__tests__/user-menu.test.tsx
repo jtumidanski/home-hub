@@ -52,7 +52,7 @@ describe("UserMenu", () => {
     expect(container).toBeEmptyDOMElement();
   });
 
-  it("renders only Settings and Sign Out items in the pop-over, in that order", async () => {
+  it("renders only Settings and Sign out items in the pop-over, in that order", async () => {
     const user = userEvent.setup();
     renderUserMenu();
     await user.click(screen.getByRole("button", { name: /test user/i }));
@@ -60,6 +60,19 @@ describe("UserMenu", () => {
     expect(items).toHaveLength(2);
     expect(items[0]).toHaveTextContent(/settings/i);
     expect(items[1]).toHaveTextContent(/sign out/i);
+  });
+
+  it("menu items are 44px targets on coarse pointers and size icons via the size prop", async () => {
+    const user = userEvent.setup();
+    render(
+      <MemoryRouter>
+        <UserMenu size="lg" />
+      </MemoryRouter>,
+    );
+    await user.click(screen.getByRole("button", { name: /test user/i }));
+    const items = await screen.findAllByRole("menuitem");
+    for (const item of items) expect(item).toHaveClass("coarse:min-h-11");
+    expect(items[0]?.querySelector("svg")).toHaveClass("size-5");
   });
 
   it("does not render any theme toggle item", async () => {
@@ -83,7 +96,7 @@ describe("UserMenu", () => {
     expect(onAction).toHaveBeenCalledTimes(1);
   });
 
-  it("Sign Out item triggers logout and calls onAction", async () => {
+  it("Sign out item triggers logout and calls onAction", async () => {
     const user = userEvent.setup();
     const onAction = vi.fn();
     renderUserMenu({ onAction });

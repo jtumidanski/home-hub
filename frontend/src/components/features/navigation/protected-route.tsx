@@ -4,8 +4,8 @@ import { Skeleton } from "@/components/ui/skeleton";
 
 function ProtectedRouteSkeleton() {
   return (
-    <div className="flex min-h-dvh">
-      <aside className="flex w-64 flex-col border-r bg-sidebar p-4 space-y-4">
+    <div className="flex min-h-dvh" role="status" aria-label="Loading">
+      <aside className="hidden w-64 flex-col border-r bg-sidebar md:flex p-4 space-y-4">
         <Skeleton className="h-8 w-32" />
         <Skeleton className="h-10 w-full" />
         <div className="space-y-2">
@@ -14,7 +14,7 @@ function ProtectedRouteSkeleton() {
           ))}
         </div>
       </aside>
-      <main className="flex-1 p-6 space-y-4">
+      <main className="flex-1 p-4 md:p-6 space-y-4">
         <Skeleton className="h-8 w-48" />
         <div className="grid gap-4 md:grid-cols-3">
           {Array.from({ length: 3 }).map((_, i) => (

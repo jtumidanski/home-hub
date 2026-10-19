@@ -1,8 +1,9 @@
+import { toasterStyle, toastOptions } from "@/lib/toast-options";
 import React from "react";
 import { BrowserRouter, Routes, Route, Navigate, useParams } from "react-router-dom";
 import { Toaster } from "sonner";
 import { QueryProvider } from "@/components/providers/query-provider";
-import { ThemeProvider } from "@/components/providers/theme-provider";
+import { ThemeProvider, useTheme } from "@/components/providers/theme-provider";
 import { AuthProvider } from "@/components/providers/auth-provider";
 import { TenantProvider } from "@/context/tenant-context";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -52,6 +53,18 @@ function RedirectSummaryToReview() {
   return <Navigate to={target} replace />;
 }
 
+function ThemedToaster() {
+  const { theme } = useTheme();
+  return (
+    <Toaster
+      theme={theme}
+      closeButton
+      style={toasterStyle}
+      toastOptions={toastOptions}
+    />
+  );
+}
+
 export function App() {
   return (
     <BrowserRouter>
@@ -60,7 +73,7 @@ export function App() {
           <AuthProvider>
             <TenantProvider>
               <TooltipProvider delay={200}>
-                <Toaster richColors closeButton />
+                <ThemedToaster />
                 <Routes>
                 <Route path="/" element={<Navigate to="/app" replace />} />
                 <Route path="/login" element={<LoginPage />} />

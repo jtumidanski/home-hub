@@ -69,6 +69,12 @@ describe("AppShell", () => {
     expect(screen.getByText("Households")).toBeInTheDocument();
   });
 
+  it("renders the brand mark and a Fraunces wordmark in the sidebar header", () => {
+    renderWithRouter();
+    expect(screen.getByRole("img", { name: "Home Hub" })).toBeInTheDocument();
+    expect(screen.getByText("Home Hub")).toHaveClass("font-heading");
+  });
+
   it("renders household switcher", () => {
     renderWithRouter();
     expect(screen.getByTestId("household-switcher")).toBeInTheDocument();

@@ -21,8 +21,9 @@ interface NavGroupProps {
   badges?: Record<string, number>;
 }
 
-const groupLabelClasses =
-  "flex h-7 w-full shrink-0 cursor-pointer items-center gap-2 rounded-md px-2 text-xs font-semibold uppercase tracking-wider text-muted-foreground transition-colors hover:text-sidebar-foreground";
+/** The one group-label recipe, shared with DashboardsNavGroup. */
+export const groupLabelClasses =
+  "flex h-7 w-full shrink-0 cursor-pointer items-center gap-2 rounded-md px-2 text-xs font-semibold uppercase tracking-wider text-muted-foreground transition-colors hover:text-sidebar-foreground focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring motion-reduce:transition-none coarse:min-h-11";
 
 export function NavGroup({
   group,
@@ -44,11 +45,11 @@ export function NavGroup({
       <CollapsiblePrimitive.Root open={open} onOpenChange={() => onToggle()}>
         <CollapsiblePrimitive.Trigger className={groupLabelClasses}>
           <ChevronRight
-            className={cn("h-3 w-3 transition-transform duration-200", open && "rotate-90")}
+            className={cn("size-3 transition-transform duration-200 motion-reduce:transition-none", open && "rotate-90")}
           />
           {group.label}
         </CollapsiblePrimitive.Trigger>
-        <CollapsiblePrimitive.Panel className="overflow-hidden transition-all duration-200 data-[state=closed]:animate-collapse data-[state=open]:animate-expand">
+        <CollapsiblePrimitive.Panel className="overflow-hidden">
           <SidebarGroupContent className="pl-2 pt-0.5">
             <SidebarMenu>
               {group.items.map(({ to, icon: Icon, label, end, badgeKey }) => (
@@ -58,7 +59,12 @@ export function NavGroup({
                     size={size}
                     isActive={isNavItemActive(location.pathname, to, end)}
                   >
-                    <NavLink to={to} end={end ?? false} onClick={onItemClick}>
+                    <NavLink
+                      to={to}
+                      end={end ?? false}
+                      onClick={onItemClick}
+                      className="aria-[current=page]:text-sidebar-primary"
+                    >
                       <Icon />
                       <span className="flex-1">{label}</span>
                       {badgeKey && badges[badgeKey] != null && badges[badgeKey]! > 0 && (

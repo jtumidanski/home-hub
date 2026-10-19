@@ -25,6 +25,16 @@ describe("ProtectedRoute", () => {
       <ProtectedRoute><div>Protected Content</div></ProtectedRoute>,
     );
     expect(screen.queryByText("Protected Content")).not.toBeInTheDocument();
+    expect(screen.getByRole("status", { name: "Loading" })).toBeInTheDocument();
+  });
+
+  it("hides the skeleton sidebar below md", () => {
+    mockUseAuth.mockReturnValue({ isAuthenticated: false, isLoading: true, needsOnboarding: false });
+    renderWithRouter(
+      <ProtectedRoute><div>Protected Content</div></ProtectedRoute>,
+    );
+    const aside = screen.getByRole("status", { name: "Loading" }).querySelector("aside")!;
+    expect(aside).toHaveClass("hidden", "md:flex");
   });
 
   it("redirects to /login when not authenticated", () => {

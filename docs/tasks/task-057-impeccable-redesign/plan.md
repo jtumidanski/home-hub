@@ -422,11 +422,11 @@ Then run the **Stage close-out procedure** (PR 1 title: `task-057 stage 0+1: aud
 - Modify: `frontend/src/__tests__/no-color-literals.test.ts` (remove `components/features/navigation/` from `PENDING`)
 - Test: `frontend/src/components/features/navigation/__tests__/*` (update)
 
-- [ ] **Step 1:** Cut the stage branch (see "Branch and PR mechanics").
-- [ ] **Step 2: Remove the PENDING entry; run** `npx vitest run src/__tests__/no-color-literals.test.ts` → FAIL listing navigation literals.
-- [ ] **Step 3: Add failing tests:** mobile header menu button has an accessible name and `coarse:size-11`; the active nav item has `aria-current="page"`; the brand mark renders in the sidebar header and mobile header.
-- [ ] **Step 4: Implement** per design.md §3.6 sketch (sidebar deeper paper, active = clay text on sage wash, Fraunces only for the "Home Hub" wordmark at ≥ 18 px) and fix every Stage 2 row located in navigation.
-- [ ] **Step 5: Run** guard + navigation tests → PASS; tsc; eslint. **Step 6: Commit** `feat(frontend): restyle app shell and navigation`.
+- [x] **Step 1:** Cut the stage branch (see "Branch and PR mechanics").
+- [x] **Step 2: Remove the PENDING entry; run** `npx vitest run src/__tests__/no-color-literals.test.ts` → FAIL listing navigation literals.
+- [x] **Step 3: Add failing tests:** mobile header menu button has an accessible name and `coarse:size-11`; the active nav item has `aria-current="page"`; the brand mark renders in the sidebar header and mobile header.
+- [x] **Step 4: Implement** per design.md §3.6 sketch (sidebar deeper paper, active = clay text on sage wash, Fraunces only for the "Home Hub" wordmark at ≥ 18 px) and fix every Stage 2 row located in navigation.
+- [x] **Step 5: Run** guard + navigation tests → PASS; tsc; eslint. **Step 6: Commit** `feat(frontend): restyle app shell and navigation`.
 
 ### Task 16: Login, onboarding, error pages, toasts
 
@@ -435,10 +435,10 @@ Then run the **Stage close-out procedure** (PR 1 title: `task-057 stage 0+1: aud
 - Modify: `no-color-literals.test.ts` (remove `pages/LoginPage.tsx`, `pages/OnboardingPage.tsx`)
 - Test: `frontend/src/pages/__tests__/*` for these pages (update/create)
 
-- [ ] **Step 1: Remove the PENDING entries; run the guard** → FAIL (or PASS if they had none; still remove them).
-- [ ] **Step 2: Add failing tests:** each page has exactly one `h1` with `font-heading`; every form control on Login/Onboarding is found by `getByLabelText`.
-- [ ] **Step 3: Implement.** Toaster: drop `richColors` and pass `toastOptions={{ classNames: { toast: "bg-popover text-popover-foreground border-border shadow-overlay", success: "…", error: "…", warning: "…", info: "…" } }}` using the semantic token pairs; keep `closeButton`. This changes toast colours only; list it in the PR body as a visual change, not a behaviour change. Fix every remaining Stage 2 row.
-- [ ] **Step 4: Run** `npx vitest run && npx tsc -b && npx eslint .` → PASS. **Step 5: Commit** `feat(frontend): restyle login, onboarding, errors, toasts`.
+- [x] **Step 1: Remove the PENDING entries; run the guard** → FAIL (or PASS if they had none; still remove them).
+- [x] **Step 2: Add failing tests:** each page has exactly one `h1` with `font-heading`; every form control on Login/Onboarding is found by `getByLabelText`.
+- [x] **Step 3: Implement.** Toaster: drop `richColors` and pass `toastOptions={{ classNames: { toast: "bg-popover text-popover-foreground border-border shadow-overlay", success: "…", error: "…", warning: "…", info: "…" } }}` using the semantic token pairs; keep `closeButton`. This changes toast colours only; list it in the PR body as a visual change, not a behaviour change. Fix every remaining Stage 2 row.
+- [x] **Step 4: Run** `npx vitest run && npx tsc -b && npx eslint .` → PASS. **Step 5: Commit** `feat(frontend): restyle login, onboarding, errors, toasts`.
 
 Then run the **Stage close-out procedure** (title: `task-057 stage 2: shell`).
 

@@ -211,3 +211,158 @@ Scope note: "introduced" means the offending line is in the branch's added lines
 - FE-17 test gaps listed above; the calendar chip components are the ones worth a render test (readable-foreground applied) when Task 22 touches them.
 - FE-19 `event-popover.tsx:38`.
 - Lint warnings: `react-hooks/incompatible-library` x5 (event-form-dialog.tsx, new-dashboard-modal.tsx), existing `watch()` usage.
+
+## Plan Adherence Audit: task-057 Stage 2 (Tasks 15, 16)
+
+**Branch:** task-057-impeccable-redesign-stage-2  **Range:** 548be27..617b691  **Date:** 2026-10-19
+
+### Verdict
+
+MOSTLY_COMPLETE, READY for close-out steps 4 and 5. No blocking items.
+
+### Build and test
+
+| Check | Result |
+|---|---|
+| `npx vitest run` (frontend) | PASS, 136 files, 879 tests |
+| `npx tsc -b` | PASS |
+| `npx eslint src` | 0 errors, 5 warnings (react-hooks/incompatible-library on `watch()`, pre-existing pattern) |
+| Go | no changes in range |
+
+### Task 15 (commit 76febda)
+
+| Step | Status | Evidence |
+|---|---|---|
+| Remove `components/features/navigation/` from PENDING | DONE | no-color-literals.test.ts diff, -1 line |
+| Tests: mobile header button name + `coarse:size-11` | DONE | mobile-header.test.tsx:15-18 |
+| Tests: `aria-current="page"` on active item | DONE | nav-group.test.tsx:28-31 |
+| Tests: brand mark in sidebar header and mobile header | DONE | app-shell.test.tsx:72-75, mobile-header.test.tsx:21-24 |
+| Implement per design §3.6, Fraunces wordmark at text-lg | DONE | `font-heading text-lg` in app-shell.tsx:43, mobile-header.tsx:9, mobile-drawer.tsx:39. app-shell.tsx was not changed in this range; it already had the recipe from Stage 1, and the test locks it in. |
+| DA-042 drawer | DONE | mobile-drawer.tsx rewritten onto base-ui Dialog (unmounts when closed, traps focus, inerts the page, returns focus). Overlay is the `bg-overlay` token (dialog.tsx:36). `bg-black` no longer appears in navigation. mobile-drawer.test.tsx added. Motion is collapsed by the global reduced-motion block (index.css:330). |
+| DA-045 | DONE | "My Dashboards" is `text-xs` with no opacity (dashboards-nav-group.tsx). Badge numerals are `text-xs` (sidebar.tsx:226). One shared `groupLabelClasses` exported from nav-group.tsx. Group triggers have `coarse:min-h-11`. Active link gets `aria-current` styling via `text-sidebar-primary`. Clay marker: accepted per ruling (§3.6 "clay text + sage wash"). |
+| DA-046 | DONE | `size` prop replaces `iconSize` class string. Shared `menuItemClasses` with `coarse:min-h-11`. "Sign out" casing. Destructive item stays `text-destructive` on highlight, which is `bg-accent`. Contrast on accent is not measured in a render (logged unrendered). |
+| Commit message | DONE | `feat(frontend): restyle app shell and navigation` |
+
+### Task 16 (commits d4aa410, 341db21)
+
+| Step | Status | Evidence |
+|---|---|---|
+| PENDING removal for LoginPage and OnboardingPage | DONE (no-op per ruling) | Not in PENDING before this stage, and the guard passes with both scanned. |
+| Tests: one `h1` with `font-heading` | DONE | LoginPage.test.tsx and OnboardingPage.test.tsx, new cases |
+| Tests: controls found by `getByLabelText` | DONE | OnboardingPage.test.tsx, "labels every form control" (Account Name, Household Name, Timezone, Imperial, Metric). Login has no form controls. |
+| Toaster: drop `richColors`, token classes, keep `closeButton` | DONE, with a documented deviation | App.tsx `ThemedToaster` passes `theme` from `useTheme()`, `closeButton`, `style={toasterStyle}` and `toastOptions` (lib/toast-options.ts). The plan sketch used `toast: "bg-popover …"` classNames. The implementation moves the base surface onto Sonner CSS variables (`--normal-bg` etc.) because Sonner's unlayered CSS beats Tailwind layers. This is a reasoned adaptation. Per-type borders use `border-success!` etc. and the close button is `size-6!`. The App.tsx change goes beyond "Toaster props only" (new wrapper component), but the ruling covers it, and theme-provider.tsx is untouched. |
+| DA-041 | DONE | toast-options.test.ts. The per-type icons the Fix column mentions are not explicitly added. Sonner supplies default icons per type, so "not colour-only" holds. |
+| DA-043 | DONE | LoginPage.tsx: anchor styled via `buttonVariants` (no nested button, tested), BrandMark, h1, `size="lg"`, `EmptyState` for no providers. The StatusBanner load-error was already present. |
+| DA-044 | DONE | Brand mark, "Step N of M" label, Accept at `size="lg"`, "Create My Own" as `secondary`, timezone hint via FormDescription, spinner `motion-safe:animate-spin`. Step-count logic (2 vs 3) is a small behaviour addition but display-only. |
+| DA-047 | DONE | error-page.tsx on `EmptyState` with `h1`, "Home" link, `role="status"` live region with a retry counter. protected-route.tsx skeleton has `role="status" aria-label="Loading"` and `hidden md:flex` aside. error-page.test.tsx added. dashboard-skeleton.tsx was not touched; it already had the role. |
+| dialog.tsx change | Out of listed Files | `DialogTitle` only reserves `pr-8` when a close button exists, via context. This supports the drawer's sr-only title. Minor, tests added (dialog.test.tsx). |
+| Commit messages | DONE | `feat(frontend): restyle login, onboarding, errors, toasts`, plus `fix(frontend): apply token styling to toasts` |
+
+Out-of-scope deferrals (per rulings, acceptable): card dark double edge (item 126) and coarse input sizing (items 117/166) are deferred to a rendered check. Neither is a Stage 2 DA row.
+
+### Close-out state
+
+- Step 1: DONE. Six "not rendered, browser unavailable" rows were appended to the Accessibility verification log (617b691). None claims a render. The PR body must list these routes as manual checks.
+- Step 2 (gate) and step 3 (review): not verified here. Step 3 is this review plus the frontend one.
+- Steps 4 and 5: pending, as stated.
+
+### Input for step 4 (DA row to fixing commit)
+
+All seven Resolved cells (design-audit.md lines 104-110) are currently empty.
+
+| Row | Fixing commit |
+|---|---|
+| DA-041 | d4aa410 (Toaster wrapper, richColors removed, Toaster `theme`) and 341db21 (token styling actually applied: `toasterStyle`, `!` per-type borders, 24px close). Use `341db21` as the completing commit, or list both. |
+| DA-042 | 76febda |
+| DA-043 | d4aa410 |
+| DA-044 | d4aa410 |
+| DA-045 | 76febda |
+| DA-046 | 76febda |
+| DA-047 | d4aa410 (error-page.tsx and its test). The protected-route.tsx skeleton part is in 76febda. List both. |
+
+Verify via `git log` before filling in: the DA-047 split across 76febda and d4aa410 is inferred from the file diffs.
+
+### Blocking items
+
+None.
+
+### Non-blocking notes
+
+1. DA-041's Fix column mentions icons on toasts. Sonner defaults are relied upon. Confirm in the rendered check.
+2. The destructive-on-accent contrast pair (DA-046) is asserted by class only, with no computed contrast. It is covered by the unrendered log row.
+
+## Frontend Audit — task-057 Stage 2 (Shell)
+
+- **Audit Scope:** `git diff 548be27..617b691` (25 frontend files: navigation shell, ui/sidebar, ui/dialog, LoginPage, OnboardingPage, error-page, App.tsx, toast-options, related tests)
+- **Guidelines Source:** frontend-dev-guidelines skill + plan.md Global Constraints
+- **Date:** 2026-10-19
+- **Build:** PASS (`npm run build`, exit 0; only the chunk-size warning)
+- **Tests:** 879 passed, 0 failed (136 files). Runner is vitest; `--watchAll=false` is invalid there, so `npm test -- --run` was used.
+- **Overall:** NEEDS-WORK (one blocking finding)
+
+### Blocking
+
+1. `frontend/src/lib/toast-options.ts:20` — `closeButton: "size-6!"` pins the Sonner close button to 24px with `!important` and has no `coarse:` override. This is an icon-only control, so the constraint requires at least 44px under `coarse:`. It meets the 24px floor but fails the coarse rule. Fix: `"size-6! coarse:size-11!"`, and extend `lib/__tests__/toast-options.test.ts` to assert it.
+
+### Non-blocking
+
+- `frontend/src/components/features/navigation/user-menu.tsx:51-52` — the popup uses `shadow-lg` and `duration-100`. The drawer (`mobile-drawer.tsx:32`) and select use `shadow-overlay` and `duration-(--duration-*)`. Not a stated constraint, and the global reduced-motion rule (`index.css:330`) collapses it. Align the tokens when convenient (Stage 7 polish).
+- `frontend/src/components/features/navigation/nav-group.tsx:48` and `dashboards-nav-group.tsx:66` — chevron uses a literal `duration-200` rather than a token. It has `motion-reduce:transition-none`, so the constraint is met.
+- `frontend/src/components/common/error-page.tsx:84-86` — the live region keeps the last "Retrying… (attempt N)" text and is never cleared. It is harmless. Fine to leave.
+- `frontend/src/App.tsx:1` — the `toast-options` import sits above `react`. Cosmetic.
+
+### Checklist
+
+| ID | Status | Evidence |
+|----|--------|----------|
+| FE-01 no `any` | PASS | Grep of all non-test changed files: no matches |
+| FE-02 no class concatenation | PASS | No `className={"…" +` or template strings in classNames. The template literals found are routes and text: `App.tsx:52`, `OnboardingPage.tsx:77`, `dashboards-nav-group.tsx:51,53`, `error-page.tsx:85`. All other classes are whole literals combined through `cn()` or `buttonVariants()`, e.g. `nav-group.tsx:48`, `LoginPage.tsx:34` |
+| FE-03 no direct API client | PASS | No `api/client` imports in the changed files |
+| FE-04 no inline Zod | PASS | No `z.` matches |
+| FE-05 no content spinners | PASS | `OnboardingPage.tsx:206,260` are submit-button spinners only, and use `motion-safe:animate-spin`. Content loading uses Skeleton (`protected-route.tsx`, `LoginPage`) |
+| FE-06 no colour literals or palette classes | PASS | No palette, hex or oklch literals in the changed files. `toast-options.ts:6-9` references tokens via `var(--…)`. The guard test now scans `navigation/` (`no-color-literals.test.ts` drops it from PENDING) and passes |
+| FE-07 no state mutation | PASS | No `.push(`, `.sort(` or `.splice(` in the diff |
+| FE-08 no default exports | PASS | No `export default` matches |
+| FE-09/10 tenant guard and keys | N/A | No hooks changed |
+| FE-11 error handling | PASS | `OnboardingPage.tsx` catches use `createErrorFromUnknown` with a toast (unchanged pattern, e.g. line ~66) |
+| FE-12/13/14/16 | N/A | No models, services, key factories or schemas changed |
+| FE-15 forms | PASS | `OnboardingPage.tsx` still uses `useForm` + `zodResolver`; `FormDescription` was added at ~line 238 |
+| FE-17 tests exist | PASS | Tests changed or added for app-shell, mobile-drawer, mobile-header, nav-group, protected-route, user-menu, dialog, error-page, toast-options, LoginPage, OnboardingPage |
+| FE-18 mocks | N/A | No services changed |
+| FE-19 cursor-pointer | PASS | `nav-group.tsx:26` (`groupLabelClasses`), `user-menu.tsx:16,31`. `SidebarMenuButton` renders an `<a>` or `<button>` |
+
+### Plan Global Constraints
+
+| Constraint | Status | Evidence |
+|-----------|--------|----------|
+| No colour literals or palette classes | PASS | See FE-06 |
+| Whole literal Tailwind strings | PASS | See FE-02 |
+| `font-heading` only at text-lg or larger, never on controls | PASS | `mobile-drawer.tsx:39` and `mobile-header.tsx:9` are `text-lg`. `LoginPage.tsx:19` and `OnboardingPage.tsx:123` are `text-2xl` on h1. `dialog.tsx:129` is `text-lg` on DialogTitle. None is on a control |
+| Status never colour-only | PASS | Toast type borders (`toast-options.ts:16-19`) are supplementary, since Sonner renders a type icon. The nav active state combines a wash and clay text with `aria-current`. The destructive menu item has a LogOut icon and a "Sign out" label |
+| Pointer targets at least 24px; nav items and icon-only controls at least 44px under `coarse:` | FAIL | Toast close button, see Blocking 1. Others pass: `sidebar.tsx:128,164` (`coarse:min-h-11`), `nav-group.tsx:26`, `user-menu.tsx:16,31`, and Button `icon` is `size-8 coarse:size-11` (`button.tsx:30`) |
+| Motion collapses under reduced motion | PASS | Global rule at `index.css:330-337`. The chevrons also carry `motion-reduce:transition-none` |
+| `theme-provider.tsx` unmodified | PASS | `git diff --stat` shows no changes. `App.tsx:56-66` only reads `useTheme()` |
+| Tests updated, not deleted | PASS | Diff shows additions only, plus a single line removed from the PENDING list (the intended Stage 2 graduation) |
+
+### Deferred-minor triage (`.superpowers/sdd/plan/stage2-deferred-minors.md`)
+
+| Item | Decision |
+|------|----------|
+| DA-045 "clay marker" not added (design.md §3.6 binding) | Accept ruling. design.md specifies clay text plus a sage wash pill, which `sidebar.tsx:167` delivers |
+| Ruling: DA-045 touches `sidebar.tsx` outside the plan's Files list | Accept. The edits are 2 lines and in scope |
+| Ruling: Task 16 PENDING removal is a no-op | Accept |
+| Ruling: `theme` via a `ThemedToaster` wrapper in App.tsx | Accept. Confirmed at `App.tsx:56-66`, and theme-provider is untouched |
+| Ruling: items 126, 117, 166 need a device check | Not blocking. Put in the PR body manual checks, owner Stage 7 polish |
+| Item 127 select popup | Already resolved (`select.tsx:84`). Nothing to do |
+| Task 15: redundant `aria-[current=page]:text-sidebar-primary` (`nav-group.tsx:66`) | Not blocking. Remove it in Stage 7 cleanup, or keep it as a harmless fallback |
+| Task 15: no active-state visual test, and none for dashboards-nav-group `aria-current` | Not blocking. Stage 7 test hardening. A jsdom class assertion would be cheap if wanted now |
+| Task 15: DA-046 destructive-on-accent contrast not pinned | Not blocking. I computed the pair: light about 5.0:1 and dark about 4.5:1, so it passes AA but with thin dark-mode margin. Pin it in `design-tokens.test.ts` in Stage 7 (owner: tokens or contrast test) |
+| Task 16: no shared skeleton wrapper | Not blocking. Dashboards already use role=status. Stage 7 |
+| Task 16: Login load-error StatusBanner untested | Not blocking, but a cheap test. Task 16 or Stage 7 |
+| Task 16: rendered toast appearance not evaluable | PR body manual check. Include the coarse close-button size once Blocking 1 is fixed |
+| Task 16: `App.tsx:1` import order | Cosmetic, fix opportunistically |
+| Task 16: toast tests are config-shape only | PR body manual check. Stage 7 may add a rendered test |
+
+### Verdict
+
+NEEDS-WORK. Build and tests pass. One blocking constraint violation: the toast close button has no 44px coarse target.
