@@ -1,6 +1,6 @@
 module github.com/jtumidanski/home-hub/shared/go/database
 
-go 1.27.1
+go 1.27.2
 
 require (
 	github.com/jtumidanski/home-hub/shared/go/model v0.0.0
