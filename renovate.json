@@ -4,7 +4,7 @@
   "enabledManagers": ["gomod", "npm", "github-actions", "dockerfile", "custom.regex"],
   "automerge": true,
   "automergeType": "pr",
-  "platformAutomerge": false,
+  "platformAutomerge": true,
   "labels": ["dependencies"],
   "minimumReleaseAge": "3 days",
   "internalChecksFilter": "strict",
@@ -39,6 +39,11 @@
     {
       "matchManagers": ["dockerfile"],
       "groupName": "Docker images"
+    },
+    {
+      "description": "Majors are never unattended: the top-level automerge covers patch and minor only.",
+      "matchUpdateTypes": ["major"],
+      "automerge": false
     },
     {
       "description": "Go toolchain (go.mod and go.work directives, toolchain.versions, golang builder images) in one PR, never automerged. Last so it overrides the gomod and dockerfile groups above.",
