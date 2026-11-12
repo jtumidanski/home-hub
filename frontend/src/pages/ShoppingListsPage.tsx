@@ -26,9 +26,10 @@ import {
 import type { ShoppingList } from "@/types/models/shopping";
 import { shoppingListNameSchema } from "@/lib/schemas/shopping.schema";
 
-export function ShoppingListsPage() {
+export type GroceryTab = "active" | "archived";
+
+export function ShoppingListsPage({ tab }: { tab: GroceryTab }) {
   const navigate = useNavigate();
-  const [tab, setTab] = useState<"active" | "archived">("active");
   const [showCreate, setShowCreate] = useState(false);
   const [newName, setNewName] = useState("");
   const [createError, setCreateError] = useState<string | null>(null);
@@ -100,24 +101,26 @@ export function ShoppingListsPage() {
       {/* Tab buttons */}
       <div className="flex gap-1 border-b">
         <button
+          aria-pressed={tab === "active"}
           className={cn(
             "px-4 py-2 text-sm font-medium border-b-2 transition-colors",
             tab === "active"
               ? "border-primary text-primary"
               : "border-transparent text-muted-foreground hover:text-foreground",
           )}
-          onClick={() => setTab("active")}
+          onClick={() => navigate("/app/shopping/grocery")}
         >
           Active ({activeLists.length})
         </button>
         <button
+          aria-pressed={tab === "archived"}
           className={cn(
             "px-4 py-2 text-sm font-medium border-b-2 transition-colors",
             tab === "archived"
               ? "border-primary text-primary"
               : "border-transparent text-muted-foreground hover:text-foreground",
           )}
-          onClick={() => setTab("archived")}
+          onClick={() => navigate("/app/shopping/grocery/archived")}
         >
           History ({archivedLists.length})
         </button>

@@ -102,7 +102,8 @@ export function AppRoutes(): React.JSX.Element {
         <Route path="recipes/:id/edit" element={<RecipeFormPage />} />
         <Route path="meals" element={<MealsPage />} />
         <Route path="shopping" element={<Navigate to="/app/shopping/grocery" replace />} />
-        <Route path="shopping/grocery" element={<ShoppingListsPage />} />
+        <Route path="shopping/grocery" element={<ShoppingListsPage tab="active" />} />
+        <Route path="shopping/grocery/archived" element={<ShoppingListsPage tab="archived" />} />
         <Route path="shopping/grocery/:id" element={<ShoppingListDetailPage />} />
         <Route path="shopping/wish-list" element={<WishListPage />} />
         <Route path="ingredients" element={<IngredientsPage />} />

@@ -30,9 +30,13 @@ vi.mock("@/components/features/navigation/app-shell", async () => {
 // a URL selects.
 async function stub(name: string) {
   const { useSearchParams } = await import("react-router-dom");
-  return function Stub() {
+  return function Stub(props: { tab?: string; view?: string }) {
     const [sp] = useSearchParams();
-    return <div data-testid="page">{`${name}:${sp.get("view") ?? sp.get("tab") ?? ""}`}</div>;
+    return (
+      <div data-testid="page">
+        {`${name}:${props.view ?? props.tab ?? sp.get("view") ?? sp.get("tab") ?? ""}`}
+      </div>
+    );
   };
 }
 
@@ -71,6 +75,16 @@ describe("AppRoutes", () => {
   it("routes an ingredient UUID to IngredientDetailPage", () => {
     renderAt("/app/ingredients/0b6c1f2e-3a4d-4e5f-8a9b-0c1d2e3f4a5b");
     expect(screen.getByTestId("page").textContent).toBe("IngredientDetailPage:");
+  });
+
+  it("routes /app/shopping/grocery to the active tab", () => {
+    renderAt("/app/shopping/grocery");
+    expect(screen.getByTestId("page").textContent).toBe("ShoppingListsPage:active");
+  });
+
+  it("routes /app/shopping/grocery/archived to the archived tab, not :id", () => {
+    renderAt("/app/shopping/grocery/archived");
+    expect(screen.getByTestId("page").textContent).toBe("ShoppingListsPage:archived");
   });
 
   it("routes /app/shopping/grocery/list-1 to ShoppingListDetailPage", () => {
