@@ -91,4 +91,24 @@ describe("AppRoutes", () => {
     renderAt("/app/shopping/grocery/list-1");
     expect(screen.getByTestId("page").textContent).toBe("ShoppingListDetailPage:");
   });
+
+  it("redirects /app/ingredients to the list view", () => {
+    renderAt("/app/ingredients");
+    expect(screen.getByTestId("location").textContent).toBe("/app/ingredients/list");
+  });
+
+  it("preserves the query when redirecting /app/ingredients", () => {
+    renderAt("/app/ingredients?category=abc");
+    expect(screen.getByTestId("location").textContent).toBe("/app/ingredients/list?category=abc");
+  });
+
+  it.each(["list", "categories", "bulk"])("routes /app/ingredients/%s to that view", (view) => {
+    renderAt(`/app/ingredients/${view}`);
+    expect(screen.getByTestId("page").textContent).toBe(`IngredientsPage:${view}`);
+  });
+
+  it("routes an unknown ingredients segment to the detail page", () => {
+    renderAt("/app/ingredients/not-a-view");
+    expect(screen.getByTestId("page").textContent).toBe("IngredientDetailPage:");
+  });
 });

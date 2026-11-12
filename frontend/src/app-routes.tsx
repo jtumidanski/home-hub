@@ -106,7 +106,10 @@ export function AppRoutes(): React.JSX.Element {
         <Route path="shopping/grocery/archived" element={<ShoppingListsPage tab="archived" />} />
         <Route path="shopping/grocery/:id" element={<ShoppingListDetailPage />} />
         <Route path="shopping/wish-list" element={<WishListPage />} />
-        <Route path="ingredients" element={<IngredientsPage />} />
+        <Route path="ingredients" element={<RedirectPreservingQuery to="/app/ingredients/list" />} />
+        <Route path="ingredients/list" element={<IngredientsPage view="list" />} />
+        <Route path="ingredients/categories" element={<IngredientsPage view="categories" />} />
+        <Route path="ingredients/bulk" element={<IngredientsPage view="bulk" />} />
         <Route path="ingredients/:id" element={<IngredientDetailPage />} />
         <Route path="households" element={<HouseholdsPage />} />
         <Route path="households/:id/members" element={<HouseholdMembersPage />} />
