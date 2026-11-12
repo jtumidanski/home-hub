@@ -78,3 +78,10 @@ Task 8: complete (commits 73fb8cd..1f50068, review clean)
 
 Controller notes for next session: all plan tasks 1–8 complete; Task 9 is the branch end per Ruling 2. Resume at /execute-task Step 5 item 1 (merge-main), then flagless verify, then code review (plan-adherence + frontend-guidelines reviewers; no Go changes → no backend reviewer). Point reviewers at the `minor (deferred)` lines above. After any gate, `git checkout -- go.work.sum`.
 Handoff after Task 8 (4 tasks completed this session)
+Branch end: merge-main up-to-date
+Agent: Branch end type=plan-adherence-reviewer model=sonnet status=DONE verdict=APPROVED_WITH_FINDINGS caused-fix=no
+Agent: Branch end type=frontend-guidelines-reviewer model=sonnet status=DONE verdict=APPROVED_WITH_FINDINGS caused-fix=no
+Branch end: review APPROVED_WITH_FINDINGS (0 blocking; FE-02 warn TrackerPage.tsx:63 template-literal class; "unrelated tooling" finding was a stale local-main diff — vs fetched main the branch is frontend + task docs only)
+
+Controller notes for next session: merge-main up-to-date and review APPROVED_WITH_FINDINGS (no fix round) are both done at head b2d6f1b + ledger-only commits. Flagless verify on b2d6f1b was still running (log /tmp/verify-task-058-url-addressable-views-b2d6f1b.log). If that log has `EXIT=`, reconcile from it, since no non-ledger commit has landed since. Otherwise re-run it. Then `git checkout -- go.work.sum` (gate side effect, never commit it), push, and open the PR (item 4).
+Handoff after branch end (verify unreconciled)
