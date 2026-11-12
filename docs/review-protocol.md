@@ -115,13 +115,12 @@ protocol far more seriously than one that returns 2 KB.
 - On `CHANGES_REQUIRED`, the `blocking` lines are the fix brief. Read the
   artifact when a line is not actionable as written — that is the designed
   escalation, not a failure.
-- Record the review by hand in the task's
-  `.superpowers/sdd/<plan-basename>/progress.md` (see
+- Record the review in the task's ledger, `docs/tasks/<id>/progress.md`
+  (`tools/task-ledger.sh path <id>`; see
   [docs/agent-dispatch.md](agent-dispatch.md) §Recording what a dispatch
   cost), adding `verdict=<verdict> caused-fix=<yes|no>` to the reviewer's
-  line. Home-hub has no separate ledger tool — `caused-fix` is the only cheap
-  way to learn afterwards whether reviews were load-bearing, and it only
-  exists if you write it down.
+  `Agent:` row. `caused-fix` is the only cheap way to learn afterwards whether
+  reviews were load-bearing, and it only exists if you write it down.
 
 ---
 

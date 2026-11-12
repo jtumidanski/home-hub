@@ -126,14 +126,14 @@ Launch the gate backgrounded and keep going; do not poll it.
 
 ### 5. Record the outcome
 
-Home-hub has no separate ledger tool. Update `docs/tasks/<task>/bug-<slug>.md`
-itself with the outcome — the commit that fixed it, which agents ran
-(implementer, and verifier or reviewer if dispatched) with their verdicts, and
-whether live testing confirmed it — and append one line to
-`.superpowers/sdd/<plan-basename>/progress.md`:
+Update `docs/tasks/<task>/bug-<slug>.md` itself with the outcome — the commit
+that fixed it, which agents ran (implementer, and verifier or reviewer if
+dispatched) with their verdicts, and whether live testing confirmed it — and
+append one line to the task ledger (`tools/task-ledger.sh init <task>` prints
+its path, `docs/tasks/<task>/progress.md`):
 
 ```
-Task <N>: bug-<slug> fixed — agent=task-implementer model=sonnet commit=<sha>
+Agent: bug-<slug> type=task-implementer model=sonnet status=fixed commit=<sha>
 ```
 
 So the next audit can answer "what did the post-PR phase actually cost"

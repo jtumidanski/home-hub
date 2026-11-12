@@ -9,13 +9,11 @@ You are starting Phase 3 of the Home Hub four-phase development workflow. Argume
 
 ### Step 1 — Resolve the task
 
-Same fuzzy-match algorithm as `/design-task` Step 1:
-
-1. Glob `docs/tasks/task-*` (main) and `.worktrees/*/docs/tasks/task-*` (sibling worktrees).
-2. Match `$ARGUMENTS` against folder names — exact, number-only (`44`/`044`/`task-44`/`task-044`), or slug fragment.
-3. Zero matches → ask for correction. Multiple matches → list and let the user pick.
-4. If the task lives only on main with no worktree, stop and tell the user the task needs a worktree.
-5. Resolve to `<worktree>/docs/tasks/<id>/`.
+Same as `/design-task` Step 1 — run `tools/task-resolve.sh "$ARGUMENTS"`
+(prints `<task-id>\t<task-dir>\t<worktree>`; exit 3 no match, 4 ambiguous
+with candidates on stderr). Never glob `.worktrees/*/docs/tasks/task-*`. If
+`<worktree>` is the main repo root, stop and tell the user the task needs a
+worktree.
 
 ### Step 2 — Ensure we're in the right worktree
 

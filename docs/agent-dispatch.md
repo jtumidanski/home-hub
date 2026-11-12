@@ -185,8 +185,9 @@ marker on disk is meaningless if the session that wrote it keeps going.
 Generate briefs with `tools/task-brief.sh <plan> <N>`, never by hand out of
 `plan.md` — assembling them by hand is exactly the context bloat the brief
 exists to prevent. The durable artifacts that make a handoff resumable are
-`task-N-report.md` per task and the workspace ledger
-`.superpowers/sdd/<plan-basename>/progress.md` for the whole plan.
+`task-N-report.md` per task and the task ledger
+`docs/tasks/<id>/progress.md` (`tools/task-ledger.sh path <id>`) for the
+whole plan.
 
 `/execute-task` Steps 4d–4e are this handoff in its two concrete procedural
 forms — `PARTIAL` handling and controller handoff — each keyed to one of
@@ -208,17 +209,18 @@ file, verify in a clean context — is
 
 ## Recording what a dispatch cost
 
-Home-hub has no separate ledger tool. When you reconcile an agent
-(implementer, verifier, reviewer), append one line by hand to the task's
-`.superpowers/sdd/<plan-basename>/progress.md`:
+When you reconcile an agent (implementer, verifier, reviewer), append one line
+to the task ledger, `docs/tasks/<id>/progress.md`:
 
 ```
-Task <N>: <status> — agent=<type> model=<model> commit=<sha>
+Agent: Task <N> type=<type> model=<model> status=<status> commit=<sha>
 ```
 
 Reviewer rows add `verdict=<verdict> caused-fix=<yes|no>`; a handoff records
-`handoff after Task <N>, context~<n>k`, which is the only marker anywhere for
-a handoff that was written and then worked past.
+`Handoff after Task <N> (context~<n>k)`, which is the only marker anywhere for
+a handoff that was written and then worked past. The `Agent:` prefix keeps
+cost rows apart from the progress lines `claude-drive` parses
+(`/execute-task` Step 4f).
 
 **Record only what you actually know.** If you cannot state a token count or
 a commit sha, leave the field off rather than estimating — a fabricated

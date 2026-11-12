@@ -18,11 +18,10 @@ anything below is ambiguous.
 Home-hub has no single "facts" script; assemble the block yourself, cheaply,
 rather than re-deriving it by hand later:
 
-1. Resolve the task folder using the same fuzzy-match algorithm as
-   `/execute-task` Step 1: glob `docs/tasks/task-*` (main) and
-   `.worktrees/*/docs/tasks/task-*` (sibling worktrees), and match the task
-   identifier in **$ARGUMENTS** against folder names — exact, number-only
-   (`44`/`044`/`task-44`/`task-044`), or slug fragment.
+1. Resolve the task folder as `/execute-task` Step 1 does:
+   `tools/task-resolve.sh <task identifier from $ARGUMENTS>` prints
+   `<task-id>\t<task-dir>\t<worktree>` (exit 3 no match, 4 ambiguous).
+   Never glob `.worktrees/*/docs/tasks/task-*`.
 2. `cd` into `<worktree>` yourself if `pwd` does not match. Do not create a
    worktree.
 3. `git branch --show-current` and `git rev-parse --show-toplevel` — confirm
