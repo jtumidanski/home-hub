@@ -150,4 +150,19 @@ describe("AppRoutes", () => {
     renderAt("/app/ingredients/not-a-view");
     expect(screen.getByTestId("page").textContent).toBe("IngredientDetailPage:");
   });
+
+  it.each(["week", "month"])("routes /app/calendar/%s to that view", (view) => {
+    renderAt(`/app/calendar/${view}`);
+    expect(screen.getByTestId("page").textContent).toBe(`CalendarPage:${view}`);
+  });
+
+  it.each([
+    ["/app/calendar", "/app/calendar/week"],
+    ["/app/calendar/bogus", "/app/calendar/week"],
+    ["/app/calendar?connected=true", "/app/calendar/week?connected=true"],
+    ["/app/calendar?error=auth_failed", "/app/calendar/week?error=auth_failed"],
+  ])("redirects %s to %s", (from, to) => {
+    renderAt(from);
+    expect(screen.getByTestId("location").textContent).toBe(to);
+  });
 });
