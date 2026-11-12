@@ -51,6 +51,11 @@ else
     echo "merge-main: already up to date"
     exit 0
   fi
+  # Pre-existing go.work.sum churn would make git refuse the merge when main
+  # also changed the file; it is regenerated output, so drop it first.
+  if [ -n "$(git ls-files -m -- go.work.sum)" ]; then
+    git checkout -- go.work.sum
+  fi
   merge_rc=0
   git merge --no-ff --no-commit origin/main || merge_rc=$?
   if [ "$merge_rc" -ne 0 ] && ! merge_in_progress; then

@@ -94,6 +94,14 @@ assert_eq "sum: rc" 0 "$rc"
 assert_eq "sum: merged copy committed" sum-main2 "$(git show HEAD:go.work.sum)"
 assert_eq "sum: tree clean" "" "$(git status --porcelain)"
 
+# --- go.work.sum churn before the merge does not block it
+mkfix; diverge sum
+printf 'churn\n' > go.work.sum
+run
+assert_eq "pre-churn: rc" 0 "$rc"
+assert_eq "pre-churn: main's copy merged" sum-main "$(git show HEAD:go.work.sum)"
+assert_eq "pre-churn: tree clean" "" "$(git status --porcelain)"
+
 # --- real conflict, then continue
 mkfix; diverge other
 run

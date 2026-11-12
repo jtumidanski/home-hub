@@ -391,27 +391,43 @@ headless run: continue into Step 5.
 
 After all plan tasks are `complete`, run this branch end. It runs headless
 (`CLAUDE_DRIVE`) and interactively, in this order. Each item appends its line
-to `<ledger>`; on relaunch, resume at the first item with no line.
+to `<ledger>`. On relaunch, an item is done only when its **latest**
+`Branch end:` line is a pass (`merged`/`up-to-date`, `PASS`, `APPROVED`) and
+no non-ledger commit landed after it; resume at the first item that is not
+done.
 
-1. **Merge main.** `tools/merge-main.sh`. Exit 1 (real conflicts) or 3 is
-   `NEEDS OPERATOR:`. Append `Branch end: merge-main <merged|up-to-date>`.
-2. **Flagless verify.** Launch the whole-branch gate in the background:
+1. **Merge main.** If `MERGE_HEAD` exists (a previous run stopped on
+   conflicts and the operator resolved them), run
+   `tools/merge-main.sh --continue`; otherwise `tools/merge-main.sh`. Any
+   non-zero exit (1 conflicts or merge in progress, 3 usage, anything else
+   e.g. a failed fetch) is `NEEDS OPERATOR:` — quote its output. Append
+   `Branch end: merge-main <merged|up-to-date>`.
+2. **Flagless verify.** Launch the whole-branch gate in the background, with a
+   log named for the head it judges:
 
    ```sh
-   tools/verify.sh > /tmp/verify-<id>.log 2>&1; echo "EXIT=$?" >> /tmp/verify-<id>.log
+   LOG=/tmp/verify-<id>-$(git rev-parse --short HEAD).log
+   tools/verify.sh > "$LOG" 2>&1; echo "EXIT=$?" >> "$LOG"
    ```
 
-   Run item 3 while it runs, then reconcile. Append
+   If that log already exists with an `EXIT=` line (an earlier run on the same
+   head finished), reconcile from it instead of re-running. Otherwise run
+   item 3 while it runs, then reconcile. Append
    `Branch end: verify <PASS|FAIL>`. Only the flagless run counts —
    never `--quick`, `--no-docker` or `--no-ui` here (CLAUDE.md, "Done means
    verified").
    - FAIL: a fix round with `task-implementer` (sonnet), per Step 4c rules,
-     then re-run this item.
+     then re-run this item **and item 3** (the fix is unreviewed). Verify fix
+     rounds share the review's limit of 3; still failing after round 3 is
+     `NEEDS OPERATOR:`.
    - Still running after item 3 with nothing else to do: headless, write
      `Handoff after branch end (verify unreconciled)` per Step 4g (the next
      context re-runs it with warm caches); interactive, wait for the
-     notification. A second consecutive `verify unreconciled` handoff is
-     `NEEDS OPERATOR:`.
+     notification. A second consecutive `verify unreconciled` handoff on the
+     same head is `NEEDS OPERATOR:` — say so, and that the operator can run
+     flagless `tools/verify.sh` themselves and record
+     `OPERATOR DIRECTION: verify PASS at <sha>`, which the next run accepts
+     for that head.
 3. **Code review** per [`docs/review-protocol.md`](../../docs/review-protocol.md)
    via `superpowers:requesting-code-review`. Dispatch the reviewers in the
    foreground, in parallel, each with `model: sonnet`, each writing to
