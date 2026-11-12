@@ -105,3 +105,22 @@ export function formatShortWeekday(dateStr: string): string {
   const anchor = new Date(Date.UTC(y ?? 1970, (m ?? 1) - 1, d ?? 1, 12, 0, 0));
   return new Intl.DateTimeFormat("en-US", { weekday: "short", timeZone: "UTC" }).format(anchor);
 }
+
+/** Formats a Date as a local-calendar YYYY-MM-DD string. */
+export function formatLocalDateStr(d: Date): string {
+  const year = d.getFullYear();
+  const month = String(d.getMonth() + 1).padStart(2, "0");
+  const day = String(d.getDate()).padStart(2, "0");
+  return `${year}-${month}-${day}`;
+}
+
+/**
+ * Parses a strict YYYY-MM-DD string into a Date at local midnight.
+ * Returns null for malformed or non-existent calendar dates.
+ */
+export function parseLocalDateStr(s: string): Date | null {
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(s)) return null;
+  const [y, m, d] = s.split("-").map(Number) as [number, number, number];
+  const result = new Date(y, m - 1, d);
+  return formatLocalDateStr(result) === s ? result : null;
+}

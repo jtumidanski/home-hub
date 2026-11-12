@@ -5,6 +5,8 @@ import {
   getLocalTodayRange,
   getLocalWeekStart,
   getLocalMonth,
+  parseLocalDateStr,
+  formatLocalDateStr,
 } from "../date-utils";
 
 describe("date-utils", () => {
@@ -138,5 +140,30 @@ describe("date-utils", () => {
       vi.setSystemTime(new Date("2026-01-15T12:00:00Z"));
       expect(getLocalMonth("UTC")).toBe("2026-01");
     });
+  });
+});
+
+describe("parseLocalDateStr / formatLocalDateStr", () => {
+  it("parses a valid date at local midnight", () => {
+    const d = parseLocalDateStr("2026-03-17")!;
+    expect(d.getFullYear()).toBe(2026);
+    expect(d.getMonth()).toBe(2);
+    expect(d.getDate()).toBe(17);
+    expect(d.getHours()).toBe(0);
+  });
+
+  it.each(["2026-02-31", "2026-1-5", "2026-13-01", "", "garbage", "2026-03-17T00:00"])(
+    "returns null for %j",
+    (s) => {
+      expect(parseLocalDateStr(s)).toBeNull();
+    },
+  );
+
+  it("formats a local date", () => {
+    expect(formatLocalDateStr(new Date(2026, 0, 5))).toBe("2026-01-05");
+  });
+
+  it.each(["2024-02-29", "2026-11-01"])("round-trips %s", (s) => {
+    expect(formatLocalDateStr(parseLocalDateStr(s)!)).toBe(s);
   });
 });
