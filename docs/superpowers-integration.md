@@ -28,11 +28,21 @@ reproduce inline, diagnose into a file, delegate the fix, verify fresh.
 Phase commands accept fuzzy task identifiers: `task-044-slug`, `task-044`,
 `044`, and `44` all resolve to the same folder.
 
-- Home-hub has no single resolver/facts script. `/design-task`,
-  `/execute-task`, and `/fix-pr-bug` Step 1 each glob `docs/tasks/task-*`
-  (main) and `.worktrees/*/docs/tasks/task-*` (sibling worktrees) and match
-  the identifier against folder names — exact, number-only, or slug
-  fragment.
+- `tools/task-resolve.sh <identifier>` resolves a task — exact, number-only,
+  or slug fragment — to `<task-id>\t<task-dir>\t<worktree>`, using the rule
+  that a worktree owns only the task it is named after. `/design-task`,
+  `/plan-task`, `/execute-task`, and `/fix-pr-bug` Step 1 all call it; never
+  glob `.worktrees/*/docs/tasks/task-*` (it returns tasks × worktrees
+  duplicates). `tools/task-ledger.sh path <task>` prints the task's
+  canonical progress ledger, `docs/tasks/<id>/progress.md`.
+- `claude-drive <task>` (in `~/.local/bin`) runs `/design-task` →
+  `/plan-task` → `/execute-task` unattended, one fresh `claude -p` per run,
+  deciding what to do next from the committed artifacts and the ledger lines
+  `/execute-task` Step 4f defines. It relies on `tools/task-resolve.sh`,
+  `tools/task-ledger.sh`, `tools/ci-status.sh`, `tools/merge-main.sh`, and the
+  `drive-protocol: branch-end v1` marker in `/execute-task` Step 5 — all read
+  from the *task's worktree*, so a task branched before they landed must
+  merge `main` first.
 - `tools/task-numbers.sh next` picks the smallest unused number for a new
   task; `tools/task-numbers.sh check` reports any number with more than one
   distinct task ID; `tools/task-numbers.sh list` prints every assignment
