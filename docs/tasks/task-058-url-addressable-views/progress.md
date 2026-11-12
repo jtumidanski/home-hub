@@ -46,3 +46,35 @@ Task 4: complete (commits 229da43..dfcb9f9)
 
 Controller notes for next session: briefs use `**Files:**` from plan — append a `### Files` block via tools/task-brief.sh output before dispatch (done for T2–T4). Harness exports `renderAt`/`shellMounts` from `frontend/src/__tests__/app-routes.test.tsx`; page stub renders `name:{view ?? tab ?? ""}` from props. After each --quick gate, `git checkout -- go.work.sum` (gate side effect). Task 6 must apply Ruling 1 (update `/app/tracker?x=1` baseline to `/app/habits/today?x=1`).
 Handoff after Task 4 (4 tasks completed this session)
+Gate: dfcb9f9..de8f412 --quick PASS. last-gated=de8f412
+Agent: Task 5 type=task-implementer model=sonnet status=DONE commit=de8f412
+Agent: Task 5 type=task-reviewer model=sonnet status=DONE verdict=APPROVED_WITH_FINDINGS caused-fix=no
+Task 5: minor (deferred): `?category=` preservation only tested for list↔categories; Bulk and "New" navigation tested without a query (code passes location.search in both)
+Task 5: minor (deferred): `page`/`search` state persists across views since the page does not remount — matches old behaviour
+Task 5: note: "New" kept the form via plain navigate+setShowCreate (no remount) — `state.openCreate` fallback not used; no D1 remount note needed in PR
+Task 5: note: reviewer returned its review inline and did not write task-5-review.md
+Task 5: complete (commits 1dd448d..de8f412, review clean)
+Gate: de8f412..6e6a6be --quick PASS. last-gated=6e6a6be
+Agent: Task 6 type=task-implementer model=sonnet status=DONE commit=6e6a6be
+Agent: Task 6 type=task-reviewer model=sonnet status=DONE verdict=APPROVED_WITH_FINDINGS caused-fix=no
+Task 6: minor (deferred): empty `?month=` not pinned by a TrackerPage test (only `?month=2026-13`); hook code handles it in one replace (use-query-param-state.ts:42-47)
+Task 6: note: implementer did not write task-6-report.md; controller transcribed the hand-back into it
+Task 6: complete (commits de8f412..6e6a6be, review clean)
+Gate: 6e6a6be..73fb8cd --quick PASS. last-gated=73fb8cd
+Agent: Task 7 type=task-implementer model=sonnet status=DONE commit=73fb8cd
+Agent: Task 7 type=task-reviewer model=sonnet status=DONE verdict=APPROVED_WITH_FINDINGS caused-fix=no
+Task 7: minor (deferred): Wednesday/invalid `week` tests assert final URL + REPLACE but do not count navigations — "exactly one rewrite" pinned only by hook code (effect keyed on `raw`)
+Task 7: minor (deferred): WeekSelector stub emits only Mondays; non-Monday from selector untested (real selector emits Mondays)
+Task 7: minor (deferred): implementer wrote implementation before first test run — no RED observed
+Task 7: complete (commits 6e6a6be..73fb8cd, review clean)
+Gate: 73fb8cd..1f50068 --quick PASS. last-gated=1f50068
+Agent: Task 8 type=task-implementer model=sonnet status=DONE commit=1f50068
+Agent: Task 8 type=task-reviewer model=sonnet status=DONE verdict=APPROVED_WITH_FINDINGS caused-fix=no
+Task 8: minor (deferred): no page-level mobile (matchMedia false) CalendarPage test; mobile anchor math only unit-tested in calendar-url.test.ts
+Task 8: minor (deferred): fixed-point test runs on canonical values only (implementer concern); reviewer judged this matches design §5, raw inputs covered by parse assertions
+Task 8: minor (deferred): navigateToView carries unrelated params (e.g. `connected`) through on view change — harmless
+Task 8: note: implementer ran full vitest (175 files / 1120 tests) + tsc -b + `npm run lint` (0 errors); `npx eslint src` errored "could not determine executable to run" — watch the branch-end frontend lint leg
+Task 8: complete (commits 73fb8cd..1f50068, review clean)
+
+Controller notes for next session: all plan tasks 1–8 complete; Task 9 is the branch end per Ruling 2. Resume at /execute-task Step 5 item 1 (merge-main), then flagless verify, then code review (plan-adherence + frontend-guidelines reviewers; no Go changes → no backend reviewer). Point reviewers at the `minor (deferred)` lines above. After any gate, `git checkout -- go.work.sum`.
+Handoff after Task 8 (4 tasks completed this session)
