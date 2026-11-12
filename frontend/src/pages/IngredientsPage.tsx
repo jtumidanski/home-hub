@@ -1,5 +1,5 @@
 import { useState, useCallback } from "react";
-import { Link, useNavigate, useSearchParams } from "react-router-dom";
+import { Link, useLocation, useNavigate, useSearchParams } from "react-router-dom";
 import { AlertTriangle, Plus, Search, X, Settings, ListChecks, ChevronLeft, ChevronRight } from "lucide-react";
 import { toast } from "sonner";
 import { useIngredients, useCreateIngredient, useDeleteIngredient } from "@/lib/hooks/api/use-ingredients";
@@ -25,13 +25,15 @@ import { BulkCategorize } from "@/components/features/ingredients/bulk-categoriz
 import { createErrorFromUnknown } from "@/lib/api/errors";
 import type { CanonicalIngredientListItem } from "@/types/models/ingredient";
 
-export function IngredientsPage() {
+export type IngredientsView = "list" | "categories" | "bulk";
+
+export function IngredientsPage({ view }: { view: IngredientsView }) {
   const navigate = useNavigate();
+  const location = useLocation();
   const [searchParams, setSearchParams] = useSearchParams();
   const [search, setSearch] = useState("");
   const [showCreate, setShowCreate] = useState(false);
   const [newName, setNewName] = useState("");
-  const [view, setView] = useState<"list" | "categories" | "bulk">("list");
   const [page, setPage] = useState(1);
   const pageSize = 20;
   const filterCategory = searchParams.get("category") ?? "all";
@@ -71,6 +73,11 @@ export function IngredientsPage() {
     : filterCategory === "all"
       ? Math.max(0, total - categorizedCount)
       : 0;
+
+  const toggleView = (target: "categories" | "bulk") => {
+    const next = view === target ? "list" : target;
+    navigate({ pathname: `/app/ingredients/${next}`, search: location.search });
+  };
 
   const handleRefresh = useCallback(async () => {
     await refetch();
@@ -118,7 +125,7 @@ export function IngredientsPage() {
                 size="sm"
                 variant={view === "categories" ? "default" : "outline"}
                 aria-pressed={view === "categories"}
-                onClick={() => setView(view === "categories" ? "list" : "categories")}
+                onClick={() => toggleView("categories")}
               >
                 <Settings className="mr-1 h-4 w-4" />
                 Categories
@@ -127,12 +134,19 @@ export function IngredientsPage() {
                 size="sm"
                 variant={view === "bulk" ? "default" : "outline"}
                 aria-pressed={view === "bulk"}
-                onClick={() => setView(view === "bulk" ? "list" : "bulk")}
+                onClick={() => toggleView("bulk")}
               >
                 <ListChecks className="mr-1 h-4 w-4" />
                 Bulk Edit
               </Button>
-              <Button size="sm" onClick={() => { setView("list"); setShowCreate(!showCreate); }}>
+              <Button size="sm" onClick={() => {
+                if (view !== "list") {
+                  navigate({ pathname: "/app/ingredients/list", search: location.search });
+                  setShowCreate(true);
+                } else {
+                  setShowCreate(!showCreate);
+                }
+              }}>
                 <Plus className="mr-1 h-4 w-4" />
                 New
               </Button>

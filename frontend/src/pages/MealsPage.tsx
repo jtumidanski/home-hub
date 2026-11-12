@@ -28,16 +28,11 @@ import {
 import { useShoppingLists, useImportMealPlan, useCreateShoppingList } from "@/lib/hooks/api/use-shopping";
 import { shoppingService } from "@/services/api/shopping";
 import { useTenant } from "@/context/tenant-context";
-import { getLocalWeekStart } from "@/lib/date-utils";
+import { getLocalWeekStart, formatLocalDateStr, parseLocalDateStr } from "@/lib/date-utils";
+import { isoMondayOf } from "@/lib/workout-week";
+import { useQueryParamState, type QueryParamCodec } from "@/lib/hooks/use-query-param-state";
 import type { Slot, PlanItemAttributes } from "@/types/models/meal-plan";
 import type { RecipeListItem } from "@/types/models/recipe";
-
-function formatDateStr(d: Date): string {
-  const year = d.getFullYear();
-  const month = String(d.getMonth() + 1).padStart(2, "0");
-  const day = String(d.getDate()).padStart(2, "0");
-  return `${year}-${month}-${day}`;
-}
 
 function getWeekDays(startsOn: Date) {
   const days = [];
@@ -45,17 +40,28 @@ function getWeekDays(startsOn: Date) {
     const d = new Date(startsOn);
     d.setDate(d.getDate() + i);
     days.push({
-      dateStr: formatDateStr(d),
+      dateStr: formatLocalDateStr(d),
       label: d.toLocaleDateString("en-US", { weekday: "short", month: "short", day: "numeric" }),
     });
   }
   return days;
 }
 
+const weekCodec: QueryParamCodec<Date> = {
+  key: "week",
+  parse: (raw) => {
+    const d = parseLocalDateStr(raw);
+    return d ? parseLocalDateStr(isoMondayOf(d)) : null;
+  },
+  serialize: formatLocalDateStr,
+  current: () => getLocalWeekStart(),
+  equals: (a, b) => formatLocalDateStr(a) === formatLocalDateStr(b),
+};
+
 export function MealsPage() {
   const navigate = useNavigate();
-  const [startsOn, setStartsOn] = useState<Date>(getLocalWeekStart);
-  const startsOnStr = formatDateStr(startsOn);
+  const [startsOn, setStartsOn] = useQueryParamState(weekCodec);
+  const startsOnStr = formatLocalDateStr(startsOn);
 
   // Find existing plan for this week
   const { data: plansData, isLoading: plansLoading } = usePlans({ starts_on: startsOnStr });

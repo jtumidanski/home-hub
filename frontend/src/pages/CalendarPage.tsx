@@ -1,6 +1,6 @@
 import { useState, useEffect, useMemo, useCallback, useSyncExternalStore } from "react";
 import { EmptyState } from "@/components/common/empty-state";
-import { useSearchParams } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { ChevronLeft, ChevronRight, Plus, CalendarIcon } from "lucide-react";
 import { toast } from "sonner";
 import { PageHeader } from "@/components/common/page-header";
@@ -31,6 +31,8 @@ import {
   isSameMonth,
   addMonths,
 } from "@/components/features/calendar/calendar-utils";
+import { calendarDateCodec, weekAnchorFor } from "@/components/features/calendar/calendar-url";
+import { useQueryParamState, withParam } from "@/lib/hooks/use-query-param-state";
 import { getErrorMessage } from "@/lib/api/errors";
 import type { CalendarConnection, CalendarEvent } from "@/types/models/calendar";
 import type { Package } from "@/types/models/package";
@@ -43,14 +45,23 @@ function subscribeMedia(cb: () => void) {
 }
 function getIsDesktop() { return mql?.matches ?? true; }
 
-export function CalendarPage() {
+function clearOAuthParams(prev: URLSearchParams): URLSearchParams {
+  const p = new URLSearchParams(prev);
+  p.delete("connected");
+  p.delete("error");
+  return p;
+}
+
+export function CalendarPage({ view }: { view: CalendarViewMode }) {
   const isDesktop = useSyncExternalStore(subscribeMedia, getIsDesktop, () => true);
   const dayCount = isDesktop ? 7 : 3;
 
   const [searchParams, setSearchParams] = useSearchParams();
-  const [weekStart, setWeekStart] = useState(() => getStartOfWeek(new Date()));
-  const [viewMode, setViewMode] = useState<CalendarViewMode>("week");
-  const [monthAnchor, setMonthAnchor] = useState(() => getStartOfMonth(new Date()));
+  const navigate = useNavigate();
+  const codec = useMemo(() => calendarDateCodec(view, isDesktop), [view, isDesktop]);
+  const [anchor, setAnchor] = useQueryParamState(codec);
+  const weekStart = view === "week" ? anchor : getStartOfWeek(anchor);
+  const monthAnchor = view === "month" ? anchor : getStartOfMonth(anchor);
   const [showSources, setShowSources] = useState(false);
   const [calPickerOpen, setCalPickerOpen] = useState(false);
 
@@ -67,24 +78,10 @@ export function CalendarPage() {
 
   const deleteEvent = useDeleteEvent();
 
-  /* eslint-disable react-hooks/set-state-in-effect -- adjusting week start when viewport changes between mobile/desktop */
-  useEffect(() => {
-    if (isDesktop) {
-      setWeekStart(getStartOfWeek(new Date()));
-    } else {
-      const today = new Date();
-      const start = new Date(today);
-      start.setDate(start.getDate() - 1);
-      start.setHours(0, 0, 0, 0);
-      setWeekStart(start);
-    }
-  }, [isDesktop]);
-  /* eslint-enable react-hooks/set-state-in-effect */
-
   useEffect(() => {
     if (searchParams.get("connected") === "true") {
       toast.success("Google Calendar connected! Your events will appear shortly.");
-      setSearchParams({}, { replace: true });
+      setSearchParams(clearOAuthParams, { replace: true });
     }
     const error = searchParams.get("error");
     if (error) {
@@ -96,7 +93,7 @@ export function CalendarPage() {
         internal: "An internal error occurred. Please try again.",
       };
       toast.error(messages[error] ?? "An error occurred connecting your calendar.");
-      setSearchParams({}, { replace: true });
+      setSearchParams(clearOAuthParams, { replace: true });
     }
   }, [searchParams, setSearchParams]);
 
@@ -107,12 +104,12 @@ export function CalendarPage() {
   }, [weekStart, dayCount]);
 
   const { startISO, endISO } = useMemo(() => {
-    if (viewMode === "month") {
+    if (view === "month") {
       const { start, end } = getMonthGridRange(monthAnchor);
       return { startISO: start.toISOString(), endISO: end.toISOString() };
     }
     return { startISO: weekStart.toISOString(), endISO: weekEnd.toISOString() };
-  }, [viewMode, monthAnchor, weekStart, weekEnd]);
+  }, [view, monthAnchor, weekStart, weekEnd]);
 
   const connectionsQuery = useCalendarConnections();
   const eventsQuery = useCalendarEvents(startISO, endISO);
@@ -149,60 +146,50 @@ export function CalendarPage() {
   const sourcesQuery = useCalendarSources(activeConnection?.id ?? null);
   const sources = sourcesQuery.data?.data ?? [];
 
-  const focusDay = useCallback((day: Date) => {
-    if (isDesktop) {
-      setWeekStart(getStartOfWeek(day));
-    } else {
-      const start = new Date(day);
-      start.setDate(start.getDate() - 1);
-      start.setHours(0, 0, 0, 0);
-      setWeekStart(start);
-    }
-  }, [isDesktop]);
-
   const goPrev = () => {
-    if (viewMode === "month") {
-      setMonthAnchor((a) => addMonths(a, -1));
+    if (view === "month") {
+      setAnchor(addMonths(anchor, -1));
       return;
     }
     const prev = new Date(weekStart);
     prev.setDate(prev.getDate() - dayCount);
-    setWeekStart(prev);
+    setAnchor(prev);
   };
   const goNext = () => {
-    if (viewMode === "month") {
-      setMonthAnchor((a) => addMonths(a, 1));
+    if (view === "month") {
+      setAnchor(addMonths(anchor, 1));
       return;
     }
     const next = new Date(weekStart);
     next.setDate(next.getDate() + dayCount);
-    setWeekStart(next);
+    setAnchor(next);
   };
 
   const handleCalendarSelect = (date: Date | undefined) => {
     if (!date) return;
-    if (viewMode === "month") {
-      setMonthAnchor(getStartOfMonth(date));
-    } else {
-      focusDay(date);
-    }
+    setAnchor(view === "month" ? getStartOfMonth(date) : weekAnchorFor(date, isDesktop));
     setCalPickerOpen(false);
   };
 
+  const navigateToView = useCallback((target: CalendarViewMode, value: Date) => {
+    navigate({
+      pathname: `/app/calendar/${target}`,
+      search: withParam(searchParams, calendarDateCodec(target, isDesktop), value),
+    });
+  }, [navigate, searchParams, isDesktop]);
+
   const handleDayClick = useCallback((day: Date) => {
-    focusDay(day);
-    setViewMode("week");
-  }, [focusDay]);
+    navigateToView("week", weekAnchorFor(day, isDesktop));
+  }, [navigateToView, isDesktop]);
 
   const handleViewModeChange = (mode: CalendarViewMode) => {
-    if (mode === viewMode) return;
+    if (mode === view) return;
     if (mode === "month") {
-      setMonthAnchor(getStartOfMonth(weekStart));
+      navigateToView("month", getStartOfMonth(weekStart));
     } else {
       const today = new Date();
-      focusDay(isSameMonth(today, monthAnchor) ? today : monthAnchor);
+      navigateToView("week", weekAnchorFor(isSameMonth(today, monthAnchor) ? today : monthAnchor, isDesktop));
     }
-    setViewMode(mode);
   };
 
   const handleAddEvent = useCallback(() => {
@@ -291,10 +278,10 @@ export function CalendarPage() {
       {/* Header */}
       <PageHeader
         title="Calendar"
-        description={viewMode === "month" ? formatMonthYear(monthAnchor) : formatDateRange(weekStart, weekEnd)}
+        description={view === "month" ? formatMonthYear(monthAnchor) : formatDateRange(weekStart, weekEnd)}
         actions={
           <>
-            <ViewModeToggle mode={viewMode} onChange={handleViewModeChange} />
+            <ViewModeToggle mode={view} onChange={handleViewModeChange} />
             <div className="flex items-center border rounded-md">
               <Button variant="ghost" size="sm" onClick={goPrev} aria-label="Previous period">
                 <ChevronLeft className="h-4 w-4" />
@@ -307,9 +294,9 @@ export function CalendarPage() {
                 <PopoverContent className="w-auto p-0" align="center">
                   <Calendar
                     mode="single"
-                    selected={viewMode === "month" ? monthAnchor : weekStart}
+                    selected={view === "month" ? monthAnchor : weekStart}
                     onSelect={handleCalendarSelect}
-                    defaultMonth={viewMode === "month" ? monthAnchor : weekStart}
+                    defaultMonth={view === "month" ? monthAnchor : weekStart}
                   />
                 </PopoverContent>
               </Popover>
@@ -374,7 +361,7 @@ export function CalendarPage() {
         <div className="flex-1 min-h-0">
           {eventsQuery.isLoading ? (
             <Skeleton className="h-full w-full" />
-          ) : viewMode === "month" ? (
+          ) : view === "month" ? (
             <MonthGrid
               monthAnchor={monthAnchor}
               events={events}
