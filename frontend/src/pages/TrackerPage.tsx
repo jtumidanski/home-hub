@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useLocation, useNavigate } from "react-router-dom";
 import { Settings, CalendarDays, ListChecks } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { TrackerSetup } from "@/components/features/tracker/tracker-setup";
@@ -7,8 +7,19 @@ import { CalendarGrid } from "@/components/features/tracker/calendar-grid";
 import { MonthReport } from "@/components/features/tracker/month-report";
 import { PageHeader } from "@/components/common/page-header";
 import { getLocalMonth } from "@/lib/date-utils";
+import { useQueryParamState, type QueryParamCodec } from "@/lib/hooks/use-query-param-state";
 
-type View = "today" | "calendar" | "setup" | "report";
+export type HabitsView = "today" | "calendar" | "setup" | "report";
+
+const MONTH_RE = /^\d{4}-(0[1-9]|1[0-2])$/;
+
+const monthCodec: QueryParamCodec<string> = {
+  key: "month",
+  parse: (raw) => (MONTH_RE.test(raw) ? raw : null),
+  serialize: (value) => value,
+  current: getLocalMonth,
+  equals: (a, b) => a === b,
+};
 
 const VIEWS = [
   { id: "today", label: "Today", icon: ListChecks },
@@ -16,9 +27,12 @@ const VIEWS = [
   { id: "setup", label: "Setup", icon: Settings },
 ] as const;
 
-export function TrackerPage() {
-  const [view, setView] = useState<View>("today");
-  const [month, setMonth] = useState(getLocalMonth);
+export function TrackerPage({ view }: { view: HabitsView }) {
+  const [month, setMonth] = useQueryParamState(monthCodec);
+  const navigate = useNavigate();
+  const location = useLocation();
+  const goTo = (target: HabitsView) =>
+    navigate({ pathname: `/app/habits/${target}`, search: location.search });
 
   const widthClass =
     view === "calendar" ? "max-w-none" :
@@ -37,7 +51,7 @@ export function TrackerPage() {
                 variant={view === id ? "default" : "ghost"}
                 size="sm"
                 aria-pressed={view === id}
-                onClick={() => setView(id)}
+                onClick={() => goTo(id)}
               >
                 <Icon className="h-4 w-4 mr-1" aria-hidden="true" /> {label}
               </Button>
@@ -51,7 +65,7 @@ export function TrackerPage() {
           <TodayView />
         )}
         {view === "calendar" && (
-          <CalendarGrid month={month} onMonthChange={setMonth} onViewReport={() => setView("report")} onOpenSetup={() => setView("setup")} />
+          <CalendarGrid month={month} onMonthChange={setMonth} onViewReport={() => goTo("report")} onOpenSetup={() => goTo("setup")} />
         )}
         {view === "setup" && <TrackerSetup />}
         {view === "report" && (

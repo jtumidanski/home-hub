@@ -1,6 +1,6 @@
 import React from "react";
-import { describe, it, expect, vi, beforeEach } from "vitest";
-import { render, screen } from "@testing-library/react";
+import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
+import { render, screen, fireEvent } from "@testing-library/react";
 import { MemoryRouter } from "react-router-dom";
 import { AppRoutes } from "../app-routes";
 import { LocationProbe } from "@/test/location-probe";
@@ -60,11 +60,50 @@ export function renderAt(url: string) {
 describe("AppRoutes", () => {
   beforeEach(() => {
     shellMounts.count = 0;
+    vi.useFakeTimers({ toFake: ["Date"] });
+    vi.setSystemTime(new Date(2026, 10, 12, 12));
+  });
+  afterEach(() => {
+    vi.useRealTimers();
   });
 
-  it("redirects /app/tracker to /app/habits preserving the query", () => {
+  it("redirects /app/tracker to /app/habits/today preserving the query", () => {
     renderAt("/app/tracker?x=1");
-    expect(screen.getByTestId("location").textContent).toBe("/app/habits?x=1");
+    expect(screen.getByTestId("location").textContent).toBe("/app/habits/today?x=1");
+  });
+
+  it.each(["today", "calendar", "setup", "report"])("routes /app/habits/%s to that view", (view) => {
+    renderAt(`/app/habits/${view}`);
+    expect(screen.getByTestId("page").textContent).toBe(`TrackerPage:${view}`);
+  });
+
+  it.each(["/app/habits", "/app/habits/bogus", "/app/tracker"])("redirects %s to /app/habits/today", (url) => {
+    renderAt(url);
+    expect(screen.getByTestId("location").textContent).toBe("/app/habits/today");
+  });
+
+  it("preserves month when redirecting /app/habits", () => {
+    renderAt("/app/habits?month=2026-01");
+    expect(screen.getByTestId("location").textContent).toBe("/app/habits/today?month=2026-01");
+  });
+
+  it("does not remount the shell when switching habits views", async () => {
+    const { useNavigate } = await import("react-router-dom");
+    function PushButton() {
+      const navigate = useNavigate();
+      return <button onClick={() => navigate("/app/habits/calendar")}>push-calendar</button>;
+    }
+    render(
+      <MemoryRouter initialEntries={["/app/habits/today"]}>
+        <AppRoutes />
+        <LocationProbe />
+        <PushButton />
+      </MemoryRouter>,
+    );
+    expect(shellMounts.count).toBe(1);
+    fireEvent.click(screen.getByText("push-calendar"));
+    expect(screen.getByTestId("location").textContent).toBe("/app/habits/calendar");
+    expect(shellMounts.count).toBe(1);
   });
 
   it("redirects /app/shopping to /app/shopping/grocery", () => {

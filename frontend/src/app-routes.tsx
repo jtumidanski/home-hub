@@ -79,8 +79,13 @@ export function AppRoutes(): React.JSX.Element {
         <Route path="reminders" element={<RemindersPage />} />
         <Route path="calendar" element={<CalendarPage />} />
         <Route path="packages" element={<PackagesPage />} />
-        <Route path="habits" element={<TrackerPage />} />
-        <Route path="tracker" element={<RedirectPreservingQuery to="/app/habits" />} />
+        <Route path="habits" element={<RedirectPreservingQuery to="/app/habits/today" />} />
+        <Route path="habits/today" element={<TrackerPage view="today" />} />
+        <Route path="habits/calendar" element={<TrackerPage view="calendar" />} />
+        <Route path="habits/setup" element={<TrackerPage view="setup" />} />
+        <Route path="habits/report" element={<TrackerPage view="report" />} />
+        <Route path="habits/*" element={<RedirectPreservingQuery to="/app/habits/today" />} />
+        <Route path="tracker" element={<RedirectPreservingQuery to="/app/habits/today" />} />
         <Route path="workouts" element={<WorkoutShell />}>
           <Route index element={<Navigate to="today" replace />} />
           <Route path="today" element={<WorkoutTodayPage />} />
