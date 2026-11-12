@@ -9,18 +9,21 @@ You are starting Phase 2 of the Home Hub four-phase development workflow. Argume
 
 ### Step 1 — Resolve the task
 
-1. **Fuzzy-match the task folder name** by globbing across both the main repo and all sibling worktrees:
-   - Main repo: `docs/tasks/task-*`
-   - Worktrees: `.worktrees/*/docs/tasks/task-*`
+1. **Run the resolver** — do NOT glob for the folder yourself:
 
-   Match `$ARGUMENTS` against folder names with these patterns (in order):
-   - Exact: `task-NNN-slug` matches `task-NNN-slug`
-   - Number-only: `44` or `044` or `task-44` or `task-044` matches any folder named `task-044-*`
-   - Slug fragment: `superpowers-integration` matches `task-NNN-superpowers-integration`
+   ```sh
+   tools/task-resolve.sh "$ARGUMENTS"
+   ```
 
-2. If zero matches: stop and ask the user for a corrected identifier.
-3. If multiple matches: list them and ask the user to pick.
-4. If the resolved task lives in `docs/tasks/` (main) but NOT in any worktree, that's an error state — the four-phase workflow requires a task worktree. Stop and tell the user:
+   It prints `<task-id>\t<task-dir>\t<worktree>` and accepts exact
+   (`task-NNN-slug`), number-only (`44`/`044`/`task-44`/`task-044`), or
+   slug-fragment identifiers. Never glob `.worktrees/*/docs/tasks/task-*`:
+   every worktree carries a full copy of `docs/tasks/`, so that pattern
+   returns (tasks × worktrees) mostly-duplicate paths.
+
+2. Exit 3 (no match): stop and ask the user for a corrected identifier.
+3. Exit 4 (ambiguous): list the candidates from stderr and ask the user to pick.
+4. If `<worktree>` is the main repo root, the task has no worktree — that's an error state — the four-phase workflow requires a task worktree. Stop and tell the user:
    > Task `<id>` exists on main but has no worktree. The current workflow expects every task to have its own worktree (created by `/spec-task`). Either move the task into a worktree or run `/spec-task` from scratch.
 5. Otherwise, the resolved location is `<worktree>/docs/tasks/<id>/`. Record `<worktree>` as the absolute path you'll use for all subsequent operations.
 

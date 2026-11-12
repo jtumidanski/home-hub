@@ -9,17 +9,22 @@ You are starting Phase 4 of the Home Hub four-phase development workflow. Argume
 
 ### Step 1 — Resolve the task
 
-Same fuzzy-match algorithm as `/design-task` Step 1 and `/fix-pr-bug` Step 1:
+Run the resolver; do NOT glob for the folder yourself:
 
-1. Glob `docs/tasks/task-*` (main) and `.worktrees/*/docs/tasks/task-*` (sibling worktrees).
-2. Match `$ARGUMENTS` against folder names — exact, number-only (`44`/`044`/`task-44`/`task-044`), or slug fragment.
-3. Zero matches → ask for correction. Multiple matches → list and let the user pick.
-4. If the task lives only on main with no worktree, stop and tell the user the task needs a worktree.
-5. Resolve to `<worktree>/docs/tasks/<id>/`.
+```sh
+tools/task-resolve.sh "$ARGUMENTS"
+```
 
-Home-hub has no single resolver/facts script for this — assemble it yourself
-with the glob above rather than hand-scanning `.worktrees/` some other way
-each time.
+It prints one tab-separated line, `<task-id>\t<task-dir>\t<worktree>`, and
+accepts exact, number-only (`44`/`044`/`task-44`/`task-044`), or slug-fragment
+identifiers. **Never glob `.worktrees/*/docs/tasks/task-*`** — every worktree
+carries a full copy of `docs/tasks/`, so that pattern returns (tasks ×
+worktrees) mostly-duplicate paths to resolve one ID.
+
+Exit codes: **3** → no match, ask for correction. **4** → ambiguous, the
+candidates are on stderr; list them and let the user pick. If `<worktree>` is
+the main repo root the task has no worktree — stop and tell the user it needs
+one.
 
 Do NOT create a new worktree — the worktree was created by `/spec-task` and
 must be reused so phase artifacts stay co-located.
@@ -33,6 +38,10 @@ Do NOT create a new worktree — the worktree was created by `/spec-task` and mu
 ### Step 3 — Validate inputs
 
 Confirm `<worktree>/docs/tasks/<id>/plan.md` AND `context.md` exist. If either is missing, tell the user to complete `/plan-task` first.
+
+Ledger: run `tools/task-ledger.sh migrate <id>` then `tools/task-ledger.sh init <id>`; use the printed path (`docs/tasks/<id>/progress.md`) as `<ledger>` everywhere. The ledger is `<ledger>`, not `<workspace>/progress.md`; the workspace (`.superpowers/sdd/…`) still holds briefs, reports and review packages. Do not change the ledger's header line — `claude-drive` identifies the ledger by the task id in its first three lines. On resume, an `OPERATOR DIRECTION:` line after the last `NEEDS OPERATOR:` block is binding.
+
+Check `printenv CLAUDE_DRIVE` once; if set, Step 4g applies for the rest of the session.
 
 ### Step 4 — Invoke subagent-driven-development
 
@@ -138,7 +147,8 @@ multiple of the same run in a clean 20k one, and their output is the biggest
 avoidable consumer of an implementer's window.
 
 **The gate runs concurrently with the next task. Never idle waiting for it.**
-See [`docs/agent-dispatch.md`](../../docs/agent-dispatch.md) §Verification
+(Headless: before your turn ends every launched gate is reconciled in-turn or
+named in the handoff line; Step 4g.) See [`docs/agent-dispatch.md`](../../docs/agent-dispatch.md) §Verification
 split for why this split exists.
 
 A gate checks a commit, and commits are immutable — task N's verdict is equally
@@ -149,8 +159,11 @@ After an implementer reports `DONE` / `DONE_WITH_CONCERNS`:
 1. **Launch** the gate for the range `<last-gated-commit>..HEAD`:
 
    ```sh
-   tools/verify.sh --quick --base <last-gated-commit> > /tmp/gate-<N>.log 2>&1
+   tools/verify.sh --quick --base <last-gated-commit> > /tmp/gate-<id>-<N>.log 2>&1; echo "EXIT=$?" >> /tmp/gate-<id>-<N>.log
    ```
+
+   The `EXIT=` line is the verdict; a log without one is a gate that did not
+   finish (ERROR, below).
 
    with `run_in_background: true`. Pass `--base` — without it the whole-branch
    diff makes each run far slower once any `shared/go/` file has been touched
@@ -214,9 +227,8 @@ A FAIL means one already-dispatched task started on a base that was not yet
 green. That is cheap and expected: the fix is a scoped commit on top, the same
 as any review finding. It is not a reason to serialize.
 
-The flagless `tools/verify.sh` still runs exactly once, at branch end, in
-`superpowers:finishing-a-development-branch`, against the full merge base.
-`--quick --base` per task is the inner loop, not the gate — per
+The flagless `tools/verify.sh` runs at branch end (Step 5), against the full
+merge base. `--quick --base` per task is the inner loop, not the gate — per
 `tools/verify.sh`'s own contract, only the flagless run counts as done.
 
 You may dispatch `task-verifier` (`model: haiku`) instead of launching the
@@ -271,11 +283,15 @@ handoff.
 first — hand off. This applies unconditionally, however many plan tasks
 remain; there is no carve-out for "only one or two left."**
 
-1. Confirm `<workspace>/progress.md` records every finished task, its commit
+1. Confirm `<ledger>` records every finished task, its commit
    range, and any ruling you made that is not already in a `task-N-report.md`.
-2. Tell the user: "Controller context is ~<N>k with <M> tasks remaining.
-   `/clear` and re-run `/execute-task <task-id>` — it resumes from the ledger."
-3. Stop: no further tool calls after the handoff line. Do not start the next
+2. Append `Handoff after Task <N>` to `<ledger>` and commit it. Then tell the
+   user: "Controller context is ~<N>k with <M> tasks remaining. `/clear` and
+   re-run `/execute-task <task-id>` — it resumes from the ledger." When
+   `CLAUDE_DRIVE` is set there is no user to tell; the committed handoff line
+   is the message (Step 4g) and `claude-drive` relaunches.
+3. Stop: no further tool calls after the handoff line (under `CLAUDE_DRIVE`:
+   after its ledger commit). Do not start the next
    task, and do not use the handoff message as a lead-in to one more action —
    a handoff the same context then works past is not a handoff.
 
@@ -298,18 +314,30 @@ task is a self-contained detour from the rest of the plan — a tooling
 investigation, a spike, a docs sweep. Those share no state with what you are
 carrying, so they pay full freight for none of it.
 
-### Step 4f — Record what each agent cost
+### Step 4f — The ledger: progress lines and agent cost
 
-Home-hub has no separate ledger tool. When you reconcile an agent
-(implementer, verifier, reviewer), append one line by hand to
-`.superpowers/sdd/<plan-basename>/progress.md`:
+`<ledger>` (Step 3) is both the resume map and the protocol `claude-drive`
+reads. These line shapes are a contract — the drive matches them at the start
+of a line, so write them exactly:
+
+| Line | When |
+|---|---|
+| `Task <N>: complete (commits <a7>..<b7>)` | A plan task is implemented, reviewed `APPROVED`, and its fix rounds landed. Never for a partial or unreviewed task. |
+| `Task <N>: partial (…)` | Step 4d. |
+| `Handoff after Task <N>` | Step 4e / 4g. Optional suffix in parentheses, e.g. `(context~160k)` or `(gate <base>..<head> unreconciled)`. |
+| `NEEDS OPERATOR:` + one paragraph | Stopping for a human (Step 4g). |
+| `Branch end: <step> <verdict>` | Step 5 items 1-3. |
+| `CI wait: PR #<n> head <sha>` / `CI: …` | Step 5 item 5. |
+
+When you reconcile an agent (implementer, verifier, reviewer), also append one
+cost row. It starts with `Agent:` so it never collides with the progress
+lines above:
 
 ```
-Task <N>: <status> — agent=<type> model=<model> commit=<sha>
+Agent: Task <N> type=<type> model=<model> status=<status> commit=<sha>
 ```
 
-Reviewer rows add `verdict=<verdict> caused-fix=<yes|no>`; when you hand off
-at Step 4e, add a `handoff after Task <N>, context~<n>k` line.
+Reviewer rows add `verdict=<verdict> caused-fix=<yes|no>`.
 
 Record only what you actually know — an omitted field stays out of the line.
 **Do not estimate.** A fabricated turn count or token figure poisons the next
@@ -318,21 +346,129 @@ session's read of the ledger worse than a gap would.
 Batch this with the ledger edit and the next dispatch — it is one more line in a
 turn that is already happening, not a turn of its own.
 
-**Batch the ledger update with the next dispatch.** Editing `progress.md` and
+**Batch the ledger update with the next dispatch.** Editing `<ledger>` and
 the following brief/dispatch call are independent — issue them in one message.
 A standalone turn for a small checkbox edit costs the same as a turn that does
 real work, and there are one or two of them per plan task.
 
-### Step 5 — On completion
+**Ledger commit cadence.** `<ledger>` is committed. Always commit it before
+ending the turn (handoff line, `NEEDS OPERATOR:` block, CI wait). Otherwise
+fold it into your next own commit; `Task N: complete` lines are not committed
+one by one. A ledger-only commit is `chore(<id>): ledger`.
 
-After all plan tasks complete and verify, the chosen skill hands off to `superpowers:finishing-a-development-branch`. Honor that handoff. Then suggest:
+### Step 4g — Headless runs (`CLAUDE_DRIVE` set)
 
-> All plan tasks complete. Recommend running `superpowers:requesting-code-review` next, which dispatches the appropriate reviewer agents (plan-adherence, backend-guidelines, frontend-guidelines) in parallel.
+`claude-drive` (`~/.local/bin/claude-drive`) runs this command as
+`claude -p` with `CLAUDE_DRIVE=1`. Ending the turn ends the process, no
+notification will re-invoke you, and `Monitor` does not block. Never wait
+in-turn; after the process exits the drive reads `<ledger>` and decides
+whether to relaunch, wait on CI, or stop for the operator.
+
+- **Agents:** dispatch in the foreground, never `run_in_background`; the result
+  arrives in-turn.
+- **Gates:** a mid-plan gate may run in the background while you keep working
+  (its completion arrives while you are making calls).
+- **Anything else you would wait for** (the Step 4e threshold, a gate still
+  running when you are out of other work, a foreground gate with no `EXIT=`
+  line): write `Handoff after Task N` to `<ledger>`. A gate left unreconciled
+  is named: `Handoff after Task N (gate <base>..<head> unreconciled)`; the next
+  context re-runs it first. Commit `<ledger>` alone as `chore(<id>): ledger`,
+  then end the turn.
+- **Stopping for the operator.** Anything you would ask the user — blocked
+  plan step, ambiguity the plan does not settle, fix rounds exhausted — append
+  a block starting with `NEEDS OPERATOR:` followed by one paragraph: what
+  happened, what was tried, the specific question. A stop never writes a
+  `Handoff after` line. Commit `<ledger>`, then end the turn.
+- **Never end the turn silently.** A turn that ends with no new
+  `Task N: complete`, handoff, `NEEDS OPERATOR:`, `Branch end:` or `CI wait:`
+  line makes the drive stop with "ENDED WITHOUT HANDOFF OR QUESTION".
+
+Interactive runs are unchanged. All tasks complete is not the end of a
+headless run: continue into Step 5.
+
+### Step 5 — On completion (branch end)
+<!-- drive-protocol: branch-end v1 -->
+
+After all plan tasks are `complete`, run this branch end. It runs headless
+(`CLAUDE_DRIVE`) and interactively, in this order. Each item appends its line
+to `<ledger>`; on relaunch, resume at the first item with no line.
+
+1. **Merge main.** `tools/merge-main.sh`. Exit 1 (real conflicts) or 3 is
+   `NEEDS OPERATOR:`. Append `Branch end: merge-main <merged|up-to-date>`.
+2. **Flagless verify.** Launch the whole-branch gate in the background:
+
+   ```sh
+   tools/verify.sh > /tmp/verify-<id>.log 2>&1; echo "EXIT=$?" >> /tmp/verify-<id>.log
+   ```
+
+   Run item 3 while it runs, then reconcile. Append
+   `Branch end: verify <PASS|FAIL>`. Only the flagless run counts —
+   never `--quick`, `--no-docker` or `--no-ui` here (CLAUDE.md, "Done means
+   verified").
+   - FAIL: a fix round with `task-implementer` (sonnet), per Step 4c rules,
+     then re-run this item.
+   - Still running after item 3 with nothing else to do: headless, write
+     `Handoff after branch end (verify unreconciled)` per Step 4g (the next
+     context re-runs it with warm caches); interactive, wait for the
+     notification. A second consecutive `verify unreconciled` handoff is
+     `NEEDS OPERATOR:`.
+3. **Code review** per [`docs/review-protocol.md`](../../docs/review-protocol.md)
+   via `superpowers:requesting-code-review`. Dispatch the reviewers in the
+   foreground, in parallel, each with `model: sonnet`, each writing to
+   `docs/tasks/<id>/audit.md`:
+   - `plan-adherence-reviewer` always, sharded by non-overlapping task range on
+     long plans (below);
+   - `backend-guidelines-reviewer` when the branch changes non-test `.go` files
+     under `services/` or `shared/`;
+   - `frontend-guidelines-reviewer` when the branch changes `.ts`/`.tsx` under
+     `frontend/`;
+   - `task-reviewer` over off-plan commits, when any exist (commits outside a
+     ledgered plan-task range, excluding merge-main and ledger-only commits).
+
+   Append `Branch end: review <verdict>`. `CHANGES_REQUIRED` is a fix round
+   under the existing limit (rounds 1-3), then re-review; a fix round
+   invalidates item 2, so re-run it. Still blocking after round 3 is
+   `NEEDS OPERATOR:`.
+4. **Open the PR.** Push, then open it with `tea` per
+   [`docs/git-workflow.md`](../../docs/git-workflow.md):
+   `tea pr create --base main --head <branch> --title "..." --description-file <body>`,
+   where `<body>` is a file under `mktemp -d`, never committed. If a PR already
+   exists for the head (`tea pr list`), reuse it.
+5. **CI wait.** Append `CI wait: PR #<n> head <sha>` (the pushed head), commit
+   the ledger as `chore(<id>): ledger`, push, and end the turn. This push is
+   the CI run.
+   - Headless: the drive waits on `tools/ci-status.sh` in the shell.
+   - Interactive: run `tools/ci-status.sh <n>` with `run_in_background: true`
+     and act on its exit notification; when it exits 0 on the PR's current
+     head, invoke `superpowers:finishing-a-development-branch`.
+
+   After a green verdict, never push a ledger-only commit: append the `CI:`
+   line, commit it locally as `chore(<id>): ledger`, and leave it unpushed, so
+   the PR head stays at the sha CI judged. Headless, the drive's `done`
+   outcome ends the run and the verdict lives in the drive log, not the
+   ledger. Merging is always the operator's.
+
+**Relaunch with `CLAUDE_DRIVE_CI_RESULT`.** A non-empty value is a file path
+holding the `tools/ci-status.sh` result. Append
+`CI: tools/ci-status.sh <n> EXIT=<rc> head <sha>` from that file, then on red
+dispatch a `task-implementer` (sonnet) fix with the failing context names from
+the output. The fix first reproduces the failure locally (flagless
+`tools/verify.sh`, or `--only <leg>` to iterate) before changing anything. The
+`CI:` line is committed with the fix round; push, then write a new `CI wait:`
+line (item 5). CI fix rounds are capped at 2. A third red, or a failure that
+cannot be reproduced, is `NEEDS OPERATOR:`.
+
+**Relaunch after a `CI wait:` with no `CLAUDE_DRIVE_CI_RESULT`.** The head
+moved for a non-ledger reason. Push the local branch if it is ahead of the PR,
+append a new `CI wait: PR #<n> head <sha>` for the current head, commit, push,
+and end the turn (re-enter item 5). Never append a `CI:` line here: there is
+no verdict for this head.
 
 Whatever the plan's size, plan adherence is `plan-adherence-reviewer`'s job and
-nothing else's. On a long plan, prefer scoping that agent to a task range over
-dispatching ad-hoc `general-purpose` "audit plan tasks N-M vs code" agents,
-and never run two overlapping-range dispatches of it at once.
+nothing else's. On a long plan, shard **that agent** by non-overlapping task
+range (`1-10`, `11-20`, …) — do not dispatch ad-hoc `general-purpose` "audit
+plan tasks N-M vs code" agents, and never run range shards alongside an
+unscoped run of the same agent.
 
 ## Important Rules
 
@@ -343,6 +479,8 @@ and never run two overlapping-range dispatches of it at once.
 - Never reverse-engineer the gate's selection from its source; ask
   `tools/verify.sh --facts` (Step 4c).
 - Never run `tools/verify.sh` inside an implementer — that is `task-verifier`'s job (Step 4c).
+- Under `CLAUDE_DRIVE`, never wait in-turn and never end the turn with an un-named outstanding gate or without a ledger line; hand off through the ledger (Step 4g).
+- Ledger lines `claude-drive` reads are a contract — write them exactly (Step 4f).
 - Never dispatch a brief with no `### Files` section (Step 4b).
 - Never carry the controller past ~150k tokens, or 4 completed plan tasks in one session — hand off to a fresh session via the ledger, unconditionally, regardless of tasks remaining (Step 4e).
 - Never start implementation outside the task worktree.
