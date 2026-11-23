@@ -1,6 +1,6 @@
 module github.com/jtumidanski/home-hub/shared/go/logging
 
-go 1.27.3
+go 1.27.4
 
 require (
 	github.com/sirupsen/logrus v1.10.2

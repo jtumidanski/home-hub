@@ -1,6 +1,6 @@
 module github.com/jtumidanski/home-hub/shared/go/kafka
 
-go 1.27.3
+go 1.27.4
 
 require (
 	github.com/segmentio/kafka-go v0.4.51
